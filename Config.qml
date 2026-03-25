@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 pragma Singleton
 
 import QtQuick
@@ -10,6 +11,7 @@ Singleton {
     property alias carouselSpeed: adapter.carouselSpeed
     property alias transparentBar: adapter.transparentBar
     property alias fontFamily: adapter.fontFamily
+    property alias trayBlacklist: adapter.trayBlacklist
 
     FileView {
         path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
@@ -23,6 +25,7 @@ Singleton {
             property int carouselSpeed: 30
             property bool transparentBar: false
             property string fontFamily: "Inter"
+            property var trayBlacklist: ["spotify", "Spotify"]
         }
     }
 }

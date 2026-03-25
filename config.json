@@ -3,5 +3,9 @@
     "showSeconds": false,
     "carouselSpeed": 30,
     "transparentBar": false,
-    "fontFamily": "Inter"
+    "fontFamily": "Inter",
+    "trayBlacklist": [
+        "spotify",
+        "Spotify"
+    ]
 }
