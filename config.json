@@ -7,5 +7,7 @@
     "trayBlacklist": [
         "spotify",
         "Spotify"
-    ]
+    ],
+    "screenRadius": 16,
+    "screenCorners": true
 }

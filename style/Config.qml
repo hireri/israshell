@@ -20,12 +20,12 @@ Singleton {
 
         JsonAdapter {
             id: adapter
-            property bool spinningCover: true
-            property bool showSeconds: false
-            property int carouselSpeed: 30
-            property bool transparentBar: false
-            property string fontFamily: "Inter"
-            property var trayBlacklist: ["spotify", "Spotify"]
+            readonly property bool spinningCover: true
+            readonly property bool showSeconds: false
+            readonly property int carouselSpeed: 30
+            readonly property bool transparentBar: false
+            readonly property string fontFamily: "Inter"
+            readonly property var trayBlacklist: ["spotify", "Spotify"]
         }
     }
 }
