@@ -83,28 +83,29 @@ Rectangle {
                 visible: albumArt.status === Image.Ready
 
                 property real rotationAngle: 0
+                property real rotationVelocity: coverRoot.shouldSpin ? 0.5 : 0
+
                 rotation: rotationAngle
+
+                Behavior on rotationVelocity {
+                    NumberAnimation {
+                        duration: 600
+                        easing.type: Easing.OutCubic
+                    }
+                }
 
                 layer.enabled: true
                 layer.smooth: true
                 antialiasing: true
 
-                onVisibleChanged: {
-                    if (!visible)
-                        rotationAngle = 0;
-                }
-
                 Timer {
                     interval: 16
-                    running: coverRoot.shouldSpin && rotatingCover.visible
+                    running: rotatingCover.visible
                     repeat: true
-                    onTriggered: rotatingCover.rotationAngle += 0.5
-                }
-
-                Behavior on rotationAngle {
-                    SmoothedAnimation {
-                        duration: 200
-                        easing.type: Easing.OutQuad
+                    onTriggered: {
+                        if (Math.abs(rotatingCover.rotationVelocity) > 0.001) {
+                            rotatingCover.rotationAngle = (rotatingCover.rotationAngle + rotatingCover.rotationVelocity) % 360;
+                        }
                     }
                 }
 
