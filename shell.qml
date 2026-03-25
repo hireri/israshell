@@ -114,63 +114,84 @@ Variants {
                         spacing: 8
 
                         Item {
+                            id: root
                             width: 24
                             height: 24
-                            layer.enabled: true
-                            layer.smooth: true
-                            antialiasing: true
 
                             anchors.verticalCenter: parent.verticalCenter
-                            property real targetRotation: 0
+
+                            property bool hasPlayer: false
+                            property bool isPlaying: false
+                            property bool shouldSpin: Config.spinningCover && hasPlayer && isPlaying
 
                             Timer {
-                                interval: 16
-                                running: {
-                                    const player = Mpris.players.values[0];
-                                    return Config.spinningCover && player && player.playbackState === MprisPlaybackState.Playing;
-                                }
+                                interval: 100
+                                running: true
                                 repeat: true
-                                onTriggered: parent.targetRotation += 0.5
-                            }
-
-                            Behavior on rotation {
-                                SmoothedAnimation {
-                                    duration: 1000
-                                    easing.type: Easing.OutQuad
+                                onTriggered: {
+                                    const player = Mpris.players.values[0];
+                                    root.hasPlayer = !!player;
+                                    root.isPlaying = player?.playbackState === MprisPlaybackState.Playing;
                                 }
                             }
-
-                            rotation: targetRotation
 
                             ClippingWrapperRectangle {
                                 anchors.fill: parent
                                 radius: 30
-                                child: Item {
+
+                                child: Rectangle {
                                     anchors.fill: parent
+                                    color: Colors.md3.surface_container_highest
 
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        color: Colors.md3.surface_container_highest
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "♪"
-                                            color: Colors.md3.on_surface_variant
-                                            font.pixelSize: 14
-                                            font.family: Config.fontFamily
-                                        }
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "♪"
+                                        color: Colors.md3.on_surface_variant
+                                        font.pixelSize: 14
+                                        font.family: Config.fontFamily
                                     }
+                                }
+                            }
 
-                                    Image {
-                                        anchors.fill: parent
-                                        source: {
-                                            const player = Mpris.players.values[0];
-                                            return player ? player.trackArtUrl : "";
-                                        }
-                                        visible: {
-                                            const player = Mpris.players.values[0];
-                                            return player && player.trackArtUrl;
-                                        }
+                            ClippingWrapperRectangle {
+                                id: rotatingCover
+                                anchors.fill: parent
+                                radius: 30
+                                visible: albumArt.status === Image.Ready
+
+                                property real rotationAngle: 0
+                                rotation: rotationAngle
+
+                                layer.enabled: true
+                                layer.smooth: true
+                                antialiasing: true
+
+                                onVisibleChanged: {
+                                    if (!visible) {
+                                        rotationAngle = 0;
+                                    }
+                                }
+
+                                Timer {
+                                    interval: 16
+                                    running: root.shouldSpin && rotatingCover.visible
+                                    repeat: true
+                                    onTriggered: rotatingCover.rotationAngle += 0.5
+                                }
+
+                                Behavior on rotationAngle {
+                                    SmoothedAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutQuad
+                                    }
+                                }
+
+                                child: Image {
+                                    id: albumArt
+                                    anchors.fill: parent
+                                    source: {
+                                        const player = Mpris.players.values[0];
+                                        return player?.trackArtUrl || "";
                                     }
                                 }
                             }

@@ -2,5 +2,6 @@
     "spinningCover": true,
     "showSeconds": false,
     "carouselSpeed": 30,
-    "transparentBar": false
+    "transparentBar": false,
+    "fontFamily": "Inter"
 }
