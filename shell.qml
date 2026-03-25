@@ -60,7 +60,7 @@ Variants {
                             }
                             color: Colors.md3.on_surface_variant
                             font.pixelSize: 10
-                            font.family: "Inter"
+                            font.family: Config.fontFamily
                         }
 
                         Text {
@@ -70,7 +70,7 @@ Variants {
                             }
                             color: Colors.md3.on_surface
                             font.pixelSize: 12
-                            font.family: "Inter"
+                            font.family: Config.fontFamily
                         }
                     }
                 }
@@ -145,13 +145,32 @@ Variants {
                             ClippingWrapperRectangle {
                                 anchors.fill: parent
                                 radius: 30
-                                color: "transparent"
-
-                                Image {
+                                child: Item {
                                     anchors.fill: parent
-                                    source: {
-                                        const player = Mpris.players.values[0];
-                                        return player ? player.trackArtUrl : "";
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        color: Colors.md3.surface_container_highest
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "♪"
+                                            color: Colors.md3.on_surface_variant
+                                            font.pixelSize: 14
+                                            font.family: Config.fontFamily
+                                        }
+                                    }
+
+                                    Image {
+                                        anchors.fill: parent
+                                        source: {
+                                            const player = Mpris.players.values[0];
+                                            return player ? player.trackArtUrl : "";
+                                        }
+                                        visible: {
+                                            const player = Mpris.players.values[0];
+                                            return player && player.trackArtUrl;
+                                        }
                                     }
                                 }
                             }
@@ -182,11 +201,8 @@ Variants {
                                 anchors.verticalCenter: parent.verticalCenter
                                 x: mediaTextContainer.shouldScroll ? -mediaTextContainer.scrollPos : (mediaTextContainer.width - implicitWidth) / 2
                                 color: Colors.md3.on_surface
-                                font.family: "Inter"
+                                font.family: Config.fontFamily
                                 font.pixelSize: 14
-                                transform: Translate {
-                                    x: -14
-                                }
                                 text: {
                                     const player = Mpris.players.values[0];
                                     if (!player)
@@ -209,7 +225,7 @@ Variants {
                                 x: mediaText.x + mediaText.implicitWidth + 20
                                 visible: mediaTextContainer.shouldScroll
                                 color: Colors.md3.on_surface
-                                font.family: "Inter"
+                                font.family: Config.fontFamily
                                 font.pixelSize: 14
                                 text: mediaText.text
                             }
@@ -283,12 +299,10 @@ Variants {
 
                             do {
                                 target += direction;
-
                                 if (target > 10)
                                     target = 1;
                                 if (target < 1)
                                     target = 10;
-
                                 attempts++;
                                 if (attempts > 10)
                                     return;
@@ -363,7 +377,7 @@ Variants {
                         padding: 12
                         anchors.centerIn: parent
                         color: Colors.md3.on_surface
-                        font.family: "Inter"
+                        font.family: Config.fontFamily
                         font.pixelSize: 14
 
                         Timer {
@@ -384,7 +398,8 @@ Variants {
                 spacing: 8
 
                 Rectangle {
-                    visible: SystemTray.items.values.length > 0
+                    id: trayContainer
+                    visible: (SystemTray.items?.count ?? 0) > 0
 
                     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
                     radius: 12
@@ -397,9 +412,11 @@ Variants {
                         spacing: 8
 
                         Repeater {
-                            model: SystemTray.items.values
+                            id: trayRepeater
+                            model: SystemTray.items
 
                             delegate: Item {
+                                required property var modelData
                                 width: 20
                                 height: 20
                                 anchors.verticalCenter: parent.verticalCenter
@@ -443,7 +460,7 @@ Variants {
                         anchors.centerIn: parent
                         text: "quick settings"
                         color: Colors.md3.on_surface
-                        font.family: "Inter"
+                        font.family: Config.fontFamily
                         font.pixelSize: 14
                     }
                 }

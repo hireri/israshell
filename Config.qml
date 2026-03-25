@@ -9,7 +9,7 @@ Singleton {
     property alias showSeconds: adapter.showSeconds
     property alias carouselSpeed: adapter.carouselSpeed
     property alias transparentBar: adapter.transparentBar
-    property alias blur: adapter.blur
+    property alias fontFamily: adapter.fontFamily
 
     FileView {
         path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
@@ -22,7 +22,7 @@ Singleton {
             property bool showSeconds: false
             property int carouselSpeed: 30
             property bool transparentBar: false
-            property bool blur: false
+            property string fontFamily: "Inter"
         }
     }
 }
