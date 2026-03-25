@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 import Quickshell
 import QtQuick
 import Quickshell.Hyprland
@@ -420,11 +421,13 @@ Variants {
 
                 Rectangle {
                     id: trayContainer
-                    visible: (SystemTray.items?.count ?? 0) > 0
+
+                    visible: (SystemTray.items?.values?.length ?? 0) > 0
 
                     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
                     radius: 12
-                    width: trayContent.implicitWidth + 20
+
+                    width: Math.max(trayContent.implicitWidth + 20, 0)
                     height: 32
 
                     Row {
@@ -438,15 +441,25 @@ Variants {
 
                             delegate: Item {
                                 required property var modelData
+                                required property int index
+
                                 width: 20
                                 height: 20
                                 anchors.verticalCenter: parent.verticalCenter
 
                                 Image {
                                     anchors.fill: parent
-                                    source: modelData.icon || ""
+                                    source: modelData?.icon ?? ""
                                     sourceSize: Qt.size(20, 20)
                                     fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                    cache: true
+
+                                    onStatusChanged: {
+                                        if (status === Image.Error) {
+                                            console.log("Tray icon error for", modelData?.id, "source:", source);
+                                        }
+                                    }
                                 }
 
                                 MouseArea {
@@ -456,12 +469,12 @@ Variants {
 
                                     onClicked: mouse => {
                                         if (mouse.button === Qt.LeftButton) {
-                                            modelData.activate();
+                                            modelData?.activate();
                                         } else if (mouse.button === Qt.MiddleButton) {
-                                            modelData.secondaryActivate();
+                                            modelData?.secondaryActivate();
                                         } else if (mouse.button === Qt.RightButton) {
                                             const pos = mapToItem(null, mouse.x, mouse.y);
-                                            modelData.display(window, pos.x, pos.y);
+                                            modelData?.display(window, pos.x, pos.y);
                                         }
                                     }
                                 }
