@@ -265,10 +265,36 @@ Variants {
                         cursorShape: Qt.PointingHandCursor
 
                         onWheel: wheel => {
-                            const current = Hyprland.focusedWorkspace.id;
-                            const target = current + (wheel.angleDelta.y > 0 ? -1 : 1);
+                            const monitor = Hyprland.monitorFor(window.modelData);
+                            if (!monitor)
+                                return;
 
-                            if (target >= 1 && target <= 10) {
+                            const currentWs = Hyprland.workspaces.values.find(w => w.active && w.monitor === monitor);
+                            if (!currentWs)
+                                return;
+
+                            const currentId = currentWs.id;
+                            const direction = wheel.angleDelta.y > 0 ? -1 : 1;
+
+                            const otherMonitorWorkspaces = new Set(Hyprland.workspaces.values.filter(w => w.monitor && w.monitor !== monitor).map(w => w.id));
+
+                            let target = currentId;
+                            let attempts = 0;
+
+                            do {
+                                target += direction;
+
+                                if (target > 10)
+                                    target = 1;
+                                if (target < 1)
+                                    target = 10;
+
+                                attempts++;
+                                if (attempts > 10)
+                                    return;
+                            } while (otherMonitorWorkspaces.has(target) && target !== currentId)
+
+                            if (target !== currentId && !otherMonitorWorkspaces.has(target)) {
                                 Hyprland.dispatch("workspace " + target);
                             }
                         }
@@ -301,8 +327,13 @@ Variants {
 
                                     color: {
                                         const wsId = index + 1;
+                                        const monitor = Hyprland.monitorFor(window.modelData);
+                                        if (!monitor)
+                                            return Colors.md3.outline_variant;
 
-                                        if (wsId === Hyprland.focusedWorkspace.id) {
+                                        const ws = Hyprland.workspaces.values.find(w => w.id === wsId);
+
+                                        if (ws && ws.active && ws.monitor === monitor) {
                                             return Colors.md3.primary;
                                         }
 
