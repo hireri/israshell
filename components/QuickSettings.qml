@@ -23,13 +23,19 @@ Item {
     function getNetworkIcon() {
         if (NetworkService.ethConnected)
             return "󰌗";
-        if (!NetworkService.wifiEnabled)
-            return "󰤭";
+        if (!NetworkService.networkingEnabled)
+            return "󰤮";
         if (!NetworkService.wifiConnected)
-            return "󰤯";
-        if (NetworkService.wifiSignal >= 75)
+            return "󰤫";
+        if (NetworkService.wifiSignal >= 80)
             return "󰤨";
-        return "󰤟";
+        if (NetworkService.wifiSignal >= 75)
+            return "󰤥";
+        if (NetworkService.wifiSignal >= 50)
+            return "󰤢";
+        if (NetworkService.wifiSignal >= 25)
+            return "󰤟";
+        return "󰤯";
     }
 
     function getBluetoothIcon() {
@@ -376,7 +382,7 @@ Item {
 
                     QsToggleChip {
                         icon: root.getNetworkIcon()
-                        active: NetworkService.wifiEnabled || NetworkService.ethConnected
+                        active: NetworkService.networkingEnabled || NetworkService.ethConnected
                         onToggled: NetworkService.toggle()
                         onRightClicked: {
                             root.isOpen = false;
