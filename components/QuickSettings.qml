@@ -230,7 +230,7 @@ Item {
                         onToggled: NetworkService.toggle()
                         onRightClicked: {
                             root.isOpen = false;
-                            appletProc.command = ["kitty", "-e", "nmtui"];
+                            appletProc.command = ["nm-connection-editor"];
                             appletProc.running = true;
                         }
                     }
