@@ -7,11 +7,10 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    property bool wifiEnabled: false
+    property bool networkingEnabled: true
     property bool wifiConnected: false
     property string wifiSsid: ""
     property int wifiSignal: 0
-
     property bool ethConnected: false
 
     Process {
@@ -31,7 +30,7 @@ Singleton {
         id: netStateProc
         running: true
 
-        command: ["sh", "-c", "nmcli -t radio wifi; nmcli -t -f TYPE,STATE,CONNECTION dev"]
+        command: ["sh", "-c", "nmcli -t networking; nmcli -t -f TYPE,STATE,CONNECTION dev"]
 
         stdout: StdioCollector {
             id: netStateOutput
@@ -40,7 +39,7 @@ Singleton {
                 if (lines.length === 0)
                     return;
 
-                root.wifiEnabled = (lines[0] === "enabled");
+                root.networkingEnabled = (lines[0] === "enabled");
 
                 let isEth = false;
                 let isWifi = false;
@@ -72,7 +71,7 @@ Singleton {
 
     Timer {
         interval: 10000
-        running: root.wifiConnected
+        running: root.wifiConnected && root.networkingEnabled
         repeat: true
         onTriggered: signalProc.running = true
     }
@@ -93,20 +92,20 @@ Singleton {
 
     Process {
         id: enableProc
-        command: ["nmcli", "radio", "wifi", "on"]
+        command: ["nmcli", "networking", "on"]
     }
 
     Process {
         id: disableProc
-        command: ["nmcli", "radio", "wifi", "off"]
+        command: ["nmcli", "networking", "off"]
     }
 
     function toggle() {
-        if (root.wifiEnabled) {
-            root.wifiEnabled = false;
+        if (root.networkingEnabled) {
+            root.networkingEnabled = false;
             disableProc.running = true;
         } else {
-            root.wifiEnabled = true;
+            root.networkingEnabled = true;
             enableProc.running = true;
         }
     }
