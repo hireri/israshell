@@ -8,10 +8,14 @@ import Quickshell.Io
 Singleton {
     property alias spinningCover: adapter.spinningCover
     property alias showSeconds: adapter.showSeconds
+    property alias hourFormat: adapter.hourFormat
     property alias carouselSpeed: adapter.carouselSpeed
     property alias transparentBar: adapter.transparentBar
     property alias fontFamily: adapter.fontFamily
     property alias trayBlacklist: adapter.trayBlacklist
+    property alias nightLightTemp: adapter.nightLightTemp
+    property alias dayLightTemp: adapter.dayLightTemp
+    property alias floatingBar: adapter.floatingBar
 
     FileView {
         path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
@@ -20,12 +24,16 @@ Singleton {
 
         JsonAdapter {
             id: adapter
-            readonly property bool spinningCover: true
-            readonly property bool showSeconds: false
-            readonly property int carouselSpeed: 30
-            readonly property bool transparentBar: false
-            readonly property string fontFamily: "Inter"
-            readonly property var trayBlacklist: ["spotify", "Spotify"]
+            property bool spinningCover: true
+            property bool showSeconds: false
+            property int hourFormat: 0
+            property int carouselSpeed: 30
+            property bool transparentBar: adapter.transparentBar
+            property string fontFamily: "Inter"
+            property var trayBlacklist: ["spotify", "Spotify"]
+            property int nightLightTemp: 4000
+            property int dayLightTemp: 6500
+            property bool floatingBar: true
         }
     }
 }

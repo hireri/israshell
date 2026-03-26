@@ -148,7 +148,7 @@ Rectangle {
                     const player = Mpris.players.values[0];
                     if (!player)
                         return "nothing playing   ᓚ₍ ^. .^₎";
-                    return player.trackTitle + " • " + player.trackArtist;
+                    return player.trackTitle + "  •  " + player.trackArtist;
                 }
 
                 onTextChanged: {

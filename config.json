@@ -1,5 +1,6 @@
 {
     "spinningCover": true,
+    "hourFormat": 1,
     "showSeconds": false,
     "carouselSpeed": 30,
     "transparentBar": false,
@@ -8,6 +9,7 @@
         "spotify",
         "Spotify"
     ],
-    "screenRadius": 16,
-    "screenCorners": true
+    "nightLightTemp": 4000,
+    "dayLightTemp": 6500,
+    "floatingBar": false
 }

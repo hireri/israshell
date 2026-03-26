@@ -5,27 +5,58 @@ import qs.style
 Rectangle {
     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
     radius: 12
-    width: clockText.implicitWidth + 40
-    height: 32
+    implicitWidth: clockTime.implicitWidth + clockDate.implicitWidth + 60
+    implicitHeight: 32
 
-    Text {
-        id: clockText
+    Row {
         anchors.centerIn: parent
-        color: Colors.md3.on_surface
-        font.family: Config.fontFamily
-        font.pixelSize: 14
 
-        function update() {
-            text = Qt.formatTime(new Date(), "hh:mm") + " " + Qt.formatDate(new Date(), "ddd dd/MM");
+        Text {
+            id: clockTime
+            color: Colors.md3.on_surface
+            font.family: Config.fontFamily
+            font.pixelSize: 14
+
+            function update() {
+                const ap = ["", " ap", " AP"][Config.hourFormat];
+                text = Qt.formatTime(new Date(), (Config.showSeconds ? "hh:mm:ss" : "hh:mm") + ap);
+            }
+
+            Timer {
+                interval: 1000
+                running: true
+                repeat: true
+                onTriggered: parent.update()
+            }
+
+            Component.onCompleted: update()
         }
 
-        Timer {
-            interval: 1000
-            running: true
-            repeat: true
-            onTriggered: parent.update()
+        Text {
+            text: "  •  "
+            color: Colors.md3.on_surface
+            font.family: Config.fontFamily
+            font.pixelSize: 14
         }
 
-        Component.onCompleted: update()
+        Text {
+            id: clockDate
+            color: Colors.md3.on_surface
+            font.family: Config.fontFamily
+            font.pixelSize: 14
+
+            function currentDate() {
+                text = Qt.formatDate(new Date(), "ddd, dd/MM");
+            }
+
+            Timer {
+                interval: 24000
+                running: true
+                repeat: true
+                onTriggered: parent.currentDate()
+            }
+
+            Component.onCompleted: currentDate()
+        }
     }
 }
