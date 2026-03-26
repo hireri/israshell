@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import Quickshell.Widgets
 
 import qs.style
 import qs.services
@@ -24,14 +25,25 @@ Item {
         onCleared: root.isOpen = false
     }
 
-    Connections {
-        target: Hyprland
-        function onActiveMonitorChanged() {
-            root.isOpen = false;
+    Process {
+        id: infoProc
+        command: ["sh", "-c", "hostname; uptime -p"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let lines = text.trim().split("\n");
+                if (lines.length >= 2) {
+                    hostText.text = lines[0] + " • " + lines[1].replace("up ", "");
+                }
+            }
         }
-        function onActiveWindowChanged() {
-            root.isOpen = false;
-        }
+    }
+
+    Timer {
+        interval: 60000
+        running: root.isOpen
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: infoProc.running = true
     }
 
     Rectangle {
@@ -50,8 +62,7 @@ Item {
         Row {
             id: btnRow
             anchors.centerIn: parent
-            spacing: 6
-
+            spacing: 8
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "󰒓"
@@ -59,7 +70,6 @@ Item {
                 font.pixelSize: 16
                 font.family: Config.fontFamily
             }
-
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Settings"
@@ -78,14 +88,11 @@ Item {
 
     PopupWindow {
         id: drawer
-
         anchor.window: root.panelWindow
-        anchor.rect.x: root.panelWindow.width - width - 8
-        anchor.rect.y: root.panelWindow.height + 8
-
-        width: 280
+        anchor.rect.x: root.panelWindow.width - width - 12
+        anchor.rect.y: root.panelWindow.height + 12
+        width: 320
         height: contentCol.implicitHeight + 24
-
         visible: drawerContent.opacity > 0
         color: "transparent"
 
@@ -96,7 +103,6 @@ Item {
             color: Colors.md3.surface_container_high
             border.color: Colors.md3.outline_variant
             border.width: 1
-
             opacity: root.isOpen ? 1 : 0
             scale: 0.95 + (opacity * 0.05)
             transformOrigin: Item.TopRight
@@ -118,13 +124,90 @@ Item {
                 }
                 spacing: 12
 
-                Text {
-                    text: "Quick Settings"
-                    color: Colors.md3.on_surface_variant
-                    font.family: Config.fontFamily
-                    font.pixelSize: 11
-                    leftPadding: 4
-                    topPadding: 4
+                Rectangle {
+                    width: parent.width
+                    height: 128
+                    color: Colors.md3.surface_container
+                    radius: 10
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 12
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 16
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: Quickshell.env("USER")
+                                    color: Colors.md3.on_surface
+                                    font.family: Config.fontFamily
+                                    font.pixelSize: 18
+                                    font.weight: Font.DemiBold
+                                }
+                                Text {
+                                    id: hostText
+                                    Layout.fillWidth: true
+                                    text: "Loading..."
+                                    color: Colors.md3.on_surface_variant
+                                    font.family: Config.fontFamily
+                                    font.pixelSize: 12
+                                }
+                            }
+
+                            IconButton {
+                                icon: "󰏫"
+                                onClicked: {
+                                    sysProc.command = ["code", Quickshell.env("HOME") + "/.config/hypr"];
+                                    sysProc.running = true;
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            PowerButton {
+                                icon: "󰌾"
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    sysProc.command = ["hyprctl", "dispatch", "exit"];
+                                    sysProc.running = true;
+                                }
+                            }
+                            PowerButton {
+                                icon: "󰤄"
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    sysProc.command = ["systemctl", "suspend"];
+                                    sysProc.running = true;
+                                }
+                            }
+                            PowerButton {
+                                icon: "󰜉"
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    sysProc.command = ["systemctl", "reboot"];
+                                    sysProc.running = true;
+                                }
+                            }
+                            PowerButton {
+                                icon: ""
+                                primary: true
+                                Layout.fillWidth: true
+                                onClicked: {
+                                    sysProc.command = ["systemctl", "poweroff"];
+                                    sysProc.running = true;
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Row {
@@ -141,10 +224,6 @@ Item {
                                     return "󰤯";
                                 if (NetworkService.wifiSignal >= 75)
                                     return "󰤨";
-                                if (NetworkService.wifiSignal >= 50)
-                                    return "󰤥";
-                                if (NetworkService.wifiSignal >= 25)
-                                    return "󰤢";
                                 return "󰤟";
                             })()
                         active: NetworkService.wifiEnabled || NetworkService.ethConnected
@@ -183,8 +262,6 @@ Item {
                 QsSliderRow {
                     width: parent.width
                     value: AudioService.volume
-                    from: 0.0
-                    to: 1.5
                     onMoved: function (val) {
                         AudioService.setVolume(val);
                     }
@@ -203,6 +280,67 @@ Item {
     Process {
         id: appletProc
     }
+    Process {
+        id: sysProc
+    }
+
+    component IconButton: Rectangle {
+        property string icon: ""
+        signal clicked
+        width: 32
+        height: 48
+        radius: 16
+        color: "transparent"
+        Text {
+            anchors.centerIn: parent
+            text: parent.icon
+            font.pixelSize: 18
+            font.family: Config.fontFamily
+            color: Colors.md3.on_surface_variant
+        }
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onEntered: parent.color = Colors.md3.surface_container_highest
+            onExited: parent.color = "transparent"
+            onClicked: parent.clicked()
+        }
+    }
+
+    component PowerButton: Rectangle {
+        property string icon: ""
+        property bool primary: false
+        signal clicked
+        height: 36
+        radius: 12
+        color: primary ? Colors.md3.error_container : Colors.md3.surface_container_highest
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 200
+            }
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: parent.icon
+            font.pixelSize: 18
+            font.family: Config.fontFamily
+            color: primary ? Colors.md3.on_error_container : Colors.md3.on_surface
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onEntered: if (!primary)
+                parent.color = Colors.md3.outline_variant
+            onExited: if (!primary)
+                parent.color = Colors.md3.surface_container_highest
+            onClicked: parent.clicked()
+        }
+    }
 
     component QsToggleChip: Rectangle {
         id: chip
@@ -210,25 +348,21 @@ Item {
         property bool active: false
         signal toggled
         signal rightClicked
-
         width: (contentCol.width - 24) / 4
-        height: 48
-        radius: active ? 16 : 12
+        height: 52
+        radius: active ? 18 : 14
         color: active ? Colors.md3.primary : Colors.md3.surface_container
-
         Behavior on color {
             ColorAnimation {
                 duration: 150
             }
         }
-
         Behavior on radius {
             NumberAnimation {
                 duration: 150
                 easing.type: Easing.OutCubic
             }
         }
-
         Text {
             anchors.centerIn: parent
             text: chip.icon
@@ -236,17 +370,11 @@ Item {
             font.family: Config.fontFamily
             color: chip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
         }
-
         MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton | Qt.RightButton
-            onClicked: function (mouse) {
-                if (mouse.button === Qt.RightButton)
-                    chip.rightClicked();
-                else
-                    chip.toggled();
-            }
+            onClicked: mouse => mouse.button === Qt.RightButton ? chip.rightClicked() : chip.toggled()
         }
     }
 
@@ -258,151 +386,83 @@ Item {
         property bool dimmed: false
         signal moved(real val)
         signal muteClicked
-
         property real _dragRatio: -1
         property real _displayRatio: _dragRatio >= 0 ? _dragRatio : ((to - from > 0) ? (value - from) / (to - from) : 0)
-
-        height: 48
-
+        height: 52
         Rectangle {
             id: trackBg
             anchors.fill: parent
-            radius: 12
+            radius: 14
             color: Colors.md3.surface_container
-
             Rectangle {
                 id: trackFill
                 x: 4
                 y: 4
                 height: parent.height - 8
                 radius: 10
-
                 readonly property real minW: height
                 readonly property real usable: trackBg.width - 8 - minW
                 width: minW + sliderRow._displayRatio * usable
-
-                color: {
-                    if (sliderRow.dimmed)
-                        return Colors.md3.outline;
-                    if (sliderRow.value > 1.0)
-                        return Colors.md3.error;
-                    return Colors.md3.primary;
-                }
-
+                color: sliderRow.dimmed ? Colors.md3.outline : (sliderRow.value > 1.0 ? Colors.md3.error : Colors.md3.primary)
                 Behavior on width {
                     NumberAnimation {
                         duration: sliderRow._dragRatio >= 0 ? 0 : 150
                         easing.type: Easing.OutQuart
                     }
                 }
-
                 Behavior on color {
                     ColorAnimation {
                         duration: 75
                     }
                 }
-
                 Text {
                     anchors.left: parent.left
-                    anchors.leftMargin: 10
+                    anchors.leftMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
-                    text: {
-                        if (sliderRow.dimmed)
-                            return "󰝟";
-                        if (sliderRow.value <= 0.01)
-                            return "󰕿";
-                        if (sliderRow.value < 0.5)
-                            return "󰖀";
-                        return "󰕾";
-                    }
+                    text: sliderRow.dimmed ? "󰝟" : (sliderRow.value <= 0.01 ? "󰕿" : (sliderRow.value < 0.5 ? "󰖀" : "󰕾"))
                     font.pixelSize: 20
                     font.family: Config.fontFamily
-                    color: {
-                        if (sliderRow.dimmed)
-                            return Colors.md3.surface_container_highest;
-                        if (sliderRow.value > 1.0)
-                            return Colors.md3.on_error;
-                        return Colors.md3.on_primary;
-                    }
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 75
-                        }
-                    }
+                    color: sliderRow.dimmed ? Colors.md3.surface_container_highest : (sliderRow.value > 1.0 ? Colors.md3.on_error : Colors.md3.on_primary)
                 }
             }
-
             Text {
                 anchors.right: parent.right
                 anchors.rightMargin: 16
                 anchors.verticalCenter: parent.verticalCenter
                 text: Math.round(sliderRow.value * 100) + "%"
-                font.pixelSize: 14
+                font.pixelSize: 13
                 font.bold: true
                 font.family: Config.fontFamily
-
-                color: {
-                    if (trackFill.width > (parent.width - 50)) {
-                        if (sliderRow.dimmed)
-                            return Colors.md3.surface_container_highest;
-                        if (sliderRow.value > 1.0)
-                            return Colors.md3.on_error;
-                        return Colors.md3.on_primary;
-                    }
-                    return Colors.md3.on_surface_variant;
-                }
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 75
-                    }
-                }
+                color: trackFill.width > (parent.width - 50) ? (sliderRow.value > 1.0 ? Colors.md3.on_error : Colors.md3.on_primary) : Colors.md3.on_surface_variant
             }
-
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 preventStealing: true
-
                 property bool dragStarted: false
                 property real startX: 0
-
-                onWheel: function (wheel) {
-                    let step = 0.05 * (sliderRow.to - sliderRow.from);
-                    if (wheel.angleDelta.y > 0) {
-                        sliderRow.moved(Math.min(sliderRow.to, sliderRow.value + step));
-                    } else {
-                        sliderRow.moved(Math.max(sliderRow.from, sliderRow.value - step));
-                    }
-                }
-
-                onPressed: function (mouse) {
+                onWheel: wheel => sliderRow.moved(wheel.angleDelta.y > 0 ? Math.min(sliderRow.to, sliderRow.value + 0.05) : Math.max(sliderRow.from, sliderRow.value - 0.05))
+                onPressed: mouse => {
                     startX = mouse.x;
                     dragStarted = false;
                 }
-
-                onPositionChanged: function (mouse) {
+                onPositionChanged: mouse => {
                     if (!pressed)
                         return;
                     if (Math.abs(mouse.x - startX) > 4)
                         dragStarted = true;
-
                     if (dragStarted) {
-                        let startXPos = 4 + trackFill.minW / 2;
-                        let dragSpace = trackBg.width - 8 - trackFill.minW;
-                        let ratio = Math.max(0, Math.min(1, (mouse.x - startXPos) / dragSpace));
+                        let ratio = Math.max(0, Math.min(1, (mouse.x - (4 + trackFill.minW / 2)) / (trackBg.width - 8 - trackFill.minW)));
                         sliderRow._dragRatio = ratio;
                         sliderRow.moved(sliderRow.from + ratio * (sliderRow.to - sliderRow.from));
                     }
                 }
-
-                onReleased: function (mouse) {
+                onReleased: mouse => {
                     if (!dragStarted) {
-                        if (startX <= 48) {
+                        if (startX <= 48)
                             sliderRow.muteClicked();
-                        } else {
-                            let startXPos = 4 + trackFill.minW / 2;
-                            let dragSpace = trackBg.width - 8 - trackFill.minW;
-                            let ratio = Math.max(0, Math.min(1, (mouse.x - startXPos) / dragSpace));
+                        else {
+                            let ratio = Math.max(0, Math.min(1, (mouse.x - (4 + trackFill.minW / 2)) / (trackBg.width - 8 - trackFill.minW)));
                             sliderRow.moved(sliderRow.from + ratio * (sliderRow.to - sliderRow.from));
                         }
                     }

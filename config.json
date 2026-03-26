@@ -12,5 +12,5 @@
     "tintTrayIcons": true,
     "nightLightTemp": 4000,
     "dayLightTemp": 6500,
-    "floatingBar": false
+    "floatingBar": true
 }
