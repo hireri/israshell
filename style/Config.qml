@@ -13,6 +13,7 @@ Singleton {
     property alias transparentBar: adapter.transparentBar
     property alias fontFamily: adapter.fontFamily
     property alias trayBlacklist: adapter.trayBlacklist
+    property alias tintTrayIcons: adapter.tintTrayIcons
     property alias nightLightTemp: adapter.nightLightTemp
     property alias dayLightTemp: adapter.dayLightTemp
     property alias floatingBar: adapter.floatingBar
@@ -31,6 +32,7 @@ Singleton {
             property bool transparentBar: adapter.transparentBar
             property string fontFamily: "Inter"
             property var trayBlacklist: ["spotify", "Spotify"]
+            property bool tintTrayIcons: false
             property int nightLightTemp: 4000
             property int dayLightTemp: 6500
             property bool floatingBar: true

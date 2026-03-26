@@ -1,4 +1,3 @@
-//@ pragma UseQApplication
 import Quickshell
 import QtQuick
 
