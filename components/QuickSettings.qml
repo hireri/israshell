@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import Quickshell.Bluetooth
 import QtQuick.Effects
 import Quickshell.Widgets
 
@@ -18,6 +19,36 @@ Item {
     height: button.height
 
     property bool isOpen: false
+
+    function getNetworkIcon() {
+        if (NetworkService.ethConnected)
+            return "󰌗";
+        if (!NetworkService.wifiEnabled)
+            return "󰤭";
+        if (!NetworkService.wifiConnected)
+            return "󰤯";
+        if (NetworkService.wifiSignal >= 75)
+            return "󰤨";
+        return "󰤟";
+    }
+
+    function getBluetoothIcon() {
+        const adapter = Bluetooth.defaultAdapter;
+        if (!adapter?.enabled)
+            return "󰂲";
+
+        const devices = Bluetooth.devices.values;
+
+        const isConnecting = devices.some(d => d.connecting);
+
+        if (adapter.discovering || isConnecting)
+            return "󰂰";
+
+        if (devices.some(d => d.connected))
+            return "󰂱";
+
+        return "󰂯";
+    }
 
     HyprlandFocusGrab {
         id: focusGrab
@@ -67,25 +98,12 @@ Item {
 
             StatusIcon {
                 active: true
-                icon: (function () {
-                        if (NetworkService.ethConnected)
-                            return "󰌗";
-                        if (!NetworkService.wifiEnabled)
-                            return "󰤭";
-                        if (!NetworkService.wifiConnected)
-                            return "󰤯";
-                        if (NetworkService.wifiSignal >= 75)
-                            return "󰤨";
-                        return "󰤟";
-                    })()
+                icon: root.getNetworkIcon()
             }
 
             StatusIcon {
-                active: BluetoothService.bluetoothEnabled
-                icon: {
-                    let isConnected = (BluetoothService.devices && (BluetoothService.devices.count > 0 || BluetoothService.devices.length > 0));
-                    return isConnected ? "󰂰" : "󰂯";
-                }
+                active: Bluetooth.defaultAdapter?.enabled ?? false
+                icon: root.getBluetoothIcon()
             }
 
             StatusIcon {
@@ -105,7 +123,7 @@ Item {
             }
 
             Rectangle {
-                implicitWidth: (BluetoothService.bluetoothEnabled || AudioService.muted || CaffeineService.active || NightLightService.active) ? 12 : 0
+                implicitWidth: ((Bluetooth.defaultAdapter?.enabled) || AudioService.muted || CaffeineService.active || NightLightService.active) ? 12 : 0
                 height: 14
                 color: "transparent"
                 clip: true
@@ -357,17 +375,7 @@ Item {
                     spacing: 8
 
                     QsToggleChip {
-                        icon: (function () {
-                                if (NetworkService.ethConnected)
-                                    return "󰌗";
-                                if (!NetworkService.wifiEnabled)
-                                    return "󰤭";
-                                if (!NetworkService.wifiConnected)
-                                    return "󰤯";
-                                if (NetworkService.wifiSignal >= 75)
-                                    return "󰤨";
-                                return "󰤟";
-                            })()
+                        icon: root.getNetworkIcon()
                         active: NetworkService.wifiEnabled || NetworkService.ethConnected
                         onToggled: NetworkService.toggle()
                         onRightClicked: {
@@ -378,14 +386,10 @@ Item {
                     }
 
                     QsToggleChip {
-                        icon: {
-                            if (!BluetoothService.bluetoothEnabled)
-                                return "󰂲";
-                            let isConnected = (BluetoothService.devices && (BluetoothService.devices.count > 0 || BluetoothService.devices.length > 0));
-                            return isConnected ? "󰂰" : "󰂯";
-                        }
-                        active: BluetoothService.bluetoothEnabled
-                        onToggled: BluetoothService.toggle()
+                        icon: root.getBluetoothIcon()
+                        active: Bluetooth.defaultAdapter?.enabled ?? false
+                        onToggled: if (Bluetooth.defaultAdapter)
+                            Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
                         onRightClicked: {
                             root.isOpen = false;
                             appletProc.command = ["blueman-manager"];
@@ -487,6 +491,7 @@ Item {
             anchors.fill: parent
             radius: 14
             color: Colors.md3.surface_container
+
             Rectangle {
                 id: trackFill
                 x: 4
@@ -497,17 +502,20 @@ Item {
                 readonly property real usable: trackBg.width - 8 - minW
                 implicitWidth: minW + sliderRow._displayRatio * usable
                 color: sliderRow.dimmed ? Colors.md3.outline : (sliderRow.value > 1.0 ? Colors.md3.error : Colors.md3.primary)
+
                 Behavior on implicitWidth {
                     NumberAnimation {
                         duration: sliderRow._dragRatio >= 0 ? 0 : 150
                         easing.type: Easing.OutQuart
                     }
                 }
+
                 Behavior on color {
                     ColorAnimation {
                         duration: 75
                     }
                 }
+
                 Text {
                     anchors.left: parent.left
                     anchors.leftMargin: 12
@@ -518,6 +526,7 @@ Item {
                     color: sliderRow.dimmed ? Colors.md3.surface_container_highest : (sliderRow.value > 1.0 ? Colors.md3.on_error : Colors.md3.on_primary)
                 }
             }
+
             Text {
                 anchors.right: parent.right
                 anchors.rightMargin: 16
@@ -526,21 +535,37 @@ Item {
                 font.pixelSize: 13
                 font.bold: true
                 font.family: Config.fontFamily
-                color: trackFill.width > (parent.width - 50) ? (sliderRow.value > 1.0 ? Colors.md3.on_error : Colors.md3.on_primary) : Colors.md3.on_surface_variant
+                color: {
+                    if (trackFill.width > (parent.width - 50)) {
+                        if (sliderRow.dimmed)
+                            return Colors.md3.surface_container_highest;
+                        return sliderRow.value > 1.0 ? Colors.md3.on_error : Colors.md3.on_primary;
+                    }
+                    return Colors.md3.on_surface_variant;
+                }
             }
+
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 preventStealing: true
+                acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+
                 property bool dragStarted: false
                 property real startX: 0
+
                 onWheel: wheel => sliderRow.moved(wheel.angleDelta.y > 0 ? Math.min(sliderRow.to, sliderRow.value + 0.05) : Math.max(sliderRow.from, sliderRow.value - 0.05))
                 onPressed: mouse => {
+                    if (mouse.button === Qt.MiddleButton) {
+                        sliderRow.muteClicked();
+                        return;
+                    }
                     startX = mouse.x;
                     dragStarted = false;
                 }
+
                 onPositionChanged: mouse => {
-                    if (!pressed)
+                    if (!pressed || mouse.button === Qt.MiddleButton)
                         return;
                     if (Math.abs(mouse.x - startX) > 4)
                         dragStarted = true;
@@ -550,7 +575,10 @@ Item {
                         sliderRow.moved(sliderRow.from + ratio * (sliderRow.to - sliderRow.from));
                     }
                 }
+
                 onReleased: mouse => {
+                    if (mouse.button === Qt.MiddleButton)
+                        return;
                     if (!dragStarted) {
                         if (startX <= 48)
                             sliderRow.muteClicked();
@@ -559,6 +587,7 @@ Item {
                             sliderRow.moved(sliderRow.from + ratio * (sliderRow.to - sliderRow.from));
                         }
                     }
+
                     sliderRow._dragRatio = -1;
                 }
             }
@@ -568,7 +597,6 @@ Item {
     component StatusIcon: Item {
         property bool active: true
         property string icon: ""
-
         property color iconColor: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
 
         implicitWidth: active ? 26 : 0
@@ -583,11 +611,13 @@ Item {
                 easing.type: Easing.OutExpo
             }
         }
+
         Behavior on opacity {
             NumberAnimation {
                 duration: 250
             }
         }
+
         Behavior on scale {
             NumberAnimation {
                 duration: 400
