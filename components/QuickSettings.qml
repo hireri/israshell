@@ -20,6 +20,10 @@ Item {
 
     property bool isOpen: false
 
+    function getDndIcon() {
+        return NotificationService.dnd ? "󰂠" : "󰂚";
+    }
+
     function getNetworkIcon() {
         if (NetworkService.ethConnected)
             return "󰌗";
@@ -126,6 +130,11 @@ Item {
             StatusIcon {
                 active: NightLightService.active
                 icon: "󱩌"
+            }
+
+            StatusIcon {
+                active: NotificationService.dnd
+                icon: "󰂠"
             }
 
             Rectangle {
@@ -414,6 +423,12 @@ Item {
                         active: NightLightService.active
                         onToggled: NightLightService.toggle()
                     }
+
+                    QsToggleChip {
+                        icon: root.getDndIcon()
+                        active: NotificationService.dnd
+                        onToggled: NotificationService.dnd = !NotificationService.dnd
+                    }
                 }
 
                 QsSliderRow {
@@ -425,9 +440,112 @@ Item {
                     dimmed: AudioService.muted
                 }
 
-                Item {
+                Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 4
+                    Layout.preferredHeight: 1
+                    color: Colors.md3.outline_variant
+                    opacity: 0.5
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text {
+                            text: "Notifications"
+                            color: Colors.md3.on_surface
+                            font.family: Config.fontFamily
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                        }
+                        Text {
+                            text: "Clear"
+                            color: Colors.md3.primary
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            visible: NotificationService.history.count > 0
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: NotificationService.clearHistory()
+                            }
+                        }
+                    }
+
+                    ListView {
+                        id: historyList
+                        Layout.fillWidth: true
+
+                        implicitHeight: Math.min(NotificationService.history.count * 64, 300)
+                        spacing: 6
+                        clip: true
+                        model: NotificationService.history
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "No notifications"
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            visible: NotificationService.history.count === 0
+                        }
+
+                        delegate: Rectangle {
+                            width: historyList.width
+                            height: 58
+                            color: Colors.md3.surface_container
+                            radius: 12
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 8
+                                spacing: 10
+
+                                Image {
+                                    Layout.preferredWidth: 32
+                                    Layout.preferredHeight: 32
+                                    source: {
+                                        let icon = model.image || model.appIcon || "dialog-information";
+                                        if (icon.startsWith("/"))
+                                            return "file://" + icon;
+                                        return "image://icon/" + icon;
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    spacing: 0
+                                    RowLayout {
+                                        Text {
+                                            text: model.summary
+                                            color: Colors.md3.on_surface
+                                            font.family: Config.fontFamily
+                                            font.pixelSize: 12
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                            Layout.fillWidth: true
+                                        }
+                                        Text {
+                                            text: model.time
+                                            color: Colors.md3.on_surface_variant
+                                            font.pixelSize: 10
+                                        }
+                                    }
+                                    Text {
+                                        text: model.body
+                                        color: Colors.md3.on_surface_variant
+                                        font.family: Config.fontFamily
+                                        font.pixelSize: 11
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

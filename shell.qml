@@ -6,6 +6,9 @@ import qs.components
 import qs.style
 
 ShellRoot {
+
+    NotificationPopup {}
+
     Variants {
         model: Quickshell.screens
 
