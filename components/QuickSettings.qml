@@ -63,20 +63,78 @@ Item {
         Row {
             id: btnRow
             anchors.centerIn: parent
-            spacing: 8
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "󰒓"
-                color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
-                font.pixelSize: 16
-                font.family: Config.fontFamily
+            spacing: 0
+
+            StatusIcon {
+                active: true
+                icon: (function () {
+                        if (NetworkService.ethConnected)
+                            return "󰌗";
+                        if (!NetworkService.wifiEnabled)
+                            return "󰤭";
+                        if (!NetworkService.wifiConnected)
+                            return "󰤯";
+                        if (NetworkService.wifiSignal >= 75)
+                            return "󰤨";
+                        return "󰤟";
+                    })()
             }
-            Text {
+
+            StatusIcon {
+                active: BluetoothService.bluetoothEnabled
+                icon: {
+                    let isConnected = (BluetoothService.devices && (BluetoothService.devices.count > 0 || BluetoothService.devices.length > 0));
+                    return isConnected ? "󰂰" : "󰂯";
+                }
+            }
+
+            StatusIcon {
+                active: AudioService.muted
+                icon: "󰝟"
+                iconColor: Colors.md3.error
+            }
+
+            StatusIcon {
+                active: CaffeineService.active
+                icon: "󰅶"
+            }
+
+            StatusIcon {
+                active: NightLightService.active
+                icon: "󱩌"
+            }
+
+            Rectangle {
+                implicitWidth: (BluetoothService.bluetoothEnabled || AudioService.muted || CaffeineService.active || NightLightService.active) ? 12 : 0
+                height: 14
+                color: "transparent"
+                clip: true
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Settings"
-                color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
-                font.family: Config.fontFamily
-                font.pixelSize: 14
+                Behavior on implicitWidth {
+                    NumberAnimation {
+                        duration: 400
+                        easing.type: Easing.OutExpo
+                    }
+                }
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 1
+                    height: 14
+                    color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.outline_variant
+                    opacity: 0.3
+                }
+            }
+
+            Item {
+                implicitWidth: 26
+                height: 24
+                Text {
+                    anchors.centerIn: parent
+                    text: "󰒓"
+                    font.family: Config.fontFamily
+                    font.pixelSize: 16
+                    color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+                }
             }
         }
 
@@ -320,7 +378,12 @@ Item {
                     }
 
                     QsToggleChip {
-                        icon: BluetoothService.bluetoothEnabled ? "󰂯" : "󰂲"
+                        icon: {
+                            if (!BluetoothService.bluetoothEnabled)
+                                return "󰂲";
+                            let isConnected = (BluetoothService.devices && (BluetoothService.devices.count > 0 || BluetoothService.devices.length > 0));
+                            return isConnected ? "󰂰" : "󰂯";
+                        }
                         active: BluetoothService.bluetoothEnabled
                         onToggled: BluetoothService.toggle()
                         onRightClicked: {
@@ -499,6 +562,45 @@ Item {
                     sliderRow._dragRatio = -1;
                 }
             }
+        }
+    }
+
+    component StatusIcon: Item {
+        property bool active: true
+        property string icon: ""
+
+        property color iconColor: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+
+        implicitWidth: active ? 26 : 0
+        height: 24
+        clip: true
+        opacity: active ? 1 : 0
+        scale: active ? 1 : 0.4
+
+        Behavior on implicitWidth {
+            NumberAnimation {
+                duration: 400
+                easing.type: Easing.OutExpo
+            }
+        }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 250
+            }
+        }
+        Behavior on scale {
+            NumberAnimation {
+                duration: 400
+                easing.type: Easing.OutBack
+            }
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: parent.icon
+            font.family: Config.fontFamily
+            font.pixelSize: 16
+            color: parent.iconColor
         }
     }
 }
