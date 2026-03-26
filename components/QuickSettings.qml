@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import QtQuick.Effects
 import Quickshell.Widgets
 
 import qs.style
@@ -13,7 +14,7 @@ Item {
 
     required property var panelWindow
 
-    width: button.width
+    implicitWidth: button.width
     height: button.height
 
     property bool isOpen: false
@@ -32,7 +33,7 @@ Item {
             onStreamFinished: {
                 let lines = text.trim().split("\n");
                 if (lines.length >= 2) {
-                    hostText.text = lines[0] + " • " + lines[1].replace("up ", "");
+                    hostText.text = lines[0] + " · " + lines[1].replace("up ", "").replace(" hours", "h").replace(" hour", "h").replace(" minutes", "m").replace(" minute", "m");
                 }
             }
         }
@@ -50,7 +51,7 @@ Item {
         id: button
         color: root.isOpen ? Colors.md3.secondary_container : (Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
         radius: 12
-        width: btnRow.implicitWidth + 20
+        implicitWidth: btnRow.implicitWidth + 20
         height: 32
 
         Behavior on color {
@@ -89,9 +90,9 @@ Item {
     PopupWindow {
         id: drawer
         anchor.window: root.panelWindow
-        anchor.rect.x: root.panelWindow.width - width - 12
+        anchor.rect.x: root.panelWindow.width - implicitWidth - 12
         anchor.rect.y: root.panelWindow.height + 12
-        width: 320
+        implicitWidth: 320
         height: contentCol.implicitHeight + 24
         visible: drawerContent.opacity > 0
         color: "transparent"
@@ -114,7 +115,7 @@ Item {
                 }
             }
 
-            Column {
+            ColumnLayout {
                 id: contentCol
                 anchors {
                     top: parent.top
@@ -124,94 +125,177 @@ Item {
                 }
                 spacing: 12
 
-                Rectangle {
-                    width: parent.width
-                    height: 128
-                    color: Colors.md3.surface_container
-                    radius: 10
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Rectangle {
+                        Layout.preferredWidth: 36
+                        Layout.preferredHeight: 36
+                        radius: 18
+                        color: Colors.md3.primary_container
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: Quickshell.env("USER").charAt(0).toUpperCase()
+                            font.pixelSize: 15
+                            font.weight: Font.DemiBold
+                            font.family: Config.fontFamily
+                            color: Colors.md3.on_primary_container
+                            visible: profileImage.status !== Image.Ready
+                        }
+
+                        Rectangle {
+                            id: maskRect
+                            anchors.fill: parent
+                            radius: 18
+                            antialiasing: true
+                            visible: false
+                            layer.enabled: true
+                            layer.samples: 4
+                        }
+
+                        Image {
+                            id: profileImage
+                            source: "file://" + Quickshell.env("HOME") + "/.face"
+                            anchors.fill: parent
+
+                            sourceSize: Qt.size(144, 144)
+
+                            fillMode: Image.PreserveAspectCrop
+                            antialiasing: true
+                            smooth: true
+                            mipmap: true
+                            visible: false
+                            cache: false
+                        }
+
+                        MultiEffect {
+                            anchors.fill: parent
+                            source: profileImage
+                            maskEnabled: true
+                            maskSource: maskRect
+                            visible: profileImage.status === Image.Ready
+                        }
+                    }
 
                     ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 16
-                        spacing: 12
+                        Layout.fillWidth: true
+                        spacing: 1
 
-                        RowLayout {
+                        Text {
                             Layout.fillWidth: true
-                            spacing: 16
+                            elide: Text.ElideRight
+                            text: Quickshell.env("USER")
+                            color: Colors.md3.on_surface
+                            font.family: Config.fontFamily
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                        }
+                        Text {
+                            id: hostText
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                            text: "loading..."
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: 11
+                        }
+                    }
 
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 0
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: Quickshell.env("USER")
-                                    color: Colors.md3.on_surface
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 18
-                                    font.weight: Font.DemiBold
-                                }
-                                Text {
-                                    id: hostText
-                                    Layout.fillWidth: true
-                                    text: "Loading..."
-                                    color: Colors.md3.on_surface_variant
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 12
-                                }
+                    Rectangle {
+                        Layout.preferredWidth: 32
+                        Layout.preferredHeight: 32
+                        radius: 12
+                        antialiasing: true
+
+                        color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container
+
+                        scale: editMouse.pressed ? 0.92 : 1
+
+                        Behavior on scale {
+                            NumberAnimation {
+                                duration: 150
+                                easing.type: Easing.OutCubic
                             }
-
-                            IconButton {
-                                icon: "󰏫"
-                                onClicked: {
-                                    sysProc.command = ["code", Quickshell.env("HOME") + "/.config/hypr"];
-                                    sysProc.running = true;
-                                }
+                        }
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
                             }
                         }
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰏫"
+                            font.pixelSize: 14
+                            font.family: Config.fontFamily
+                            color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+                        }
+                        MouseArea {
+                            id: editMouse
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onClicked: {
+                                sysProc.command = ["code", Quickshell.env("HOME") + "/.config/hypr"];
+                                sysProc.running = true;
+                            }
+                        }
+                    }
 
-                            PowerButton {
-                                icon: "󰌾"
-                                Layout.fillWidth: true
-                                onClicked: {
-                                    sysProc.command = ["hyprctl", "dispatch", "exit"];
-                                    sysProc.running = true;
-                                }
+                    Rectangle {
+                        Layout.preferredWidth: 32
+                        Layout.preferredHeight: 32
+                        radius: 12
+                        antialiasing: true
+
+                        color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.on_error
+
+                        scale: pwrMouse.pressed ? 0.92 : 1
+
+                        Behavior on scale {
+                            NumberAnimation {
+                                duration: 150
+                                easing.type: Easing.OutCubic
                             }
-                            PowerButton {
-                                icon: "󰤄"
-                                Layout.fillWidth: true
-                                onClicked: {
-                                    sysProc.command = ["systemctl", "suspend"];
-                                    sysProc.running = true;
-                                }
+                        }
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
                             }
-                            PowerButton {
-                                icon: "󰜉"
-                                Layout.fillWidth: true
-                                onClicked: {
-                                    sysProc.command = ["systemctl", "reboot"];
-                                    sysProc.running = true;
-                                }
-                            }
-                            PowerButton {
-                                icon: ""
-                                primary: true
-                                Layout.fillWidth: true
-                                onClicked: {
-                                    sysProc.command = ["systemctl", "poweroff"];
-                                    sysProc.running = true;
-                                }
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰐥"
+                            font.pixelSize: 16
+                            font.family: Config.fontFamily
+                            color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
+                        }
+                        MouseArea {
+                            id: pwrMouse
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onClicked: {
+                                root.isOpen = false;
+                                sysProc.command = ["wlogout", "-p", "layer-shell"];
+                                sysProc.running = true;
                             }
                         }
                     }
                 }
 
-                Row {
-                    width: parent.width
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: Colors.md3.outline_variant
+                    opacity: 0.5
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
                     spacing: 8
 
                     QsToggleChip {
@@ -260,7 +344,6 @@ Item {
                 }
 
                 QsSliderRow {
-                    width: parent.width
                     value: AudioService.volume
                     onMoved: function (val) {
                         AudioService.setVolume(val);
@@ -270,8 +353,8 @@ Item {
                 }
 
                 Item {
-                    width: 1
-                    height: 4
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 4
                 }
             }
         }
@@ -284,72 +367,16 @@ Item {
         id: sysProc
     }
 
-    component IconButton: Rectangle {
-        property string icon: ""
-        signal clicked
-        width: 32
-        height: 48
-        radius: 16
-        color: "transparent"
-        Text {
-            anchors.centerIn: parent
-            text: parent.icon
-            font.pixelSize: 18
-            font.family: Config.fontFamily
-            color: Colors.md3.on_surface_variant
-        }
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            hoverEnabled: true
-            onEntered: parent.color = Colors.md3.surface_container_highest
-            onExited: parent.color = "transparent"
-            onClicked: parent.clicked()
-        }
-    }
-
-    component PowerButton: Rectangle {
-        property string icon: ""
-        property bool primary: false
-        signal clicked
-        height: 36
-        radius: 12
-        color: primary ? Colors.md3.error_container : Colors.md3.surface_container_highest
-
-        Behavior on color {
-            ColorAnimation {
-                duration: 200
-            }
-        }
-
-        Text {
-            anchors.centerIn: parent
-            text: parent.icon
-            font.pixelSize: 18
-            font.family: Config.fontFamily
-            color: primary ? Colors.md3.on_error_container : Colors.md3.on_surface
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            hoverEnabled: true
-            onEntered: if (!primary)
-                parent.color = Colors.md3.outline_variant
-            onExited: if (!primary)
-                parent.color = Colors.md3.surface_container_highest
-            onClicked: parent.clicked()
-        }
-    }
-
     component QsToggleChip: Rectangle {
         id: chip
         property string icon: ""
         property bool active: false
         signal toggled
         signal rightClicked
-        width: (contentCol.width - 24) / 4
-        height: 52
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 52
+
         radius: active ? 18 : 14
         color: active ? Colors.md3.primary : Colors.md3.surface_container
         Behavior on color {
@@ -388,7 +415,10 @@ Item {
         signal muteClicked
         property real _dragRatio: -1
         property real _displayRatio: _dragRatio >= 0 ? _dragRatio : ((to - from > 0) ? (value - from) / (to - from) : 0)
-        height: 52
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 52
+
         Rectangle {
             id: trackBg
             anchors.fill: parent
@@ -402,9 +432,9 @@ Item {
                 radius: 10
                 readonly property real minW: height
                 readonly property real usable: trackBg.width - 8 - minW
-                width: minW + sliderRow._displayRatio * usable
+                implicitWidth: minW + sliderRow._displayRatio * usable
                 color: sliderRow.dimmed ? Colors.md3.outline : (sliderRow.value > 1.0 ? Colors.md3.error : Colors.md3.primary)
-                Behavior on width {
+                Behavior on implicitWidth {
                     NumberAnimation {
                         duration: sliderRow._dragRatio >= 0 ? 0 : 150
                         easing.type: Easing.OutQuart

@@ -11,9 +11,9 @@ Item {
     id: trayRoot
     required property var panelWindow
 
-    width: Math.max(trayContent.implicitWidth + 20, 0)
+    implicitWidth: Math.max(trayContent.implicitWidth + 20, 0)
     height: 32
-    visible: (SystemTray.items?.values?.length ?? 0) > 0
+    visible: (SystemTray.items?.values.length ?? 0) > 0
 
     Window {
         id: tooltipWindow
@@ -62,7 +62,7 @@ Item {
             id: tooltipContent
             opacity: 0
             scale: 0.9
-            width: tooltipText.implicitWidth + 16
+            implicitWidth: tooltipText.implicitWidth + 16
             height: tooltipText.implicitHeight + 12
             color: Colors.md3.surface_container_highest
             radius: 8
@@ -99,7 +99,7 @@ Item {
 
                     readonly property bool isBlacklisted: Config.trayBlacklist.includes(modelData.id) || Config.trayBlacklist.includes(modelData.title)
                     visible: !isBlacklisted
-                    width: visible ? 20 : 0
+                    implicitWidth: visible ? 20 : 0
                     height: 20
                     anchors.verticalCenter: parent.verticalCenter
 

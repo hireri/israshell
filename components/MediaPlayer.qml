@@ -8,7 +8,7 @@ import qs.style
 Rectangle {
     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
     radius: 12
-    width: 240
+    implicitWidth: 240
     height: 32
 
     MouseArea {
@@ -39,7 +39,7 @@ Rectangle {
 
         Item {
             id: coverRoot
-            width: 24
+            implicitWidth: 24
             height: 24
             anchors.verticalCenter: parent.verticalCenter
 
@@ -111,6 +111,8 @@ Rectangle {
 
                 child: Image {
                     id: albumArt
+                    antialiasing: true
+                    layer.samples: 4
                     anchors.fill: parent
                     source: Mpris.players.values[0]?.trackArtUrl ?? ""
                 }
@@ -119,12 +121,12 @@ Rectangle {
 
         Item {
             id: mediaTextContainer
-            width: 200
+            implicitWidth: 200
             height: 20
             clip: true
             anchors.verticalCenter: parent.verticalCenter
 
-            property bool shouldScroll: mediaText.implicitWidth > width
+            property bool shouldScroll: mediaText.implicitWidth > implicitWidth
             property real scrollPos: 0
 
             NumberAnimation {
@@ -173,7 +175,7 @@ Rectangle {
 
             Rectangle {
                 anchors.left: parent.left
-                width: 20
+                implicitWidth: 20
                 height: parent.height
                 visible: mediaTextContainer.shouldScroll
                 gradient: Gradient {
@@ -191,7 +193,7 @@ Rectangle {
 
             Rectangle {
                 anchors.right: parent.right
-                width: 20
+                implicitWidth: 20
                 height: parent.height
                 visible: mediaTextContainer.shouldScroll
                 gradient: Gradient {

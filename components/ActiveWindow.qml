@@ -7,7 +7,7 @@ import qs.style
 Rectangle {
     color: "transparent"
     radius: 12
-    width: leftContent.implicitWidth + 20
+    implicitWidth: leftContent.implicitWidth + 20
     height: 32
 
     Row {

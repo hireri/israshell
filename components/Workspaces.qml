@@ -9,7 +9,7 @@ Rectangle {
 
     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
     radius: 12
-    width: workspacesContent.implicitWidth + 28
+    implicitWidth: workspacesContent.implicitWidth + 28
     height: 32
 
     MouseArea {
@@ -55,12 +55,12 @@ Rectangle {
         Repeater {
             model: 10
             Item {
-                width: 12
+                implicitWidth: 12
                 height: 30
                 anchors.verticalCenter: parent.verticalCenter
 
                 Rectangle {
-                    width: 12
+                    implicitWidth: 12
                     height: 12
                     radius: 5
                     anchors.centerIn: parent
