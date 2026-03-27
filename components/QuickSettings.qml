@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import Quickshell.Bluetooth
 import QtQuick.Effects
 import Quickshell.Widgets
+import QtQuick.Controls
 
 import qs.style
 import qs.services
@@ -174,7 +175,10 @@ Item {
         MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
-            onClicked: root.isOpen = !root.isOpen
+            onClicked: {
+                root.isOpen = !root.isOpen;
+                NotificationService.sendAllToPanel();
+            }
         }
     }
 
@@ -453,6 +457,7 @@ Item {
 
                     RowLayout {
                         Layout.fillWidth: true
+
                         Text {
                             text: "Notifications"
                             color: Colors.md3.on_surface
@@ -460,91 +465,139 @@ Item {
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
+
                         Item {
                             Layout.fillWidth: true
                         }
+
                         Text {
-                            text: "Clear"
+                            text: "Clear history"
                             color: Colors.md3.primary
                             font.family: Config.fontFamily
                             font.pixelSize: 12
-                            visible: NotificationService.history.count > 0
+                            visible: NotificationService.history.length > 0
+
                             MouseArea {
                                 anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: NotificationService.clearHistory()
                             }
                         }
                     }
 
-                    ListView {
-                        id: historyList
+                    Column {
                         Layout.fillWidth: true
-
-                        implicitHeight: Math.min(NotificationService.history.count * 64, 300)
                         spacing: 6
-                        clip: true
-                        model: NotificationService.history
+                        visible: NotificationService.list.length > 0
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "No notifications"
-                            color: Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: 12
-                            visible: NotificationService.history.count === 0
+                        Repeater {
+                            model: ScriptModel {
+                                values: NotificationService.list
+                            }
+
+                            delegate: NotificationCard {
+                                required property var modelData
+                                wrapper: modelData
+
+                                width: parent.width
+                            }
                         }
+                    }
 
-                        delegate: Rectangle {
-                            width: historyList.width
-                            height: 58
-                            color: Colors.md3.surface_container
-                            radius: 12
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: Colors.md3.outline_variant
+                        visible: NotificationService.list.length > 0 && NotificationService.history.length > 0
+                    }
 
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 8
-                                spacing: 10
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: 6
+                        visible: NotificationService.history.length > 0
 
-                                Image {
-                                    Layout.preferredWidth: 32
-                                    Layout.preferredHeight: 32
-                                    source: {
-                                        let icon = model.image || model.appIcon || "dialog-information";
-                                        if (icon.startsWith("/"))
-                                            return "file://" + icon;
-                                        return "image://icon/" + icon;
+                        Repeater {
+                            model: ScriptModel {
+                                values: NotificationService.history
+                            }
+
+                            delegate: Rectangle {
+                                required property var modelData
+
+                                width: parent.width
+                                height: 58
+                                color: Colors.md3.surface_container
+                                radius: 12
+                                opacity: 0.7
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 8
+                                    spacing: 10
+
+                                    Image {
+                                        Layout.preferredWidth: 32
+                                        Layout.preferredHeight: 32
+                                        fillMode: Image.PreserveAspectFit
+                                        source: {
+                                            const raw = modelData.image || modelData.appIcon || "";
+                                            if (!raw)
+                                                return "image://icon/dialog-information";
+                                            if (raw.startsWith("/"))
+                                                return "file://" + raw;
+                                            return "image://icon/" + raw;
+                                        }
                                     }
-                                }
 
-                                ColumnLayout {
-                                    spacing: 0
-                                    RowLayout {
+                                    ColumnLayout {
+                                        spacing: 0
+                                        Layout.fillWidth: true
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+
+                                            Text {
+                                                text: modelData.summary ?? ""
+                                                color: Colors.md3.on_surface
+                                                font.family: Config.fontFamily
+                                                font.pixelSize: 12
+                                                font.bold: true
+                                                elide: Text.ElideRight
+                                                Layout.fillWidth: true
+                                            }
+
+                                            Text {
+                                                text: modelData.time ?? ""
+                                                color: Colors.md3.on_surface_variant
+                                                font.family: Config.fontFamily
+                                                font.pixelSize: 10
+                                            }
+                                        }
+
                                         Text {
-                                            text: model.summary
-                                            color: Colors.md3.on_surface
+                                            text: modelData.body ?? ""
+                                            color: Colors.md3.on_surface_variant
                                             font.family: Config.fontFamily
-                                            font.pixelSize: 12
-                                            font.bold: true
+                                            font.pixelSize: 11
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
+                                            textFormat: Text.PlainText
                                         }
-                                        Text {
-                                            text: model.time
-                                            color: Colors.md3.on_surface_variant
-                                            font.pixelSize: 10
-                                        }
-                                    }
-                                    Text {
-                                        text: model.body
-                                        color: Colors.md3.on_surface_variant
-                                        font.family: Config.fontFamily
-                                        font.pixelSize: 11
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
                                     }
                                 }
                             }
                         }
+                    }
+
+                    // empty state
+                    Text {
+                        Layout.fillWidth: true
+                        visible: NotificationService.list.length === 0 && NotificationService.history.length === 0
+                        text: "No notifications"
+                        color: Colors.md3.on_surface_variant
+                        font.family: Config.fontFamily
+                        font.pixelSize: 12
+                        horizontalAlignment: Text.AlignHCenter
                     }
                 }
             }
