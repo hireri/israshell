@@ -4,9 +4,7 @@ import QtQuick
 
 import qs.style
 
-Rectangle {
-    color: "transparent"
-    radius: 12
+Item {
     implicitWidth: leftContent.implicitWidth + 20
     height: 32
 
