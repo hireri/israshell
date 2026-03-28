@@ -25,13 +25,26 @@ Item {
     property string textAppIdB: ""
     property string textTitleB: ""
     property string displayedAppId: ""
+    property string displayedTitle: ""
+
+    readonly property bool showFallback: !activeWindow
+
+    readonly property string kaomoji: " > ⩊ < "
+    readonly property int kaomojiFallbackWidth: kaomeasure.implicitWidth + 12
+
+    Text {
+        id: kaomeasure
+        visible: false
+        text: root.kaomoji
+        font.pixelSize: 10
+        font.family: Config.fontFamily
+    }
 
     function truncateText(str, maxLength) {
         if (!str)
             return "";
-        if (str.length > maxLength) {
+        if (str.length > maxLength)
             return str.substring(0, maxLength).trim() + "...";
-        }
         return str;
     }
 
@@ -68,6 +81,7 @@ Item {
         const newSource = getIconSource(rawAppId);
 
         displayedAppId = rawAppId;
+        displayedTitle = rawTitle;
 
         if (layerA) {
             iconSourceB = newSource;
@@ -91,6 +105,7 @@ Item {
 
         function onTitleChanged() {
             const truncatedTitle = truncateText(activeWindow.title, maxTitleChars);
+            displayedTitle = activeWindow.title ?? "";
             if (layerA)
                 textTitleA = truncatedTitle;
             else
@@ -120,6 +135,7 @@ Item {
         const rawTitle = w?.title ?? "";
 
         displayedAppId = rawAppId;
+        displayedTitle = rawTitle;
         iconSourceA = getIconSource(rawAppId);
         textAppIdA = truncateText(rawAppId, maxAppIdChars);
         textTitleA = truncateText(rawTitle, maxTitleChars);
@@ -163,11 +179,34 @@ Item {
         spacing: 8
 
         ClippingRectangle {
-            implicitWidth: 32
+            id: iconContainer
+            implicitWidth: showFallback ? kaomojiFallbackWidth : 32
             implicitHeight: 32
             anchors.verticalCenter: parent.verticalCenter
-            radius: 12
+            radius: 10
             color: "transparent"
+
+            Behavior on implicitWidth {
+                NumberAnimation {
+                    duration: 180
+                    easing.type: Easing.InOutQuad
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color: Colors.md3.secondary_container
+                visible: showFallback
+
+                Text {
+                    anchors.centerIn: parent
+                    text: kaomoji
+                    color: Colors.md3.on_secondary_container
+                    font.pixelSize: 10
+                    font.family: Config.fontFamily
+                    font.weight: Font.Medium
+                }
+            }
 
             Image {
                 id: iconA
@@ -185,21 +224,6 @@ Item {
                 opacity: 0
                 sourceSize: Qt.size(32, 32)
                 fillMode: Image.PreserveAspectCrop
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: Colors.md3.secondary_container
-                visible: (layerA ? iconA : iconB).status !== Image.Ready
-
-                Text {
-                    anchors.centerIn: parent
-                    text: displayedAppId ? displayedAppId.charAt(0).toUpperCase() : ""
-                    color: Colors.md3.on_secondary_container
-                    font.pixelSize: 16
-                    font.family: Config.fontFamily
-                    font.weight: Font.Medium
-                }
             }
         }
 
