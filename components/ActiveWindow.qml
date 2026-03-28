@@ -5,6 +5,8 @@ import QtQuick
 import qs.style
 
 Item {
+    readonly property int maxTextWidth: 450
+
     implicitWidth: leftContent.implicitWidth + 20
     height: 32
 
@@ -14,6 +16,7 @@ Item {
         spacing: 8
 
         IconImage {
+            id: appIcon
             implicitSize: 28
             anchors.verticalCenter: parent.verticalCenter
             source: {
@@ -24,8 +27,12 @@ Item {
 
         Column {
             anchors.verticalCenter: parent.verticalCenter
+            width: Math.min(Math.max(appIdText.implicitWidth, titleText.implicitWidth), maxTextWidth)
 
             Text {
+                id: appIdText
+                width: parent.width
+                elide: Text.ElideRight
                 text: {
                     const active = Hyprland.toplevels.values.find(t => t.activated);
                     return active?.wayland ? active.wayland.appId : "";
@@ -36,6 +43,9 @@ Item {
             }
 
             Text {
+                id: titleText
+                width: parent.width
+                elide: Text.ElideRight
                 text: {
                     const active = Hyprland.toplevels.values.find(t => t.activated);
                     return active ? active.title : "";
