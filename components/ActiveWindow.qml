@@ -1,3 +1,4 @@
+import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Widgets
 import QtQuick
@@ -8,6 +9,9 @@ Item {
     id: root
     readonly property int maxTextWidth: 450
     readonly property var activeWindow: Hyprland.toplevels.values.find(t => t.activated)
+
+    readonly property int maxTitleChars: 60
+    readonly property int maxAppIdChars: 40
 
     implicitWidth: leftContent.implicitWidth + 20
     height: 32
@@ -22,6 +26,15 @@ Item {
     property string textTitleB: ""
     property string displayedAppId: ""
 
+    function truncateText(str, maxLength) {
+        if (!str)
+            return "";
+        if (str.length > maxLength) {
+            return str.substring(0, maxLength).trim() + "...";
+        }
+        return str;
+    }
+
     function getAppId(w) {
         if (!w)
             return "";
@@ -33,7 +46,13 @@ Item {
             return "";
 
         if (appId.startsWith("steam_app_")) {
-            return "image://icon/" + appId + "?fallback=steam";
+            const steamId = appId.replace("steam_app_", "");
+            return "image://icon/steam_icon_" + steamId + "?fallback=steam";
+        }
+
+        const entry = DesktopEntries.heuristicLookup(appId);
+        if (entry && entry.icon) {
+            return "image://icon/" + entry.icon + "?fallback=application-x-executable";
         }
 
         return "image://icon/" + appId + "?fallback=application-x-executable";
@@ -41,11 +60,14 @@ Item {
 
     function updateWindowInfo() {
         const w = activeWindow;
-        const newAppId = getAppId(w);
-        const newTitle = w ? (w.title ?? "") : "";
-        const newSource = getIconSource(newAppId);
+        const rawAppId = getAppId(w);
+        const rawTitle = w ? (w.title ?? "") : "";
 
-        displayedAppId = newAppId;
+        const newAppId = truncateText(rawAppId, maxAppIdChars);
+        const newTitle = truncateText(rawTitle, maxTitleChars);
+        const newSource = getIconSource(rawAppId);
+
+        displayedAppId = rawAppId;
 
         if (layerA) {
             iconSourceB = newSource;
@@ -68,16 +90,19 @@ Item {
         ignoreUnknownSignals: true
 
         function onTitleChanged() {
+            const truncatedTitle = truncateText(activeWindow.title, maxTitleChars);
             if (layerA)
-                textTitleA = activeWindow.title;
+                textTitleA = truncatedTitle;
             else
-                textTitleB = activeWindow.title;
+                textTitleB = truncatedTitle;
         }
 
         function onWaylandChanged() {
-            const newAppId = getAppId(activeWindow);
-            const newSource = getIconSource(newAppId);
-            displayedAppId = newAppId;
+            const rawAppId = getAppId(activeWindow);
+            const newAppId = truncateText(rawAppId, maxAppIdChars);
+            const newSource = getIconSource(rawAppId);
+
+            displayedAppId = rawAppId;
 
             if (layerA) {
                 textAppIdA = newAppId;
@@ -91,11 +116,13 @@ Item {
 
     Component.onCompleted: {
         const w = activeWindow;
-        const initAppId = getAppId(w);
-        displayedAppId = initAppId;
-        iconSourceA = getIconSource(initAppId);
-        textAppIdA = initAppId;
-        textTitleA = w?.title ?? "";
+        const rawAppId = getAppId(w);
+        const rawTitle = w?.title ?? "";
+
+        displayedAppId = rawAppId;
+        iconSourceA = getIconSource(rawAppId);
+        textAppIdA = truncateText(rawAppId, maxAppIdChars);
+        textTitleA = truncateText(rawTitle, maxTitleChars);
     }
 
     ParallelAnimation {
@@ -139,29 +166,40 @@ Item {
             implicitWidth: 32
             implicitHeight: 32
             anchors.verticalCenter: parent.verticalCenter
-            radius: 10
+            radius: 12
+            color: "transparent"
 
-            IconImage {
+            Image {
                 id: iconA
                 anchors.fill: parent
                 source: iconSourceA
                 opacity: 1
+                sourceSize: Qt.size(32, 32)
+                fillMode: Image.PreserveAspectCrop
             }
-            IconImage {
+
+            Image {
                 id: iconB
                 anchors.fill: parent
                 source: iconSourceB
                 opacity: 0
+                sourceSize: Qt.size(32, 32)
+                fillMode: Image.PreserveAspectCrop
             }
 
-            Text {
-                anchors.centerIn: parent
-                text: displayedAppId ? displayedAppId.charAt(0).toUpperCase() : ""
-                color: Colors.md3.on_secondary_container
-                font.pixelSize: 14
-                font.family: Config.fontFamily
-                font.weight: Font.Medium
+            Rectangle {
+                anchors.fill: parent
+                color: Colors.md3.secondary_container
                 visible: (layerA ? iconA : iconB).status !== Image.Ready
+
+                Text {
+                    anchors.centerIn: parent
+                    text: displayedAppId ? displayedAppId.charAt(0).toUpperCase() : ""
+                    color: Colors.md3.on_secondary_container
+                    font.pixelSize: 16
+                    font.family: Config.fontFamily
+                    font.weight: Font.Medium
+                }
             }
         }
 
