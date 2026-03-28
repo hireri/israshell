@@ -117,7 +117,7 @@ Item {
                 implicitWidth: 40
                 implicitHeight: 40
 
-                Rectangle {
+                ClippingRectangle {
                     anchors.fill: parent
                     radius: 8
                     color: Colors.md3.surface_container
@@ -132,7 +132,7 @@ Item {
                     }
                 }
 
-                Rectangle {
+                ClippingRectangle {
                     visible: item.imgUrl.length === 0 || item.hasBadge
                     implicitWidth: item.hasBadge ? 16 : 40
                     implicitHeight: item.hasBadge ? 16 : 40

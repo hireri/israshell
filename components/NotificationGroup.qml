@@ -206,8 +206,8 @@ MouseArea {
         }
 
         color: Colors.md3.surface_container_high
-        radius: 16
-        border.color: Colors.md3.outline_variant
+        radius: 8
+        border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
         border.width: 1
         clip: true
 
@@ -288,7 +288,7 @@ MouseArea {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "⌄"
+                            text: ""
                             color: Colors.md3.on_surface_variant
                             font.pixelSize: 11
                             rotation: group.expandedState ? 180 : 0
@@ -352,7 +352,7 @@ MouseArea {
                     implicitHeight: 44
                     visible: group.notifs.length > 0
 
-                    Rectangle {
+                    ClippingRectangle {
                         anchors.fill: parent
                         radius: 10
                         color: Colors.md3.surface_container
@@ -367,11 +367,12 @@ MouseArea {
                         }
                     }
 
-                    Rectangle {
+                    ClippingRectangle {
                         visible: group.groupImage.length === 0 || group.groupHasBadge
                         implicitWidth: group.groupHasBadge ? 18 : 44
                         implicitHeight: group.groupHasBadge ? 18 : 44
                         radius: group.groupHasBadge ? 5 : 10
+                        clip: true
                         color: Colors.md3.surface_container_high
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom

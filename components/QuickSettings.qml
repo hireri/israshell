@@ -335,6 +335,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
                             onClicked: {
+                                root.isOpen = false;
                                 sysProc.command = ["code", Quickshell.env("HOME") + "/.config/hypr"];
                                 sysProc.running = true;
                             }
@@ -514,7 +515,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "No notifications"
+                            text: "Nothing here..."
                             color: Colors.md3.on_surface_variant
                             font.family: Config.fontFamily
                             font.pixelSize: 12
