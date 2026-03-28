@@ -13,32 +13,39 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell:notificationPopup"
     exclusiveZone: 0
-    margins.top: Config.floatingBar ? 64 : 54
-    margins.right: 12
+    margins.top: 12
+
+    implicitWidth: 700
 
     mask: Region {
-        item: groupCol
+        item: notifList
     }
     color: "transparent"
-    implicitWidth: 320
 
     visible: NotificationService.popupGroupModel.count > 0
 
-    Column {
-        id: groupCol
-        width: 320
-        spacing: 8
+    NotificationListView {
+        id: notifList
         anchors.top: parent.top
         anchors.right: parent.right
+        implicitWidth: 320
+        implicitHeight: contentHeight
+        height: contentHeight
+        anchors.rightMargin: 12
 
-        Repeater {
-            model: NotificationService.popupGroupModel
+        model: ScriptModel {
+            values: NotificationService.popupAppNames
+        }
 
-            delegate: NotificationGroup {
-                required property var model
-                appName: model.appName
-                width: 320
-            }
+        delegate: NotificationGroup {
+            required property var modelData
+            required property int index
+            appName: modelData
+            groupIdx: index
+            listRef: notifList
+            popup: true
+            inPanel: false
+            width: 320
         }
     }
 }

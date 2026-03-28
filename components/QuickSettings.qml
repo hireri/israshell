@@ -22,7 +22,7 @@ Item {
     property bool isOpen: false
 
     function getDndIcon() {
-        return NotificationService.dnd ? "󰂠" : "󰂚";
+        return NotificationService.dnd ? "󰂛" : "󰂚";
     }
 
     function getNetworkIcon() {
@@ -135,21 +135,23 @@ Item {
 
             StatusIcon {
                 active: NotificationService.dnd
-                icon: "󰂠"
+                icon: "󰂛"
             }
 
             Rectangle {
-                implicitWidth: ((Bluetooth.defaultAdapter?.enabled) || AudioService.muted || CaffeineService.active || NightLightService.active) ? 12 : 0
+                implicitWidth: ((Bluetooth.defaultAdapter?.enabled) || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd) ? 12 : 0
                 height: 14
                 color: "transparent"
                 clip: true
                 anchors.verticalCenter: parent.verticalCenter
+
                 Behavior on implicitWidth {
                     NumberAnimation {
                         duration: 400
                         easing.type: Easing.OutExpo
                     }
                 }
+
                 Rectangle {
                     anchors.centerIn: parent
                     width: 1
@@ -188,7 +190,7 @@ Item {
         anchor.rect.x: root.panelWindow.width - implicitWidth - 12
         anchor.rect.y: root.panelWindow.height + 12
         implicitWidth: 320
-        height: contentCol.implicitHeight + 24
+        implicitHeight: contentCol.implicitHeight + 24
         visible: drawerContent.opacity > 0
         color: "transparent"
 
@@ -466,6 +468,24 @@ Item {
                             font.weight: Font.DemiBold
                         }
 
+                        Rectangle {
+                            visible: NotificationService.listCount > 0
+                            implicitWidth: qsCntLbl.implicitWidth + 10
+                            implicitHeight: 18
+                            radius: 9
+                            color: Colors.md3.primary_container
+
+                            Text {
+                                id: qsCntLbl
+                                anchors.centerIn: parent
+                                text: NotificationService.listCount
+                                color: Colors.md3.on_primary_container
+                                font.family: Config.fontFamily
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+                        }
+
                         Item {
                             Layout.fillWidth: true
                         }
@@ -485,119 +505,144 @@ Item {
                         }
                     }
 
-                    Column {
-                        Layout.fillWidth: true
-                        spacing: 6
-                        visible: NotificationService.list.length > 0
-
-                        Repeater {
-                            model: ScriptModel {
-                                values: NotificationService.list
-                            }
-
-                            delegate: NotificationCard {
-                                required property var modelData
-                                wrapper: modelData
-
-                                width: parent.width
-                            }
-                        }
-                    }
-
                     Rectangle {
                         Layout.fillWidth: true
-                        height: 1
-                        color: Colors.md3.outline_variant
-                        visible: NotificationService.list.length > 0 && NotificationService.history.length > 0
-                    }
+                        implicitHeight: 320
+                        radius: 16
+                        color: Colors.md3.surface_container
+                        clip: true
 
-                    Column {
-                        Layout.fillWidth: true
-                        spacing: 6
-                        visible: NotificationService.history.length > 0
+                        Text {
+                            anchors.centerIn: parent
+                            text: "No notifications"
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            visible: NotificationService.listCount === 0 && NotificationService.history.length === 0
+                        }
 
-                        Repeater {
-                            model: ScriptModel {
-                                values: NotificationService.history
+                        Flickable {
+                            id: qsFlick
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            contentHeight: qsCol.implicitHeight
+                            clip: false
+                            flickableDirection: Flickable.VerticalFlick
+                            flickDeceleration: 4000
+                            maximumFlickVelocity: 1200
+                            boundsBehavior: Flickable.DragAndOvershootBounds
+                            ScrollBar.vertical: ScrollBar {
+                                policy: ScrollBar.AlwaysOff
                             }
 
-                            delegate: Rectangle {
-                                required property var modelData
+                            Column {
+                                id: qsCol
+                                width: qsFlick.width
+                                spacing: 6
 
-                                width: parent.width
-                                height: 58
-                                color: Colors.md3.surface_container
-                                radius: 12
-                                opacity: 0.7
+                                NotificationListView {
+                                    id: qsNotifList
+                                    width: parent.width
+                                    implicitHeight: contentHeight
+                                    height: contentHeight
 
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 8
-                                    spacing: 10
+                                    model: NotificationService.qsGroupModel
 
-                                    Image {
-                                        Layout.preferredWidth: 32
-                                        Layout.preferredHeight: 32
-                                        fillMode: Image.PreserveAspectFit
-                                        source: {
-                                            const raw = modelData.image || modelData.appIcon || "";
-                                            if (!raw)
-                                                return "image://icon/dialog-information";
-                                            if (raw.startsWith("/"))
-                                                return "file://" + raw;
-                                            return "image://icon/" + raw;
-                                        }
+                                    delegate: NotificationGroup {
+                                        required property var model
+                                        required property int index
+                                        appName: model.appName
+                                        groupIdx: index
+                                        listRef: qsNotifList
+                                        showAll: true
+                                        inPanel: true
+                                        popup: false
+                                        width: qsNotifList.width
                                     }
+                                }
 
-                                    ColumnLayout {
-                                        spacing: 0
-                                        Layout.fillWidth: true
+                                Rectangle {
+                                    visible: NotificationService.listCount > 0 && NotificationService.history.length > 0
+                                    width: parent.width
+                                    implicitHeight: 1
+                                    color: Colors.md3.outline_variant
+                                    opacity: 0.5
+                                }
+
+                                Repeater {
+                                    model: ScriptModel {
+                                        values: NotificationService.history
+                                    }
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        width: parent.width
+                                        implicitHeight: hRow.implicitHeight + 20
+                                        radius: 12
+                                        color: Colors.md3.surface_container_low
+                                        opacity: 0.7
 
                                         RowLayout {
-                                            Layout.fillWidth: true
+                                            id: hRow
+                                            anchors {
+                                                left: parent.left
+                                                right: parent.right
+                                                top: parent.top
+                                                margins: 10
+                                            }
+                                            spacing: 10
 
-                                            Text {
-                                                text: modelData.summary ?? ""
-                                                color: Colors.md3.on_surface
-                                                font.family: Config.fontFamily
-                                                font.pixelSize: 12
-                                                font.bold: true
-                                                elide: Text.ElideRight
+                                            Image {
+                                                Layout.preferredWidth: 32
+                                                Layout.preferredHeight: 32
+                                                fillMode: Image.PreserveAspectFit
+                                                source: {
+                                                    const raw = modelData.image || modelData.appIcon || "";
+                                                    if (!raw)
+                                                        return "";
+                                                    if (raw.startsWith("/"))
+                                                        return "file://" + raw;
+                                                    return "image://icon/" + raw;
+                                                }
+                                            }
+
+                                            ColumnLayout {
+                                                spacing: 1
                                                 Layout.fillWidth: true
-                                            }
 
-                                            Text {
-                                                text: modelData.time ?? ""
-                                                color: Colors.md3.on_surface_variant
-                                                font.family: Config.fontFamily
-                                                font.pixelSize: 10
-                                            }
-                                        }
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    Text {
+                                                        text: modelData.summary ?? ""
+                                                        color: Colors.md3.on_surface
+                                                        font.family: Config.fontFamily
+                                                        font.pixelSize: 12
+                                                        font.bold: true
+                                                        elide: Text.ElideRight
+                                                        Layout.fillWidth: true
+                                                    }
+                                                    Text {
+                                                        text: modelData.time ?? ""
+                                                        color: Colors.md3.on_surface_variant
+                                                        font.family: Config.fontFamily
+                                                        font.pixelSize: 10
+                                                    }
+                                                }
 
-                                        Text {
-                                            text: modelData.body ?? ""
-                                            color: Colors.md3.on_surface_variant
-                                            font.family: Config.fontFamily
-                                            font.pixelSize: 11
-                                            elide: Text.ElideRight
-                                            Layout.fillWidth: true
-                                            textFormat: Text.PlainText
+                                                Text {
+                                                    text: modelData.body ?? ""
+                                                    color: Colors.md3.on_surface_variant
+                                                    font.family: Config.fontFamily
+                                                    font.pixelSize: 11
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
+                                                    textFormat: Text.PlainText
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-
-                    // empty state
-                    Text {
-                        Layout.fillWidth: true
-                        visible: NotificationService.list.length === 0 && NotificationService.history.length === 0
-                        text: "No notifications"
-                        color: Colors.md3.on_surface_variant
-                        font.family: Config.fontFamily
-                        font.pixelSize: 12
-                        horizontalAlignment: Text.AlignHCenter
                     }
                 }
             }

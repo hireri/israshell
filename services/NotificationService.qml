@@ -20,11 +20,12 @@ Item {
 
         property bool expanded: false
         property bool popup: true
+        property bool dismissing: false
 
         readonly property string iconSrc: {
             const raw = image || appIcon;
             if (!raw)
-                return "image://icon/dialog-information";
+                return "";
             if (raw.startsWith("/"))
                 return "file://" + raw;
             return "image://icon/" + raw;
@@ -36,7 +37,21 @@ Item {
     property bool dnd: false
     property var list: []
 
+    readonly property int listCount: list.length
+
     readonly property ListModel popupGroupModel: ListModel {}
+
+    readonly property ListModel qsGroupModel: ListModel {}
+
+    property var latestTimeForApp: ({})
+
+    readonly property var popupAppNames: {
+        const _ = popupGroupModel.count;
+        const names = [];
+        for (let i = 0; i < popupGroupModel.count; i++)
+            names.push(popupGroupModel.get(i).appName);
+        return names.sort((a, b) => (root.latestTimeForApp[b] ?? 0) - (root.latestTimeForApp[a] ?? 0));
+    }
 
     PersistentProperties {
         id: persist
@@ -74,14 +89,19 @@ Item {
 
             root.list = [...root.list, wrapper];
 
+            const lt = root.latestTimeForApp;
+            lt[wrapper.appName] = wrapper.time;
+            root.latestTimeForApp = lt;
+
             if (!root.dnd) {
                 root._ensurePopupGroup(wrapper.appName);
             } else {
                 wrapper.popup = false;
             }
 
+            root._ensureQsGroup(wrapper.appName);
+
             notification.closed.connect(reason => {
-                // only keep record if the notification expired naturally
                 if (reason === NotificationCloseReason.Expired) {
                     const h = [
                         {
@@ -103,12 +123,20 @@ Item {
 
                 root.list = root.list.filter(w => w !== wrapper);
                 root._cleanupPopupGroup(wrapper.appName);
+                root._cleanupQsGroup(wrapper.appName);
+
+                const lt2 = root.latestTimeForApp;
+                if (!root.list.some(w => w.appName === wrapper.appName)) {
+                    delete lt2[wrapper.appName];
+                    root.latestTimeForApp = lt2;
+                }
+
                 wrapper.destroy();
             });
         }
     }
 
-    function _groupIndex(appName) {
+    function _popupGroupIndex(appName) {
         for (let i = 0; i < popupGroupModel.count; i++)
             if (popupGroupModel.get(i).appName === appName)
                 return i;
@@ -116,24 +144,44 @@ Item {
     }
 
     function _ensurePopupGroup(appName) {
-        if (_groupIndex(appName) === -1)
+        if (_popupGroupIndex(appName) === -1)
             popupGroupModel.insert(0, {
                 appName: appName
             });
     }
 
     function _cleanupPopupGroup(appName) {
-        if (root.list.some(w => w.appName === appName))
+        if (root.list.some(w => w.appName === appName && w.popup && !w.dismissing))
             return;
-        const idx = _groupIndex(appName);
+        const idx = _popupGroupIndex(appName);
         if (idx !== -1)
             popupGroupModel.remove(idx);
     }
 
-    // public api 👀
+    function _qsGroupIndex(appName) {
+        for (let i = 0; i < qsGroupModel.count; i++)
+            if (qsGroupModel.get(i).appName === appName)
+                return i;
+        return -1;
+    }
+
+    function _ensureQsGroup(appName) {
+        if (_qsGroupIndex(appName) === -1)
+            qsGroupModel.insert(0, {
+                appName: appName
+            });
+    }
+
+    function _cleanupQsGroup(appName) {
+        if (root.list.some(w => w.appName === appName))
+            return;
+        const idx = _qsGroupIndex(appName);
+        if (idx !== -1)
+            qsGroupModel.remove(idx);
+    }
 
     function sendGroupToPanel(appName) {
-        const idx = _groupIndex(appName);
+        const idx = _popupGroupIndex(appName);
         if (idx !== -1)
             popupGroupModel.remove(idx);
         root.list.forEach(w => {
