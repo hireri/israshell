@@ -40,7 +40,6 @@ Item {
     readonly property int listCount: list.length
 
     readonly property ListModel popupGroupModel: ListModel {}
-
     readonly property ListModel qsGroupModel: ListModel {}
 
     property var latestTimeForApp: ({})
@@ -53,12 +52,8 @@ Item {
         return names.sort((a, b) => (root.latestTimeForApp[b] ?? 0) - (root.latestTimeForApp[a] ?? 0));
     }
 
-    PersistentProperties {
-        id: persist
-        reloadableId: "notificationHistory"
-        property var history: []
-    }
-    readonly property var history: persist.history
+    // Stub — history removed, kept for backward compatibility with any references
+    readonly property var history: []
 
     Component {
         id: wrapperComponent
@@ -89,11 +84,14 @@ Item {
 
             root.list = [...root.list, wrapper];
 
+            // Update recency tracking
             const lt = root.latestTimeForApp;
             lt[wrapper.appName] = wrapper.time;
             root.latestTimeForApp = lt;
 
-            if (!root.dnd) {
+            // Critical always shows as popup — everything else respects DND
+            const isCritical = wrapper.urgency === "critical";
+            if (!root.dnd || isCritical) {
                 root._ensurePopupGroup(wrapper.appName);
             } else {
                 wrapper.popup = false;
@@ -103,35 +101,23 @@ Item {
 
             notification.closed.connect(reason => {
                 if (reason === NotificationCloseReason.Expired) {
-                    const h = [
-                        {
-                            summary: wrapper.summary,
-                            body: wrapper.body,
-                            appName: wrapper.appName,
-                            appIcon: wrapper.appIcon,
-                            image: wrapper.image,
-                            time: new Date().toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit"
-                            })
-                        },
-                        ...persist.history];
-                    if (h.length > 50)
-                        h.length = 50;
-                    persist.history = h;
+                    // Timed out — keep in QS panel so user can still act on it
+                    wrapper.popup = false;
+                } else {
+                    // Dismissed (user cleared) or CloseRequested (app withdrew /
+                    // action was taken) — remove and destroy
+                    root.list = root.list.filter(w => w !== wrapper);
+                    root._cleanupPopupGroup(wrapper.appName);
+                    root._cleanupQsGroup(wrapper.appName);
+
+                    const lt2 = root.latestTimeForApp;
+                    if (!root.list.some(w => w.appName === wrapper.appName)) {
+                        delete lt2[wrapper.appName];
+                        root.latestTimeForApp = lt2;
+                    }
+
+                    wrapper.destroy();
                 }
-
-                root.list = root.list.filter(w => w !== wrapper);
-                root._cleanupPopupGroup(wrapper.appName);
-                root._cleanupQsGroup(wrapper.appName);
-
-                const lt2 = root.latestTimeForApp;
-                if (!root.list.some(w => w.appName === wrapper.appName)) {
-                    delete lt2[wrapper.appName];
-                    root.latestTimeForApp = lt2;
-                }
-
-                wrapper.destroy();
             });
         }
     }
@@ -202,9 +188,5 @@ Item {
 
     function dismissAll() {
         root.list.slice().forEach(w => w.notification?.dismiss());
-    }
-
-    function clearHistory() {
-        persist.history = [];
     }
 }

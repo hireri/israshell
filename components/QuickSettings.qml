@@ -254,10 +254,10 @@ Item {
         id: sidebar
         anchor.window: root.panelWindow
         anchor.rect.x: (root.panelWindow.screen?.width ?? 1920) - implicitWidth
-        anchor.rect.y: root.panelWindow.height + 8
+        anchor.rect.y: root.panelWindow.height + 12
         implicitWidth: 432
         anchor.adjustment: PopupAdjustment.None
-        implicitHeight: (root.panelWindow.screen?.height ?? 1080) - root.panelWindow.height - 8 - 12
+        implicitHeight: (root.panelWindow.screen?.height ?? 1080) - root.panelWindow.height - 24
         color: "transparent"
         visible: root._sidebarVisible
 
@@ -563,20 +563,6 @@ Item {
                         Item {
                             Layout.fillWidth: true
                         }
-
-                        Text {
-                            text: "Clear history"
-                            color: Colors.md3.primary
-                            font.family: Config.fontFamily
-                            font.pixelSize: 12
-                            visible: NotificationService.history.length > 0
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: NotificationService.clearHistory()
-                            }
-                        }
                     }
 
                     Rectangle {
@@ -632,87 +618,6 @@ Item {
                                         inPanel: true
                                         popup: false
                                         width: qsNotifList.width
-                                    }
-                                }
-
-                                Rectangle {
-                                    visible: NotificationService.listCount > 0 && NotificationService.history.length > 0
-                                    width: parent.width
-                                    implicitHeight: 1
-                                    color: Colors.md3.outline_variant
-                                    opacity: 0.5
-                                }
-
-                                Repeater {
-                                    model: ScriptModel {
-                                        values: NotificationService.history
-                                    }
-                                    delegate: Rectangle {
-                                        required property var modelData
-                                        width: parent.width
-                                        implicitHeight: hRow.implicitHeight + 20
-                                        radius: 12
-                                        color: Colors.md3.surface_container_low
-                                        opacity: 0.7
-
-                                        RowLayout {
-                                            id: hRow
-                                            anchors {
-                                                left: parent.left
-                                                right: parent.right
-                                                top: parent.top
-                                                margins: 10
-                                            }
-                                            spacing: 10
-
-                                            Image {
-                                                Layout.preferredWidth: 32
-                                                Layout.preferredHeight: 32
-                                                fillMode: Image.PreserveAspectFit
-                                                source: {
-                                                    const raw = modelData.image || modelData.appIcon || "";
-                                                    if (!raw)
-                                                        return "";
-                                                    if (raw.startsWith("/"))
-                                                        return "file://" + raw;
-                                                    return "image://icon/" + raw;
-                                                }
-                                            }
-
-                                            ColumnLayout {
-                                                spacing: 1
-                                                Layout.fillWidth: true
-
-                                                RowLayout {
-                                                    Layout.fillWidth: true
-                                                    Text {
-                                                        text: modelData.summary ?? ""
-                                                        color: Colors.md3.on_surface
-                                                        font.family: Config.fontFamily
-                                                        font.pixelSize: 12
-                                                        font.bold: true
-                                                        elide: Text.ElideRight
-                                                        Layout.fillWidth: true
-                                                    }
-                                                    Text {
-                                                        text: modelData.time ?? ""
-                                                        color: Colors.md3.on_surface_variant
-                                                        font.family: Config.fontFamily
-                                                        font.pixelSize: 10
-                                                    }
-                                                }
-
-                                                Text {
-                                                    text: modelData.body ?? ""
-                                                    color: Colors.md3.on_surface_variant
-                                                    font.family: Config.fontFamily
-                                                    font.pixelSize: 11
-                                                    elide: Text.ElideRight
-                                                    Layout.fillWidth: true
-                                                    textFormat: Text.PlainText
-                                                }
-                                            }
-                                        }
                                     }
                                 }
                             }
