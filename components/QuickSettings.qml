@@ -706,7 +706,7 @@ Item {
                 readonly property real minW: height
                 readonly property real usable: trackBg.width - 8 - minW
                 implicitWidth: minW + sliderRow._displayRatio * usable
-                color: sliderRow.dimmed ? Colors.md3.outline : (sliderRow.value > 1.0 ? Colors.md3.error : Colors.md3.primary)
+                color: sliderRow.dimmed ? Colors.md3.outline : (sliderRow.value > 1.005 ? Colors.md3.error : Colors.md3.primary)
 
                 Behavior on implicitWidth {
                     NumberAnimation {
