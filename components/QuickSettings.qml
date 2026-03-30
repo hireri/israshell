@@ -20,6 +20,37 @@ Item {
     height: button.height
 
     property bool isOpen: false
+    property bool _sidebarVisible: false
+
+    onIsOpenChanged: {
+        if (isOpen) {
+            _sidebarVisible = true;
+        } else {
+            closeTimer.restart();
+        }
+    }
+
+    Timer {
+        id: closeTimer
+        interval: 310
+        onTriggered: if (!root.isOpen)
+            root._sidebarVisible = false
+    }
+
+    GlobalShortcut {
+        name: "openQuickSettings"
+        description: "Toggle quick settings sidebar"
+        onPressed: {
+            const screen = root.panelWindow.screen;
+            if (!screen)
+                return;
+            if (Hyprland.focusedMonitor?.name !== screen.name)
+                return;
+            root.isOpen = !root.isOpen;
+            if (root.isOpen)
+                NotificationService.sendAllToPanel();
+        }
+    }
 
     function getDndIcon() {
         return NotificationService.dnd ? "󰂛" : "󰂚";
@@ -47,25 +78,12 @@ Item {
         const adapter = Bluetooth.defaultAdapter;
         if (!adapter?.enabled)
             return "󰂲";
-
         const devices = Bluetooth.devices.values;
-
-        const isConnecting = devices.some(d => d.connecting);
-
-        if (adapter.discovering || isConnecting)
+        if (adapter.discovering || devices.some(d => d.connecting))
             return "󰂰";
-
         if (devices.some(d => d.connected))
             return "󰂱";
-
         return "󰂯";
-    }
-
-    HyprlandFocusGrab {
-        id: focusGrab
-        windows: [drawer]
-        active: root.isOpen
-        onCleared: root.isOpen = false
     }
 
     Process {
@@ -111,35 +129,30 @@ Item {
                 active: true
                 icon: root.getNetworkIcon()
             }
-
             StatusIcon {
                 active: Bluetooth.defaultAdapter?.enabled ?? false
                 icon: root.getBluetoothIcon()
             }
-
             StatusIcon {
                 active: AudioService.muted
                 icon: "󰝟"
                 iconColor: Colors.md3.error
             }
-
             StatusIcon {
                 active: CaffeineService.active
                 icon: "󰅶"
             }
-
             StatusIcon {
                 active: NightLightService.active
                 icon: "󱩌"
             }
-
             StatusIcon {
                 active: NotificationService.dnd
                 icon: "󰂛"
             }
 
             Rectangle {
-                implicitWidth: ((Bluetooth.defaultAdapter?.enabled) || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd) ? 12 : 0
+                implicitWidth: (Bluetooth.defaultAdapter?.enabled || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd) ? 12 : 0
                 height: 14
                 color: "transparent"
                 clip: true
@@ -164,12 +177,57 @@ Item {
             Item {
                 implicitWidth: 26
                 height: 24
-                Text {
+
+                Rectangle {
                     anchors.centerIn: parent
-                    text: "󰒓"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 16
-                    color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+                    implicitWidth: 20
+                    implicitHeight: 20
+                    radius: 10
+                    color: Colors.md3.primary_container
+                    visible: btnProfileImage.status !== Image.Ready
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: Quickshell.env("USER").charAt(0).toUpperCase()
+                        font.pixelSize: 10
+                        font.weight: Font.DemiBold
+                        font.family: Config.fontFamily
+                        color: Colors.md3.on_primary_container
+                    }
+                }
+
+                Item {
+                    anchors.centerIn: parent
+                    implicitWidth: 20
+                    implicitHeight: 20
+                    visible: btnProfileImage.status === Image.Ready
+
+                    Rectangle {
+                        id: btnMaskRect
+                        anchors.fill: parent
+                        radius: 10
+                        visible: false
+                        layer.enabled: true
+                    }
+
+                    Image {
+                        id: btnProfileImage
+                        source: "file://" + Quickshell.env("HOME") + "/.face"
+                        anchors.fill: parent
+                        sourceSize: Qt.size(40, 40)
+                        fillMode: Image.PreserveAspectCrop
+                        antialiasing: true
+                        smooth: true
+                        visible: false
+                        cache: false
+                    }
+
+                    MultiEffect {
+                        anchors.fill: parent
+                        source: btnProfileImage
+                        maskEnabled: true
+                        maskSource: btnMaskRect
+                    }
                 }
             }
         }
@@ -179,73 +237,92 @@ Item {
             cursorShape: Qt.PointingHandCursor
             onClicked: {
                 root.isOpen = !root.isOpen;
-                NotificationService.sendAllToPanel();
+                if (root.isOpen)
+                    NotificationService.sendAllToPanel();
             }
         }
     }
 
+    HyprlandFocusGrab {
+        id: focusGrab
+        windows: [sidebar]
+        active: root.isOpen
+        onCleared: root.isOpen = false
+    }
+
     PopupWindow {
-        id: drawer
+        id: sidebar
         anchor.window: root.panelWindow
-        anchor.rect.x: root.panelWindow.width - implicitWidth - 12
-        anchor.rect.y: root.panelWindow.height + 12
-        implicitWidth: 320
-        implicitHeight: contentCol.implicitHeight + 24
-        visible: drawerContent.opacity > 0
+        anchor.rect.x: (root.panelWindow.screen?.width ?? 1920) - implicitWidth
+        anchor.rect.y: root.panelWindow.height + 8
+        implicitWidth: 432
+        anchor.adjustment: PopupAdjustment.None
+        implicitHeight: (root.panelWindow.screen?.height ?? 1080) - root.panelWindow.height - 8 - 12
         color: "transparent"
+        visible: root._sidebarVisible
+
+        Keys.onEscapePressed: root.isOpen = false
+
+        property real slideX: root.isOpen ? 0 : 452
+
+        Behavior on slideX {
+            NumberAnimation {
+                duration: 300
+                easing.type: Easing.OutCubic
+            }
+        }
 
         Rectangle {
-            id: drawerContent
-            anchors.fill: parent
-            radius: 16
+            id: sidebarCard
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.right: parent.right
+            anchors.rightMargin: 12
+            width: 420
+
+            radius: 18
             color: Colors.md3.surface_container_high
             border.color: Colors.md3.outline_variant
             border.width: 1
-            opacity: root.isOpen ? 1 : 0
-            scale: 0.95 + (opacity * 0.05)
-            transformOrigin: Item.TopRight
+            clip: true
 
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 200
-                    easing.type: Easing.OutQuart
-                }
+            transform: Translate {
+                x: sidebar.slideX
             }
 
             ColumnLayout {
-                id: contentCol
-                anchors {
-                    top: parent.top
-                    left: parent.left
-                    right: parent.right
-                    margins: 12
-                }
+                anchors.fill: parent
+                anchors.margins: 14
                 spacing: 12
 
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 10
 
-                    Rectangle {
-                        Layout.preferredWidth: 36
-                        Layout.preferredHeight: 36
-                        radius: 18
-                        color: Colors.md3.primary_container
+                    Item {
+                        Layout.preferredWidth: 44
+                        Layout.preferredHeight: 44
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: Quickshell.env("USER").charAt(0).toUpperCase()
-                            font.pixelSize: 15
-                            font.weight: Font.DemiBold
-                            font.family: Config.fontFamily
-                            color: Colors.md3.on_primary_container
-                            visible: profileImage.status !== Image.Ready
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 22
+                            color: Colors.md3.primary_container
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: Quickshell.env("USER").charAt(0).toUpperCase()
+                                font.pixelSize: 18
+                                font.weight: Font.DemiBold
+                                font.family: Config.fontFamily
+                                color: Colors.md3.on_primary_container
+                                visible: profileImage.status !== Image.Ready
+                            }
                         }
 
                         Rectangle {
                             id: maskRect
                             anchors.fill: parent
-                            radius: 18
+                            radius: 22
                             antialiasing: true
                             visible: false
                             layer.enabled: true
@@ -256,9 +333,7 @@ Item {
                             id: profileImage
                             source: "file://" + Quickshell.env("HOME") + "/.face"
                             anchors.fill: parent
-
                             sourceSize: Qt.size(144, 144)
-
                             fillMode: Image.PreserveAspectCrop
                             antialiasing: true
                             smooth: true
@@ -286,9 +361,10 @@ Item {
                             text: Quickshell.env("USER")
                             color: Colors.md3.on_surface
                             font.family: Config.fontFamily
-                            font.pixelSize: 14
+                            font.pixelSize: 15
                             font.weight: Font.DemiBold
                         }
+
                         Text {
                             id: hostText
                             Layout.fillWidth: true
@@ -296,18 +372,16 @@ Item {
                             text: "loading..."
                             color: Colors.md3.on_surface_variant
                             font.family: Config.fontFamily
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                         }
                     }
 
                     Rectangle {
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
+                        Layout.preferredWidth: 36
+                        Layout.preferredHeight: 36
+
                         radius: 12
-                        antialiasing: true
-
                         color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container
-
                         scale: editMouse.pressed ? 0.92 : 1
 
                         Behavior on scale {
@@ -316,6 +390,7 @@ Item {
                                 easing.type: Easing.OutCubic
                             }
                         }
+
                         Behavior on color {
                             ColorAnimation {
                                 duration: 150
@@ -325,10 +400,11 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: "󰏫"
-                            font.pixelSize: 14
+                            font.pixelSize: 15
                             font.family: Config.fontFamily
                             color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
                         }
+
                         MouseArea {
                             id: editMouse
                             anchors.fill: parent
@@ -343,13 +419,11 @@ Item {
                     }
 
                     Rectangle {
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
+                        Layout.preferredWidth: 36
+                        Layout.preferredHeight: 36
+
                         radius: 12
-                        antialiasing: true
-
                         color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.on_error
-
                         scale: pwrMouse.pressed ? 0.92 : 1
 
                         Behavior on scale {
@@ -367,7 +441,7 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: "󰐥"
-                            font.pixelSize: 16
+                            font.pixelSize: 17
                             font.family: Config.fontFamily
                             color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
                         }
@@ -389,7 +463,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
                     color: Colors.md3.outline_variant
-                    opacity: 0.5
+                    opacity: 0.4
                 }
 
                 RowLayout {
@@ -426,7 +500,7 @@ Item {
                     }
 
                     QsToggleChip {
-                        icon: NightLightService.active ? "󱩌" : "󱩍"
+                        icon: NightLightService.active ? "󱩌" : "󰛨"
                         active: NightLightService.active
                         onToggled: NightLightService.toggle()
                     }
@@ -440,9 +514,7 @@ Item {
 
                 QsSliderRow {
                     value: AudioService.volume
-                    onMoved: function (val) {
-                        AudioService.setVolume(val);
-                    }
+                    onMoved: val => AudioService.setVolume(val)
                     onMuteClicked: AudioService.toggleMute()
                     dimmed: AudioService.muted
                 }
@@ -451,11 +523,12 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
                     color: Colors.md3.outline_variant
-                    opacity: 0.5
+                    opacity: 0.4
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
                     spacing: 8
 
                     RowLayout {
@@ -471,13 +544,13 @@ Item {
 
                         Rectangle {
                             visible: NotificationService.listCount > 0
-                            implicitWidth: qsCntLbl.implicitWidth + 10
+                            implicitWidth: ntfCnt.implicitWidth + 10
                             implicitHeight: 18
                             radius: 9
                             color: Colors.md3.primary_container
 
                             Text {
-                                id: qsCntLbl
+                                id: ntfCnt
                                 anchors.centerIn: parent
                                 text: NotificationService.listCount
                                 color: Colors.md3.on_primary_container
@@ -508,8 +581,8 @@ Item {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: 320
-                        radius: 16
+                        Layout.fillHeight: true
+                        radius: 14
                         color: Colors.md3.surface_container
                         clip: true
 
@@ -525,7 +598,7 @@ Item {
                         Flickable {
                             id: qsFlick
                             anchors.fill: parent
-                            anchors.margins: 10
+                            anchors.margins: 8
                             contentHeight: qsCol.implicitHeight
                             clip: false
                             flickableDirection: Flickable.VerticalFlick
@@ -669,17 +742,20 @@ Item {
 
         radius: active ? 18 : 14
         color: active ? Colors.md3.primary : Colors.md3.surface_container
+
         Behavior on color {
             ColorAnimation {
                 duration: 150
             }
         }
+
         Behavior on radius {
             NumberAnimation {
                 duration: 150
                 easing.type: Easing.OutCubic
             }
         }
+
         Text {
             anchors.centerIn: parent
             text: chip.icon
@@ -687,6 +763,7 @@ Item {
             font.family: Config.fontFamily
             color: chip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
         }
+
         MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
