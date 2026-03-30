@@ -22,6 +22,8 @@ Item {
         property bool popup: true
         property bool dismissing: false
 
+        readonly property string groupKey: appName + "|" + summary
+
         readonly property string iconSrc: {
             const raw = image || appIcon;
             if (!raw)
@@ -42,18 +44,42 @@ Item {
     readonly property ListModel popupGroupModel: ListModel {}
     readonly property ListModel qsGroupModel: ListModel {}
 
-    property var latestTimeForApp: ({})
+    property var latestTimeForKey: ({})
 
-    readonly property var popupAppNames: {
-        const _ = popupGroupModel.count;
-        const names = [];
-        for (let i = 0; i < popupGroupModel.count; i++)
-            names.push(popupGroupModel.get(i).appName);
-        return names.sort((a, b) => (root.latestTimeForApp[b] ?? 0) - (root.latestTimeForApp[a] ?? 0));
-    }
-
-    // Stub — history removed, kept for backward compatibility with any references
     readonly property var history: []
+
+    Item {
+        id: cleanupTimer
+        property var _queue: []
+
+        function schedule(appName, summary, gKey, wrapper) {
+            _queue.push({
+                appName,
+                summary,
+                gKey,
+                wrapper
+            });
+            _timer.restart();
+        }
+
+        Timer {
+            id: _timer
+            interval: 300
+            repeat: false
+            onTriggered: {
+                cleanupTimer._queue.forEach(entry => {
+                    root._cleanupQsGroup(entry.appName, entry.summary);
+                    const lt = root.latestTimeForKey;
+                    if (!root.list.some(w => w.groupKey === entry.gKey)) {
+                        delete lt[entry.gKey];
+                        root.latestTimeForKey = lt;
+                    }
+                    entry.wrapper.destroy();
+                });
+                cleanupTimer._queue = [];
+            }
+        }
+    }
 
     Component {
         id: wrapperComponent
@@ -71,6 +97,12 @@ Item {
         onNotification: notification => {
             notification.tracked = true;
 
+            if (notification.replacesId && notification.replacesId > 0) {
+                const replaced = root.list.find(w => {
+                    return false;
+                });
+            }
+
             const wrapper = wrapperComponent.createObject(root, {
                 notification: notification,
                 summary: notification.summary || "",
@@ -84,94 +116,107 @@ Item {
 
             root.list = [...root.list, wrapper];
 
-            // Update recency tracking
-            const lt = root.latestTimeForApp;
-            lt[wrapper.appName] = wrapper.time;
-            root.latestTimeForApp = lt;
+            const lt = root.latestTimeForKey;
+            lt[wrapper.groupKey] = wrapper.time;
+            root.latestTimeForKey = lt;
 
-            // Critical always shows as popup — everything else respects DND
             const isCritical = wrapper.urgency === "critical";
             if (!root.dnd || isCritical) {
-                root._ensurePopupGroup(wrapper.appName);
+                root._ensurePopupGroup(wrapper.appName, wrapper.summary);
             } else {
                 wrapper.popup = false;
             }
 
-            root._ensureQsGroup(wrapper.appName);
+            root._ensureQsGroup(wrapper.appName, wrapper.summary);
 
             notification.closed.connect(reason => {
-                if (reason === NotificationCloseReason.Expired) {
-                    // Timed out — keep in QS panel so user can still act on it
-                    wrapper.popup = false;
-                } else {
-                    // Dismissed (user cleared) or CloseRequested (app withdrew /
-                    // action was taken) — remove and destroy
-                    root.list = root.list.filter(w => w !== wrapper);
-                    root._cleanupPopupGroup(wrapper.appName);
-                    root._cleanupQsGroup(wrapper.appName);
+                const reasonStr = {
+                    [NotificationCloseReason.Expired]: "Expired",
+                    [NotificationCloseReason.Dismissed]: "Dismissed",
+                    [NotificationCloseReason.CloseRequested]: "CloseRequested"
+                }[reason] ?? `Unknown(${reason})`;
 
-                    const lt2 = root.latestTimeForApp;
-                    if (!root.list.some(w => w.appName === wrapper.appName)) {
-                        delete lt2[wrapper.appName];
-                        root.latestTimeForApp = lt2;
-                    }
-
-                    wrapper.destroy();
+                if (reason === NotificationCloseReason.CloseRequested) {
+                    wrapper.notification = null;
+                    return;
                 }
+
+                wrapper.popup = false;
+                root.list = root.list.filter(w => w !== wrapper);
+                root._cleanupPopupGroup(wrapper.appName, wrapper.summary);
+
+                const appN = wrapper.appName;
+                const summ = wrapper.summary;
+                const gKey = wrapper.groupKey;
+                cleanupTimer.schedule(appN, summ, gKey, wrapper);
             });
         }
     }
 
-    function _popupGroupIndex(appName) {
+    function _popupGroupIndex(appName, groupSummary) {
+        const key = appName + "|" + groupSummary;
         for (let i = 0; i < popupGroupModel.count; i++)
-            if (popupGroupModel.get(i).appName === appName)
+            if (popupGroupModel.get(i).groupKey === key)
                 return i;
         return -1;
     }
 
-    function _ensurePopupGroup(appName) {
-        if (_popupGroupIndex(appName) === -1)
+    function _ensurePopupGroup(appName, groupSummary) {
+        if (_popupGroupIndex(appName, groupSummary) === -1) {
+            const key = appName + "|" + groupSummary;
             popupGroupModel.insert(0, {
-                appName: appName
+                appName: appName,
+                groupSummary: groupSummary,
+                groupKey: key
             });
+        }
     }
 
-    function _cleanupPopupGroup(appName) {
-        if (root.list.some(w => w.appName === appName && w.popup && !w.dismissing))
+    function _cleanupPopupGroup(appName, groupSummary) {
+        const key = appName + "|" + groupSummary;
+        if (root.list.some(w => w.groupKey === key && w.popup && !w.dismissing))
             return;
-        const idx = _popupGroupIndex(appName);
-        if (idx !== -1)
+        const idx = _popupGroupIndex(appName, groupSummary);
+        if (idx !== -1) {
             popupGroupModel.remove(idx);
+        }
     }
 
-    function _qsGroupIndex(appName) {
+    function _qsGroupIndex(appName, groupSummary) {
+        const key = appName + "|" + groupSummary;
         for (let i = 0; i < qsGroupModel.count; i++)
-            if (qsGroupModel.get(i).appName === appName)
+            if (qsGroupModel.get(i).groupKey === key)
                 return i;
         return -1;
     }
 
-    function _ensureQsGroup(appName) {
-        if (_qsGroupIndex(appName) === -1)
+    function _ensureQsGroup(appName, groupSummary) {
+        if (_qsGroupIndex(appName, groupSummary) === -1) {
             qsGroupModel.insert(0, {
-                appName: appName
+                appName: appName,
+                groupSummary: groupSummary,
+                groupKey: appName + "|" + groupSummary
             });
+        }
     }
 
-    function _cleanupQsGroup(appName) {
-        if (root.list.some(w => w.appName === appName))
+    function _cleanupQsGroup(appName, groupSummary) {
+        const key = appName + "|" + groupSummary;
+        if (root.list.some(w => w.groupKey === key))
             return;
-        const idx = _qsGroupIndex(appName);
-        if (idx !== -1)
+        const idx = _qsGroupIndex(appName, groupSummary);
+        if (idx !== -1) {
             qsGroupModel.remove(idx);
+        }
     }
 
-    function sendGroupToPanel(appName) {
-        const idx = _popupGroupIndex(appName);
+    function sendGroupToPanel(appName, groupSummary) {
+        const key = appName + "|" + groupSummary;
+        const idx = _popupGroupIndex(appName, groupSummary);
         if (idx !== -1)
             popupGroupModel.remove(idx);
         root.list.forEach(w => {
-            if (w.appName === appName) {
+            if (w.groupKey === key) {
                 w.popup = false;
                 w.expanded = false;
             }
@@ -188,5 +233,8 @@ Item {
 
     function dismissAll() {
         root.list.slice().forEach(w => w.notification?.dismiss());
+    }
+
+    function clearHistory() {
     }
 }

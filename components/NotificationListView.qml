@@ -6,6 +6,7 @@ ListView {
 
     property int dragIndex: -1
     property real dragDistance: 0
+    property bool popup: false
 
     function resetDrag() {
         dragIndex = -1;
@@ -20,17 +21,24 @@ ListView {
         ParallelAnimation {
             NumberAnimation {
                 property: "opacity"
-                from: 0
+                from: root.popup ? 1 : 0
                 to: 1
-                duration: 250
+                duration: root.popup ? 0 : 220
+                easing.type: Easing.OutCubic
+            }
+            NumberAnimation {
+                property: "x"
+                from: root.popup ? 60 : 0
+                to: 0
+                duration: root.popup ? 280 : 0
                 easing.type: Easing.OutCubic
             }
             NumberAnimation {
                 property: "scale"
-                from: 0.88
+                from: root.popup ? 1 : 0.92
                 to: 1
-                duration: 280
-                easing.type: Easing.OutCubic
+                duration: root.popup ? 0 : 250
+                easing.type: Easing.OutBack
             }
         }
     }
@@ -44,19 +52,11 @@ ListView {
     }
 
     remove: Transition {
-        ParallelAnimation {
-            NumberAnimation {
-                property: "x"
-                to: 380
-                duration: 220
-                easing.type: Easing.InCubic
-            }
-            NumberAnimation {
-                property: "opacity"
-                to: 0
-                duration: 180
-                easing.type: Easing.OutCubic
-            }
+        NumberAnimation {
+            property: "height"
+            to: 0
+            duration: 220
+            easing.type: Easing.OutCubic
         }
     }
 

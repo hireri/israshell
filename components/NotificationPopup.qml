@@ -1,51 +1,78 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.style
 import qs.services
 
-PanelWindow {
-    id: root
+Item {
+    id: outer
 
-    anchors.top: true
-    anchors.right: true
-    anchors.bottom: true
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.namespace: "quickshell:notificationPopup"
-    exclusiveZone: 0
-    margins.top: 12
+    property bool keepActive: false
 
-    implicitWidth: 700
-
-    mask: Region {
-        item: notifList
+    Timer {
+        id: deactivateTimer
+        interval: 400
+        onTriggered: outer.keepActive = false
     }
-    color: "transparent"
 
-    visible: NotificationService.popupGroupModel.count > 0
-
-    NotificationListView {
-        id: notifList
-        anchors.top: parent.top
-        anchors.right: parent.right
-        implicitWidth: 320
-        implicitHeight: contentHeight
-        height: contentHeight
-        anchors.rightMargin: 12
-
-        model: ScriptModel {
-            values: NotificationService.popupAppNames
+    Connections {
+        target: NotificationService.popupGroupModel
+        function onCountChanged() {
+            if (NotificationService.popupGroupModel.count > 0) {
+                outer.keepActive = true;
+                deactivateTimer.stop();
+            } else {
+                deactivateTimer.restart();
+            }
         }
+    }
 
-        delegate: NotificationGroup {
-            required property var modelData
-            required property int index
-            appName: modelData
-            groupIdx: index
-            listRef: notifList
-            popup: true
-            inPanel: false
-            width: 320
+    Loader {
+        active: outer.keepActive
+        sourceComponent: PanelWindow {
+            id: root
+
+            anchors.top: true
+            anchors.right: true
+            anchors.bottom: true
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.namespace: "quickshell:notificationPopup"
+            WlrLayershell.screen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? null
+            exclusiveZone: 0
+            margins.top: Config.floatingBar ? 64 : 54
+
+            implicitWidth: 700
+            color: "transparent"
+
+            mask: Region {
+                item: notifList
+            }
+
+            NotificationListView {
+                id: notifList
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                implicitWidth: 320
+                implicitHeight: contentHeight
+                height: contentHeight
+                popup: true
+
+                model: NotificationService.popupGroupModel
+
+                delegate: NotificationGroup {
+                    required property var model
+                    required property int index
+                    appName: model.appName ?? ""
+                    groupSummary: model.groupSummary ?? ""
+                    groupIdx: index
+                    listRef: notifList
+                    popup: true
+                    inPanel: false
+                    width: 320
+                }
+            }
         }
     }
 }

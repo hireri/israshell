@@ -4,7 +4,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Bluetooth
-import QtQuick.Effects
 import Quickshell.Widgets
 import QtQuick.Controls
 
@@ -196,19 +195,17 @@ Item {
                     }
                 }
 
-                Item {
+                ClippingRectangle {
                     anchors.centerIn: parent
                     implicitWidth: 20
                     implicitHeight: 20
+                    radius: 10
+                    clip: true
+                    layer.enabled: true
+                    layer.smooth: true
+                    antialiasing: true
                     visible: btnProfileImage.status === Image.Ready
-
-                    Rectangle {
-                        id: btnMaskRect
-                        anchors.fill: parent
-                        radius: 10
-                        visible: false
-                        layer.enabled: true
-                    }
+                    color: "transparent"
 
                     Image {
                         id: btnProfileImage
@@ -218,15 +215,7 @@ Item {
                         fillMode: Image.PreserveAspectCrop
                         antialiasing: true
                         smooth: true
-                        visible: false
                         cache: false
-                    }
-
-                    MultiEffect {
-                        anchors.fill: parent
-                        source: btnProfileImage
-                        maskEnabled: true
-                        maskSource: btnMaskRect
                     }
                 }
             }
@@ -319,35 +308,27 @@ Item {
                             }
                         }
 
-                        Rectangle {
-                            id: maskRect
+                        ClippingRectangle {
                             anchors.fill: parent
                             radius: 22
-                            antialiasing: true
-                            visible: false
+                            clip: true
                             layer.enabled: true
-                            layer.samples: 4
-                        }
-
-                        Image {
-                            id: profileImage
-                            source: "file://" + Quickshell.env("HOME") + "/.face"
-                            anchors.fill: parent
-                            sourceSize: Qt.size(144, 144)
-                            fillMode: Image.PreserveAspectCrop
+                            layer.smooth: true
                             antialiasing: true
-                            smooth: true
-                            mipmap: true
-                            visible: false
-                            cache: false
-                        }
-
-                        MultiEffect {
-                            anchors.fill: parent
-                            source: profileImage
-                            maskEnabled: true
-                            maskSource: maskRect
                             visible: profileImage.status === Image.Ready
+                            color: "transparent"
+
+                            Image {
+                                id: profileImage
+                                source: "file://" + Quickshell.env("HOME") + "/.face"
+                                anchors.fill: parent
+                                sourceSize: Qt.size(144, 144)
+                                fillMode: Image.PreserveAspectCrop
+                                antialiasing: true
+                                smooth: true
+                                mipmap: true
+                                cache: false
+                            }
                         }
                     }
 
@@ -609,9 +590,10 @@ Item {
                                     model: NotificationService.qsGroupModel
 
                                     delegate: NotificationGroup {
-                                        required property var model
                                         required property int index
-                                        appName: model.appName
+                                        readonly property var row: qsNotifList.model.get(index) ?? {}
+                                        appName: row.appName ?? ""
+                                        groupSummary: row.groupSummary ?? ""
                                         groupIdx: index
                                         listRef: qsNotifList
                                         showAll: true

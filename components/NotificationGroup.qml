@@ -1,7 +1,7 @@
-pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Widgets
 import qs.style
@@ -11,15 +11,17 @@ MouseArea {
     id: group
 
     property string appName: ""
+    property string groupSummary: ""
     property bool showAll: false
     property bool inPanel: false
     property bool popup: false
     property var listRef: null
     property int groupIdx: 0
 
+    readonly property string groupKey: appName + "|" + groupSummary
+
     property int dragIndex: -1
     property real dragDistance: 0
-
     function resetDrag() {
         dragIndex = -1;
         dragDistance = 0;
@@ -27,23 +29,57 @@ MouseArea {
 
     readonly property var notifs: {
         const _ = NotificationService.listCount;
-        return NotificationService.list.filter(w => w.appName === group.appName && (group.showAll || w.popup)).reverse();
+        return NotificationService.list.filter(w => w.groupKey === group.groupKey && (group.showAll || w.popup)).reverse();
     }
     readonly property int count: notifs.length
+    readonly property var latest: notifs.length > 0 ? notifs[0] : null
+    readonly property var latestActions: latest?.notification?.actions ?? []
 
-    readonly property string groupIcon: {
-        if (notifs.length === 0)
-            return Quickshell.iconPath("", "application-x-executable");
-        return Quickshell.iconPath(notifs[0].appIcon, "application-x-executable");
+    property string _image: ""
+    property string _icon: Quickshell.iconPath("", "application-x-executable")
+    property bool _hasBadge: false
+    property string _summary: groupSummary
+    property string _appName: appName
+
+    onNotifsChanged: {
+        if (notifs.length > 0) {
+            const n = notifs[0];
+            _image = n.image ?? "";
+            _icon = Quickshell.iconPath(n.appIcon ?? "", "application-x-executable");
+            _hasBadge = _image.length > 0 && (n.appIcon?.length ?? 0) > 0;
+            _summary = groupSummary;
+            _appName = appName;
+            if (group.popup && !containsMouse && n.notification !== null)
+                groupTimer.restart();
+        }
     }
-    readonly property string groupImage: notifs.length > 0 ? (notifs[0].image ?? "") : ""
-    readonly property bool groupHasBadge: groupImage.length > 0 && (notifs.length > 0 && (notifs[0].appIcon?.length ?? 0) > 0)
+
+    function _cap(s) {
+        return s.replace(/\b\w/g, c => c.toUpperCase());
+    }
 
     property bool expandedState: false
     property bool isDragging: false
+    property bool dismissing: false
+    property bool timerExpiry: false
+    property real cardX: 0
+    property real cardOpacity: 1.0
 
-    onNotifsChanged: if (count > 0 && !containsMouse)
-        groupTimer.restart()
+    Component.onCompleted: {
+        if (group.popup) {
+            card.implicitHeight = 0;
+            Qt.callLater(() => {
+                card.implicitHeight = Qt.binding(() => cardCol.implicitHeight + 24);
+            });
+        }
+    }
+
+    onCountChanged: {
+        if (count === 0 && !group.dismissing) {
+            group.dismissing = true;
+            _shrinkAnim.start();
+        }
+    }
 
     Timer {
         id: groupTimer
@@ -54,7 +90,16 @@ MouseArea {
             return t > 0 ? t : 5000;
         }
         running: false
-        onTriggered: NotificationService.sendGroupToPanel(group.appName)
+        onTriggered: {
+            if (group.notifs.length > 0 && !group.notifs[0].notification) {
+                groupTimer.stop();
+                return;
+            }
+            group.timerExpiry = true;
+            group.dismissing = true;
+            _dismissAnim.toX = 0;
+            _dismissAnim.start();
+        }
     }
 
     hoverEnabled: true
@@ -73,8 +118,6 @@ MouseArea {
             group.expandedState = !group.expandedState;
     }
 
-    property real cardX: 0
-    property bool dismissing: false
     readonly property real dismissThreshold: 70
 
     Behavior on cardX {
@@ -90,9 +133,7 @@ MouseArea {
         enabled: group.listRef !== null
 
         function onDragDistanceChanged() {
-            if (group.isDragging)
-                return;
-            if (group.dismissing)
+            if (group.isDragging || group.dismissing)
                 return;
             const idx = group.listRef.dragIndex;
             if (idx < 0)
@@ -112,9 +153,9 @@ MouseArea {
         }
 
         function onDragIndexChanged() {
-            if (group.isDragging)
+            if (group.isDragging || group.dismissing)
                 return;
-            if (group.listRef.dragIndex < 0 && !group.dismissing)
+            if (group.listRef.dragIndex < 0)
                 group.cardX = 0;
         }
     }
@@ -122,9 +163,8 @@ MouseArea {
     function _handleRelease(diffX, velocityX) {
         group.isDragging = false;
         const fling = Math.abs(velocityX) > 0.5;
-        const pastThresh = Math.abs(diffX) > group.dismissThreshold;
-
-        if (pastThresh || fling) {
+        const past = Math.abs(diffX) > group.dismissThreshold;
+        if (past || fling) {
             const dir = diffX !== 0 ? Math.sign(diffX) : Math.sign(velocityX);
             group.dismissing = true;
             if (group.listRef)
@@ -141,18 +181,49 @@ MouseArea {
     SequentialAnimation {
         id: _dismissAnim
         property real toX: 0
-
-        NumberAnimation {
-            target: group
-            property: "cardX"
-            to: _dismissAnim.toX
-            duration: 220
-            easing.type: Easing.OutCubic
+        ParallelAnimation {
+            NumberAnimation {
+                target: group
+                property: "cardX"
+                to: _dismissAnim.toX
+                duration: 240
+                easing.type: Easing.OutCubic
+            }
+            NumberAnimation {
+                target: group
+                property: "cardOpacity"
+                to: 0
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
         }
         ScriptAction {
             script: {
-                NotificationService.sendGroupToPanel(group.appName);
-                Qt.callLater(() => group.notifs.slice().forEach(w => w.notification?.dismiss()));
+                if (group.inPanel)
+                    group.notifs.slice().forEach(w => w.notification?.dismiss());
+                else
+                    NotificationService.sendGroupToPanel(group.appName, group.groupSummary);
+                group.timerExpiry = false;
+            }
+        }
+    }
+
+    SequentialAnimation {
+        id: _shrinkAnim
+        ParallelAnimation {
+            NumberAnimation {
+                target: group
+                property: "cardOpacity"
+                to: 0
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
+            NumberAnimation {
+                target: card
+                property: "implicitHeight"
+                to: 0
+                duration: 220
+                easing.type: Easing.OutCubic
             }
         }
     }
@@ -160,7 +231,7 @@ MouseArea {
     DragManager {
         id: mainDrag
         anchors.fill: parent
-        interactive: !group.expandedState || group.count <= 1
+        interactive: true
         automaticallyReset: false
 
         onDraggingChanged: {
@@ -175,9 +246,7 @@ MouseArea {
         onDragDiffXChanged: {
             if (!dragging)
                 return;
-
             group.cardX = dragDiffX;
-
             if (group.listRef)
                 group.listRef.dragDistance = dragDiffX;
         }
@@ -186,123 +255,175 @@ MouseArea {
         }
     }
 
-    implicitWidth: background.implicitWidth
-    implicitHeight: background.implicitHeight
+    implicitWidth: shadow.implicitWidth
+    implicitHeight: shadow.implicitHeight
 
-    Rectangle {
-        id: background
+    Item {
+        id: shadow
         anchors.left: parent.left
         anchors.top: parent.top
         width: parent.width
-
-        implicitWidth: 320
-        implicitHeight: cardContent.implicitHeight + 24
-
-        Behavior on implicitHeight {
-            NumberAnimation {
-                duration: 250
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        color: Colors.md3.surface_container_high
-        radius: 8
-        border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
-        border.width: 1
-        clip: true
+        implicitWidth: card.implicitWidth
+        implicitHeight: card.implicitHeight + 10
 
         transform: Translate {
             x: group.cardX
         }
+        opacity: group.cardOpacity
 
-        ColumnLayout {
-            id: cardContent
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                margins: 12
+        RectangularShadow {
+            anchors.fill: card
+            radius: card.radius
+            blur: 20
+            color: Qt.rgba(0, 0, 0, 0.25)
+            offset: Qt.vector2d(0, 4)
+            antialiasing: true
+        }
+
+        Rectangle {
+            id: card
+            anchors.left: parent.left
+            anchors.top: parent.top
+            width: parent.width
+            implicitWidth: group.width > 0 ? group.width : 320
+            implicitHeight: cardCol.implicitHeight + 24
+
+            Behavior on implicitHeight {
+                NumberAnimation {
+                    duration: 260
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 0.2
+                }
             }
-            spacing: 8
 
-            Item {
-                id: headerRow
-                Layout.fillWidth: true
-                implicitHeight: headerLayout.implicitHeight
+            radius: 18
+            color: Colors.md3.surface_container_high
+            clip: true
+
+            ColumnLayout {
+                id: cardCol
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: parent.top
+                    margins: 14
+                }
+                spacing: 10
 
                 RowLayout {
-                    id: headerLayout
-                    anchors.fill: parent
-                    spacing: 8
+                    Layout.fillWidth: true
+                    spacing: 12
 
-                    Text {
-                        text: group.appName
-                        color: Colors.md3.on_surface_variant
-                        font.family: Config.fontFamily
-                        font.pixelSize: 12
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                    }
+                    Item {
+                        Layout.preferredWidth: 44
+                        Layout.preferredHeight: 44
+                        Layout.alignment: Qt.AlignTop
 
-                    Rectangle {
-                        visible: group.count > 1
-                        implicitWidth: cntLbl.implicitWidth + 10
-                        implicitHeight: 18
-                        radius: 9
-                        color: Colors.md3.primary_container
-
-                        Text {
-                            id: cntLbl
-                            anchors.centerIn: parent
-                            text: group.count
-                            color: Colors.md3.on_primary_container
-                            font.family: Config.fontFamily
-                            font.pixelSize: 11
-                            font.bold: true
-                        }
-                    }
-
-                    Text {
-                        text: "Dismiss all"
-                        color: Colors.md3.primary
-                        font.family: Config.fontFamily
-                        font.pixelSize: 12
-                        visible: group.expandedState && group.count > 1
-
-                        MouseArea {
+                        ClippingRectangle {
                             anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: mouse => {
-                                mouse.accepted = true;
-                                group.notifs.slice().forEach(w => w.notification?.dismiss());
+                            radius: 14
+                            color: Colors.md3.surface_container
+                            visible: group._image.length > 0
+
+                            Image {
+                                anchors.fill: parent
+                                fillMode: Image.PreserveAspectCrop
+                                source: group._image
+                                asynchronous: true
+                            }
+                        }
+
+                        ClippingRectangle {
+                            visible: group._image.length === 0 || group._hasBadge
+                            implicitWidth: group._hasBadge ? 22 : 44
+                            implicitHeight: group._hasBadge ? 22 : 44
+                            radius: group._hasBadge ? 7 : 14
+                            color: Colors.md3.surface_container
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            anchors.rightMargin: group._hasBadge ? -3 : 0
+                            anchors.bottomMargin: group._hasBadge ? -3 : 0
+
+                            IconImage {
+                                anchors.fill: parent
+                                anchors.margins: group._hasBadge ? 2 : 6
+                                source: group._icon
+                                asynchronous: true
                             }
                         }
                     }
 
-                    Rectangle {
-                        id: expandPill
-                        implicitWidth: 28
-                        implicitHeight: 18
-                        radius: 9
-                        color: Colors.md3.surface_container_highest
+                    ColumnLayout {
+                        Layout.fillWidth: true
 
                         Text {
-                            anchors.centerIn: parent
-                            text: ""
+                            visible: group._summary.length > 0 && group._summary !== group._appName
+                            text: group._cap(group._appName)
                             color: Colors.md3.on_surface_variant
-                            font.pixelSize: 11
-                            rotation: group.expandedState ? 180 : 0
-                            Behavior on rotation {
-                                NumberAnimation {
-                                    duration: 200
-                                    easing.type: Easing.OutCubic
+                            font.family: Config.fontFamily
+                            font.pixelSize: 10
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            text: group._summary.length > 0 ? group._summary : group._cap(group._appName)
+                            color: Colors.md3.on_surface
+                            font.family: Config.fontFamily
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Rectangle {
+                        visible: group.count > 1 || bodyItem.latestOverflows
+                        implicitWidth: pillRow.implicitWidth + 14
+                        implicitHeight: 22
+                        radius: 11
+                        color: pillHov.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 120
+                            }
+                        }
+
+                        RowLayout {
+                            id: pillRow
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            Text {
+                                visible: group.count > 1
+                                text: group.count
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+
+                            Text {
+                                text: ""
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: 12
+                                rotation: group.expandedState ? 180 : 0
+                                Behavior on rotation {
+                                    NumberAnimation {
+                                        duration: 220
+                                        easing.type: Easing.OutCubic
+                                    }
                                 }
                             }
                         }
 
                         MouseArea {
+                            id: pillHov
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
                             onClicked: mouse => {
                                 mouse.accepted = true;
                                 group.expandedState = !group.expandedState;
@@ -311,207 +432,88 @@ MouseArea {
                     }
                 }
 
-                DragManager {
-                    id: headerDrag
-                    anchors.left: parent.left
-                    anchors.right: expandPill.left
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    interactive: group.expandedState && group.count > 1
-                    automaticallyReset: false
-
-                    onDraggingChanged: {
-                        if (dragging) {
-                            group.isDragging = true;
-                            if (group.listRef) {
-                                group.listRef.dragIndex = group.groupIdx;
-                                group.listRef.dragDistance = 0;
-                            }
-                        }
-                    }
-                    onDragDiffXChanged: {
-                        if (!dragging)
-                            return;
-                        group.cardX = dragDiffX;
-                        if (group.listRef)
-                            group.listRef.dragDistance = dragDiffX;
-                    }
-                    onDragReleased: (diffX, diffY, velocityX) => {
-                        group._handleRelease(diffX, velocityX);
-                    }
-                }
-            }
-
-            RowLayout {
-                visible: !group.expandedState
-                Layout.fillWidth: true
-                spacing: 10
-
                 Item {
-                    implicitWidth: 44
-                    implicitHeight: 44
-                    visible: group.notifs.length > 0
-
-                    ClippingRectangle {
-                        anchors.fill: parent
-                        radius: 10
-                        color: Colors.md3.surface_container
-                        clip: true
-                        visible: group.groupImage.length > 0
-
-                        Image {
-                            anchors.fill: parent
-                            fillMode: Image.PreserveAspectCrop
-                            source: group.groupImage
-                            asynchronous: true
-                        }
-                    }
-
-                    ClippingRectangle {
-                        visible: group.groupImage.length === 0 || group.groupHasBadge
-                        implicitWidth: group.groupHasBadge ? 18 : 44
-                        implicitHeight: group.groupHasBadge ? 18 : 44
-                        radius: group.groupHasBadge ? 5 : 10
-                        clip: true
-                        color: Colors.md3.surface_container_high
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.rightMargin: group.groupHasBadge ? -2 : 0
-                        anchors.bottomMargin: group.groupHasBadge ? -2 : 0
-
-                        IconImage {
-                            anchors.fill: parent
-                            anchors.margins: 3
-                            source: group.groupIcon
-                            asynchronous: true
-                        }
-                    }
-                }
-
-                ColumnLayout {
+                    id: bodyItem
                     Layout.fillWidth: true
-                    spacing: 4
+                    clip: true
 
-                    Repeater {
-                        model: ScriptModel {
-                            values: group.notifs.slice(0, 2)
+                    readonly property real lineH: Math.round(13 * 1.45)
+                    readonly property real maxH: lineH * 3
+                    readonly property bool latestOverflows: latestText.implicitHeight > maxH
+                    readonly property bool hasHidden: group.count > 1 && !latestOverflows
+
+                    implicitHeight: group.expandedState ? expandedBody.implicitHeight : (latestOverflows ? maxH : Math.min(latestText.implicitHeight + (hasHidden ? (group.count - 1) * (lineH + 2) : 0), maxH))
+
+                    Behavior on implicitHeight {
+                        NumberAnimation {
+                            duration: 260
+                            easing.type: Easing.OutCubic
                         }
-                        delegate: ColumnLayout {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            spacing: 1
-
-                            Text {
-                                text: modelData.summary
-                                color: Colors.md3.on_surface
-                                font.family: Config.fontFamily
-                                font.pixelSize: 13
-                                font.bold: true
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                                visible: modelData.summary !== group.appName
-                            }
-
-                            Text {
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: 12
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                                maximumLineCount: 1
-                                textFormat: Text.PlainText
-                                text: modelData.body.length > 0 ? modelData.body : modelData.summary
-                                visible: modelData.body.length > 0 || modelData.summary === group.appName
-                            }
-                        }
-                    }
-
-                    Item {
-                        id: collapsedActsContainer
-                        readonly property var acts: {
-                            if (group.notifs.length === 0)
-                                return [];
-                            return group.notifs[0]?.notification?.actions || [];
-                        }
-                        visible: acts.length > 0
-                        Layout.fillWidth: true
-                        implicitHeight: cActFlick.implicitHeight
-
-                        Flickable {
-                            id: cActFlick
-                            anchors.fill: parent
-                            contentWidth: cActRow.implicitWidth
-                            implicitHeight: cActRow.implicitHeight
-                            clip: true
-                            flickableDirection: Flickable.HorizontalFlick
-                            ScrollBar.horizontal: ScrollBar {
-                                policy: ScrollBar.AlwaysOff
-                            }
-
-                            RowLayout {
-                                id: cActRow
-                                spacing: 6
-
-                                Repeater {
-                                    model: ScriptModel {
-                                        values: collapsedActsContainer.acts
-                                    }
-                                    delegate: Rectangle {
-                                        required property var modelData
-                                        implicitWidth: caLbl.implicitWidth + 24
-                                        implicitHeight: 32
-                                        radius: 8
-                                        color: caHov.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container
-
-                                        Text {
-                                            id: caLbl
-                                            anchors.centerIn: parent
-                                            text: modelData.text || ""
-                                            color: Colors.md3.on_surface
-                                            font.family: Config.fontFamily
-                                            font.pixelSize: 12
-                                        }
-                                        MouseArea {
-                                            id: caHov
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            hoverEnabled: true
-                                            onClicked: mouse => {
-                                                mouse.accepted = true;
-                                                modelData.invoke();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            Item {
-                visible: group.expandedState
-                Layout.fillWidth: true
-                implicitHeight: group.inPanel ? expandedCol.implicitHeight : Math.min(expandedCol.implicitHeight, 480)
-
-                Flickable {
-                    anchors.fill: parent
-                    contentHeight: expandedCol.implicitHeight
-                    interactive: !group.inPanel && group.count > 1
-                    flickableDirection: Flickable.VerticalFlick
-                    boundsBehavior: Flickable.DragAndOvershootBounds
-                    ScrollBar.vertical: ScrollBar {
-                        policy: ScrollBar.AlwaysOff
                     }
 
                     Column {
-                        id: expandedCol
-                        width: parent.width
-                        spacing: 4
+                        id: collapsedBody
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            bottom: parent.bottom
+                        }
+                        visible: !group.expandedState
+                        spacing: 2
+                        padding: 4
+                        bottomPadding: 8
 
                         Repeater {
                             model: ScriptModel {
-                                values: group.notifs
+                                values: !bodyItem.latestOverflows ? group.notifs.slice(1).reverse() : []
+                            }
+                            delegate: Text {
+                                required property var modelData
+                                width: collapsedBody.width
+                                text: modelData.body.length > 0 ? modelData.body : modelData.summary
+                                color: Colors.md3.on_surface_variant
+                                opacity: 0.6
+                                font.family: Config.fontFamily
+                                font.pixelSize: 13
+                                wrapMode: Text.WordWrap
+                                textFormat: Text.RichText
+                                maximumLineCount: 1
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        Text {
+                            id: latestText
+                            width: collapsedBody.width
+                            text: group.latest ? (group.latest.body.length > 0 ? group.latest.body : group.latest.summary) : ""
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: 13
+                            wrapMode: Text.WordWrap
+                            textFormat: Text.RichText
+                            maximumLineCount: 3
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Column {
+                        id: expandedBody
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                        }
+                        visible: group.expandedState
+                        spacing: 6
+                        bottomPadding: 10
+
+                        Repeater {
+                            model: ScriptModel {
+                                values: {
+                                    const arr = group.notifs.slice();
+                                    arr.reverse();
+                                    return arr;
+                                }
                             }
                             delegate: NotificationItem {
                                 required property var modelData
@@ -519,7 +521,109 @@ MouseArea {
                                 wrapper: modelData
                                 groupRef: group
                                 itemIndex: index
-                                implicitWidth: expandedCol.width
+                                width: expandedBody.width
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            bottom: parent.bottom
+                        }
+                        height: 20
+                        visible: !group.expandedState && bodyItem.latestOverflows
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: Qt.rgba(Colors.md3.surface_container_high.r, Colors.md3.surface_container_high.g, Colors.md3.surface_container_high.b, 0)
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: Colors.md3.surface_container_high
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            top: parent.top
+                        }
+                        height: 20
+                        visible: !group.expandedState && bodyItem.hasHidden
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: Colors.md3.surface_container_high
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: Qt.rgba(Colors.md3.surface_container_high.r, Colors.md3.surface_container_high.g, Colors.md3.surface_container_high.b, 0)
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    visible: group.latestActions.length > 0
+                    Layout.fillWidth: true
+                    implicitHeight: actFlick.implicitHeight
+
+                    Flickable {
+                        id: actFlick
+                        anchors.fill: parent
+                        contentWidth: actRow.implicitWidth
+                        implicitHeight: actRow.implicitHeight
+                        interactive: actRow.implicitWidth > width
+                        clip: actRow.implicitWidth > width
+                        flickableDirection: Flickable.HorizontalFlick
+                        ScrollBar.horizontal: ScrollBar {
+                            policy: ScrollBar.AlwaysOff
+                        }
+
+                        RowLayout {
+                            id: actRow
+                            spacing: 6
+
+                            Repeater {
+                                model: ScriptModel {
+                                    values: group.latestActions
+                                }
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    implicitWidth: aLbl.implicitWidth + 20
+                                    implicitHeight: 30
+                                    radius: 15
+                                    color: aHov.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_highest
+
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: 100
+                                        }
+                                    }
+
+                                    Text {
+                                        id: aLbl
+                                        anchors.centerIn: parent
+                                        text: modelData.text || ""
+                                        color: Colors.md3.on_surface
+                                        font.family: Config.fontFamily
+                                        font.pixelSize: 12
+                                    }
+                                    MouseArea {
+                                        id: aHov
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        hoverEnabled: true
+                                        onClicked: mouse => {
+                                            mouse.accepted = true;
+                                            modelData.invoke();
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
