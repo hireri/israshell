@@ -58,33 +58,33 @@ Rectangle {
                 }
             }
 
-            ClippingWrapperRectangle {
+            ClippingRectangle {
                 anchors.fill: parent
                 radius: 30
+                color: Colors.md3.surface_container_highest
 
-                child: Rectangle {
-                    anchors.fill: parent
-                    color: Colors.md3.surface_container_highest
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "♪"
-                        color: Colors.md3.on_surface_variant
-                        font.pixelSize: 14
-                        font.family: Config.fontFamily
-                    }
+                Text {
+                    anchors.centerIn: parent
+                    text: "♪"
+                    color: Colors.md3.on_surface_variant
+                    font.pixelSize: 14
+                    font.family: Config.fontFamily
                 }
             }
 
-            ClippingWrapperRectangle {
+            ClippingRectangle {
                 id: rotatingCover
                 anchors.fill: parent
                 radius: 30
                 visible: albumArt.status === Image.Ready
+                color: "transparent"
+                clip: true
+                layer.enabled: true
+                layer.smooth: true
+                antialiasing: true
 
                 property real rotationAngle: 0
                 property real rotationVelocity: coverRoot.shouldSpin ? 0.5 : 0
-
                 rotation: rotationAngle
 
                 Behavior on rotationVelocity {
@@ -94,27 +94,22 @@ Rectangle {
                     }
                 }
 
-                layer.enabled: true
-                layer.smooth: true
-                antialiasing: true
-
                 Timer {
                     interval: 16
                     running: rotatingCover.visible
                     repeat: true
                     onTriggered: {
-                        if (Math.abs(rotatingCover.rotationVelocity) > 0.001) {
+                        if (Math.abs(rotatingCover.rotationVelocity) > 0.001)
                             rotatingCover.rotationAngle = (rotatingCover.rotationAngle + rotatingCover.rotationVelocity) % 360;
-                        }
                     }
                 }
 
-                child: Image {
+                Image {
                     id: albumArt
-                    antialiasing: true
-                    layer.samples: 4
                     anchors.fill: parent
                     source: Mpris.players.values[0]?.trackArtUrl ?? ""
+                    antialiasing: true
+                    smooth: true
                 }
             }
         }
