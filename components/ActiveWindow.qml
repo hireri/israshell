@@ -98,6 +98,7 @@ Item {
     }
 
     onActiveWindowChanged: updateWindowInfo()
+    onActiveFocusChanged: updateWindowInfo()
 
     Connections {
         target: activeWindow || null
