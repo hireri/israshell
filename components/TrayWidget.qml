@@ -15,6 +15,22 @@ Item {
     height: 32
     visible: (SystemTray.items?.values.length ?? 0) > 0
 
+    function getTrayName(item) {
+        if (item.tooltipTitle && !item.tooltipTitle.includes("chrome_status_icon")) {
+            return item.tooltipTitle;
+        }
+        if (item.title && !item.title.includes("chrome_status_icon")) {
+            return item.title;
+        }
+        if (item.tooltipDescription && !item.tooltipDescription.includes("chrome_status_icon")) {
+            return item.tooltipDescription;
+        }
+        if (item.id && !item.id.includes("chrome_status_icon")) {
+            return item.id.charAt(0).toUpperCase() + item.id.slice(1);
+        }
+        return "Application";
+    }
+
     Window {
         id: tooltipWindow
         visible: false
@@ -143,13 +159,16 @@ Item {
                         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
 
                         onEntered: {
-                            if (modelData.title) {
+                            var prettyName = trayRoot.getTrayName(modelData);
+
+                            if (prettyName) {
                                 var globalCoord = delegateRoot.mapToGlobal(delegateRoot.width / 2, delegateRoot.height);
                                 tooltipWindow.targetPos = globalCoord;
-                                tooltipWindow.title = modelData.title;
+                                tooltipWindow.title = prettyName;
                                 tooltipWindow.visible = true;
                             }
                         }
+
                         onExited: tooltipWindow.visible = false
 
                         onClicked: mouse => {
