@@ -7,83 +7,47 @@ import Quickshell.Services.Notifications
 Item {
     id: root
 
-    component NotifWrapper: QtObject {
-        required property var notification
-
-        property string summary: ""
-        property string body: ""
-        property string appName: ""
-        property string appIcon: ""
-        property string image: ""
-        property string urgency: "normal"
-        property double time: 0
-
-        property bool expanded: false
-        property bool popup: true
-        property bool dismissing: false
-
-        readonly property string groupKey: appName + "|" + summary
-
-        readonly property string iconSrc: {
-            const raw = image || appIcon;
-            if (!raw)
-                return "";
-            if (raw.startsWith("/"))
-                return "file://" + raw;
-            return "image://icon/" + raw;
-        }
-    }
-
-    component NotifWrapperComponent: NotifWrapper {}
-
+    // groups[groupKey] = {
+    //   appName, groupSummary,
+    //   messages: [{ body, summary, image, appIcon, time }],
+    //   liveNotification: <Notification | null>
+    // }
+    property var groups: ({})
+    property int version: 0
     property bool dnd: false
-    property var list: []
-
-    readonly property int listCount: list.length
 
     readonly property ListModel popupGroupModel: ListModel {}
     readonly property ListModel qsGroupModel: ListModel {}
-
-    property var latestTimeForKey: ({})
-
     readonly property var history: []
 
     Item {
-        id: cleanupTimer
-        property var _queue: []
+        id: popupCleanupTimer
+        property var _pending: ({})
 
-        function schedule(appName, summary, gKey, wrapper) {
-            _queue.push({
-                appName,
-                summary,
-                gKey,
-                wrapper
+        function schedule(gKey, appName, groupSummary) {
+            if (_pending[gKey]) {
+                _pending[gKey].restart();
+                return;
+            }
+            const t = Qt.createQmlObject('import QtQuick; Timer { interval: 600; repeat: false }', popupCleanupTimer);
+            _pending[gKey] = t;
+            t.triggered.connect(() => {
+                console.log("[NOTIF] ⏱ popup cleanup timeout:", gKey);
+                root._removeGroup(gKey);
+                t.destroy();
+                delete popupCleanupTimer._pending[gKey];
             });
-            _timer.restart();
+            t.start();
         }
 
-        Timer {
-            id: _timer
-            interval: 300
-            repeat: false
-            onTriggered: {
-                cleanupTimer._queue.forEach(entry => {
-                    root._cleanupQsGroup(entry.appName, entry.summary);
-                    const lt = root.latestTimeForKey;
-                    if (!root.list.some(w => w.groupKey === entry.gKey)) {
-                        delete lt[entry.gKey];
-                        root.latestTimeForKey = lt;
-                    }
-                    entry.wrapper.destroy();
-                });
-                cleanupTimer._queue = [];
+        function cancel(gKey) {
+            if (_pending[gKey]) {
+                _pending[gKey].stop();
+                _pending[gKey].destroy();
+                delete _pending[gKey];
+                console.log("[NOTIF] ✓ popup cleanup cancelled (replacement arrived):", gKey);
             }
         }
-    }
-
-    Component {
-        id: wrapperComponent
-        NotifWrapperComponent {}
     }
 
     readonly property NotificationServer server: NotificationServer {
@@ -97,37 +61,47 @@ Item {
         onNotification: notification => {
             notification.tracked = true;
 
-            if (notification.replacesId && notification.replacesId > 0) {
-                const replaced = root.list.find(w => {
-                    return false;
-                });
-            }
+            const appName = notification.appName || "Unknown";
+            const groupSummary = notification.summary || "";
+            const gKey = appName + "|" + groupSummary;
 
-            const wrapper = wrapperComponent.createObject(root, {
-                notification: notification,
-                summary: notification.summary || "",
+            const rawImage = notification.image || "";
+            const isRealImage = rawImage.startsWith("file://") || rawImage.startsWith("/") || rawImage.startsWith("image://icon//");
+
+            const msg = {
                 body: notification.body || "",
-                appName: notification.appName || "Unknown",
-                appIcon: notification.appIcon || "",
-                image: notification.image || "",
-                urgency: notification.urgency?.toString() ?? "normal",
+                summary: groupSummary,
+                image: isRealImage ? rawImage : "",
+                appIcon: notification.appIcon || (!isRealImage ? rawImage : ""),
                 time: Date.now()
-            });
+            };
 
-            root.list = [...root.list, wrapper];
+            console.log("[NOTIF] ▶ ARRIVE", "id:", notification.id, "replacesId:", notification.replacesId, "gKey:", gKey, "body:", msg.body.substring(0, 60), "urgency:", notification.urgency?.toString(), "image:", msg.image || "(none)", "appIcon:", msg.appIcon || "(none)", "actions:", (notification.actions || []).map(a => a.identifier).join(",") || "(none)");
 
-            const lt = root.latestTimeForKey;
-            lt[wrapper.groupKey] = wrapper.time;
-            root.latestTimeForKey = lt;
+            popupCleanupTimer.cancel(gKey);
 
-            const isCritical = wrapper.urgency === "critical";
-            if (!root.dnd || isCritical) {
-                root._ensurePopupGroup(wrapper.appName, wrapper.summary);
-            } else {
-                wrapper.popup = false;
+            const gs = Object.assign({}, root.groups);
+            if (!gs[gKey]) {
+                gs[gKey] = {
+                    appName,
+                    groupSummary,
+                    messages: [],
+                    liveNotification: null,
+                    urgency: "normal"
+                };
             }
+            gs[gKey] = Object.assign({}, gs[gKey], {
+                messages: [...gs[gKey].messages, msg],
+                liveNotification: notification,
+                urgency: notification.urgency?.toString() ?? "normal"
+            });
+            root.groups = gs;
+            root.version++;
 
-            root._ensureQsGroup(wrapper.appName, wrapper.summary);
+            const isCritical = notification.urgency?.toString() === "2";
+            if (!root.dnd || isCritical)
+                root._ensurePopupGroup(appName, groupSummary, gKey);
+            root._ensureQsGroup(appName, groupSummary, gKey);
 
             notification.closed.connect(reason => {
                 const reasonStr = {
@@ -136,105 +110,103 @@ Item {
                     [NotificationCloseReason.CloseRequested]: "CloseRequested"
                 }[reason] ?? `Unknown(${reason})`;
 
+                console.log("[NOTIF] ✗ CLOSE", "reason:", reasonStr, "gKey:", gKey, "body:", msg.body.substring(0, 40));
+
                 if (reason === NotificationCloseReason.CloseRequested) {
-                    wrapper.notification = null;
-                    return;
+                    const gs2 = Object.assign({}, root.groups);
+                    if (gs2[gKey]) {
+                        gs2[gKey] = Object.assign({}, gs2[gKey], {
+                            liveNotification: null
+                        });
+                        root.groups = gs2;
+                        root.version++;
+                    }
+                    popupCleanupTimer.schedule(gKey, appName, groupSummary);
+                    console.log("[NOTIF] ↷ CloseRequested — nulled liveNotification, waiting for replacement");
+                } else {
+                    console.log("[NOTIF] ✗ REMOVING group:", gKey);
+                    root._removeGroup(gKey);
                 }
-
-                wrapper.popup = false;
-                root.list = root.list.filter(w => w !== wrapper);
-                root._cleanupPopupGroup(wrapper.appName, wrapper.summary);
-
-                const appN = wrapper.appName;
-                const summ = wrapper.summary;
-                const gKey = wrapper.groupKey;
-                cleanupTimer.schedule(appN, summ, gKey, wrapper);
             });
         }
     }
 
-    function _popupGroupIndex(appName, groupSummary) {
-        const key = appName + "|" + groupSummary;
+    function _removeGroup(gKey) {
+        const gs = Object.assign({}, root.groups);
+        delete gs[gKey];
+        root.groups = gs;
+        root.version++;
+        _removePopupGroup(gKey);
+        _removeQsGroup(gKey);
+        console.log("[NOTIF] - group removed:", gKey);
+    }
+
+    function _popupGroupIndex(gKey) {
         for (let i = 0; i < popupGroupModel.count; i++)
-            if (popupGroupModel.get(i).groupKey === key)
+            if (popupGroupModel.get(i).groupKey === gKey)
                 return i;
         return -1;
     }
 
-    function _ensurePopupGroup(appName, groupSummary) {
-        if (_popupGroupIndex(appName, groupSummary) === -1) {
-            const key = appName + "|" + groupSummary;
+    function _ensurePopupGroup(appName, groupSummary, gKey) {
+        if (_popupGroupIndex(gKey) === -1) {
+            console.log("[NOTIF] + popupGroup:", gKey);
             popupGroupModel.insert(0, {
-                appName: appName,
-                groupSummary: groupSummary,
-                groupKey: key
+                appName,
+                groupSummary,
+                groupKey: gKey
             });
         }
     }
 
-    function _cleanupPopupGroup(appName, groupSummary) {
-        const key = appName + "|" + groupSummary;
-        if (root.list.some(w => w.groupKey === key && w.popup && !w.dismissing))
-            return;
-        const idx = _popupGroupIndex(appName, groupSummary);
+    function _removePopupGroup(gKey) {
+        const idx = _popupGroupIndex(gKey);
         if (idx !== -1) {
+            console.log("[NOTIF] - popupGroup:", gKey);
             popupGroupModel.remove(idx);
         }
     }
 
-    function _qsGroupIndex(appName, groupSummary) {
-        const key = appName + "|" + groupSummary;
+    function _qsGroupIndex(gKey) {
         for (let i = 0; i < qsGroupModel.count; i++)
-            if (qsGroupModel.get(i).groupKey === key)
+            if (qsGroupModel.get(i).groupKey === gKey)
                 return i;
         return -1;
     }
 
-    function _ensureQsGroup(appName, groupSummary) {
-        if (_qsGroupIndex(appName, groupSummary) === -1) {
+    function _ensureQsGroup(appName, groupSummary, gKey) {
+        if (_qsGroupIndex(gKey) === -1) {
+            console.log("[NOTIF] + qsGroup:", gKey);
             qsGroupModel.insert(0, {
-                appName: appName,
-                groupSummary: groupSummary,
-                groupKey: appName + "|" + groupSummary
+                appName,
+                groupSummary,
+                groupKey: gKey
             });
         }
     }
 
-    function _cleanupQsGroup(appName, groupSummary) {
-        const key = appName + "|" + groupSummary;
-        if (root.list.some(w => w.groupKey === key))
-            return;
-        const idx = _qsGroupIndex(appName, groupSummary);
+    function _removeQsGroup(gKey) {
+        const idx = _qsGroupIndex(gKey);
         if (idx !== -1) {
+            console.log("[NOTIF] - qsGroup:", gKey);
             qsGroupModel.remove(idx);
         }
     }
 
-    function sendGroupToPanel(appName, groupSummary) {
-        const key = appName + "|" + groupSummary;
-        const idx = _popupGroupIndex(appName, groupSummary);
-        if (idx !== -1)
-            popupGroupModel.remove(idx);
-        root.list.forEach(w => {
-            if (w.groupKey === key) {
-                w.popup = false;
-                w.expanded = false;
-            }
-        });
+    function sendGroupToPanel(gKey) {
+        console.log("[NOTIF] → sendGroupToPanel:", gKey);
+        _removePopupGroup(gKey);
+    }
+
+    function dismissGroup(gKey) {
+        const g = root.groups[gKey];
+        if (g?.liveNotification)
+            g.liveNotification.dismiss();
+        else
+            root._removeGroup(gKey);
     }
 
     function sendAllToPanel() {
-        root.list.forEach(w => {
-            w.popup = false;
-            w.expanded = false;
-        });
         popupGroupModel.clear();
-    }
-
-    function dismissAll() {
-        root.list.slice().forEach(w => w.notification?.dismiss());
-    }
-
-    function clearHistory() {
     }
 }

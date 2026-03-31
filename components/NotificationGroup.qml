@@ -20,6 +20,111 @@ MouseArea {
 
     readonly property string groupKey: appName + "|" + groupSummary
 
+    readonly property var groupData: {
+        const _ = NotificationService.version;
+        return NotificationService.groups[group.groupKey] ?? null;
+    }
+    readonly property var messages: {
+        const _ = NotificationService.version;
+        const d = group.groupData;
+        if (!d || d.messages.length === 0)
+            return [];
+        return d.messages.slice().reverse();
+    }
+    readonly property int count: messages.length
+    readonly property var latest: messages.length > 0 ? messages[0] : null
+    readonly property var liveNotif: groupData?.liveNotification ?? null
+    readonly property bool isCritical: (groupData?.urgency ?? "normal") === "2"
+
+    property string _icon: Quickshell.iconPath("", "application-x-executable")
+    property string _appBadgeIcon: ""
+    property bool _hasBadge: false
+    property string _summary: groupSummary
+    property string _appName: appName
+    property var _cachedActions: []
+
+    readonly property var latestActions: liveNotif?.actions ?? []
+
+    onMessagesChanged: {
+        if (messages.length > 0) {
+            const m = messages[0];
+
+            const hasImage = m.image && m.image !== "";
+            const hasAppIcon = m.appIcon && m.appIcon !== "";
+
+            if (hasImage) {
+                _icon = resolveIcon(m.image);
+
+                if (hasAppIcon) {
+                    _appBadgeIcon = resolveIcon(m.appIcon);
+                    _hasBadge = true;
+                } else {
+                    _hasBadge = false;
+                }
+            } else {
+                _icon = resolveIcon(m.appIcon);
+                _hasBadge = false;
+                _appBadgeIcon = "";
+            }
+
+            _summary = groupSummary;
+            _appName = appName;
+            if (group.popup && !containsMouse && group.liveNotif !== null)
+                groupTimer.restart();
+        }
+    }
+
+    onLatestActionsChanged: {
+        if (latestActions.length > 0)
+            _cachedActions = latestActions;
+    }
+
+    property int _tick: 0
+    Timer {
+        interval: 60000
+        running: true
+        repeat: true
+        onTriggered: group._tick++
+    }
+    readonly property string relativeTime: {
+        const _ = group._tick;
+        if (!group.latest)
+            return "";
+        const m = Math.floor((Date.now() - group.latest.time) / 60000);
+        if (m < 1)
+            return "just now";
+        if (m < 60)
+            return m + "m";
+        const h = Math.floor(m / 60);
+        if (h < 24)
+            return h + "h";
+        return Math.floor(h / 24) + "d";
+    }
+
+    function _cap(s) {
+        return s.replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    readonly property real bodyLineH: 13 * 1.45
+    readonly property bool canExpand: count > 1 || measureText.implicitHeight > bodyLineH * 2 || (latest?.image?.length ?? 0) > 0
+
+    Text {
+        id: measureText
+        visible: false
+        width: group.width > 0 ? (group.width - 44 - 14 * 2 - 10) : 200
+        text: group.latest ? group._md(group.latest.body.length > 0 ? group.latest.body : group.latest.summary) : ""
+        font.family: Config.fontFamily
+        font.pixelSize: 13
+        wrapMode: Text.WordWrap
+        textFormat: Text.StyledText
+    }
+
+    function _md(s) {
+        if (!s)
+            return "";
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/<img[^>]*>/g, "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>").replace(/~~(.+?)~~/g, "<s>$1</s>").replace(/`(.+?)`/g, "<tt>$1</tt>").replace(/\n/g, "<br/>");
+    }
+
     property int dragIndex: -1
     property real dragDistance: 0
     function resetDrag() {
@@ -27,52 +132,12 @@ MouseArea {
         dragDistance = 0;
     }
 
-    readonly property var notifs: {
-        const _ = NotificationService.listCount;
-        return NotificationService.list.filter(w => w.groupKey === group.groupKey && (group.showAll || w.popup)).reverse();
-    }
-    readonly property int count: notifs.length
-    readonly property var latest: notifs.length > 0 ? notifs[0] : null
-    readonly property var latestActions: latest?.notification?.actions ?? []
-
-    property string _image: ""
-    property string _icon: Quickshell.iconPath("", "application-x-executable")
-    property bool _hasBadge: false
-    property string _summary: groupSummary
-    property string _appName: appName
-
-    onNotifsChanged: {
-        if (notifs.length > 0) {
-            const n = notifs[0];
-            _image = n.image ?? "";
-            _icon = Quickshell.iconPath(n.appIcon ?? "", "application-x-executable");
-            _hasBadge = _image.length > 0 && (n.appIcon?.length ?? 0) > 0;
-            _summary = groupSummary;
-            _appName = appName;
-            if (group.popup && !containsMouse && n.notification !== null)
-                groupTimer.restart();
-        }
-    }
-
-    function _cap(s) {
-        return s.replace(/\b\w/g, c => c.toUpperCase());
-    }
-
     property bool expandedState: false
     property bool isDragging: false
     property bool dismissing: false
-    property bool timerExpiry: false
     property real cardX: 0
     property real cardOpacity: 1.0
-
-    Component.onCompleted: {
-        if (group.popup) {
-            card.implicitHeight = 0;
-            Qt.callLater(() => {
-                card.implicitHeight = Qt.binding(() => cardCol.implicitHeight + 24);
-            });
-        }
-    }
+    property real _cardHeight: -1
 
     onCountChanged: {
         if (count === 0 && !group.dismissing) {
@@ -84,18 +149,15 @@ MouseArea {
     Timer {
         id: groupTimer
         interval: {
-            if (group.notifs.length === 0)
-                return 5000;
-            const t = group.notifs[0].notification?.expireTimeout ?? 0;
+            const t = group.liveNotif?.expireTimeout ?? 0;
             return t > 0 ? t : 5000;
         }
         running: false
         onTriggered: {
-            if (group.notifs.length > 0 && !group.notifs[0].notification) {
-                groupTimer.stop();
+            if (!group.liveNotif) {
+                stop();
                 return;
             }
-            group.timerExpiry = true;
             group.dismissing = true;
             _dismissAnim.toX = 0;
             _dismissAnim.start();
@@ -108,13 +170,13 @@ MouseArea {
             return;
         if (containsMouse)
             groupTimer.stop();
-        else if (group.count > 0)
+        else if (group.liveNotif)
             groupTimer.restart();
     }
 
     acceptedButtons: Qt.RightButton
     onClicked: mouse => {
-        if (mouse.button === Qt.RightButton)
+        if (mouse.button === Qt.RightButton && group.canExpand)
             group.expandedState = !group.expandedState;
     }
 
@@ -131,7 +193,6 @@ MouseArea {
     Connections {
         target: group.listRef
         enabled: group.listRef !== null
-
         function onDragDistanceChanged() {
             if (group.isDragging || group.dismissing)
                 return;
@@ -151,7 +212,6 @@ MouseArea {
             else if (diff > 2)
                 group.cardX = 0;
         }
-
         function onDragIndexChanged() {
             if (group.isDragging || group.dismissing)
                 return;
@@ -200,16 +260,20 @@ MouseArea {
         ScriptAction {
             script: {
                 if (group.inPanel)
-                    group.notifs.slice().forEach(w => w.notification?.dismiss());
+                    NotificationService.dismissGroup(group.groupKey);
                 else
-                    NotificationService.sendGroupToPanel(group.appName, group.groupSummary);
-                group.timerExpiry = false;
+                    NotificationService.sendGroupToPanel(group.groupKey);
             }
         }
     }
 
     SequentialAnimation {
         id: _shrinkAnim
+        ScriptAction {
+            script: {
+                group._cardHeight = card.height;
+            }
+        }
         ParallelAnimation {
             NumberAnimation {
                 target: group
@@ -219,8 +283,8 @@ MouseArea {
                 easing.type: Easing.OutCubic
             }
             NumberAnimation {
-                target: card
-                property: "implicitHeight"
+                target: group
+                property: "_cardHeight"
                 to: 0
                 duration: 220
                 easing.type: Easing.OutCubic
@@ -233,7 +297,6 @@ MouseArea {
         anchors.fill: parent
         interactive: true
         automaticallyReset: false
-
         onDraggingChanged: {
             if (dragging) {
                 group.isDragging = true;
@@ -258,14 +321,22 @@ MouseArea {
     implicitWidth: shadow.implicitWidth
     implicitHeight: shadow.implicitHeight
 
+    function resolveIcon(source) {
+        if (!source)
+            return "";
+        if (source.startsWith("/") || source.startsWith("file://") || source.startsWith("data:")) {
+            return source;
+        }
+        return Quickshell.iconPath(source, "application-x-executable");
+    }
+
     Item {
         id: shadow
         anchors.left: parent.left
         anchors.top: parent.top
         width: parent.width
         implicitWidth: card.implicitWidth
-        implicitHeight: card.implicitHeight + 10
-
+        implicitHeight: card.height + 10
         transform: Translate {
             x: group.cardX
         }
@@ -275,7 +346,7 @@ MouseArea {
             anchors.fill: card
             radius: card.radius
             blur: 20
-            color: Qt.rgba(0, 0, 0, 0.25)
+            color: Qt.rgba(0, 0, 0, 0.22)
             offset: Qt.vector2d(0, 4)
             antialiasing: true
         }
@@ -286,19 +357,85 @@ MouseArea {
             anchors.top: parent.top
             width: parent.width
             implicitWidth: group.width > 0 ? group.width : 320
-            implicitHeight: cardCol.implicitHeight + 24
-
-            Behavior on implicitHeight {
-                NumberAnimation {
-                    duration: 260
-                    easing.type: Easing.OutBack
-                    easing.overshoot: 0.2
-                }
-            }
+            height: group._cardHeight >= 0 ? group._cardHeight : cardCol.implicitHeight + 24
 
             radius: 18
             color: Colors.md3.surface_container_high
+            border.color: group.isCritical ? Colors.md3.on_error_container : Colors.md3.outline_variant
+            border.width: 1
             clip: true
+
+            Row {
+                id: topRightRow
+                anchors {
+                    right: card.right
+                    top: card.top
+                    margins: 14
+                }
+                spacing: 6
+                z: 2
+
+                Text {
+                    text: group.relativeTime
+                    color: Colors.md3.on_surface_variant
+                    font.family: Config.fontFamily
+                    font.pixelSize: 11
+                    opacity: 0.65
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Rectangle {
+                    visible: group.canExpand
+                    anchors.verticalCenter: parent.verticalCenter
+                    implicitWidth: pillRow.implicitWidth + 20
+                    implicitHeight: 20
+                    radius: 10
+                    color: Colors.md3.surface_container_highest
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 120
+                        }
+                    }
+
+                    RowLayout {
+                        id: pillRow
+                        anchors.centerIn: parent
+                        spacing: 6
+                        Text {
+                            visible: group.count > 1
+                            text: group.count
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: 10
+                            font.bold: true
+                        }
+                        Text {
+                            text: ""
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: 11
+                            rotation: group.expandedState ? 180 : 0
+                            Behavior on rotation {
+                                NumberAnimation {
+                                    duration: 300
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+                        }
+                    }
+                    MouseArea {
+                        id: pillHov
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onClicked: mouse => {
+                            mouse.accepted = true;
+                            if (group.canExpand)
+                                group.expandedState = !group.expandedState;
+                        }
+                    }
+                }
+            }
 
             ColumnLayout {
                 id: cardCol
@@ -308,11 +445,11 @@ MouseArea {
                     top: parent.top
                     margins: 14
                 }
-                spacing: 10
+                spacing: 8
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 12
+                    spacing: 10
 
                     Item {
                         Layout.preferredWidth: 44
@@ -323,258 +460,180 @@ MouseArea {
                             anchors.fill: parent
                             radius: 14
                             color: Colors.md3.surface_container
-                            visible: group._image.length > 0
-
                             Image {
                                 anchors.fill: parent
+                                source: group._icon
                                 fillMode: Image.PreserveAspectCrop
-                                source: group._image
                                 asynchronous: true
+                                sourceSize: Qt.size(88, 88)
+                                mipmap: true
                             }
                         }
 
                         ClippingRectangle {
-                            visible: group._image.length === 0 || group._hasBadge
-                            implicitWidth: group._hasBadge ? 22 : 44
-                            implicitHeight: group._hasBadge ? 22 : 44
-                            radius: group._hasBadge ? 7 : 14
+                            visible: group._hasBadge && group._appBadgeIcon !== ""
+                            implicitWidth: 22
+                            implicitHeight: 22
+                            radius: 7
                             color: Colors.md3.surface_container
                             anchors.right: parent.right
                             anchors.bottom: parent.bottom
-                            anchors.rightMargin: group._hasBadge ? -3 : 0
-                            anchors.bottomMargin: group._hasBadge ? -3 : 0
+                            anchors.rightMargin: -3
+                            anchors.bottomMargin: -3
 
-                            IconImage {
+                            Image {
                                 anchors.fill: parent
-                                anchors.margins: group._hasBadge ? 2 : 6
-                                source: group._icon
-                                asynchronous: true
+                                anchors.margins: 2
+                                source: group._appBadgeIcon
+                                fillMode: Image.PreserveAspectFit
+                                visible: group._hasBadge && group._appBadgeIcon !== ""
                             }
                         }
                     }
 
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.rightMargin: topRightRow.implicitWidth + 6
+                        spacing: 4
 
-                        Text {
+                        Item {
+                            Layout.fillWidth: true
+                            implicitHeight: appNameText.implicitHeight * appNameReveal
+                            clip: true
                             visible: group._summary.length > 0 && group._summary !== group._appName
-                            text: group._cap(group._appName)
-                            color: Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: 10
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
-                        }
 
-                        Text {
-                            text: group._summary.length > 0 ? group._summary : group._cap(group._appName)
-                            color: Colors.md3.on_surface
-                            font.family: Config.fontFamily
-                            font.pixelSize: 14
-                            font.weight: Font.DemiBold
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    Rectangle {
-                        visible: group.count > 1 || bodyItem.latestOverflows
-                        implicitWidth: pillRow.implicitWidth + 14
-                        implicitHeight: 22
-                        radius: 11
-                        color: pillHov.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 120
+                            property real appNameReveal: group.expandedState ? 1 : 0
+                            Behavior on appNameReveal {
+                                NumberAnimation {
+                                    duration: 300
+                                    easing.type: Easing.OutCubic
+                                }
                             }
-                        }
-
-                        RowLayout {
-                            id: pillRow
-                            anchors.centerIn: parent
-                            spacing: 6
 
                             Text {
-                                visible: group.count > 1
-                                text: group.count
+                                id: appNameText
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    top: parent.top
+                                }
+                                text: group._cap(group._appName)
                                 color: Colors.md3.on_surface_variant
                                 font.family: Config.fontFamily
                                 font.pixelSize: 11
-                                font.bold: true
-                            }
-
-                            Text {
-                                text: ""
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: 12
-                                rotation: group.expandedState ? 180 : 0
-                                Behavior on rotation {
+                                elide: Text.ElideRight
+                                opacity: group.expandedState ? 1 : 0
+                                Behavior on opacity {
                                     NumberAnimation {
-                                        duration: 220
+                                        duration: 300
                                         easing.type: Easing.OutCubic
                                     }
                                 }
                             }
                         }
 
-                        MouseArea {
-                            id: pillHov
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onClicked: mouse => {
-                                mouse.accepted = true;
-                                group.expandedState = !group.expandedState;
+                        Text {
+                            Layout.fillWidth: true
+                            text: group._summary.length > 0 ? group._summary : group._cap(group._appName)
+                            color: Colors.md3.on_surface
+                            font.family: Config.fontFamily
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                        }
+
+                        Item {
+                            id: bodyContainer
+                            Layout.fillWidth: true
+                            Layout.rightMargin: -parent.Layout.rightMargin
+                            clip: true
+
+                            implicitHeight: group.expandedState ? expandedBody.implicitHeight : collapsedBody.implicitHeight
+                            Behavior on implicitHeight {
+                                NumberAnimation {
+                                    duration: 300
+                                    easing.type: Easing.OutCubic
+                                }
                             }
-                        }
-                    }
-                }
 
-                Item {
-                    id: bodyItem
-                    Layout.fillWidth: true
-                    clip: true
-
-                    readonly property real lineH: Math.round(13 * 1.45)
-                    readonly property real maxH: lineH * 3
-                    readonly property bool latestOverflows: latestText.implicitHeight > maxH
-                    readonly property bool hasHidden: group.count > 1 && !latestOverflows
-
-                    implicitHeight: group.expandedState ? expandedBody.implicitHeight : (latestOverflows ? maxH : Math.min(latestText.implicitHeight + (hasHidden ? (group.count - 1) * (lineH + 2) : 0), maxH))
-
-                    Behavior on implicitHeight {
-                        NumberAnimation {
-                            duration: 260
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-
-                    Column {
-                        id: collapsedBody
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            bottom: parent.bottom
-                        }
-                        visible: !group.expandedState
-                        spacing: 2
-                        padding: 4
-                        bottomPadding: 8
-
-                        Repeater {
-                            model: ScriptModel {
-                                values: !bodyItem.latestOverflows ? group.notifs.slice(1).reverse() : []
-                            }
-                            delegate: Text {
-                                required property var modelData
-                                width: collapsedBody.width
-                                text: modelData.body.length > 0 ? modelData.body : modelData.summary
+                            Text {
+                                id: collapsedBody
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    top: parent.top
+                                }
+                                text: group.latest ? group._md(group.latest.body.length > 0 ? group.latest.body : group.latest.summary) : ""
                                 color: Colors.md3.on_surface_variant
-                                opacity: 0.6
                                 font.family: Config.fontFamily
                                 font.pixelSize: 13
                                 wrapMode: Text.WordWrap
-                                textFormat: Text.RichText
-                                maximumLineCount: 1
+                                textFormat: Text.StyledText
+                                maximumLineCount: 2
                                 elide: Text.ElideRight
-                            }
-                        }
-
-                        Text {
-                            id: latestText
-                            width: collapsedBody.width
-                            text: group.latest ? (group.latest.body.length > 0 ? group.latest.body : group.latest.summary) : ""
-                            color: Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: 13
-                            wrapMode: Text.WordWrap
-                            textFormat: Text.RichText
-                            maximumLineCount: 3
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    Column {
-                        id: expandedBody
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            top: parent.top
-                        }
-                        visible: group.expandedState
-                        spacing: 6
-                        bottomPadding: 10
-
-                        Repeater {
-                            model: ScriptModel {
-                                values: {
-                                    const arr = group.notifs.slice();
-                                    arr.reverse();
-                                    return arr;
+                                opacity: group.expandedState ? 0 : 1
+                                visible: opacity > 0
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 160
+                                        easing.type: Easing.OutCubic
+                                    }
                                 }
                             }
-                            delegate: NotificationItem {
-                                required property var modelData
-                                required property int index
-                                wrapper: modelData
-                                groupRef: group
-                                itemIndex: index
-                                width: expandedBody.width
-                            }
-                        }
-                    }
 
-                    Rectangle {
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            bottom: parent.bottom
-                        }
-                        height: 20
-                        visible: !group.expandedState && bodyItem.latestOverflows
-                        gradient: Gradient {
-                            GradientStop {
-                                position: 0.0
-                                color: Qt.rgba(Colors.md3.surface_container_high.r, Colors.md3.surface_container_high.g, Colors.md3.surface_container_high.b, 0)
-                            }
-                            GradientStop {
-                                position: 1.0
-                                color: Colors.md3.surface_container_high
-                            }
-                        }
-                    }
+                            Column {
+                                id: expandedBody
+                                anchors {
+                                    left: parent.left
+                                    right: parent.right
+                                    top: parent.top
+                                }
+                                spacing: 6
+                                opacity: group.expandedState ? 1 : 0
+                                visible: opacity > 0
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
 
-                    Rectangle {
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            top: parent.top
-                        }
-                        height: 20
-                        visible: !group.expandedState && bodyItem.hasHidden
-                        gradient: Gradient {
-                            GradientStop {
-                                position: 0.0
-                                color: Colors.md3.surface_container_high
-                            }
-                            GradientStop {
-                                position: 1.0
-                                color: Qt.rgba(Colors.md3.surface_container_high.r, Colors.md3.surface_container_high.g, Colors.md3.surface_container_high.b, 0)
+                                Repeater {
+                                    model: ScriptModel {
+                                        values: {
+                                            const arr = group.messages.slice();
+                                            arr.reverse();
+                                            return arr;
+                                        }
+                                    }
+                                    delegate: NotificationItem {
+                                        required property var modelData
+                                        required property int index
+                                        msgData: modelData
+                                        groupRef: group
+                                        itemIndex: index
+                                        collapsed: false
+                                        width: expandedBody.width
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
                 Item {
-                    visible: group.latestActions.length > 0
+                    visible: group._cachedActions.length > 0
                     Layout.fillWidth: true
                     implicitHeight: actFlick.implicitHeight
 
                     Flickable {
                         id: actFlick
-                        anchors.fill: parent
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                        }
+                        height: actRow.implicitHeight
                         contentWidth: actRow.implicitWidth
                         implicitHeight: actRow.implicitHeight
                         interactive: actRow.implicitWidth > width
@@ -584,27 +643,24 @@ MouseArea {
                             policy: ScrollBar.AlwaysOff
                         }
 
-                        RowLayout {
+                        Row {
                             id: actRow
                             spacing: 6
-
                             Repeater {
                                 model: ScriptModel {
-                                    values: group.latestActions
+                                    values: group._cachedActions
                                 }
                                 delegate: Rectangle {
                                     required property var modelData
                                     implicitWidth: aLbl.implicitWidth + 20
-                                    implicitHeight: 30
-                                    radius: 15
+                                    implicitHeight: 28
+                                    radius: 14
                                     color: aHov.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_highest
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 100
                                         }
                                     }
-
                                     Text {
                                         id: aLbl
                                         anchors.centerIn: parent
@@ -620,11 +676,78 @@ MouseArea {
                                         hoverEnabled: true
                                         onClicked: mouse => {
                                             mouse.accepted = true;
-                                            modelData.invoke();
+                                            const live = group.liveNotif?.actions ?? [];
+                                            const liveAct = live.find(a => a.identifier === modelData.identifier);
+                                            const act = liveAct ?? modelData;
+                                            if (typeof act.invoke === "function")
+                                                act.invoke();
                                         }
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    Item {
+                        anchors.fill: actFlick
+                        visible: actRow.implicitWidth > actFlick.width
+                        z: 1
+
+                        Rectangle {
+                            anchors {
+                                left: parent.left
+                                top: parent.top
+                                bottom: parent.bottom
+                            }
+                            width: 28
+                            opacity: actFlick.contentX > 1 ? 1 : 0
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            gradient: Gradient {
+                                orientation: Gradient.Horizontal
+                                GradientStop {
+                                    position: 0.0
+                                    color: Colors.md3.surface_container_high
+                                }
+                                GradientStop {
+                                    position: 1.0
+                                    color: "transparent"
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors {
+                                right: parent.right
+                                top: parent.top
+                                bottom: parent.bottom
+                            }
+                            width: 28
+                            opacity: actFlick.contentX < actFlick.contentWidth - actFlick.width - 1 ? 1 : 0
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            gradient: Gradient {
+                                orientation: Gradient.Horizontal
+                                GradientStop {
+                                    position: 0.0
+                                    color: "transparent"
+                                }
+                                GradientStop {
+                                    position: 1.0
+                                    color: Colors.md3.surface_container_high
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: false
                         }
                     }
                 }

@@ -524,7 +524,7 @@ Item {
                         }
 
                         Rectangle {
-                            visible: NotificationService.listCount > 0
+                            visible: NotificationService.qsGroupModel.count > 0
                             implicitWidth: ntfCnt.implicitWidth + 10
                             implicitHeight: 18
                             radius: 9
@@ -533,7 +533,7 @@ Item {
                             Text {
                                 id: ntfCnt
                                 anchors.centerIn: parent
-                                text: NotificationService.listCount
+                                text: NotificationService.qsGroupModel.count
                                 color: Colors.md3.on_primary_container
                                 font.family: Config.fontFamily
                                 font.pixelSize: 11
@@ -559,7 +559,7 @@ Item {
                             color: Colors.md3.on_surface_variant
                             font.family: Config.fontFamily
                             font.pixelSize: 12
-                            visible: NotificationService.listCount === 0 && NotificationService.history.length === 0
+                            visible: NotificationService.qsGroupModel.count === 0
                         }
 
                         Flickable {

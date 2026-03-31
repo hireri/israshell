@@ -7,7 +7,6 @@ import qs.services
 
 Item {
     id: outer
-
     property bool keepActive: false
 
     Timer {
@@ -32,7 +31,6 @@ Item {
         active: outer.keepActive
         sourceComponent: PanelWindow {
             id: root
-
             anchors.top: true
             anchors.right: true
             anchors.bottom: true
@@ -41,10 +39,8 @@ Item {
             WlrLayershell.screen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? null
             exclusiveZone: 0
             margins.top: Config.floatingBar ? 64 : 54
-
             implicitWidth: 700
             color: "transparent"
-
             mask: Region {
                 item: notifList
             }
@@ -58,9 +54,7 @@ Item {
                 implicitHeight: contentHeight
                 height: contentHeight
                 popup: true
-
                 model: NotificationService.popupGroupModel
-
                 delegate: NotificationGroup {
                     required property var model
                     required property int index
@@ -71,6 +65,7 @@ Item {
                     popup: true
                     inPanel: false
                     width: 320
+                    height: implicitHeight
                 }
             }
         }
