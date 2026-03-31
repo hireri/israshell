@@ -478,7 +478,7 @@ MouseArea {
                             visible: group._hasBadge && group._appBadgeIcon !== ""
                             implicitWidth: 22
                             implicitHeight: 22
-                            radius: 7
+                            radius: 12
                             color: Colors.md3.surface_container
                             anchors.right: parent.right
                             anchors.bottom: parent.bottom
