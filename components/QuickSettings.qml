@@ -501,13 +501,6 @@ Item {
                     dimmed: AudioService.muted
                 }
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.4
-                }
-
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -550,7 +543,7 @@ Item {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        radius: 14
+                        radius: 24
                         color: Colors.md3.surface_container
                         clip: true
 
@@ -559,7 +552,7 @@ Item {
                             text: "Nothing here..."
                             color: Colors.md3.on_surface_variant
                             font.family: Config.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: 24
                             visible: NotificationService.qsGroupModel.count === 0
                         }
 

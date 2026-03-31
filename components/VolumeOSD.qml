@@ -32,16 +32,15 @@ Scope {
         hideTimer.restart();
     }
 
-    // Dynamic icon selection based on volume state
     property string volumeIcon: {
         let sink = Pipewire.defaultAudioSink;
         if (!sink || sink.audio.muted || sink.audio.volume === 0)
-            return "󰖁";  // 󰖁 mdi-volume-off
+            return "󰖁";
         if (sink.audio.volume < 0.33)
-            return "󰕿";                               // 󰕿 mdi-volume-low
+            return "󰕿";
         if (sink.audio.volume < 0.66)
-            return "󰖀";                               // 󰖀 mdi-volume-medium
-        return "󰕾";                                                             // 󰕾 mdi-volume-high
+            return "󰖀";
+        return "󰕾";
     }
 
     Timer {
@@ -58,20 +57,17 @@ Scope {
             margins.bottom: screen.height / 5
             exclusiveZone: 0
 
-            // M3 component sizing - 56dp height for touch targets
             implicitWidth: 400
             implicitHeight: 56
             color: "transparent"
 
-            // Main Container - Surface Container with M3 pill shape
             Rectangle {
                 anchors.fill: parent
-                radius: height / 2  // Full pill shape (M3 slider style)
+                radius: height / 2
                 color: Colors.md3.surface_container
                 border.width: 1
                 border.color: Colors.md3.outline_variant
 
-                // M3 spacing: 16dp/20dp horizontal, centered vertical
                 RowLayout {
                     anchors {
                         fill: parent
@@ -81,16 +77,14 @@ Scope {
                     }
                     spacing: 16
 
-                    // Dynamic Nerd Font Icon
                     Text {
                         id: volumeIconText
                         text: root.volumeIcon
                         font.family: Config.fontFamily
                         font.pixelSize: root.fontSize
-                        color: Colors.md3.primary  // M3: Primary color for active state
+                        color: Colors.md3.primary
                         Layout.alignment: Qt.AlignVCenter
 
-                        // Subtle scale animation on change
                         Behavior on text {
                             NumberAnimation {
                                 target: volumeIconText
@@ -103,14 +97,12 @@ Scope {
                         }
                     }
 
-                    // Progress Track - Outline Variant (M3 disabled/track state)
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 8  // M3 slider track height
+                        Layout.preferredHeight: 8
                         radius: 4
                         color: Colors.md3.outline_variant
 
-                        // Active Progress - Primary Color
                         Rectangle {
                             anchors {
                                 left: parent.left
@@ -121,7 +113,6 @@ Scope {
                             radius: parent.radius
                             color: Colors.md3.primary
 
-                            // Smooth width animation
                             Behavior on width {
                                 NumberAnimation {
                                     duration: 100
@@ -131,7 +122,6 @@ Scope {
                         }
                     }
 
-                    // Percentage label (M3 label style)
                     Text {
                         text: Math.round((Pipewire.defaultAudioSink?.audio.volume ?? 0) * 100) + "%"
                         font.family: Config.fontFamily

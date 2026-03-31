@@ -366,7 +366,7 @@ MouseArea {
             radius: 18
             color: Colors.md3.surface_container_high
             border.color: group.isCritical ? Colors.md3.on_error_container : Colors.md3.outline_variant
-            border.width: 1
+            border.width: group.isCritical ? 1 : 0
             clip: true
 
             Row {
