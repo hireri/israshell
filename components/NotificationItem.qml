@@ -15,7 +15,11 @@ Item {
 
     readonly property string _body: msgData?.body ?? ""
     readonly property string _summary: msgData?.summary ?? ""
-    readonly property string _image: msgData?.image ?? ""
+    readonly property string _image: {
+        if (groupRef && groupRef._isAvatarMode)
+            return "";
+        return msgData?.image ?? "";
+    }
 
     Component.onCompleted: {
         if (groupRef !== null && !collapsed) {

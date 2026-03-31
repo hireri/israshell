@@ -39,6 +39,7 @@ MouseArea {
     property string _icon: Quickshell.iconPath("", "application-x-executable")
     property string _appBadgeIcon: ""
     property bool _hasBadge: false
+    property bool _isAvatarMode: false
     property string _summary: groupSummary
     property string _appName: appName
     property var _cachedActions: []
@@ -49,22 +50,25 @@ MouseArea {
         if (messages.length > 0) {
             const m = messages[0];
 
-            const hasImage = m.image && m.image !== "";
-            const hasAppIcon = m.appIcon && m.appIcon !== "";
+            const hasImage = !!(m.image && m.image !== "");
+            const de = m.desktopEntry ?? "";
+            const hasDesktopId = de !== "";
 
-            if (hasImage) {
+            if (hasImage && hasDesktopId) {
+                _isAvatarMode = true;
                 _icon = resolveIcon(m.image);
-
-                if (hasAppIcon) {
-                    _appBadgeIcon = resolveIcon(m.appIcon);
-                    _hasBadge = true;
-                } else {
-                    _hasBadge = false;
-                }
-            } else {
-                _icon = resolveIcon(m.appIcon);
+                _appBadgeIcon = de;
+                _hasBadge = true;
+            } else if (hasImage) {
+                _isAvatarMode = false;
                 _hasBadge = false;
                 _appBadgeIcon = "";
+                _icon = resolveIcon(m.appIcon);
+            } else {
+                _isAvatarMode = false;
+                _hasBadge = false;
+                _appBadgeIcon = "";
+                _icon = resolveIcon(m.appIcon);
             }
 
             _summary = groupSummary;
@@ -106,7 +110,7 @@ MouseArea {
     }
 
     readonly property real bodyLineH: 13 * 1.45
-    readonly property bool canExpand: count > 1 || measureText.implicitHeight > bodyLineH * 2 || (latest?.image?.length ?? 0) > 0
+    readonly property bool canExpand: count > 1 || measureText.implicitHeight > bodyLineH * 2 || (!group._isAvatarMode && (latest?.image?.length ?? 0) > 0)
 
     Text {
         id: measureText
@@ -324,7 +328,7 @@ MouseArea {
     function resolveIcon(source) {
         if (!source)
             return "";
-        if (source.startsWith("/") || source.startsWith("file://") || source.startsWith("data:")) {
+        if (source.startsWith("/") || source.startsWith("file://") || source.startsWith("data:") || source.startsWith("image://")) {
             return source;
         }
         return Quickshell.iconPath(source, "application-x-executable");
@@ -484,9 +488,8 @@ MouseArea {
                             Image {
                                 anchors.fill: parent
                                 anchors.margins: 2
-                                source: group._appBadgeIcon
+                                source: resolveIcon(group._appBadgeIcon)
                                 fillMode: Image.PreserveAspectFit
-                                visible: group._hasBadge && group._appBadgeIcon !== ""
                             }
                         }
                     }
