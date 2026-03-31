@@ -109,8 +109,8 @@ Item {
     Rectangle {
         id: button
         color: root.isOpen ? Colors.md3.secondary_container : (Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
-        radius: 12
-        implicitWidth: btnRow.implicitWidth + 20
+        radius: Config.floatingBar ? 18 : 12
+        implicitWidth: btnRow.implicitWidth + 10
         height: 32
 
         Behavior on color {
@@ -123,6 +123,7 @@ Item {
             id: btnRow
             anchors.centerIn: parent
             spacing: 0
+            leftPadding: (Bluetooth.defaultAdapter?.enabled || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd) ? 5 : 2
 
             StatusIcon {
                 active: true

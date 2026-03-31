@@ -36,7 +36,7 @@ ShellRoot {
                     id: barContainer
                     anchors.fill: parent
 
-                    radius: Config.floatingBar ? 18 : 0
+                    radius: Config.floatingBar ? 22 : 0
 
                     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
 

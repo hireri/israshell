@@ -4,7 +4,7 @@ import qs.style
 
 Rectangle {
     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
-    radius: 12
+    radius: Config.floatingBar ? 18 : 12
     implicitWidth: clockTime.implicitWidth + clockDate.implicitWidth + 60
     implicitHeight: 32
 
