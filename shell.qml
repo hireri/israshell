@@ -8,6 +8,7 @@ import qs.style
 ShellRoot {
 
     NotificationPopup {}
+    VolumeOSD {}
 
     Variants {
         model: Quickshell.screens

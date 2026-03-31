@@ -708,7 +708,7 @@ Item {
                     anchors.left: parent.left
                     anchors.leftMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
-                    text: sliderRow.dimmed ? "󰝟" : (sliderRow.value <= 0.01 ? "󰕿" : (sliderRow.value < 0.5 ? "󰖀" : "󰕾"))
+                    text: sliderRow.dimmed ? "󰝟" : (sliderRow.value < 0.33 ? "󰕿" : (sliderRow.value < 0.66 ? "󰖀" : "󰕾"))
                     font.pixelSize: 20
                     font.family: Config.fontFamily
                     color: sliderRow.dimmed ? Colors.md3.surface_container_highest : (sliderRow.value > 1.0 ? Colors.md3.on_error : Colors.md3.on_primary)
