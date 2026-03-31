@@ -143,7 +143,6 @@ Rectangle {
 
                     Item {
                         anchors.fill: parent
-                        scale: itemMouseArea.pressed ? 0.85 : 1.0
                         Behavior on scale {
                             NumberAnimation {
                                 duration: 100
@@ -190,6 +189,7 @@ Rectangle {
                             }
                             font.pixelSize: 13
                             font.bold: true
+                            font.family: Config.fontFamily
                             z: 2
 
                             property bool showNumber: !wsItem.hasWindows && (root.isHovered || wsItem.isActiveHere || wsItem.isActiveOther)
