@@ -38,7 +38,7 @@ Item {
             WlrLayershell.namespace: "quickshell:notificationPopup"
             WlrLayershell.screen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? null
             exclusiveZone: 0
-            margins.top: Config.floatingBar ? 64 : 54
+            margins.top: 12
             implicitWidth: 700
             color: "transparent"
             mask: Region {
