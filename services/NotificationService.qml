@@ -207,6 +207,19 @@ Item {
             root._removeGroup(gKey);
     }
 
+    function dismissAll() {
+        const gKeys = Object.keys(root.groups);
+        for (let i = 0; i < gKeys.length; i++) {
+            const gKey = gKeys[i];
+            const g = root.groups[gKey];
+            if (g?.liveNotification) {
+                g.liveNotification.dismiss();
+            } else {
+                root._removeGroup(gKey);
+            }
+        }
+    }
+
     function sendAllToPanel() {
         popupGroupModel.clear();
     }

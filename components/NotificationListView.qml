@@ -13,7 +13,6 @@ ListView {
         dragDistance = 0;
     }
 
-    spacing: 2
     clip: false
     interactive: false
 

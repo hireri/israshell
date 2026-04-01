@@ -75,7 +75,7 @@ Item {
 
         Text {
             Layout.fillWidth: true
-            text: item._md(item._body.length > 0 ? item._body : item._summary)
+            text: item._body.length > 0 ? item._body : item._summary
             color: Colors.md3.on_surface_variant
             font.family: Config.fontFamily
             font.pixelSize: 13
@@ -84,11 +84,5 @@ Item {
             maximumLineCount: item.collapsed ? 2 : -1
             elide: item.collapsed ? Text.ElideRight : Text.ElideNone
         }
-    }
-
-    function _md(s) {
-        if (!s)
-            return "";
-        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/<img[^>]*>/g, "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>").replace(/~~(.+?)~~/g, "<s>$1</s>").replace(/`(.+?)`/g, "<tt>$1</tt>").replace(/\n/g, "<br/>");
     }
 }

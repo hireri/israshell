@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import Quickshell.Bluetooth
 import Quickshell.Widgets
 import QtQuick.Controls
+import Quickshell.Wayland
 
 import qs.style
 import qs.services
@@ -52,7 +53,7 @@ Item {
     }
 
     function getDndIcon() {
-        return NotificationService.dnd ? "󰂛" : "󰂚";
+        return NotificationService.dnd ? "󰂠" : "󰂞";
     }
 
     function getNetworkIcon() {
@@ -148,7 +149,7 @@ Item {
             }
             StatusIcon {
                 active: NotificationService.dnd
-                icon: "󰂛"
+                icon: "󰂠"
             }
 
             Rectangle {
@@ -247,7 +248,7 @@ Item {
         anchor.rect.y: root.panelWindow.height + 12
         implicitWidth: 432
         anchor.adjustment: PopupAdjustment.None
-        implicitHeight: (root.panelWindow.screen?.height ?? 1080) - root.panelWindow.height - 24
+        implicitHeight: Math.round((root.panelWindow.screen?.height ?? 1080) * 0.75)
         color: "transparent"
         visible: root._sidebarVisible
 
@@ -271,8 +272,8 @@ Item {
             width: 420
 
             radius: 18
-            color: Colors.md3.surface_container_high
-            border.color: Colors.md3.outline_variant
+            color: Colors.md3.surface_container_low
+            border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
             border.width: 1
             clip: true
 
@@ -285,157 +286,161 @@ Item {
                 anchors.margins: 14
                 spacing: 12
 
-                RowLayout {
+                Rectangle {
                     Layout.fillWidth: true
-                    spacing: 10
+                    Layout.preferredHeight: userRow.implicitHeight + 28
+                    color: Colors.md3.surface_container
+                    radius: 24
 
-                    Item {
-                        Layout.preferredWidth: 44
-                        Layout.preferredHeight: 44
+                    RowLayout {
+                        id: userRow
+                        anchors.fill: parent
+                        anchors.margins: 14
+                        spacing: 10
+
+                        Item {
+                            Layout.preferredWidth: 44
+                            Layout.preferredHeight: 44
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 22
+                                color: Colors.md3.primary_container
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: Quickshell.env("USER").charAt(0).toUpperCase()
+                                    font.pixelSize: 18
+                                    font.weight: Font.DemiBold
+                                    font.family: Config.fontFamily
+                                    color: Colors.md3.on_primary_container
+                                    visible: profileImage.status !== Image.Ready
+                                }
+                            }
+
+                            ClippingRectangle {
+                                anchors.fill: parent
+                                radius: 22
+                                clip: true
+                                layer.enabled: true
+                                layer.smooth: true
+                                antialiasing: true
+                                visible: profileImage.status === Image.Ready
+                                color: "transparent"
+
+                                Image {
+                                    id: profileImage
+                                    source: "file://" + Quickshell.env("HOME") + "/.face"
+                                    anchors.fill: parent
+                                    sourceSize: Qt.size(144, 144)
+                                    fillMode: Image.PreserveAspectCrop
+                                    antialiasing: true
+                                    smooth: true
+                                    mipmap: true
+                                    cache: false
+                                }
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 1
+
+                            Text {
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                                text: Quickshell.env("USER")
+                                color: Colors.md3.on_surface
+                                font.family: Config.fontFamily
+                                font.pixelSize: 15
+                                font.weight: Font.DemiBold
+                            }
+
+                            Text {
+                                id: hostText
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                                text: "loading..."
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: 12
+                            }
+                        }
 
                         Rectangle {
-                            anchors.fill: parent
-                            radius: 22
-                            color: Colors.md3.primary_container
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 36
+                            radius: 12
+                            color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+
+                            Behavior on scale {
+                                NumberAnimation {
+                                    duration: 150
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
 
                             Text {
                                 anchors.centerIn: parent
-                                text: Quickshell.env("USER").charAt(0).toUpperCase()
-                                font.pixelSize: 18
-                                font.weight: Font.DemiBold
+                                text: "󰏫"
+                                font.pixelSize: 15
                                 font.family: Config.fontFamily
-                                color: Colors.md3.on_primary_container
-                                visible: profileImage.status !== Image.Ready
+                                color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
                             }
-                        }
 
-                        ClippingRectangle {
-                            anchors.fill: parent
-                            radius: 22
-                            clip: true
-                            layer.enabled: true
-                            layer.smooth: true
-                            antialiasing: true
-                            visible: profileImage.status === Image.Ready
-                            color: "transparent"
-
-                            Image {
-                                id: profileImage
-                                source: "file://" + Quickshell.env("HOME") + "/.face"
+                            MouseArea {
+                                id: editMouse
                                 anchors.fill: parent
-                                sourceSize: Qt.size(144, 144)
-                                fillMode: Image.PreserveAspectCrop
-                                antialiasing: true
-                                smooth: true
-                                mipmap: true
-                                cache: false
-                            }
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 1
-
-                        Text {
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
-                            text: Quickshell.env("USER")
-                            color: Colors.md3.on_surface
-                            font.family: Config.fontFamily
-                            font.pixelSize: 15
-                            font.weight: Font.DemiBold
-                        }
-
-                        Text {
-                            id: hostText
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
-                            text: "loading..."
-                            color: Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: 12
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.preferredWidth: 36
-                        Layout.preferredHeight: 36
-
-                        radius: 12
-                        color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container
-                        scale: editMouse.pressed ? 0.92 : 1
-
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: 150
-                                easing.type: Easing.OutCubic
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: {
+                                    root.isOpen = false;
+                                    sysProc.command = ["code", Quickshell.env("HOME") + "/.config/hypr"];
+                                    sysProc.running = true;
+                                }
                             }
                         }
 
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 150
+                        Rectangle {
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 36
+                            radius: 12
+                            color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.error_container
+
+                            Behavior on scale {
+                                NumberAnimation {
+                                    duration: 150
+                                    easing.type: Easing.OutCubic
+                                }
                             }
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰏫"
-                            font.pixelSize: 15
-                            font.family: Config.fontFamily
-                            color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                        }
-
-                        MouseArea {
-                            id: editMouse
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onClicked: {
-                                root.isOpen = false;
-                                sysProc.command = ["code", Quickshell.env("HOME") + "/.config/hypr"];
-                                sysProc.running = true;
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
                             }
-                        }
-                    }
 
-                    Rectangle {
-                        Layout.preferredWidth: 36
-                        Layout.preferredHeight: 36
-
-                        radius: 12
-                        color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.on_error
-                        scale: pwrMouse.pressed ? 0.92 : 1
-
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: 150
-                                easing.type: Easing.OutCubic
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰐥"
+                                font.pixelSize: 17
+                                font.family: Config.fontFamily
+                                color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
                             }
-                        }
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 150
-                            }
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰐥"
-                            font.pixelSize: 17
-                            font.family: Config.fontFamily
-                            color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
-                        }
-                        MouseArea {
-                            id: pwrMouse
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onClicked: {
-                                root.isOpen = false;
-                                sysProc.command = ["wlogout", "-p", "layer-shell"];
-                                sysProc.running = true;
+                            MouseArea {
+                                id: pwrMouse
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: {
+                                    root.isOpen = false;
+                                    sysProc.command = ["wlogout", "-p", "layer-shell"];
+                                    sysProc.running = true;
+                                }
                             }
                         }
                     }
@@ -443,100 +448,161 @@ Item {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.4
-                }
+                    Layout.preferredHeight: qsCol.implicitHeight + 28
+                    color: Colors.md3.surface_container
+                    radius: 24
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
+                    ColumnLayout {
+                        id: qsCol
+                        anchors.fill: parent
+                        anchors.margins: 14
+                        spacing: 12
 
-                    QsToggleChip {
-                        icon: root.getNetworkIcon()
-                        active: NetworkService.networkingEnabled || NetworkService.ethConnected
-                        onToggled: NetworkService.toggle()
-                        onRightClicked: {
-                            root.isOpen = false;
-                            appletProc.command = ["nm-connection-editor"];
-                            appletProc.running = true;
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            QsToggleChip {
+                                icon: root.getNetworkIcon()
+                                active: NetworkService.networkingEnabled || NetworkService.ethConnected
+                                onToggled: NetworkService.toggle()
+                                onRightClicked: {
+                                    root.isOpen = false;
+                                    appletProc.command = ["nm-connection-editor"];
+                                    appletProc.running = true;
+                                }
+                            }
+
+                            QsToggleChip {
+                                icon: root.getBluetoothIcon()
+                                active: Bluetooth.defaultAdapter?.enabled ?? false
+                                onToggled: if (Bluetooth.defaultAdapter)
+                                    Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+                                onRightClicked: {
+                                    root.isOpen = false;
+                                    appletProc.command = ["blueman-manager"];
+                                    appletProc.running = true;
+                                }
+                            }
+
+                            QsToggleChip {
+                                icon: CaffeineService.active ? "󰅶" : "󰾪"
+                                active: CaffeineService.active
+                                onToggled: CaffeineService.toggle()
+                            }
+
+                            QsToggleChip {
+                                icon: NightLightService.active ? "󱩌" : "󰛨"
+                                active: NightLightService.active
+                                onToggled: NightLightService.toggle()
+                            }
+                        }
+
+                        QsSliderRow {
+                            Layout.fillWidth: true
+                            value: AudioService.volume
+                            onMoved: val => AudioService.setVolume(val)
+                            onMuteClicked: AudioService.toggleMute()
+                            dimmed: AudioService.muted
                         }
                     }
-
-                    QsToggleChip {
-                        icon: root.getBluetoothIcon()
-                        active: Bluetooth.defaultAdapter?.enabled ?? false
-                        onToggled: if (Bluetooth.defaultAdapter)
-                            Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
-                        onRightClicked: {
-                            root.isOpen = false;
-                            appletProc.command = ["blueman-manager"];
-                            appletProc.running = true;
-                        }
-                    }
-
-                    QsToggleChip {
-                        icon: CaffeineService.active ? "󰅶" : "󰾪"
-                        active: CaffeineService.active
-                        onToggled: CaffeineService.toggle()
-                    }
-
-                    QsToggleChip {
-                        icon: NightLightService.active ? "󱩌" : "󰛨"
-                        active: NightLightService.active
-                        onToggled: NightLightService.toggle()
-                    }
-
-                    QsToggleChip {
-                        icon: root.getDndIcon()
-                        active: NotificationService.dnd
-                        onToggled: NotificationService.dnd = !NotificationService.dnd
-                    }
-                }
-
-                QsSliderRow {
-                    value: AudioService.volume
-                    onMoved: val => AudioService.setVolume(val)
-                    onMuteClicked: AudioService.toggleMute()
-                    dimmed: AudioService.muted
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    spacing: 8
+                    spacing: 0
 
-                    RowLayout {
+                    Rectangle {
                         Layout.fillWidth: true
+                        Layout.preferredHeight: 44
+                        color: Colors.md3.surface_container
 
-                        Text {
-                            text: "Notifications"
-                            color: Colors.md3.on_surface
-                            font.family: Config.fontFamily
-                            font.pixelSize: 14
-                            font.weight: Font.DemiBold
-                        }
+                        topRightRadius: 22
+                        topLeftRadius: 22
 
-                        Rectangle {
-                            visible: NotificationService.qsGroupModel.count > 0
-                            implicitWidth: ntfCnt.implicitWidth + 10
-                            implicitHeight: 18
-                            radius: 9
-                            color: Colors.md3.primary_container
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 4
+                            spacing: 4
 
-                            Text {
-                                id: ntfCnt
-                                anchors.centerIn: parent
-                                text: NotificationService.qsGroupModel.count
-                                color: Colors.md3.on_primary_container
-                                font.family: Config.fontFamily
-                                font.pixelSize: 11
-                                font.bold: true
+                            Rectangle {
+                                Layout.preferredWidth: 56
+                                Layout.fillHeight: true
+                                radius: 10
+                                topLeftRadius: 18
+                                color: dndMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 150
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: root.getDndIcon()
+                                    font.pixelSize: 16
+                                    font.family: Config.fontFamily
+                                    color: Colors.md3.on_surface
+                                }
+
+                                MouseArea {
+                                    id: dndMouse
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+                                    onClicked: NotificationService.dnd = !NotificationService.dnd
+                                }
                             }
-                        }
 
-                        Item {
-                            Layout.fillWidth: true
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: 10
+                                color: Colors.md3.surface_container_high
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: NotificationService.qsGroupModel.count === 0 ? "No notifications" : NotificationService.qsGroupModel.count + " notification" + (NotificationService.qsGroupModel.count === 1 ? "" : "s")
+                                    font.pixelSize: 13
+                                    font.family: Config.fontFamily
+                                    font.weight: Font.Medium
+                                    color: Colors.md3.on_surface
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.preferredWidth: 56
+                                Layout.fillHeight: true
+                                radius: 10
+                                topRightRadius: 18
+                                color: clearMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                                opacity: NotificationService.qsGroupModel.count > 0 ? 1 : 0.3
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 150
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "󰩹"
+                                    font.pixelSize: 16
+                                    font.family: Config.fontFamily
+                                    color: Colors.md3.on_surface
+                                }
+
+                                MouseArea {
+                                    id: clearMouse
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+                                    enabled: NotificationService.qsGroupModel.count > 0
+                                    onClicked: NotificationService.dismissAll()
+                                }
+                            }
                         }
                     }
 
@@ -544,23 +610,45 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         radius: 24
+                        topRightRadius: 0
+                        topLeftRadius: 0
                         color: Colors.md3.surface_container
                         clip: true
 
-                        Text {
+                        Column {
                             anchors.centerIn: parent
-                            text: "Nothing here..."
-                            color: Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: 24
+                            spacing: 12
                             visible: NotificationService.qsGroupModel.count === 0
+
+                            Rectangle {
+                                implicitWidth: 200
+                                implicitHeight: 80
+                                radius: 24
+                                color: Colors.md3.primary_container
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "(˶˃ ᵕ ˂˶) .ᐟ.ᐟ"
+                                    font.pixelSize: 32
+                                    color: Colors.md3.on_primary_container
+                                }
+                            }
+
+                            Text {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "All caught up . . !"
+                                font.pixelSize: 16
+                                font.family: Config.fontFamily
+                                color: Colors.md3.on_surface_variant
+                                opacity: 0.8
+                            }
                         }
 
                         Flickable {
                             id: qsFlick
                             anchors.fill: parent
                             anchors.margins: 8
-                            contentHeight: qsCol.implicitHeight
+                            contentHeight: notifCol.implicitHeight
                             clip: false
                             flickableDirection: Flickable.VerticalFlick
                             flickDeceleration: 4000
@@ -571,7 +659,7 @@ Item {
                             }
 
                             Column {
-                                id: qsCol
+                                id: notifCol
                                 width: qsFlick.width
                                 spacing: 6
 
@@ -622,7 +710,15 @@ Item {
         Layout.preferredHeight: 52
 
         radius: active ? 18 : 14
-        color: active ? Colors.md3.primary : Colors.md3.surface_container
+        color: {
+            if (active)
+                return Colors.md3.primary;
+            if (hovered)
+                return Colors.md3.surface_container_highest;
+            return Colors.md3.surface_container_high;
+        }
+
+        property bool hovered: mouseArea.containsMouse
 
         Behavior on color {
             ColorAnimation {
@@ -646,9 +742,11 @@ Item {
         }
 
         MouseArea {
+            id: mouseArea
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton | Qt.RightButton
+            hoverEnabled: true
             onClicked: mouse => mouse.button === Qt.RightButton ? chip.rightClicked() : chip.toggled()
         }
     }
@@ -671,7 +769,7 @@ Item {
             id: trackBg
             anchors.fill: parent
             radius: 14
-            color: Colors.md3.surface_container
+            color: Colors.md3.surface_container_high
 
             Rectangle {
                 id: trackFill

@@ -126,7 +126,7 @@ MouseArea {
     function _md(s) {
         if (!s)
             return "";
-        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/<img[^>]*>/g, "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>").replace(/~~(.+?)~~/g, "<s>$1</s>").replace(/`(.+?)`/g, "<tt>$1</tt>").replace(/\n/g, "<br/>");
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/<img[^>]*>/g, "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>").replace(/~~(.+?)~~/g, "<s>$1</s>").replace(/`(.+?)`/g, "<code>$1</code>").replace(/\n/g, "<br/>");
     }
 
     property int dragIndex: -1
@@ -464,6 +464,15 @@ MouseArea {
                             anchors.fill: parent
                             radius: 14
                             color: Colors.md3.surface_container
+
+                            Text {
+                                text: "󰂚"
+                                color: Colors.md3.on_surface_variant
+                                anchors.centerIn: parent
+                                font.pixelSize: 24
+                                font.family: Config.fontFamily
+                            }
+
                             Image {
                                 anchors.fill: parent
                                 source: group._icon
