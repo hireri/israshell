@@ -152,8 +152,8 @@ Rectangle {
 
                         Rectangle {
                             anchors.centerIn: parent
-                            width: 6
-                            height: 6
+                            width: 4
+                            height: 4
                             radius: 3
                             color: Colors.md3.outline_variant
 

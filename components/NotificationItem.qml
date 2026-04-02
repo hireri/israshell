@@ -15,10 +15,23 @@ Item {
 
     readonly property string _body: msgData?.body ?? ""
     readonly property string _summary: msgData?.summary ?? ""
-    readonly property string _image: {
-        if (groupRef && groupRef._isAvatarMode)
+
+    readonly property string _inlineImage: {
+        if (!groupRef)
             return "";
-        return msgData?.image ?? "";
+        const img = groupRef.getBodyImage(_body);
+        if (img === "")
+            return "";
+
+        if (img.startsWith("/") || img.includes("://"))
+            return img;
+        return Quickshell.iconPath(img, "");
+    }
+
+    readonly property string _displayText: {
+        if (!groupRef)
+            return _body || _summary;
+        return groupRef._md(_body.length > 0 ? _body : _summary);
     }
 
     Component.onCompleted: {
@@ -46,14 +59,31 @@ Item {
             left: parent.left
             right: parent.right
         }
-        spacing: 6
+        spacing: 8
+
+        Text {
+            Layout.fillWidth: true
+            text: item._displayText
+            color: Colors.md3.on_surface_variant
+            font.family: Config.fontFamily
+            font.pixelSize: 13
+            wrapMode: Text.WordWrap
+
+            textFormat: Text.StyledText
+
+            onLinkActivated: link => Qt.openUrlExternally(link)
+
+            maximumLineCount: item.collapsed ? 2 : -1
+            elide: item.collapsed ? Text.ElideRight : Text.ElideNone
+        }
 
         ClippingRectangle {
             id: attachmentRect
             Layout.fillWidth: true
-            visible: !item.collapsed && item._image.length > 0
+            visible: !item.collapsed && item._inlineImage !== ""
             radius: 12
-            color: Colors.md3.surface_container
+            color: Colors.md3.surface_container_lowest
+            clip: true
 
             Layout.preferredHeight: {
                 if (attachmentImg.implicitWidth > 0) {
@@ -66,23 +96,12 @@ Item {
             Image {
                 id: attachmentImg
                 anchors.fill: parent
-                source: item._image
+                source: item._inlineImage
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 mipmap: true
+                autoTransform: true
             }
-        }
-
-        Text {
-            Layout.fillWidth: true
-            text: item._body.length > 0 ? item._body : item._summary
-            color: Colors.md3.on_surface_variant
-            font.family: Config.fontFamily
-            font.pixelSize: 13
-            wrapMode: Text.WordWrap
-            textFormat: Text.StyledText
-            maximumLineCount: item.collapsed ? 2 : -1
-            elide: item.collapsed ? Text.ElideRight : Text.ElideNone
         }
     }
 }

@@ -44,35 +44,64 @@ MouseArea {
     property string _appName: appName
     property var _cachedActions: []
 
+    function resolveIcon(source) {
+        if (!source || source === "")
+            return "";
+
+        if (source.startsWith("/") || source.includes("://"))
+            return source;
+
+        return Quickshell.iconPath(source);
+    }
+
+    function _md(s) {
+        if (!s)
+            return "";
+
+        let res = s.replace(/<img[^>]*>/g, "");
+
+        res = res.replace(/&/g, "&amp;").replace(/\n/g, "<br/>");
+
+        res = res.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>").replace(/~~(.+?)~~/g, "<s>$1</s>").replace(/`(.+?)`/g, "<code>$1</code>");
+
+        return res;
+    }
+
+    function getBodyImage(s) {
+        if (!s)
+            return "";
+        const match = s.match(/<img\s+src=["']([^"']+)["'][^>]*\/?>/);
+        return match ? match[1] : "";
+    }
+
+    readonly property string _mainIcon: {
+        const m = group.latest;
+        if (!m)
+            return resolveIcon("");
+        if (m.image !== "")
+            return resolveIcon(m.image);
+        if (m.appIcon !== "")
+            return resolveIcon(m.appIcon);
+        return resolveIcon(m.desktopEntry);
+    }
+
+    readonly property string _badgeIcon: {
+        const m = group.latest;
+        if (!m)
+            return "";
+        if (m.image !== "") {
+            const icon = m.appIcon !== "" ? m.appIcon : m.desktopEntry;
+            if (icon !== "" && resolveIcon(icon) !== resolveIcon(m.image)) {
+                return resolveIcon(icon);
+            }
+        }
+        return "";
+    }
+
     readonly property var latestActions: liveNotif?.actions ?? []
 
     onMessagesChanged: {
         if (messages.length > 0) {
-            const m = messages[0];
-
-            const hasImage = !!(m.image && m.image !== "");
-            const de = m.desktopEntry ?? "";
-            const hasDesktopId = de !== "";
-
-            if (hasImage && hasDesktopId) {
-                _isAvatarMode = true;
-                _icon = resolveIcon(m.image);
-                _appBadgeIcon = de;
-                _hasBadge = true;
-            } else if (hasImage) {
-                _isAvatarMode = false;
-                _hasBadge = false;
-                _appBadgeIcon = "";
-                _icon = resolveIcon(m.appIcon);
-            } else {
-                _isAvatarMode = false;
-                _hasBadge = false;
-                _appBadgeIcon = "";
-                _icon = resolveIcon(m.appIcon);
-            }
-
-            _summary = groupSummary;
-            _appName = appName;
             if (group.popup && !containsMouse && group.liveNotif !== null)
                 groupTimer.restart();
         }
@@ -110,7 +139,16 @@ MouseArea {
     }
 
     readonly property real bodyLineH: 13 * 1.45
-    readonly property bool canExpand: count > 1 || measureText.implicitHeight > bodyLineH * 2 || (!group._isAvatarMode && (latest?.image?.length ?? 0) > 0)
+
+    readonly property bool canExpand: {
+        if (count > 1)
+            return true;
+        if (measureText.implicitHeight > bodyLineH * 2)
+            return true;
+        if (latest && getBodyImage(latest.body) !== "")
+            return true;
+        return false;
+    }
 
     Text {
         id: measureText
@@ -121,12 +159,6 @@ MouseArea {
         font.pixelSize: 13
         wrapMode: Text.WordWrap
         textFormat: Text.StyledText
-    }
-
-    function _md(s) {
-        if (!s)
-            return "";
-        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/<img[^>]*>/g, "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>").replace(/~~(.+?)~~/g, "<s>$1</s>").replace(/`(.+?)`/g, "<code>$1</code>").replace(/\n/g, "<br/>");
     }
 
     property int dragIndex: -1
@@ -325,15 +357,6 @@ MouseArea {
     implicitWidth: shadow.implicitWidth
     implicitHeight: shadow.implicitHeight
 
-    function resolveIcon(source) {
-        if (!source)
-            return "";
-        if (source.startsWith("/") || source.startsWith("file://") || source.startsWith("data:") || source.startsWith("image://")) {
-            return source;
-        }
-        return Quickshell.iconPath(source, "application-x-executable");
-    }
-
     Item {
         id: shadow
         anchors.left: parent.left
@@ -471,20 +494,20 @@ MouseArea {
                                 anchors.centerIn: parent
                                 font.pixelSize: 24
                                 font.family: Config.fontFamily
+                                visible: group._mainIcon === ""
                             }
 
                             Image {
                                 anchors.fill: parent
-                                source: group._icon
+                                source: group._mainIcon
                                 fillMode: Image.PreserveAspectCrop
-                                asynchronous: true
                                 sourceSize: Qt.size(88, 88)
-                                mipmap: true
+                                asynchronous: true
                             }
                         }
 
                         ClippingRectangle {
-                            visible: group._hasBadge && group._appBadgeIcon !== ""
+                            visible: group._badgeIcon !== ""
                             implicitWidth: 22
                             implicitHeight: 22
                             radius: 12
@@ -497,7 +520,7 @@ MouseArea {
                             Image {
                                 anchors.fill: parent
                                 anchors.margins: 2
-                                source: resolveIcon(group._appBadgeIcon)
+                                source: group._badgeIcon
                                 fillMode: Image.PreserveAspectFit
                             }
                         }

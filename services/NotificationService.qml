@@ -65,14 +65,11 @@ Item {
             const groupSummary = notification.summary || "";
             const gKey = appName + "|" + groupSummary;
 
-            const rawImage = notification.image || "";
-            const isRealImage = rawImage.startsWith("file://") || rawImage.startsWith("/") || (rawImage.startsWith("image://") && !rawImage.startsWith("image://icon//"));
-
             const msg = {
                 body: notification.body || "",
                 summary: groupSummary,
-                image: isRealImage ? rawImage : "",
-                appIcon: notification.appIcon || (!isRealImage ? rawImage : ""),
+                image: notification.image || "",
+                appIcon: notification.appIcon || "",
                 desktopEntry: notification.desktopEntry || "",
                 time: Date.now()
             };
