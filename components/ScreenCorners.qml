@@ -49,6 +49,7 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
 
             WlrLayershell.namespace: "quickshell:screenCorners"
+            WlrLayershell.layer: WlrLayer.Overlay
 
             mask: Region {}
 
