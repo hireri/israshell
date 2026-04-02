@@ -1,5 +1,6 @@
 //@ pragma UseQApplication
 import Quickshell
+import Quickshell.Wayland
 import QtQuick
 
 import qs.components
@@ -10,81 +11,154 @@ ShellRoot {
     NotificationPopup {}
     VolumeOSD {}
 
+    Loader {
+        active: Config.screenCorners
+        sourceComponent: ScreenCorners {}
+    }
+
+    component HuggingCornerBlock: Item {
+        id: block
+        property int type: 0
+        property string cornerColor
+        property int radiusSize: 16
+
+        width: radiusSize
+        height: radiusSize
+        clip: true
+
+        Rectangle {
+            width: block.radiusSize * 4
+            height: block.radiusSize * 4
+            radius: block.radiusSize * 2
+            color: "transparent"
+
+            border.width: block.radiusSize
+            border.color: block.cornerColor
+
+            x: (block.type === 1) ? -block.radiusSize * 2 : -block.radiusSize
+            y: -block.radiusSize
+        }
+    }
+
     Variants {
         model: Quickshell.screens
 
-        PanelWindow {
-            id: window
-            property var modelData
-            screen: modelData
+        Scope {
+            id: screenScope
+            required property var modelData
 
-            anchors.top: true
-            anchors.left: true
-            anchors.right: true
+            PanelWindow {
+                id: window
+                property var modelData: screenScope.modelData
+                screen: modelData
 
-            implicitHeight: Config.floatingBar ? 56 : 44
+                property bool isMenuOpen: qsWidget.isOpen || false
 
-            color: "transparent"
-            exclusiveZone: implicitHeight
+                WlrLayershell.namespace: "quickshell:bar"
+                WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
 
-            Item {
-                anchors.fill: parent
-                anchors.leftMargin: Config.floatingBar ? 12 : 0
-                anchors.rightMargin: Config.floatingBar ? 12 : 0
-                anchors.topMargin: Config.floatingBar ? 8 : 0
+                anchors.top: true
+                anchors.left: true
+                anchors.right: true
 
-                Rectangle {
-                    id: barContainer
+                implicitHeight: (Config.floatingBar ? 56 : 44)
+
+                color: "transparent"
+
+                exclusiveZone: Config.floatingBar ? 56 : 44
+
+                Item {
                     anchors.fill: parent
-
-                    radius: Config.floatingBar ? 22 : 0
-
-                    color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
-
-                    border.width: Config.floatingBar ? 1 : 0
-                    border.color: Config.transparentBar ? Qt.alpha(Colors.md3.outline_variant, 0.5) : Colors.md3.outline_variant
+                    anchors.leftMargin: Config.floatingBar ? 12 : 0
+                    anchors.rightMargin: Config.floatingBar ? 12 : 0
+                    anchors.topMargin: Config.floatingBar ? 10 : 0
 
                     Rectangle {
+                        id: barContainer
                         anchors.fill: parent
-                        anchors.margins: -2
-                        radius: parent.radius + 2
-                        color: Qt.alpha(Colors.md3.shadow, 0.15)
-                        z: -1
+
+                        radius: Config.floatingBar ? 22 : 0
+                        color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
+                        border.width: Config.floatingBar ? 1 : 0
+                        border.color: Config.transparentBar ? Qt.alpha(Colors.md3.outline_variant, 0.5) : Colors.md3.outline_variant
+
+                        Item {
+                            anchors.fill: parent
+                            anchors.rightMargin: 8
+                            anchors.leftMargin: 6
+
+                            ActiveWindow {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Row {
+                                anchors.centerIn: parent
+                                spacing: 12
+
+                                MediaPlayer {}
+                                Workspaces {
+                                    panelWindow: window
+                                }
+                                BarClock {}
+                            }
+
+                            Row {
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 12
+
+                                TrayWidget {
+                                    panelWindow: window
+                                }
+                                QuickSettings {
+                                    id: qsWidget
+                                    panelWindow: window
+                                }
+                            }
+                        }
                     }
+                }
+            }
 
-                    Item {
-                        anchors.fill: parent
-                        anchors.rightMargin: 8
+            PanelWindow {
+                id: huggingWindow
+                screen: modelData
 
-                        ActiveWindow {
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
+                visible: !Config.floatingBar && Config.huggingBar
 
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 12
+                anchors.top: true
+                anchors.left: true
+                anchors.right: true
+                margins.top: window.implicitHeight
 
-                            MediaPlayer {}
-                            Workspaces {
-                                panelWindow: window
-                            }
-                            BarClock {}
-                        }
+                property int cornerRadius: 26
+                implicitHeight: cornerRadius
 
-                        Row {
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 12
+                color: "transparent"
+                exclusionMode: ExclusionMode.Ignore
 
-                            TrayWidget {
-                                panelWindow: window
-                            }
-                            QuickSettings {
-                                panelWindow: window
-                            }
-                        }
-                    }
+                WlrLayershell.namespace: "quickshell:huggingCorners"
+                WlrLayershell.layer: window.isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
+
+                mask: Region {}
+
+                property string barColor: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
+
+                HuggingCornerBlock {
+                    type: 0
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    cornerColor: huggingWindow.barColor
+                    radiusSize: huggingWindow.cornerRadius
+                }
+
+                HuggingCornerBlock {
+                    type: 1
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    cornerColor: huggingWindow.barColor
+                    radiusSize: huggingWindow.cornerRadius
                 }
             }
         }

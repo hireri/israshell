@@ -17,6 +17,8 @@ Singleton {
     property alias nightLightTemp: adapter.nightLightTemp
     property alias dayLightTemp: adapter.dayLightTemp
     property alias floatingBar: adapter.floatingBar
+    property alias huggingBar: adapter.huggingBar
+    property alias screenCorners: adapter.screenCorners
 
     FileView {
         path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
@@ -36,6 +38,8 @@ Singleton {
             property int nightLightTemp: 4000
             property int dayLightTemp: 6500
             property bool floatingBar: true
+            property bool huggingBar: false
+            property bool screenCorners: true
         }
     }
 }

@@ -110,7 +110,7 @@ Item {
     Rectangle {
         id: button
         color: root.isOpen ? Colors.md3.secondary_container : (Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
-        radius: Config.floatingBar ? 18 : 12
+        radius: 18
         implicitWidth: btnRow.implicitWidth + 10
         height: 32
 
