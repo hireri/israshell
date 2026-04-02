@@ -503,6 +503,11 @@ Item {
                             value: AudioService.volume
                             onMoved: val => AudioService.setVolume(val)
                             onMuteClicked: AudioService.toggleMute()
+                            onRightClicked: {
+                                root.isOpen = false;
+                                appletProc.command = ["pavucontrol"];
+                                appletProc.running = true;
+                            }
                             dimmed: AudioService.muted
                         }
                     }
@@ -764,6 +769,7 @@ Item {
         property bool dimmed: false
         signal moved(real val)
         signal muteClicked
+        signal rightClicked
         property real _dragRatio: -1
         property real _displayRatio: _dragRatio >= 0 ? _dragRatio : ((to - from > 0) ? (value - from) / (to - from) : 0)
 
@@ -833,13 +839,17 @@ Item {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 preventStealing: true
-                acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
 
                 property bool dragStarted: false
                 property real startX: 0
 
                 onWheel: wheel => sliderRow.moved(wheel.angleDelta.y > 0 ? Math.min(sliderRow.to, sliderRow.value + 0.05) : Math.max(sliderRow.from, sliderRow.value - 0.05))
                 onPressed: mouse => {
+                    if (mouse.button === Qt.RightButton) {
+                        sliderRow.rightClicked();
+                        return;
+                    }
                     if (mouse.button === Qt.MiddleButton) {
                         sliderRow.muteClicked();
                         return;
