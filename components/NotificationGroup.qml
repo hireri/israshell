@@ -376,6 +376,7 @@ MouseArea {
             color: Qt.rgba(0, 0, 0, 0.22)
             offset: Qt.vector2d(0, 4)
             antialiasing: true
+            visible: !group.inPanel
         }
 
         Rectangle {
@@ -384,12 +385,11 @@ MouseArea {
             anchors.top: parent.top
             width: parent.width
             implicitWidth: group.width > 0 ? group.width : 320
-            height: group._cardHeight >= 0 ? group._cardHeight : cardCol.implicitHeight + 24
+            height: group._cardHeight >= 0 ? group._cardHeight : cardCol.implicitHeight + 28
 
             radius: 18
-            color: Colors.md3.surface_container_high
-            border.color: group.isCritical ? Colors.md3.on_error_container : Colors.md3.outline_variant
-            border.width: group.isCritical ? 1 : 0
+            color: group.inPanel ? Colors.md3.surface_container_high : Colors.md3.surface_container
+            border.color: group.isCritical ? Colors.md3.on_error_container : (group.inPanel ? "transparent" : Qt.alpha(Colors.md3.outline_variant, 0.5))
             clip: true
 
             Row {
@@ -486,7 +486,7 @@ MouseArea {
                         ClippingRectangle {
                             anchors.fill: parent
                             radius: 14
-                            color: Colors.md3.surface_container
+                            color: group.inPanel ? Colors.md3.surface_container : Colors.md3.surface_container_high
 
                             Text {
                                 text: "󰂚"

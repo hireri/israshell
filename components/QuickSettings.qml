@@ -523,7 +523,12 @@ Item {
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.margins: 4
+                            anchors {
+                                leftMargin: 8
+                                rightMargin: 8
+                                topMargin: 8
+                                bottomMargin: 0
+                            }
                             spacing: 4
 
                             Rectangle {
