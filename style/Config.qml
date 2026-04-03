@@ -19,6 +19,7 @@ Singleton {
     property alias floatingBar: adapter.floatingBar
     property alias huggingBar: adapter.huggingBar
     property alias screenCorners: adapter.screenCorners
+    property alias dateFormat: adapter.dateFormat
 
     FileView {
         path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
@@ -31,7 +32,7 @@ Singleton {
             property bool showSeconds: false
             property int hourFormat: 0
             property int carouselSpeed: 30
-            property bool transparentBar: adapter.transparentBar
+            property bool transparentBar: false
             property string fontFamily: "Inter"
             property var trayBlacklist: ["spotify", "Spotify"]
             property bool tintTrayIcons: false
@@ -40,6 +41,7 @@ Singleton {
             property bool floatingBar: true
             property bool huggingBar: false
             property bool screenCorners: true
+            property int dateFormat: 0
         }
     }
 }

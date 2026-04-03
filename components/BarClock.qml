@@ -17,19 +17,16 @@ Rectangle {
             font.family: Config.fontFamily
             font.pixelSize: 14
 
-            function update() {
-                const ap = ["", " ap", " AP"][Config.hourFormat];
-                text = Qt.formatTime(new Date(), (Config.showSeconds ? "hh:mm:ss" : "hh:mm") + ap);
-            }
+            property string timeFormat: (Config.showSeconds ? "hh:mm:ss" : "hh:mm") + ["", " ap", " AP"][Config.hourFormat]
+            text: Qt.formatTime(new Date(), timeFormat)
 
             Timer {
                 interval: 1000
                 running: true
                 repeat: true
-                onTriggered: parent.update()
+                triggeredOnStart: true
+                onTriggered: parent.text = Qt.formatTime(new Date(), parent.timeFormat)
             }
-
-            Component.onCompleted: update()
         }
 
         Text {
@@ -45,18 +42,16 @@ Rectangle {
             font.family: Config.fontFamily
             font.pixelSize: 14
 
-            function currentDate() {
-                text = Qt.formatDate(new Date(), "ddd, dd/MM");
-            }
+            property string dateFormatStr: ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat]
+            text: Qt.formatDate(new Date(), dateFormatStr)
 
             Timer {
-                interval: 24000
+                interval: 60000
                 running: true
                 repeat: true
-                onTriggered: parent.currentDate()
+                triggeredOnStart: true
+                onTriggered: parent.text = Qt.formatDate(new Date(), parent.dateFormatStr)
             }
-
-            Component.onCompleted: currentDate()
         }
     }
 }
