@@ -1,15 +1,74 @@
 //@ pragma UseQApplication
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import QtQuick
 
 import qs.components
 import qs.style
+import qs.services
 
 ShellRoot {
 
     NotificationPopup {}
     VolumeOSD {}
+
+    Logout {
+        LogoutButton {
+            command: "loginctl lock-session"
+            keybind: Qt.Key_L
+            text: "Lock"
+            icon: "󰌾"
+            containerColor: Colors.md3.primary_container
+            contentColor: Colors.md3.on_primary_container
+        }
+        LogoutButton {
+            command: "loginctl terminate-user $USER"
+            keybind: Qt.Key_E
+            text: "Logout"
+            icon: "󰗽"
+            containerColor: Colors.md3.primary_container
+            contentColor: Colors.md3.on_primary_container
+        }
+        LogoutButton {
+            command: "systemctl suspend"
+            keybind: Qt.Key_S
+            text: "Suspend"
+            icon: "󰒲"
+            containerColor: Colors.md3.primary_container
+            contentColor: Colors.md3.on_primary_container
+        }
+        LogoutButton {
+            command: "systemctl hibernate"
+            keybind: Qt.Key_H
+            text: "Hibernate"
+            icon: "󰜗"
+            containerColor: Colors.md3.primary_container
+            contentColor: Colors.md3.on_primary_container
+        }
+        LogoutButton {
+            command: "systemctl poweroff"
+            keybind: Qt.Key_P
+            text: "Shutdown"
+            icon: "󰐥"
+            containerColor: Colors.md3.primary
+            contentColor: Colors.md3.on_primary
+        }
+        LogoutButton {
+            command: "systemctl reboot"
+            keybind: Qt.Key_R
+            text: "Reboot"
+            icon: "󰑐"
+            containerColor: Colors.md3.primary
+            contentColor: Colors.md3.on_primary
+        }
+    }
+
+    GlobalShortcut {
+        name: "openPowerMenu"
+        description: "Toggle power menu overlay"
+        onPressed: PowerMenuState.toggle()
+    }
 
     Loader {
         active: Config.screenCorners

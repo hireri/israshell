@@ -450,8 +450,7 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     root.isOpen = false;
-                                    sysProc.command = ["wlogout", "-p", "layer-shell"];
-                                    sysProc.running = true;
+                                    onClicked: PowerMenuState.toggle();
                                 }
                             }
                         }
