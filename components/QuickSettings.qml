@@ -171,7 +171,19 @@ Item {
                     width: 1
                     height: 14
                     color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.outline_variant
-                    opacity: 0.3
+                    opacity: root.isOpen ? 0.3 : 0.7
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
+                        }
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
+                        }
+                    }
                 }
             }
 
