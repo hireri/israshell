@@ -160,6 +160,10 @@ ShellRoot {
                                     panelWindow: window
                                 }
                                 BarClock {}
+
+                                WallpaperPicker {
+                                    panelWindow: window
+                                }
                             }
 
                             Row {

@@ -116,13 +116,6 @@ Variants {
                 else
                     w.closeMenu();
             }
-
-            function onImmediateHide() {
-                enterAnim.stop();
-                exitAnim.stop();
-                scrim.opacity = 0;
-                w.visible = false;
-            }
         }
 
         contentItem {
