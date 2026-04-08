@@ -28,6 +28,21 @@ Item {
         }
     }
 
+    GlobalShortcut {
+        name: "openWallpaperPicker"
+        description: "Toggle wallpaper picker"
+        onPressed: {
+            const screen = root.panelWindow.screen;
+            if (!screen)
+                return;
+            if (Hyprland.focusedMonitor?.name !== screen.name)
+                return;
+            root.isOpen = !root.isOpen;
+            if (root.isOpen)
+                WallpaperService.openFor(root.panelWindow);
+        }
+    }
+
     Timer {
         id: closeTimer
         interval: 380

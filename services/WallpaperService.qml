@@ -87,16 +87,6 @@ Singleton {
 
     onCurrentDirChanged: _runList()
 
-    GlobalShortcut {
-        name: "openWallpaperPicker"
-        description: "Toggle wallpaper picker"
-        onPressed: {
-            root.isOpen = !root.isOpen;
-            if (root.isOpen)
-                root.openFor(null);
-        }
-    }
-
     Process {
         id: listProc
         stdout: StdioCollector {
