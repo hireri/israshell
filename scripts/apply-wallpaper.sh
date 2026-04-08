@@ -16,4 +16,4 @@ awww img \
     --transition-duration 2 \
     "$HOME/.config/hypr/current_wall"
 
-matugen image "$HOME/.config/hypr/current_wall" -m "$MODE"
+matugen image "$HOME/.config/hypr/current_wall" -m "$MODE" --source-color-index 0
