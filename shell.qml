@@ -111,7 +111,7 @@ ShellRoot {
                 property var modelData: screenScope.modelData
                 screen: modelData
 
-                property bool isMenuOpen: qsWidget.isOpen || false
+                property bool isMenuOpen: qsWidget.isOpen || wpWidget.isOpen || false
 
                 WlrLayershell.namespace: "quickshell:bar"
                 WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
@@ -162,6 +162,7 @@ ShellRoot {
                                 BarClock {}
 
                                 WallpaperPicker {
+                                    id: wpWidget
                                     panelWindow: window
                                 }
                             }
