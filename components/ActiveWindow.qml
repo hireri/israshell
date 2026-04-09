@@ -8,10 +8,8 @@ import qs.style
 Item {
     id: root
     readonly property int maxTextWidth: 450
-    readonly property var activeWindow: Hyprland.toplevels.values.find(t => t.activated)
 
-    readonly property int maxTitleChars: 60
-    readonly property int maxAppIdChars: 40
+    readonly property var activeWindow: Hyprland.activeToplevel
 
     implicitWidth: leftContent.implicitWidth + 20
     height: 32
@@ -38,14 +36,6 @@ Item {
         text: root.kaomoji
         font.pixelSize: 10
         font.family: Config.fontFamily
-    }
-
-    function truncateText(str, maxLength) {
-        if (!str)
-            return "";
-        if (str.length > maxLength)
-            return str.substring(0, maxLength).trim() + "...";
-        return str;
     }
 
     function getAppId(w) {
@@ -76,8 +66,6 @@ Item {
         const rawAppId = getAppId(w);
         const rawTitle = w ? (w.title ?? "") : "";
 
-        const newAppId = truncateText(rawAppId, maxAppIdChars);
-        const newTitle = truncateText(rawTitle, maxTitleChars);
         const newSource = getIconSource(rawAppId);
 
         displayedAppId = rawAppId;
@@ -85,12 +73,12 @@ Item {
 
         if (layerA) {
             iconSourceB = newSource;
-            textAppIdB = newAppId;
-            textTitleB = newTitle;
+            textAppIdB = rawAppId;
+            textTitleB = rawTitle;
         } else {
             iconSourceA = newSource;
-            textAppIdA = newAppId;
-            textTitleA = newTitle;
+            textAppIdA = rawAppId;
+            textTitleA = rawTitle;
         }
 
         layerA = !layerA;
@@ -98,33 +86,30 @@ Item {
     }
 
     onActiveWindowChanged: updateWindowInfo()
-    onActiveFocusChanged: updateWindowInfo()
 
     Connections {
         target: activeWindow || null
         ignoreUnknownSignals: true
 
         function onTitleChanged() {
-            const truncatedTitle = truncateText(activeWindow.title, maxTitleChars);
             displayedTitle = activeWindow.title ?? "";
             if (layerA)
-                textTitleA = truncatedTitle;
+                textTitleA = displayedTitle;
             else
-                textTitleB = truncatedTitle;
+                textTitleB = displayedTitle;
         }
 
         function onWaylandChanged() {
             const rawAppId = getAppId(activeWindow);
-            const newAppId = truncateText(rawAppId, maxAppIdChars);
             const newSource = getIconSource(rawAppId);
 
             displayedAppId = rawAppId;
 
             if (layerA) {
-                textAppIdA = newAppId;
+                textAppIdA = rawAppId;
                 iconSourceA = newSource;
             } else {
-                textAppIdB = newAppId;
+                textAppIdB = rawAppId;
                 iconSourceB = newSource;
             }
         }
@@ -138,8 +123,8 @@ Item {
         displayedAppId = rawAppId;
         displayedTitle = rawTitle;
         iconSourceA = getIconSource(rawAppId);
-        textAppIdA = truncateText(rawAppId, maxAppIdChars);
-        textTitleA = truncateText(rawTitle, maxTitleChars);
+        textAppIdA = rawAppId;
+        textTitleA = rawTitle;
     }
 
     ParallelAnimation {
@@ -231,7 +216,7 @@ Item {
         Item {
             id: textContainer
             anchors.verticalCenter: parent.verticalCenter
-            height: textColA.implicitHeight
+            height: Math.max(textColA.implicitHeight, textColB.implicitHeight)
             clip: true
 
             width: {
@@ -253,6 +238,8 @@ Item {
 
                 Text {
                     id: appIdTextA
+                    width: parent.width
+                    elide: Text.ElideRight
                     color: Colors.md3.on_surface_variant
                     font.pixelSize: 10
                     font.family: Config.fontFamily
@@ -260,6 +247,8 @@ Item {
                 }
                 Text {
                     id: titleTextA
+                    width: parent.width
+                    elide: Text.ElideRight
                     color: Colors.md3.on_surface
                     font.pixelSize: 12
                     font.family: Config.fontFamily
@@ -274,6 +263,8 @@ Item {
 
                 Text {
                     id: appIdTextB
+                    width: parent.width
+                    elide: Text.ElideRight
                     color: Colors.md3.on_surface_variant
                     font.pixelSize: 10
                     font.family: Config.fontFamily
@@ -281,6 +272,8 @@ Item {
                 }
                 Text {
                     id: titleTextB
+                    width: parent.width
+                    elide: Text.ElideRight
                     color: Colors.md3.on_surface
                     font.pixelSize: 12
                     font.family: Config.fontFamily
