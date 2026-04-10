@@ -81,7 +81,7 @@ Singleton {
     function _runList() {
         loading = true;
         listProc.running = false;
-        listProc.command = ["python3", "-c", "import os,sys\n" + "d=sys.argv[1]\n" + "imgs={'.jpg','.jpeg','.png','.webp','.gif'}\n" + "try:\n" + "    ents=sorted(os.scandir(d),key=lambda e:(not e.is_dir(),e.name.lower()))\n" + "    for e in ents:\n" + "        if e.name.startswith('.'): continue\n" + "        if e.is_dir(): print('D\\t'+e.name+'\\t'+e.path)\n" + "        elif os.path.splitext(e.name)[1].lower() in imgs: print('F\\t'+e.name+'\\t'+e.path)\n" + "except: pass\n", currentDir];
+        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; } | " + "sort -rn | cut -f2-"];
         listProc.running = true;
     }
 
