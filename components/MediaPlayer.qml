@@ -11,12 +11,20 @@ Rectangle {
     implicitWidth: 240
     height: 32
 
+    function activePlayer() {
+        for (const p of Mpris.players.values) {
+            if (p.trackTitle && p.trackTitle !== "")
+                return p;
+        }
+        return null;
+    }
+
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton | Qt.MiddleButton
 
         onClicked: mouse => {
-            const player = Mpris.players.values[0];
+            const player = activePlayer();
             if (!player)
                 return;
             if (mouse.button === Qt.RightButton)
@@ -26,7 +34,7 @@ Rectangle {
         }
 
         onWheel: wheel => {
-            const player = Mpris.players.values[0];
+            const player = activePlayer();
             if (!player)
                 return;
             player.volume = Math.max(0, Math.min(1, player.volume + (wheel.angleDelta.y > 0 ? 0.05 : -0.05)));
@@ -52,7 +60,7 @@ Rectangle {
                 running: true
                 repeat: true
                 onTriggered: {
-                    const player = Mpris.players.values[0];
+                    const player = activePlayer();
                     coverRoot.hasPlayer = !!player;
                     coverRoot.isPlaying = player?.playbackState === MprisPlaybackState.Playing;
                 }
@@ -107,7 +115,7 @@ Rectangle {
                 Image {
                     id: albumArt
                     anchors.fill: parent
-                    source: Mpris.players.values[0]?.trackArtUrl ?? ""
+                    source: activePlayer()?.trackArtUrl ?? ""
                     antialiasing: true
                     smooth: true
                 }
@@ -142,7 +150,7 @@ Rectangle {
                 font.family: Config.fontFamily
                 font.pixelSize: 14
                 text: {
-                    const player = Mpris.players.values[0];
+                    const player = activePlayer();
                     if (!player)
                         return "nothing playing   ᓚ₍ ^. .^₎";
                     return player.trackTitle + "  •  " + player.trackArtist;
