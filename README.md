@@ -10,8 +10,7 @@
 ---
 
 ## ✨ Showcase
-
-<video src="https://files.catbox.moe/xqssff.mp4" width="620" controls></video>
+https://github.com/user-attachments/assets/a8801fbd-5926-4c2e-8c5f-b0d1f30682bb
 
 ---
 
