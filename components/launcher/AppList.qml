@@ -10,6 +10,8 @@ Item {
     property string query: ""
     signal launched
 
+    readonly property real listContentHeight: list.contentHeight
+
     property int selectedIndex: 0
     onQueryChanged: selectedIndex = 0
 
@@ -56,16 +58,14 @@ Item {
         clip: true
         spacing: 2
         boundsBehavior: Flickable.StopAtBounds
-
         currentIndex: root.selectedIndex
         highlightMoveDuration: 150
         highlightMoveVelocity: -1
         highlightFollowsCurrentItem: true
 
         highlight: Rectangle {
-            radius: 10
+            radius: 14
             color: Colors.md3.secondary_container
-
             Rectangle {
                 width: 3
                 height: 22
@@ -73,7 +73,7 @@ Item {
                 color: Colors.md3.primary
                 anchors {
                     left: parent.left
-                    leftMargin: 4
+                    leftMargin: 5
                     verticalCenter: parent.verticalCenter
                 }
             }
@@ -83,92 +83,125 @@ Item {
             id: del
             required property var modelData
             required property int index
-
             width: list.width
-            height: 48
+            height: 52
+
+            MouseArea {
+                id: hov
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    del.modelData.execute();
+                    root.launched();
+                }
+            }
 
             Rectangle {
                 anchors.fill: parent
-                anchors.leftMargin: 0
-                radius: 10
-                color: "transparent"
+                radius: 14
+                color: Colors.md3.on_surface
+                opacity: hov.pressed ? 0.12 : hov.containsMouse ? 0.08 : 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 80
+                    }
+                }
+            }
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: parent.radius
-                    color: Colors.md3.on_surface
-                    opacity: hov.pressed ? 0.12 : hov.containsMouse ? 0.06 : 0
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 80
-                        }
+            RowLayout {
+                anchors {
+                    fill: parent
+                    leftMargin: 14
+                    rightMargin: 14
+                }
+                spacing: 12
+
+                Item {
+                    width: 34
+                    height: 34
+                    Layout.alignment: Qt.AlignVCenter
+                    IconImage {
+                        anchors.fill: parent
+                        source: Quickshell.iconPath(del.modelData.icon ?? "", true)
+                        visible: (del.modelData.icon ?? "") !== ""
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰘔"
+                        color: Colors.md3.primary
+                        font.pixelSize: 22
+                        font.family: Config.fontFamily
+                        visible: (del.modelData.icon ?? "") === ""
                     }
                 }
 
-                RowLayout {
-                    anchors {
-                        fill: parent
-                        leftMargin: 12
-                        rightMargin: 12
-                    }
-                    spacing: 14
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 2
 
-                    Item {
-                        width: 32
-                        height: 32
-                        Layout.alignment: Qt.AlignVCenter
-
-                        IconImage {
-                            anchors.fill: parent
-                            source: Quickshell.iconPath(del.modelData.icon ?? "", true)
-                            visible: (del.modelData.icon ?? "") !== ""
-                        }
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰘔"
-                            color: Colors.md3.primary
-                            font.pixelSize: 22
-                            font.family: Config.fontFamily
-                            visible: (del.modelData.icon ?? "") === ""
-                        }
-                    }
-
-                    ColumnLayout {
+                    Text {
+                        text: del.modelData.name ?? ""
+                        color: root.selectedIndex === del.index ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+                        font.pixelSize: 13
+                        font.family: Config.fontFamily
+                        font.bold: root.selectedIndex === del.index
+                        elide: Text.ElideRight
                         Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: 2
-
-                        Text {
-                            text: del.modelData.name ?? ""
-                            color: root.selectedIndex === del.index ? Colors.md3.on_secondary_container : Colors.md3.on_surface
-                            font.pixelSize: 13
-                            font.family: Config.fontFamily
-                            font.bold: root.selectedIndex === del.index
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Text {
-                            text: del.modelData.genericName ?? del.modelData.comment ?? ""
-                            color: root.selectedIndex === del.index ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
-                            font.pixelSize: 11
-                            font.family: Config.fontFamily
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                            visible: text !== ""
-                            opacity: 0.8
-                        }
+                    }
+                    Text {
+                        text: del.modelData.genericName ?? del.modelData.comment ?? ""
+                        color: Colors.md3.on_surface_variant
+                        font.pixelSize: 11
+                        font.family: Config.fontFamily
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                        visible: text !== ""
+                        opacity: 0.8
                     }
                 }
 
-                MouseArea {
-                    id: hov
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        del.modelData.execute();
-                        root.launched();
+                Row {
+                    spacing: 4
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: (del.modelData.actions?.length ?? 0) > 0
+
+                    Repeater {
+                        model: (del.modelData.actions ?? []).slice(0, 3)
+                        Rectangle {
+                            id: actionBtn
+                            width: 32
+                            height: 32
+                            radius: 10
+                            readonly property string aIcon: Quickshell.iconPath(modelData.icon ?? "", true) !== "" ? Quickshell.iconPath(modelData.icon ?? "", true) : Quickshell.iconPath(del.modelData.icon ?? "", true)
+                            color: aHov.containsMouse ? Colors.md3.secondary_container : "transparent"
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 80
+                                }
+                            }
+
+                            IconImage {
+                                anchors {
+                                    fill: parent
+                                    margins: 5
+                                }
+                                source: actionBtn.aIcon
+                            }
+
+                            MouseArea {
+                                id: aHov
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: mouse => {
+                                    mouse.accepted = true;
+                                    modelData.execute();
+                                    root.launched();
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -176,7 +209,7 @@ Item {
 
         Text {
             anchors.centerIn: parent
-            text: "No applications found"
+            text: "No apps found." // shouldnt even show up
             color: Colors.md3.on_surface_variant
             font.pixelSize: 13
             font.family: Config.fontFamily

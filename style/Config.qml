@@ -20,6 +20,7 @@ Singleton {
     property alias huggingBar: adapter.huggingBar
     property alias screenCorners: adapter.screenCorners
     property alias dateFormat: adapter.dateFormat
+    property alias osdPosition: adapter.osdPosition
 
     FileView {
         path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
@@ -42,6 +43,7 @@ Singleton {
             property bool huggingBar: false
             property bool screenCorners: true
             property int dateFormat: 0
+            property int osdPosition: 0
         }
     }
 }
