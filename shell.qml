@@ -12,6 +12,7 @@ ShellRoot {
 
     NotificationPopup {}
     VolumeOSD {}
+    AppLauncher {}
 
     Logout {
         LogoutButton {
