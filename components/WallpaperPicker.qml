@@ -181,8 +181,13 @@ Item {
                 const q = (query ?? "").toLowerCase().trim();
                 const src = entries ?? WallpaperService.entries;
                 const filtered = q ? src.filter(e => e.name.toLowerCase().includes(q)) : src;
+                const sorted = [...filtered].sort((a, b) => {
+                    if (a.isDir === b.isDir)
+                        return 0;
+                    return a.isDir ? -1 : 1;
+                });
                 panel.gridModel.clear();
-                for (const e of filtered)
+                for (const e of sorted)
                     panel.gridModel.append(e);
             }
 
