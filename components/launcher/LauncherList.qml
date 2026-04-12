@@ -60,13 +60,13 @@ Item {
         }
 
         onCountChanged: {
-            const pm = list.highlightMoveDuration, pr = list.highlightResizeDuration;
-            list.highlightMoveDuration = list.highlightResizeDuration = 0;
+            list.highlightMoveDuration = 0;
+            list.highlightResizeDuration = 0;
             list.currentIndex = 0;
             list.positionViewAtBeginning();
             Qt.callLater(() => {
-                list.highlightMoveDuration = pm;
-                list.highlightResizeDuration = pr;
+                list.highlightMoveDuration = 160;
+                list.highlightResizeDuration = 160;
             });
         }
 

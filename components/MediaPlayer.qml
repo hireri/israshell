@@ -156,6 +156,11 @@ Rectangle {
                     return player.trackTitle + "  •  " + player.trackArtist;
                 }
 
+                Component.onCompleted: {
+                    if (mediaTextContainer.shouldScroll)
+                        scrollAnim.restart();
+                }
+
                 onTextChanged: {
                     if (mediaTextContainer.shouldScroll)
                         scrollAnim.restart();
