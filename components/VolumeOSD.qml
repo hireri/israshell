@@ -51,7 +51,8 @@ Scope {
 
     property real volumePercent: root.rawVolume * 100
     property bool isOverLimit: volumePercent > 100
-    property real trackFill: Math.min(volumePercent / 150, 1.0)
+    property real trackFill: Math.min(volumePercent / 100, 1.0)
+    property real overFill: Math.max((volumePercent - 100) / 50, 0)
 
     Timer {
         id: hideTimer
@@ -161,7 +162,7 @@ Scope {
                             }
                             height: parent.height * root.trackFill
                             radius: 4
-                            color: root.isMuted ? Colors.md3.outline : (root.isOverLimit ? Colors.md3.error : Colors.md3.primary)
+                            color: root.isMuted ? Colors.md3.outline : Colors.md3.primary
                             Behavior on height {
                                 NumberAnimation {
                                     duration: 100
@@ -171,13 +172,21 @@ Scope {
                         }
 
                         Rectangle {
+                            visible: root.isOverLimit
                             anchors {
                                 left: parent.left
                                 right: parent.right
+                                bottom: parent.bottom
                             }
-                            y: parent.height * (1 - 100 / 150) - height / 2
-                            height: 2
-                            color: root.isOverLimit ? Colors.md3.error : Qt.alpha(Colors.md3.outline_variant, 0.6)
+                            height: parent.height * root.overFill
+                            radius: 4
+                            color: Colors.md3.error
+                            Behavior on height {
+                                NumberAnimation {
+                                    duration: 100
+                                    easing.type: Easing.OutQuad
+                                }
+                            }
                         }
                     }
 
@@ -238,7 +247,7 @@ Scope {
                             }
                             width: parent.width * root.trackFill
                             radius: 4
-                            color: root.isMuted ? Colors.md3.outline : (root.isOverLimit ? Colors.md3.error : Colors.md3.primary)
+                            color: root.isMuted ? Colors.md3.outline : Colors.md3.primary
                             Behavior on width {
                                 NumberAnimation {
                                     duration: 100
@@ -248,13 +257,21 @@ Scope {
                         }
 
                         Rectangle {
+                            visible: root.isOverLimit
                             anchors {
                                 top: parent.top
                                 bottom: parent.bottom
+                                left: parent.left
                             }
-                            x: parent.width * (100 / 150) - width / 2
-                            width: 2
-                            color: root.isOverLimit ? Colors.md3.error : Qt.alpha(Colors.md3.outline_variant, 0.6)
+                            width: parent.width * root.overFill
+                            radius: 4
+                            color: Colors.md3.error
+                            Behavior on width {
+                                NumberAnimation {
+                                    duration: 100
+                                    easing.type: Easing.OutQuad
+                                }
+                            }
                         }
                     }
 
