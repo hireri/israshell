@@ -53,7 +53,7 @@ Ensure you are on an Arch-based system with the following installed:
 ```bash
 sudo pacman -S quickshell hyprland pipewire bluez networkmanager hypridle
 # full feature set
-sudo pacman -S whois kakasi mpv espeak-ng xdg-utils
+sudo pacman -S whois kakasi mpv espeak-ng xdg-utils rdap
 ```
 
 ### 2. Configuration
@@ -76,6 +76,6 @@ qs -n
 | :--- | :--- | :--- |
 | **Shell Core** | `quickshell`, `hyprland` | Runtime & WM |
 | **Audio/Comm** | `pipewire`, `bluez`, `networkmanager` | Connectivity |
-| **Productivity**| `clipvault`, `whois`, `kakasi` | Widgets |
+| **Productivity**| `clipvault`, `whois`, `kakasi` `rdap` | Widgets |
 | **Multimedia**  | `gtts-cli`, `mpv`, `espeak-ng` | TTS Engine |
 | **System**      | `hyprsunset`, `hypridle`, `systemd` | Control |
