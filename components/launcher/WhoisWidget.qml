@@ -11,10 +11,12 @@ Item {
 
     property bool _loading: false
     property bool _error: false
+    property string _errorMsg: ""
     property string _raw: ""
     property var _info: ({})
 
     readonly property bool _isIp: /^\d{1,3}(?:\.\d{1,3}){3}$/.test(subject.trim()) || /^[0-9a-fA-F:]{2,39}$/.test(subject.trim())
+    readonly property bool _isAsn: /^AS\d+$/i.test(subject.trim())
 
     implicitHeight: col.implicitHeight
 
@@ -33,31 +35,81 @@ Item {
                 return;
             root._loading = true;
             root._error = false;
+            root._errorMsg = "";
             root._raw = "";
             root._info = {};
-            whoisProc.running = false;
-            whoisProc.command = ["whois", s];
-            whoisProc.running = true;
+            rdapProc.running = false;
+            rdapProc.command = ["rdap", s];
+            rdapProc.running = true;
         }
     }
 
     Process {
-        id: whoisProc
+        id: rdapProc
         stdout: StdioCollector {
             onStreamFinished: {
                 root._loading = false;
-                if (this.text.trim() === "") {
+                const output = this.text.trim();
+
+                if (output === "") {
                     root._error = true;
+                    root._errorMsg = "Empty response from RDAP server";
                     return;
                 }
-                root._raw = this.text;
-                root._info = root._parse(this.text);
+
+                if (output.includes("404") || output.includes("Not Found")) {
+                    root._error = true;
+                    root._errorMsg = "Domain/IP not found (404)";
+                    root._raw = output;
+                    return;
+                }
+
+                if (output.includes("400") || output.includes("Bad Request")) {
+                    root._error = true;
+                    root._errorMsg = "Invalid query format";
+                    root._raw = output;
+                    return;
+                }
+
+                if (output.includes("Rate limit") || output.includes("429")) {
+                    root._error = true;
+                    root._errorMsg = "Rate limited - try again later";
+                    root._raw = output;
+                    return;
+                }
+
+                root._raw = output;
+                root._info = root._parseText(output);
+
+                if (Object.keys(root._info).length === 0) {
+                    root._error = true;
+                    root._errorMsg = "Could not parse RDAP response";
+                }
             }
         }
         stderr: StdioCollector {
             onStreamFinished: {
-                if (this.text.trim() !== "" && root._raw === "" && !root._loading)
-                    root._error = true;
+                const err = this.text.trim();
+                if (err === "" && root._raw !== "")
+                    return;
+
+                root._loading = false;
+                root._error = true;
+
+                if (err.includes("command not found") || err.includes("No such file")) {
+                    root._errorMsg = "RDAP not found. Install `rdap` from AUR";
+                } else {
+                    root._errorMsg = err || "RDAP lookup failed";
+                }
+            }
+        }
+        onRunningChanged: {
+            if (!running && exitCode !== 0 && exitCode !== undefined && root._raw === "") {
+                root._loading = false;
+                root._error = true;
+                if (root._errorMsg === "") {
+                    root._errorMsg = "RDAP process failed (exit " + exitCode + ")";
+                }
             }
         }
     }
@@ -67,27 +119,40 @@ Item {
         running: false
     }
 
-    function _parse(text) {
-        const result = {};
+    Process {
+        id: copyProc
+        running: false
+    }
 
-        function get(patterns) {
-            for (const p of patterns) {
-                const re = new RegExp("^" + p + ":\\s*(.+)$", "im");
-                const m = re.exec(text);
-                if (m) {
-                    const v = m[1].trim();
-                    if (!v.startsWith("http") && v.length < 120)
-                        return v;
-                }
+    function _parseText(text) {
+        const result = {};
+        const lines = text.split('\n');
+
+        function getValue(pattern) {
+            const re = new RegExp(`^${pattern}:\\s*(.+)$`, 'i');
+            for (const line of lines) {
+                const m = line.match(re);
+                if (m)
+                    return m[1].trim();
             }
             return null;
+        }
+
+        function getAllValues(pattern) {
+            const re = new RegExp(`^${pattern}:\\s*(.+)$`, 'i');
+            const values = [];
+            for (const line of lines) {
+                const m = line.match(re);
+                if (m)
+                    values.push(m[1].trim());
+            }
+            return values;
         }
 
         function fmtDate(raw) {
             if (!raw)
                 return null;
-            const clean = raw.split(/\s+/)[0];
-            const d = new Date(clean);
+            const d = new Date(raw);
             return isNaN(d.getTime()) ? raw : d.toLocaleDateString("en-GB", {
                 year: "numeric",
                 month: "short",
@@ -95,15 +160,144 @@ Item {
             });
         }
 
-        result.registrar = get(["Registrar", "registrar", "Sponsoring Registrar"]);
-        result.created = fmtDate(get(["Creation Date", "Created", "Registered", "created", "Registration Time"]));
-        result.expires = fmtDate(get(["Registry Expiry Date", "Expiry Date", "Expiration Date", "Registrar Registration Expiration Date", "expires", "Expiry"]));
-        const statusRaw = get(["Domain Status", "Status", "status"]);
-        if (statusRaw)
-            result.status = statusRaw.split(/\s+/)[0];
-        result.org = get(["OrgName", "Org-Name", "org-name", "Organization", "organization", "NetName", "netname", "descr"]);
-        result.country = get(["Country", "country"]);
-        result.range = get(["NetRange", "inetnum", "CIDR"]);
+        if (text.match(/Start Address:/i) || text.match(/^\d+\.\d+\.\d+\.\d+\s*-\s*\d+\.\d+\.\d+\.\d+/m)) {
+            result.type = "ip";
+            result.name = getValue("Name");
+            result.handle = getValue("Handle");
+            result.startAddress = getValue("Start Address");
+            result.endAddress = getValue("End Address");
+            result.ipVersion = getValue("IP Version");
+            result.country = getValue("Country");
+            result.cidr = getValue("CIDR");
+            result.parent = getValue("Parent");
+            result.port43 = getValue("Port43");
+            result.assignmentType = getValue("Type");
+            result.created = fmtDate(getValue("registration"));
+            result.updated = fmtDate(getValue("last changed"));
+            result.status = getValue("Status");
+
+            let currentEntity = null;
+            let currentRoles = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                if (line.match(/^Entity Handle:/i)) {
+                    currentEntity = line.match(/^Entity Handle:\s*(.+)$/i)?.[1]?.trim();
+                    currentRoles = [];
+                    continue;
+                }
+
+                const roleMatch = line.match(/^Role:\s*(.+)$/i);
+                if (roleMatch) {
+                    currentRoles.push(roleMatch[1].toLowerCase());
+                    continue;
+                }
+
+                if (currentRoles.includes("abuse")) {
+                    const emailMatch = line.match(/^Email:\s*(.+)$/i);
+                    if (emailMatch && !result.abuseEmail) {
+                        result.abuseEmail = emailMatch[1];
+                    }
+                    const nameMatch = line.match(/^Name:\s*(.+)$/i);
+                    if (nameMatch && !result.abuseName) {
+                        result.abuseName = nameMatch[1];
+                    }
+                }
+
+                if (currentRoles.includes("registrant")) {
+                    const orgMatch = line.match(/^Name:\s*(.+)$/i);
+                    if (orgMatch && !result.registrantOrg) {
+                        result.registrantOrg = orgMatch[1];
+                    }
+                }
+            }
+        } else if (text.includes("Object Class: domain") || text.match(/Domain Name:/i)) {
+            result.type = "domain";
+
+            result.name = getValue("Domain Name");
+            result.handle = getValue("Handle");
+
+            const statuses = getAllValues("Status");
+            if (statuses.length > 0) {
+                result.status = statuses[0].replace(/https:\/\/icann\.org\/epp#/, "");
+                result.allStatuses = statuses;
+            }
+
+            const nsList = getAllValues("Nameserver");
+            if (nsList.length > 0) {
+                result.nameservers = nsList.join(", ");
+            }
+
+            const ds = getValue("Delegation Signed");
+            if (ds) {
+                result.dnssec = ds.toLowerCase() === "yes" ? "signed" : "unsigned";
+            }
+
+            result.created = fmtDate(getValue("Registration"));
+            result.expires = fmtDate(getValue("Expiration") || getValue("registrar expiration"));
+            result.updated = fmtDate(getValue("Last Changed"));
+            result.rdapUpdated = fmtDate(getValue("Last Update"));
+
+            result.port43 = getValue("Port43");
+
+            let currentEntity = null;
+            let currentRoles = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                if (line.match(/^Entity Handle:/i)) {
+                    currentEntity = line.match(/^Entity Handle:\s*(.+)$/i)?.[1]?.trim();
+                    currentRoles = [];
+                    continue;
+                }
+
+                const roleMatch = line.match(/^Role:\s*(.+)$/i);
+                if (roleMatch) {
+                    currentRoles.push(roleMatch[1].toLowerCase());
+                    continue;
+                }
+
+                if (currentRoles.includes("registrar")) {
+                    const idMatch = line.match(/^IANA Registrar ID:\s*(.+)$/i);
+                    if (idMatch)
+                        result.registrarId = idMatch[1];
+                    const nameMatch = line.match(/^Name:\s*(.+)$/i);
+                    if (nameMatch && !result.registrar)
+                        result.registrar = nameMatch[1];
+                }
+
+                if (currentRoles.includes("registrant")) {
+                    const orgMatch = line.match(/^Organization:\s*(.+)$/i);
+                    if (orgMatch)
+                        result.registrantOrg = orgMatch[1];
+                    const nameMatch = line.match(/^Name:\s*(.+)$/i);
+                    if (nameMatch && !result.registrantName)
+                        result.registrantName = nameMatch[1];
+                    const emailMatch = line.match(/^Email:\s*(.+)$/i);
+                    if (emailMatch)
+                        result.registrantEmail = emailMatch[1];
+                }
+
+                if (currentRoles.includes("abuse")) {
+                    const emailMatch = line.match(/^Email:\s*(.+)$/i);
+                    if (emailMatch && !result.abuseEmail) {
+                        result.abuseEmail = emailMatch[1];
+                    }
+                }
+            }
+        } else if (text.includes("Object Class: autnum") || text.match(/autnum/i)) {
+            result.type = "asn";
+            result.asn = getValue("autnum") || getValue("Handle");
+            result.name = getValue("Name");
+            result.country = getValue("Country");
+            result.handle = getValue("Handle");
+        }
+
+        if (text.includes("REDACTED FOR PRIVACY") || text.includes("REDACTED")) {
+            result.redacted = true;
+        }
 
         return result;
     }
@@ -112,10 +306,11 @@ Item {
         id: pb
         property string label: ""
         property bool primary: false
+        property bool showBtn: true
         signal tapped
 
-        implicitWidth: lbl.implicitWidth + 22
-        implicitHeight: 30
+        implicitWidth: showBtn ? lbl.implicitWidth + 22 : 0
+        implicitHeight: showBtn ? 30 : 0
         radius: height / 2
         color: ma.containsMouse ? (primary ? Colors.md3.primary : Colors.md3.secondary_container) : (primary ? Colors.md3.primary_container : Colors.md3.surface_container_high)
         Behavior on color {
@@ -144,7 +339,9 @@ Item {
     component InfoRow: RowLayout {
         property string label: ""
         property string value: ""
-        visible: value !== "" && value !== null && value !== undefined
+
+        readonly property bool hasValue: value !== "" && value !== null && value !== undefined
+
         Layout.fillWidth: true
         spacing: 0
 
@@ -155,6 +352,7 @@ Item {
             font.family: Config.fontFamily
             opacity: 0.5
             Layout.preferredWidth: 80
+            visible: parent.hasValue
         }
         Text {
             text: value ?? ""
@@ -163,6 +361,7 @@ Item {
             font.family: Config.fontFamily
             elide: Text.ElideRight
             Layout.fillWidth: true
+            visible: parent.hasValue
         }
     }
 
@@ -218,6 +417,23 @@ Item {
                 }
             }
 
+            Rectangle {
+                visible: !root._loading && !root._error && (root._info.redacted ?? false)
+                implicitWidth: redLbl.implicitWidth + 14
+                height: 22
+                radius: 11
+                color: Colors.md3.tertiary_container
+
+                Text {
+                    id: redLbl
+                    anchors.centerIn: parent
+                    text: "redacted"
+                    color: Colors.md3.on_tertiary_container
+                    font.pixelSize: 11
+                    font.family: Config.fontFamily
+                }
+            }
+
             Item {
                 Layout.fillWidth: true
             }
@@ -244,22 +460,23 @@ Item {
         }
 
         Text {
-            visible: root._error
+            visible: root._error && root._errorMsg !== ""
             Layout.fillWidth: true
-            text: "Whois lookup failed. Is `whois` installed?"
+            text: root._errorMsg
             color: Colors.md3.error
             font.pixelSize: 13
             font.family: Config.fontFamily
             opacity: 0.8
+            wrapMode: Text.Wrap
         }
 
         Item {
-            visible: !root._loading && !root._error
+            visible: !root._loading && !root._error && (root._info.type ?? "") === "domain"
             Layout.fillWidth: true
-            implicitHeight: infoRows.implicitHeight
+            implicitHeight: domainRows.implicitHeight
 
             ColumnLayout {
-                id: infoRows
+                id: domainRows
                 anchors {
                     top: parent.top
                     left: parent.left
@@ -279,38 +496,154 @@ Item {
                     value: root._info.registrar ?? ""
                 }
                 InfoRow {
+                    label: "registrar id"
+                    value: root._info.registrarId ?? ""
+                }
+                InfoRow {
                     label: "created"
                     value: root._info.created ?? ""
+                }
+                InfoRow {
+                    label: "updated"
+                    value: root._info.updated ?? ""
                 }
                 InfoRow {
                     label: "expires"
                     value: root._info.expires ?? ""
                 }
                 InfoRow {
-                    label: "org"
-                    value: root._info.org ?? ""
+                    label: "nameservers"
+                    value: root._info.nameservers ?? ""
+                }
+                InfoRow {
+                    label: "dnssec"
+                    value: root._info.dnssec ?? ""
+                }
+                InfoRow {
+                    label: "registrant"
+                    value: root._info.registrantOrg ?? root._info.registrantName ?? ""
+                }
+                InfoRow {
+                    label: "abuse email"
+                    value: root._info.abuseEmail ?? ""
+                }
+            }
+        }
+
+        Item {
+            visible: !root._loading && !root._error && (root._info.type ?? "") === "ip"
+            Layout.fillWidth: true
+            implicitHeight: ipRows.implicitHeight
+
+            ColumnLayout {
+                id: ipRows
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                }
+                spacing: 6
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: Colors.md3.outline_variant
+                    opacity: 0.35
+                }
+
+                InfoRow {
+                    label: "network"
+                    value: root._info.name ?? ""
+                }
+                InfoRow {
+                    label: "handle"
+                    value: root._info.handle ?? ""
+                }
+                InfoRow {
+                    label: "range"
+                    value: root._info.startAddress && root._info.endAddress ? `${root._info.startAddress} - ${root._info.endAddress}` : (root._info.cidr ?? "")
+                }
+                InfoRow {
+                    label: "cidr"
+                    value: root._info.cidr ?? ""
+                }
+                InfoRow {
+                    label: "type"
+                    value: root._info.assignmentType ?? ""
                 }
                 InfoRow {
                     label: "country"
                     value: root._info.country ?? ""
                 }
                 InfoRow {
-                    label: "range"
-                    value: root._info.range ?? ""
+                    label: "status"
+                    value: root._info.status ?? ""
                 }
-
-                Text {
-                    visible: !root._loading && !root._error && (root._info.registrar ?? "") === "" && (root._info.org ?? "") === "" && root._raw !== ""
-                    Layout.fillWidth: true
-                    text: "Data returned but format unrecognised. Copy raw for full output"
-                    color: Colors.md3.on_surface_variant
-                    font.pixelSize: 12
-                    font.family: Config.fontFamily
-                    font.italic: true
-                    opacity: 0.5
-                    wrapMode: Text.Wrap
+                InfoRow {
+                    label: "org"
+                    value: root._info.registrantOrg ?? ""
+                }
+                InfoRow {
+                    label: "abuse email"
+                    value: root._info.abuseEmail ?? ""
+                }
+                InfoRow {
+                    label: "whois srv"
+                    value: root._info.port43 ?? ""
                 }
             }
+        }
+
+        Item {
+            visible: !root._loading && !root._error && (root._info.type ?? "") === "asn"
+            Layout.fillWidth: true
+            implicitHeight: asnRows.implicitHeight
+
+            ColumnLayout {
+                id: asnRows
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                }
+                spacing: 6
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: Colors.md3.outline_variant
+                    opacity: 0.35
+                }
+
+                InfoRow {
+                    label: "asn"
+                    value: root._info.asn ?? ""
+                }
+                InfoRow {
+                    label: "name"
+                    value: root._info.name ?? ""
+                }
+                InfoRow {
+                    label: "country"
+                    value: root._info.country ?? ""
+                }
+                InfoRow {
+                    label: "handle"
+                    value: root._info.handle ?? ""
+                }
+            }
+        }
+
+        Text {
+            visible: !root._loading && !root._error && Object.keys(root._info).length === 0 && root._raw !== "" && root._errorMsg === ""
+            Layout.fillWidth: true
+            text: "No data parsed from RDAP response"
+            color: Colors.md3.on_surface_variant
+            font.pixelSize: 12
+            font.family: Config.fontFamily
+            font.italic: true
+            opacity: 0.5
+            wrapMode: Text.Wrap
         }
 
         Flow {
@@ -319,22 +652,36 @@ Item {
             spacing: 6
 
             PillBtn {
-                label: "󰆏  copy " + (root._isIp ? "ip" : "domain")
+                label: "󰆏  copy " + (root._isIp ? "ip" : root._isAsn ? "asn" : "domain")
                 primary: true
-                onTapped: root.copyResult(root.subject.trim())
+                onTapped: {
+                    copyProc.command = ["wl-copy", root.subject.trim()];
+                    copyProc.running = true;
+                }
             }
             PillBtn {
                 label: "󰖟  open in browser"
-                visible: !root._isIp
+                showBtn: !root._isIp && !root._isAsn
                 onTapped: {
                     browserProc.command = ["xdg-open", "https://" + root.subject.trim()];
                     browserProc.running = true;
                 }
             }
             PillBtn {
-                label: "󰆏  copy raw"
-                visible: root._raw !== ""
-                onTapped: root.copyResult(root._raw)
+                label: "󰆏  copy rdap output"
+                showBtn: root._raw !== ""
+                onTapped: {
+                    copyProc.command = ["wl-copy", root._raw];
+                    copyProc.running = true;
+                }
+            }
+            PillBtn {
+                label: "󰆏  copy abuse email"
+                showBtn: (root._info.abuseEmail ?? "") !== ""
+                onTapped: {
+                    copyProc.command = ["wl-copy", root._info.abuseEmail];
+                    copyProc.running = true;
+                }
             }
         }
     }
