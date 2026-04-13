@@ -107,7 +107,7 @@ Rectangle {
                 color: Colors.md3.surface_container_highest
                 Text {
                     anchors.centerIn: parent
-                    text: "♪"
+                    text: "󰝚"
                     color: Colors.md3.on_surface_variant
                     font.pixelSize: 14
                     font.family: Config.fontFamily

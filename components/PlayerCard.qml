@@ -41,12 +41,25 @@ Item {
             localArtPath = artUrl;
             return;
         }
+
+        localArtPath = "";
         const file = "/tmp/qs_art_" + Qt.md5(artUrl);
         artFetchProc.launchedUrl = artUrl;
         artFetchProc.launchedFile = file;
         artFetchProc.running = false;
-        artFetchProc.command = ["bash", "-c", `f='${file}'; t="$f.tmp"; [ -f "$f" ] || { curl -4 -sSL '${artUrl}' -o "$t" && mv "$t" "$f"; }`];
+        artFetchProc.command = ["bash", "-c", `f='${file}'; t="$f.tmp";[ -f "$f" ] || { curl -4 -sSL '${artUrl}' -o "$t" && mv "$t" "$f"; }`];
         artFetchProc.running = true;
+    }
+
+    Timer {
+        id: quantizerDelay
+        interval: 100
+        running: root.visible
+        onTriggered: {
+            if (root.artUrl === artFetchProc.launchedUrl) {
+                root.localArtPath = "file://" + artFetchProc.launchedFile;
+            }
+        }
     }
 
     Process {
@@ -55,8 +68,9 @@ Item {
         property string launchedFile: ""
         running: false
         onExited: code => {
-            if (code === 0 && launchedUrl === root.artUrl && launchedFile !== "")
-                root.localArtPath = "file://" + launchedFile;
+            if (code === 0 && launchedUrl === root.artUrl && launchedFile !== "") {
+                quantizerDelay.restart();
+            }
         }
     }
 
@@ -246,9 +260,9 @@ Item {
             }
 
             Connections {
-                target: root
-                function onLocalArtPathChanged() {
-                    bgClip.showBg(root.localArtPath);
+                target: coverRoot
+                function onShownPathChanged() {
+                    bgClip.showBg(coverRoot.shownPath);
                 }
             }
 
@@ -323,6 +337,16 @@ Item {
                             distanceToPlane: 200
                         }
 
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰝚"
+                            font.pixelSize: 30
+                            font.family: Config.fontFamily
+                            color: root.colOnSurfaceVariant
+                            opacity: 0.45
+                            visible: coverImg.status !== Image.Ready
+                        }
+
                         Image {
                             id: coverImg
                             anchors.fill: parent
@@ -334,69 +358,44 @@ Item {
                             antialiasing: true
                             smooth: true
                             mipmap: true
-                        }
-                    }
 
-                    Rectangle {
-                        id: coverFade
-                        anchors.fill: parent
-                        radius: 12
-                        color: root.colSurface
-                        opacity: 0
-                        z: 10
+                            opacity: status === Image.Ready ? 1 : 0
+                            Behavior on opacity {
+                                enabled: !root.suppressAnimations
+                                NumberAnimation {
+                                    duration: 200
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+                        }
                     }
 
                     Connections {
                         target: root
-                        function onLocalArtPathChanged() {
-                            if (root.localArtPath === "") {
-                                coverRoot.shownPath = "";
-                                root._silentNextArtLoad = false;
-                                return;
-                            }
+
+                        function onArtUrlChanged() {
                             if (root._silentNextArtLoad) {
-                                coverRoot.shownPath = root.localArtPath;
+                                coverFlipAnim.stop();
+                                coverRoot.flipAngle = 0;
+                                coverRoot.shownPath = root.artUrl;
                                 root._silentNextArtLoad = false;
                                 return;
                             }
-                            if (coverRoot.shownPath === "") {
-                                coverRoot.shownPath = root.localArtPath;
+
+                            if (root.artUrl === "") {
+                                coverFlipAnim.stop();
+                                coverRoot.flipAngle = 0;
+                                coverRoot.shownPath = "";
                                 return;
                             }
-                            if (root.localArtPath === coverRoot.shownPath)
-                                return;
 
                             if (coverFlipAnim.running) {
                                 coverFlipAnim.stop();
                                 coverRoot.flipAngle = 0;
-                                coverFadeAnim.start();
+                                coverRoot.shownPath = root.artUrl;
                             } else {
                                 coverFlipAnim.start();
                             }
-                        }
-                    }
-
-                    SequentialAnimation {
-                        id: coverFadeAnim
-                        NumberAnimation {
-                            target: coverFade
-                            property: "opacity"
-                            to: 1
-                            duration: 80
-                            easing.type: Easing.OutCubic
-                        }
-                        ScriptAction {
-                            script: {
-                                coverRoot.shownPath = root.localArtPath;
-                                root._silentNextArtLoad = false;
-                            }
-                        }
-                        NumberAnimation {
-                            target: coverFade
-                            property: "opacity"
-                            to: 0
-                            duration: 160
-                            easing.type: Easing.OutCubic
                         }
                     }
 
@@ -411,8 +410,7 @@ Item {
                         }
                         ScriptAction {
                             script: {
-                                coverRoot.shownPath = root.localArtPath;
-                                root._silentNextArtLoad = false;
+                                coverRoot.shownPath = root.artUrl;
                                 coverRoot.flipAngle = -90;
                             }
                         }
@@ -424,11 +422,6 @@ Item {
                             easing.type: Easing.OutElastic
                             easing.period: 0.88
                             easing.amplitude: 1.3
-                        }
-                        onFinished: {
-                            root._silentNextArtLoad = false;
-                            if (root.localArtPath !== coverRoot.shownPath && root.localArtPath !== "")
-                                coverFadeAnim.start();
                         }
                     }
                 }
