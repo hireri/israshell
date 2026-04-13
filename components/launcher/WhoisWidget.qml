@@ -26,13 +26,109 @@ Item {
         _deb.restart();
     }
 
+    Process {
+        id: rdapProc
+
+        property bool _stdoutDone: false
+        property bool _stderrDone: false
+        property int _exitCode: 0
+
+        function checkComplete() {
+            if (!_stdoutDone || !_stderrDone)
+                return;
+
+            root._loading = false;
+
+            if (_exitCode !== 0 && !root._error && root._raw === "" && root._errorMsg === "") {
+                root._error = true;
+                root._errorMsg = "RDAP process failed (exit " + _exitCode + ")";
+            }
+        }
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const output = this.text.trim();
+                root._raw = output;
+                rdapProc._stdoutDone = true;
+
+                if (output === "") {} else if (output.includes("404") || output.includes("Not Found")) {
+                    root._error = true;
+                    root._errorMsg = "Domain/IP not found (404)";
+                } else if (output.includes("400") || output.includes("Bad Request")) {
+                    root._error = true;
+                    root._errorMsg = "Invalid query format";
+                } else if (output.includes("Rate limit") || output.includes("429")) {
+                    root._error = true;
+                    root._errorMsg = "Rate limited - try again later";
+                } else {
+                    root._info = root._parseText(output);
+                    if (Object.keys(root._info).length === 0) {
+                        root._error = true;
+                        root._errorMsg = "Could not parse RDAP response";
+                    }
+                }
+
+                rdapProc.checkComplete();
+            }
+        }
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const err = this.text.trim();
+                rdapProc._stderrDone = true;
+
+                if (err !== "") {
+                    root._error = true;
+                    if (err.includes("command not found") || err.includes("No such file")) {
+                        root._errorMsg = "RDAP not found. Install `rdap` from AUR";
+                    } else {
+                        root._errorMsg = err;
+                    }
+                }
+
+                rdapProc.checkComplete();
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            rdapProc._exitCode = exitCode;
+            if (!rdapProc._stdoutDone)
+                rdapProc._stdoutDone = true;
+            if (!rdapProc._stderrDone)
+                rdapProc._stderrDone = true;
+            checkComplete();
+        }
+
+        onRunningChanged: {
+            if (running) {
+                _stdoutDone = false;
+                _stderrDone = false;
+                _exitCode = 0;
+            }
+        }
+    }
+
     Timer {
         id: _deb
         interval: 500
         onTriggered: {
             const s = root.subject.trim();
-            if (!s)
+            if (!s || s.length < 3)
                 return;
+
+            if (s.endsWith('.') || s.endsWith(':') || s.endsWith('-'))
+                return;
+
+            if (/^\d+\.\d*$/.test(s) || /^\d+\.\d+\.\d*$/.test(s))
+                return;
+
+            const looksLikeDomain = /^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$/.test(s) && s.includes('.');
+            const looksLikeIP = /^[\d.:a-fA-F]+$/.test(s) && (s.includes('.') || s.includes(':'));
+            const looksLikeASN = /^AS\d+$/i.test(s);
+
+            if (!looksLikeDomain && !looksLikeIP && !looksLikeASN)
+                return;
+
             root._loading = true;
             root._error = false;
             root._errorMsg = "";
@@ -41,76 +137,6 @@ Item {
             rdapProc.running = false;
             rdapProc.command = ["rdap", s];
             rdapProc.running = true;
-        }
-    }
-
-    Process {
-        id: rdapProc
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root._loading = false;
-                const output = this.text.trim();
-
-                if (output === "") {
-                    root._error = true;
-                    root._errorMsg = "Empty response from RDAP server";
-                    return;
-                }
-
-                if (output.includes("404") || output.includes("Not Found")) {
-                    root._error = true;
-                    root._errorMsg = "Domain/IP not found (404)";
-                    root._raw = output;
-                    return;
-                }
-
-                if (output.includes("400") || output.includes("Bad Request")) {
-                    root._error = true;
-                    root._errorMsg = "Invalid query format";
-                    root._raw = output;
-                    return;
-                }
-
-                if (output.includes("Rate limit") || output.includes("429")) {
-                    root._error = true;
-                    root._errorMsg = "Rate limited - try again later";
-                    root._raw = output;
-                    return;
-                }
-
-                root._raw = output;
-                root._info = root._parseText(output);
-
-                if (Object.keys(root._info).length === 0) {
-                    root._error = true;
-                    root._errorMsg = "Could not parse RDAP response";
-                }
-            }
-        }
-        stderr: StdioCollector {
-            onStreamFinished: {
-                const err = this.text.trim();
-                if (err === "" && root._raw !== "")
-                    return;
-
-                root._loading = false;
-                root._error = true;
-
-                if (err.includes("command not found") || err.includes("No such file")) {
-                    root._errorMsg = "RDAP not found. Install `rdap` from AUR";
-                } else {
-                    root._errorMsg = err || "RDAP lookup failed";
-                }
-            }
-        }
-        onRunningChanged: {
-            if (!running && exitCode !== 0 && exitCode !== undefined && root._raw === "") {
-                root._loading = false;
-                root._error = true;
-                if (root._errorMsg === "") {
-                    root._errorMsg = "RDAP process failed (exit " + exitCode + ")";
-                }
-            }
         }
     }
 

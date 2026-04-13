@@ -156,7 +156,9 @@ ShellRoot {
                                 anchors.centerIn: parent
                                 spacing: 12
 
-                                MediaPlayer {}
+                                MediaPlayer {
+                                    panelScreen: screenScope.modelData
+                                }
                                 Workspaces {
                                     panelWindow: window
                                 }

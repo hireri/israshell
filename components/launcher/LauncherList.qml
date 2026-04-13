@@ -12,6 +12,7 @@ Item {
     property string mode: "apps"
     readonly property real listContentHeight: list.contentHeight
     readonly property int selectedIndex: list.currentIndex
+    readonly property int count: list.count
 
     signal itemActivated(var entry)
     signal actionActivated
@@ -68,6 +69,10 @@ Item {
                 list.highlightMoveDuration = 160;
                 list.highlightResizeDuration = 160;
             });
+        }
+
+        onModelChanged: {
+            resetToTop();
         }
 
         highlightMoveDuration: 160
@@ -495,35 +500,49 @@ Item {
             }
         }
 
-        Column {
+        Item {
+            id: emptyState
             anchors.centerIn: parent
-            spacing: 12
+            width: childrenRect.width
+            height: childrenRect.height
             visible: list.count === 0
 
-            Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                implicitWidth: kaoLbl.implicitWidth + 28
-                height: 44
-                radius: 22
-                color: Colors.md3.primary_container
-
-                Text {
-                    id: kaoLbl
-                    anchors.centerIn: parent
-                    text: "(ᵕ—ᴗ—)?"
-                    color: Colors.md3.primary
-                    font.pixelSize: 22
-                    font.family: Config.fontFamily
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 200
                 }
             }
 
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: root._emptyText[root.mode] ?? "No results."
-                color: Colors.md3.on_surface_variant
-                font.pixelSize: 13
-                font.family: Config.fontFamily
-                opacity: 0.4
+            Column {
+                anchors.centerIn: parent
+                spacing: 12
+                visible: list.count === 0
+
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    implicitWidth: kaoLbl.implicitWidth + 28
+                    height: 44
+                    radius: 22
+                    color: Colors.md3.primary_container
+
+                    Text {
+                        id: kaoLbl
+                        anchors.centerIn: parent
+                        text: "(ᵕ—ᴗ—)?"
+                        color: Colors.md3.primary
+                        font.pixelSize: 22
+                        font.family: Config.fontFamily
+                    }
+                }
+
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: root._emptyText[root.mode] ?? "No results."
+                    color: Colors.md3.on_surface_variant
+                    font.pixelSize: 13
+                    font.family: Config.fontFamily
+                    opacity: 0.4
+                }
             }
         }
     }

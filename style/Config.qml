@@ -21,6 +21,7 @@ Singleton {
     property alias screenCorners: adapter.screenCorners
     property alias dateFormat: adapter.dateFormat
     property alias osdPosition: adapter.osdPosition
+    property alias darkMode: adapter.darkMode
 
     FileView {
         path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
@@ -44,6 +45,7 @@ Singleton {
             property bool screenCorners: true
             property int dateFormat: 0
             property int osdPosition: 0
+            property bool darkMode: true
         }
     }
 }

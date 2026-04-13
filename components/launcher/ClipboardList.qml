@@ -24,34 +24,48 @@ Item {
     }
     onQueryChanged: selectedIndex = 0
 
-    function moveUp()   { if (selectedIndex > 0) selectedIndex--; }
-    function moveDown() { if (selectedIndex < list.count - 1) selectedIndex++; }
+    function moveUp() {
+        if (selectedIndex > 0)
+            selectedIndex--;
+    }
+    function moveDown() {
+        if (selectedIndex < list.count - 1)
+            selectedIndex++;
+    }
     function activateCurrent() {
         const item = clipModel.values[selectedIndex];
-        if (item) _copy(item);
+        if (item)
+            _copy(item);
     }
 
     function _copy(entry) {
         if (entry.isImage) {
-            imgCopyProc.command = ["sh", "-c", "clipvault get " + entry.id + " | wl-copy --type " + entry.mime];
+            imgCopyProc.running = false;
+            imgCopyProc.command = ["sh", "-c", "clipvault get " + entry.id + " | wl-copy --type '" + entry.mime + "' &"];
             imgCopyProc.running = true;
         } else {
-            copyProc.command = ["wl-copy", entry.content];
+            copyProc.running = false;
+            copyProc.command = ["sh", "-c", "clipvault get " + entry.id + " | wl-copy &"];
             copyProc.running = true;
         }
         root.selected();
     }
 
     function _looksLikeBinary(s) {
-        if (s.startsWith("\x89PNG"))  return true;
-        if (s.charCodeAt(0) === 0xFF && s.charCodeAt(1) === 0xD8) return true;
-        if (s.startsWith("GIF8"))     return true;
-        if (s.startsWith("RIFF"))     return true;
+        if (s.startsWith("\x89PNG"))
+            return true;
+        if (s.charCodeAt(0) === 0xFF && s.charCodeAt(1) === 0xD8)
+            return true;
+        if (s.startsWith("GIF8"))
+            return true;
+        if (s.startsWith("RIFF"))
+            return true;
         let n = 0;
         const len = Math.min(s.length, 32);
         for (let i = 0; i < len; i++) {
             const c = s.charCodeAt(i);
-            if (c < 32 && c !== 9 && c !== 10 && c !== 13) n++;
+            if (c < 32 && c !== 9 && c !== 10 && c !== 13)
+                n++;
         }
         return n > 4;
     }
@@ -61,10 +75,9 @@ Item {
         objectProp: "id"
         values: {
             const q = root.query.trim().toLowerCase();
-            if (q === "") return root._rawEntries;
-            return root._rawEntries.filter(e =>
-                e.isImage ? "image".includes(q) : e.content.toLowerCase().includes(q)
-            );
+            if (q === "")
+                return root._rawEntries;
+            return root._rawEntries.filter(e => e.isImage ? "image".includes(q) : e.content.toLowerCase().includes(q));
         }
     }
 
@@ -75,27 +88,45 @@ Item {
             onStreamFinished: {
                 const parsed = [];
                 for (const line of this.text.trim().split("\n")) {
-                    if (!line.trim()) continue;
+                    if (!line.trim())
+                        continue;
                     const tab = line.indexOf("\t");
-                    if (tab === -1) continue;
-                    const id      = line.slice(0, tab).trim();
+                    if (tab === -1)
+                        continue;
+                    const id = line.slice(0, tab).trim();
                     const content = line.slice(tab + 1);
                     const trimmed = content.trim();
                     if (trimmed.startsWith("[[ binary data ")) {
                         const mm = /\[\[ binary data ([^\]]+?)\s*\]\]/.exec(trimmed);
-                        parsed.push({ id, isImage: true, content: "", mime: mm ? mm[1].trim() : "image/png" });
+                        parsed.push({
+                            id,
+                            isImage: true,
+                            content: "",
+                            mime: mm ? mm[1].trim() : "image/png"
+                        });
                     } else {
-                        parsed.push({ id, isImage: false, content: trimmed, mime: "text/plain" });
+                        parsed.push({
+                            id,
+                            isImage: false,
+                            content: trimmed,
+                            mime: "text/plain"
+                        });
                     }
                 }
-                root._rawEntries  = parsed;
+                root._rawEntries = parsed;
                 root.selectedIndex = 0;
             }
         }
     }
 
-    Process { id: copyProc;    running: false }
-    Process { id: imgCopyProc; running: false }
+    Process {
+        id: copyProc
+        running: false
+    }
+    Process {
+        id: imgCopyProc
+        running: false
+    }
 
     ListView {
         id: list
@@ -109,7 +140,10 @@ Item {
         highlightMoveVelocity: -1
         highlightFollowsCurrentItem: true
 
-        highlight: Rectangle { radius: 14; color: Colors.md3.secondary_container }
+        highlight: Rectangle {
+            radius: 14
+            color: Colors.md3.secondary_container
+        }
 
         delegate: Item {
             id: del
@@ -131,12 +165,21 @@ Item {
                 radius: 14
                 color: Colors.md3.on_surface
                 opacity: hov.pressed ? 0.12 : hov.containsMouse ? 0.08 : 0
-                Behavior on opacity { NumberAnimation { duration: 80 } }
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 80
+                    }
+                }
             }
 
             Text {
                 id: idLabel
-                anchors { left: parent.left; leftMargin: 14; top: parent.top; topMargin: 14 }
+                anchors {
+                    left: parent.left
+                    leftMargin: 14
+                    top: parent.top
+                    topMargin: 14
+                }
                 text: "#" + del.modelData.id
                 color: Colors.md3.on_surface_variant
                 font.pixelSize: 11
@@ -148,9 +191,12 @@ Item {
                 id: contentText
                 visible: !del.modelData.isImage
                 anchors {
-                    left: idLabel.right; leftMargin: 8
-                    right: parent.right; rightMargin: 14
-                    top: parent.top; topMargin: 12
+                    left: idLabel.right
+                    leftMargin: 8
+                    right: parent.right
+                    rightMargin: 14
+                    top: parent.top
+                    topMargin: 12
                 }
                 text: del.modelData.content.trim()
                 color: root.selectedIndex === del.index ? Colors.md3.on_secondary_container : Colors.md3.on_surface
@@ -166,7 +212,11 @@ Item {
 
             Item {
                 visible: del.modelData.isImage
-                anchors { fill: parent; leftMargin: 14; rightMargin: 14 }
+                anchors {
+                    fill: parent
+                    leftMargin: 14
+                    rightMargin: 14
+                }
 
                 Loader {
                     id: thumbLoader
@@ -178,7 +228,9 @@ Item {
                             Process {
                                 command: ["sh", "-c", "clipvault get " + del.modelData.id + " | base64 -w0"]
                                 running: true
-                                stdout: StdioCollector { onStreamFinished: thumbItem.b64 = this.text.trim() }
+                                stdout: StdioCollector {
+                                    onStreamFinished: thumbItem.b64 = this.text.trim()
+                                }
                             }
                         }
                     }
@@ -186,7 +238,9 @@ Item {
 
                 Rectangle {
                     id: thumb
-                    width: 48; height: 48; radius: 10
+                    width: 48
+                    height: 48
+                    radius: 10
                     anchors.verticalCenter: parent.verticalCenter
                     color: Colors.md3.surface_container_high
                     clip: true
@@ -194,9 +248,7 @@ Item {
                     Image {
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
-                        source: (thumbLoader.item?.b64 ?? "") !== ""
-                            ? ("data:" + del.modelData.mime + ";base64," + thumbLoader.item.b64)
-                            : ""
+                        source: (thumbLoader.item?.b64 ?? "") !== "" ? ("data:" + del.modelData.mime + ";base64," + thumbLoader.item.b64) : ""
                         visible: source !== ""
                     }
                     Text {
@@ -211,7 +263,11 @@ Item {
                 }
 
                 Text {
-                    anchors { left: thumb.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
+                    anchors {
+                        left: thumb.right
+                        leftMargin: 12
+                        verticalCenter: parent.verticalCenter
+                    }
                     text: "Image"
                     color: root.selectedIndex === del.index ? Colors.md3.on_secondary_container : Colors.md3.on_surface
                     font.pixelSize: 13

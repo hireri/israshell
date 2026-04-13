@@ -302,12 +302,17 @@ Scope {
         if (entry.type === "app") {
             const e = entry.entry;
             const cwd = e.workingDirectory !== "" ? e.workingDirectory : Quickshell.env("HOME");
+
+            let cmd;
+            if (e.runInTerminal) {
+                cmd = ["kitty", "-e", ...e.command];
+            } else {
+                cmd = e.command;
+            }
+
             Quickshell.execDetached({
-                command: e.command,
-                workingDirectory: cwd,
-                environment: {
-                    FASTFETCH_SKIP: null
-                }
+                command: cmd,
+                workingDirectory: cwd
             });
             close();
         } else if (entry.type === "clip") {
@@ -315,7 +320,7 @@ Scope {
                 imgCopyProc.command = ["sh", "-c", "clipvault get " + entry.id + " | wl-copy --type " + entry.mime];
                 imgCopyProc.running = true;
             } else {
-                copyProc.command = ["wl-copy", entry.content];
+                copyProc.command = ["sh", "-c", "clipvault get " + entry.id + " | wl-copy &"];
                 copyProc.running = true;
             }
             close();
@@ -630,9 +635,8 @@ Scope {
                 border.width: 1
                 border.color: Colors.md3.outline_variant
 
-                readonly property int _min: 150
                 readonly property int _max: 400
-                height: Math.max(_min, Math.min(_max, launcherList.listContentHeight + 12))
+                height: launcherList.count === 0 ? 220 : Math.min(_max, Math.max(60, launcherList.listContentHeight + 2))
                 Behavior on height {
                     enabled: !root._opening
                     NumberAnimation {
