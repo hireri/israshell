@@ -12,12 +12,10 @@ Singleton {
     property bool isOpen: false
     property bool applying: false
     property bool loading: false
-    property bool isDark: true
+    property bool isDark: Config.darkMode
+    property string currentWall: Config.currentWall
+    property string currentDir: Config.currentWallDir !== "" ? Config.currentWallDir : Quickshell.env("HOME") + "/Pictures"
 
-    property string currentWall: ""
-    property string currentDir: Quickshell.env("HOME") + "/Pictures"
-
-    // [{isDir, name, path}]
     property var entries: []
 
     function openFor(_panelWindow) {
@@ -32,11 +30,10 @@ Singleton {
     }
 
     function navigate(path) {
-        if (path === currentDir) {
+        if (path === currentDir)
             _runList();
-        } else {
+        else
             currentDir = path;
-        }
     }
 
     function selectWall(path) {
@@ -55,8 +52,7 @@ Singleton {
         const walls = entries.filter(e => !e.isDir);
         if (walls.length === 0)
             return;
-        const pick = walls[Math.floor(Math.random() * walls.length)];
-        selectWall(pick.path);
+        selectWall(walls[Math.floor(Math.random() * walls.length)].path);
     }
 
     function openFolder() {
@@ -81,11 +77,36 @@ Singleton {
     function _runList() {
         loading = true;
         listProc.running = false;
-        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; } | " + "sort -rn | cut -f2-"];
+        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; } | sort -rn | cut -f2-"];
         listProc.running = true;
     }
 
+    function _runClockPosition() {
+        if (!currentWall || !Config.desktopClock)
+            return;
+
+        const mode = isDark ? "dark" : "light";
+        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/leastbusy.py", root.currentWall, "--clock-w", "350", "--clock-h", "350", "--mode", mode];
+
+        clockProc.running = false;
+        clockProc.running = true;
+    }
+
     onCurrentDirChanged: _runList()
+
+    onCurrentWallChanged: {
+        _runClockPosition();
+    }
+
+    onIsDarkChanged: {
+        Config.update({
+            darkMode: isDark
+        });
+        if (currentWall) {
+            applyTheme();
+            _runClockPosition();
+        }
+    }
 
     Process {
         id: listProc
@@ -112,8 +133,33 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const p = text.trim();
-                if (p)
+                if (p) {
                     root.currentWall = p;
+                    root._runClockPosition();
+                }
+            }
+        }
+    }
+
+    Process {
+        id: clockProc
+
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const positions = {};
+                text.trim().split("\n").forEach(line => {
+                    const m = line.match(/^([^=]+)=(\d+),(\d+)$/);
+                    if (m)
+                        positions[m[1]] = {
+                            x: parseInt(m[2]),
+                            y: parseInt(m[3])
+                        };
+                });
+                if (Object.keys(positions).length > 0)
+                    Config.update({
+                        clockPositions: positions
+                    });
             }
         }
     }
@@ -135,6 +181,7 @@ Singleton {
             if (code === 0) {
                 currentWallProc.running = false;
                 currentWallProc.running = true;
+                root._runClockPosition();
             }
         }
     }

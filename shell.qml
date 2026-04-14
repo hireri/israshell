@@ -14,6 +14,11 @@ ShellRoot {
     VolumeOSD {}
     AppLauncher {}
 
+    Variants {
+        model: Quickshell.screens
+        WallpaperClock {}
+    }
+
     Logout {
         LogoutButton {
             command: "loginctl lock-session"

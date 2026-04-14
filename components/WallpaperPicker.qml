@@ -316,19 +316,22 @@ Item {
                         }
 
                         onVisibleChanged: {
-                            if (!visible || !WallpaperService.currentWall)
-                                return;
-                            let idx = -1;
-                            for (let i = 0; i < panel.gridModel.count; i++) {
-                                const e = panel.gridModel.get(i);
-                                if (!e.isDir && e.path === WallpaperService.currentWall) {
-                                    idx = i;
-                                    break;
-                                }
-                            }
-                            if (idx >= 0) {
-                                currentIndex = idx;
-                                Qt.callLater(() => positionViewAtIndex(idx, GridView.Center));
+                            if (visible && WallpaperService.currentWall) {
+                                Qt.callLater(() => {
+                                    let idx = -1;
+                                    for (let i = 0; i < panel.gridModel.count; i++) {
+                                        const e = panel.gridModel.get(i);
+                                        if (!e.isDir && e.path === WallpaperService.currentWall) {
+                                            idx = i;
+                                            break;
+                                        }
+                                    }
+
+                                    if (idx >= 0) {
+                                        grid.currentIndex = idx;
+                                        grid.positionViewAtIndex(idx, GridView.Center);
+                                    }
+                                });
                             }
                         }
 
