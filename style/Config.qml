@@ -13,7 +13,7 @@ Singleton {
     property int carouselSpeed: 30
     property bool transparentBar: false
     property string fontFamily: "Inter"
-    property var trayBlacklist: ["spotify", "Spotify"]
+    property var trayBlacklist: ["spotify", "blueman", "Network"]
     property bool tintTrayIcons: false
     property int nightLightTemp: 4000
     property int dayLightTemp: 6500
@@ -50,7 +50,7 @@ Singleton {
             carouselSpeed: 30,
             transparentBar: false,
             fontFamily: "Inter",
-            trayBlacklist: ["spotify", "Spotify"],
+            trayBlacklist: ["spotify", "blueman", "Network"],
             tintTrayIcons: false,
             nightLightTemp: 4000,
             dayLightTemp: 6500,
