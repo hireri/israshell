@@ -27,6 +27,7 @@ Singleton {
     property var clock: ({
             fontFamily: "",
             layout: "vertical",
+            showSeconds: false,
             hourSize: 100,
             minuteSize: 100,
             hourWeight: 500,
@@ -35,7 +36,7 @@ Singleton {
             timeSpacing: -30,
             dateSpacing: -5,
             showDate: true,
-            align: "center",
+            align: "left",
             colorRole: "primary",
             subColorRole: "secondary",
             shadowBlur: 16
@@ -64,6 +65,7 @@ Singleton {
             clock: {
                 fontFamily: "",
                 layout: "vertical",
+                showSeconds: false,
                 hourSize: 100,
                 minuteSize: 100,
                 hourWeight: 500,
@@ -72,7 +74,7 @@ Singleton {
                 timeSpacing: -30,
                 dateSpacing: -5,
                 showDate: true,
-                align: "center",
+                align: "left",
                 colorRole: "primary",
                 subColorRole: "secondary",
                 shadowBlur: 16
