@@ -271,15 +271,13 @@ PanelWindow {
                 anchors.fill: parent
                 radius: width / 2
                 color: Colors.md3.surface_container_high ?? Colors.md3.surface_container ?? Qt.rgba(0.95, 0.95, 0.95, 1)
-                border.width: 0
 
                 layer.enabled: true
                 layer.effect: DropShadow {
                     transparentBorder: true
-                    radius: 24
-                    samples: 48
+                    radius: Config.clock.shadowBlur ?? 16
+                    samples: 32
                     color: Qt.alpha("black", 0.15)
-                    verticalOffset: 8
                 }
             }
 
