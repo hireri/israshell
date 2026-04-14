@@ -16,6 +16,8 @@ Scope {
 
     property string _query: ""
 
+    property bool _sortAlpha: true
+
     readonly property string mode: {
         const q = _query;
         if (q.startsWith(";"))
@@ -245,8 +247,20 @@ Scope {
                                 uid: "app_" + d.id,
                                 entry: d
                             }));
-                if (q === "")
-                    return mapped(all.sort((a, b) => a.name.localeCompare(b.name)));
+
+                if (q === "") {
+                    if (root._sortAlpha) {
+                        return mapped(all.sort((a, b) => a.name.localeCompare(b.name)));
+                    } else {
+                        return mapped(all.sort((a, b) => {
+                            const ac = a.categories?.[0] ?? "ZZZ";
+                            const bc = b.categories?.[0] ?? "ZZZ";
+                            const cmp = ac.localeCompare(bc);
+                            return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
+                        }));
+                    }
+                }
+
                 return mapped(all.filter(d => d.name?.toLowerCase().includes(q) || d.genericName?.toLowerCase().includes(q) || d.keywords?.some(k => k.toLowerCase().includes(q)) || d.categories?.some(c => c.toLowerCase().includes(q))).sort((a, b) => {
                     const an = a.name.toLowerCase(), bn = b.name.toLowerCase();
                     const aS = an.startsWith(q), bS = bn.startsWith(q);
@@ -267,7 +281,7 @@ Scope {
                 if (!root._emojiLoaded)
                     return [];
                 if (q === "")
-                    return root._emojiData.slice(0, 150).map(e => Object.assign({
+                    return root._emojiData.map(e => Object.assign({
                             type: "emoji",
                             uid: "emoji_" + e.emoji
                         }, e));
@@ -275,7 +289,7 @@ Scope {
                 return root._emojiData.filter(e => {
                     const s = (e.name + " " + e.keywords.join(" ")).toLowerCase();
                     return words.every(w => s.includes(w));
-                }).slice(0, 100).map(e => Object.assign({
+                }).map(e => Object.assign({
                         type: "emoji",
                         uid: "emoji_" + e.emoji
                     }, e));
@@ -636,7 +650,7 @@ Scope {
                 border.color: Colors.md3.outline_variant
 
                 readonly property int _max: 400
-                height: launcherList.count === 0 ? 220 : Math.min(_max, Math.max(60, launcherList.listContentHeight + 2))
+                height: launcherList.count === 0 ? 220 : Math.min(_max, Math.max(60, launcherList.listContentHeight + 40))
                 Behavior on height {
                     enabled: !root._opening
                     NumberAnimation {
@@ -645,13 +659,50 @@ Scope {
                     }
                 }
 
-                LauncherList {
-                    id: launcherList
+                Column {
                     anchors.fill: parent
-                    model: unifiedModel
-                    mode: root.mode
-                    onItemActivated: entry => root._handleActivation(entry)
-                    onActionActivated: root.close()
+
+                    LauncherHeader {
+                        id: listHeader
+                        width: parent.width
+                        mode: root.mode
+                        count: unifiedModel.values.length
+                        sortAlpha: root._sortAlpha
+                        onClearRequested: {
+                            clearProc.running = true;
+                            clearClipboardProc.running = true;
+                            root._clipEntries = [];
+                        }
+                        onSortToggled: {
+                            root._sortAlpha = !root._sortAlpha;
+                            launcherList.resetToTop();
+                        }
+                        onSkinToneChanged: index => launcherList.skinToneIndex = index
+                    }
+
+                    Process {
+                        id: clearProc
+                        command: ["clipvault", "clear"]
+                        running: false
+                        onRunningChanged: if (!running)
+                            clipLoader.running = true
+                    }
+
+                    Process {
+                        id: clearClipboardProc
+                        command: ["wl-copy", "--clear"]
+                        running: false
+                    }
+
+                    LauncherList {
+                        id: launcherList
+                        width: parent.width
+                        height: parent.height - listHeader.height
+                        model: unifiedModel
+                        mode: root.mode
+                        onItemActivated: entry => root._handleActivation(entry)
+                        onActionActivated: root.close()
+                    }
                 }
             }
         }
