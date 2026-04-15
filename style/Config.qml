@@ -24,6 +24,12 @@ Singleton {
     property int osdPosition: 1
     property bool darkMode: true
     property bool desktopClock: true
+    property bool screencapEnabled: true
+    property var screencap: ({
+            blacklist: ["cts", "ocr"],
+            screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
+            recordPath: "~/.config/hypr/scripts/record.sh"
+        })
     property var clock: ({
             fontFamily: "",
             layout: "vertical",
@@ -62,6 +68,12 @@ Singleton {
             osdPosition: 1,
             darkMode: true,
             desktopClock: true,
+            screencapEnabled: true,
+            screencap: {
+                blacklist: ["cts", "ocr"],
+                screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
+                recordPath: "~/.config/hypr/scripts/record.sh"
+            },
             clock: {
                 fontFamily: "",
                 layout: "vertical",
