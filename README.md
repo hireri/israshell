@@ -1,4 +1,4 @@
-**israshell**
+# **israshell**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Distro](https://img.shields.io/badge/optimized_for-Arch_Linux-1793d1.svg?logo=arch-linux)
