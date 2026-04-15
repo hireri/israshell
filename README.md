@@ -1,81 +1,113 @@
-# 🐚 israshell
-
-**israshell** is a high-performance, modular Wayland shell designed for users who demand both aesthetic perfection and extreme utility. Built with [Quickshell](https://github.com/outfoxxed/quickshell) and meticulously optimized for **Hyprland** on **Arch-based Linux distributions**, it bridges the gap between a minimal compositor and a full desktop environment.
+**israshell**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Wayland-orange.svg)
 ![Distro](https://img.shields.io/badge/optimized_for-Arch_Linux-1793d1.svg?logo=arch-linux)
 ![Compositor](https://img.shields.io/badge/compositor-Hyprland-brightgreen.svg)
 
----
-
-## ✨ Showcase
 https://github.com/user-attachments/assets/a8801fbd-5926-4c2e-8c5f-b0d1f30682bb
 
----
+A Quickshell shell for Hyprland. Uses matugen colors, smart desktop clock widget, and provides its own notification/tray implementation. Configurable font with default Inter NerdFont.
 
-## 🌟 Beyond the Basics: Features
+## Features
 
-### 🚀 The Intelligence Launcher
-While most shells provide a simple application runner, **israshell** includes a "Swiss-Army" toolkit that eliminates the need for external tools:
+- **Top bar** — Workspaces, window title, media controls, tray. Floating or hugging layout.
+- **Quick settings** — NetworkManager, Blueman, Pipewire volume, hyprsunset night light, caffeine toggle.
+- **Launcher** — App search, emoji picker (`:`), clipboard (`;`). Context widgets for math, translation, colors, whois, unit conversions...
+- **Desktop clock** — Horizontal, vertical, analog, or word (text) layouts. Auto positions finding the least busy spot for itself.
+- **Wallpaper picker** — Directory browser with breadcrumb and image preview.
+- **Overlays** — Power menu, volume OSD, optional rounded display corners.
 
-- **🎨 Color Intelligence**: Instant HEX/RGB/HSL conversion and visualization. Input any color format, see a live preview, and copy the normalized result.
-- **🕒 Temporal Logic**: 
-  - **Unix Converter**: Paste a timestamp to see human-readable dates, ISO strings, and relative time (e.g., "3 hours ago").
-  - **Countdown Engine**: Natural language queries like `days until christmas` or `time since 2023-01-01` provide instant delta calculations.
-- **🌐 Global Utility**: 
-  - **Dictionary & Whois**: Instant word definitions and domain/IP intelligence.
-  - **Translation with TTS**: Multi-language support with high-quality text-to-speech.
-- **📋 Persistent Clipboard**: A unified manager using `clipvault` that tracks text and image history.
+## Configuration
 
-### ⚡ Power Management & System Control
-- **Quick Settings**: A ChromeOS-inspired panel for Wi-Fi, Bluetooth, and Audio.
-- **Eye Care & Sleep**: Integrated toggles for `hyprsunset` (Night Light) and `hypridle` (Caffeine mode) with state persistence.
-- **Media Hub**: Unified media controls that track active players and provide visual feedback.
+example `config.json` (what i use):
 
-### 🔔 Modular Notification Server
-A robust implementation of the Desktop Notification Specification:
-- **Smart Grouping**: Notifications are automatically organized by application.
-- **Persistence**: A centralized history view ensures you never miss a critical alert.
-- **Material Design**: Modern, cohesive styling that follows the Material 3 specification.
-
-### 🎨 Architected for Customization
-- **MD3 Color System**: A full implementation of Material Design 3 in QML, ensuring perfect visual harmony.
-- **Hot-Reloading JSON**: No need to recompile or restart. Edit `config.json` and watch your shell transform instantly.
-- **Arch Optimized**: Lightweight and designed to leverage the Arch Linux ecosystem (Pipewire, NetworkManager, Bluez).
-
----
-
-## 🛠️ Installation & Setup
-
-### 1. Requirements
-Ensure you are on an Arch-based system with the following installed:
-```bash
-sudo pacman -S quickshell hyprland pipewire bluez networkmanager hypridle
-# full feature set
-sudo pacman -S whois kakasi mpv espeak-ng xdg-utils rdap
+```json
+{
+{
+    "spinningCover": true,
+    "showSeconds": false,
+    "hourFormat": 1,
+    "carouselSpeed": 30,
+    "transparentBar": false,
+    "fontFamily": "Inter",
+    "trayBlacklist": [
+        "spotify",
+        "blueman",
+        "Network"
+    ],
+    "tintTrayIcons": true,
+    "nightLightTemp": 4000,
+    "dayLightTemp": 6500,
+    "floatingBar": false,
+    "huggingBar": true,
+    "screenCorners": true,
+    "dateFormat": 0,
+    "osdPosition": 1,
+    "darkMode": true,
+    "desktopClock": true,
+    "clock": {
+        "fontFamily": "Nunito ExtraBold", // yay -S ttf-nunito
+        "layout": "vertical",
+        "showSeconds": true,
+        "hourSize": 100,
+        "minuteSize": 100,
+        "hourWeight": 75,
+        "minuteWeight": 75,
+        "dateSize": 25,
+        "timeSpacing": -50,
+        "dateSpacing": -15,
+        "showDate": true,
+        "align": "left",
+        "colorRole": "primary",
+        "subColorRole": "secondary",
+        "shadowBlur": 16
+    },
+    "clockPositions": {
+        "DP-2": {
+            "x": 1941,
+            "y": 836
+        },
+        "HDMI-A-1": {
+            "x": 1420,
+            "y": 682
+        }
+    }
+}
+}
 ```
 
-### 2. Configuration
-Initialize your settings:
-```bash
-cp config.json.example config.json
+## Hyprland binds
+
+All available binds, this is my config:
+
+```ini
+bind = $mainMod, O, global, quickshell:openQuickSettings
+bind = $mainMod, M, global, quickshell:openPowerMenu
+bind = $mainMod, W, global, quickshell:openWallpaperPicker
+
+bindr = $mainMod, super_l, exec, qs ipc call launcher toggle
+bind = $mainMod, V, exec, qs ipc call launcher openWith ";"
+bind = $mainMod, Period, exec, qs ipc call launcher openWith ":"
+
+bind = $mainMod SHIFT, N, exec, qs ipc call media next
+bind = $mainMod SHIFT, P, exec, qs ipc call media togglePlaying
 ```
 
-### 3. Execution
-Launch the shell:
+## Dependencies
+
+- **Core**: `quickshell`, `hyprland`, `hyprsunset`, `hypridle`
+- **Visuals**: `matugen`, `awww`
+- **Services**: `networkmanager`, `blueman`, `pipewire`, `wireplumber`, `bluez`, `bluez-utils`
+- **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
+- **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`
+- **Python Stack**: `python`, `python-numpy`, `python-pillow`, `python-scipy`, `python-matplotlib`, `python-gtts`
+- **Fonts**: `inter-font`
+
 ```bash
-qs -n
+yay -Q quickshell hyprland hyprsunset hypridle matugen awww \
+        networkmanager blueman pipewire wireplumber bluez bluez-utils \
+        qt6-declarative qt6-5compat qt6-svg clipvault rdap kakasi \
+        mpv wl-clipboard xdg-utils pavucontrol inter-font \
+        python python-numpy python-pillow python-scipy python-matplotlib python-gtts 
 ```
-
----
-
-## 📦 Detailed Dependency Matrix
-
-| Component | Package | Role |
-| :--- | :--- | :--- |
-| **Shell Core** | `quickshell`, `hyprland` | Runtime & WM |
-| **Audio/Comm** | `pipewire`, `bluez`, `networkmanager` | Connectivity |
-| **Productivity**| `clipvault`, `whois`, `kakasi` `rdap` | Widgets |
-| **Multimedia**  | `gtts-cli`, `mpv`, `espeak-ng` | TTS Engine |
-| **System**      | `hyprsunset`, `hypridle`, `systemd` | Control |
+i might have missed some. lmk.
