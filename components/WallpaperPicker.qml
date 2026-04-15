@@ -8,6 +8,7 @@ import Quickshell.Widgets
 
 import qs.style
 import qs.services
+import qs.icons
 
 Item {
     id: root
@@ -75,13 +76,15 @@ Item {
             }
         }
 
-        Text {
+        // Replace the Text component with your new custom shape icon
+        WallpapersIcon {
             anchors.centerIn: parent
-            text: "󰸉"
-            font.family: Config.fontFamily
-            font.pixelSize: 19
-            renderType: Text.NativeRendering
+            iconSize: 20
+
+            // Your custom component exposes "color", so we can easily bind it
             color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+
+            // Re-apply the smooth color transition for the icon itself
             Behavior on color {
                 ColorAnimation {
                     duration: 150

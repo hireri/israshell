@@ -180,6 +180,8 @@ ShellRoot {
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 12
 
+                                ScreenRecorder {}
+
                                 TrayWidget {
                                     panelWindow: window
                                 }
