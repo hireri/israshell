@@ -13,6 +13,7 @@ Singleton {
     property int carouselSpeed: 30
     property bool transparentBar: false
     property string fontFamily: "Inter"
+    property string fontMonospace: "Roboto Mono"
     property var trayBlacklist: ["spotify", "blueman", "Network"]
     property bool tintTrayIcons: false
     property int nightLightTemp: 4000
@@ -57,6 +58,7 @@ Singleton {
             carouselSpeed: 30,
             transparentBar: false,
             fontFamily: "Inter",
+            fontMonospace: "Roboto Mono",
             trayBlacklist: ["spotify", "blueman", "Network"],
             tintTrayIcons: false,
             nightLightTemp: 4000,

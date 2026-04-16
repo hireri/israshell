@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.style
 import qs.icons
+import Quickshell.Widgets
 
 Rectangle {
     id: root
@@ -22,6 +23,7 @@ Rectangle {
     property bool isRecording: false
     property string recordingTime: "00:00"
     property double startTime: 0
+    property int missCount: 0
 
     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.85) : Colors.md3.surface_container_high
     radius: 20
@@ -50,33 +52,45 @@ Rectangle {
         command: ["sh", "-c", "pgrep -x wl-screenrec || pgrep -x gpu-screen-recorder"]
         running: false
         onExited: exitCode => {
-            var wasRecording = isRecording;
-            isRecording = (exitCode === 0);
-            if (isRecording && !wasRecording)
+            var currentlyRunning = (exitCode === 0);
+
+            if (currentlyRunning && !isRecording) {
+                isRecording = true;
                 startTime = Date.now();
-            else if (!isRecording)
+            } else if (!currentlyRunning && isRecording) {
+                isRecording = false;
                 recordingTime = "00:00";
+            }
         }
     }
 
     Timer {
+        id: checkTimer
         interval: 1000
         running: true
         repeat: true
-        triggeredOnStart: true
-        onTriggered: checkProcess.running = true
+        onTriggered: {
+            if (!checkProcess.running) {
+                checkProcess.running = true;
+            }
+        }
     }
 
     Timer {
-        interval: 1000
-        running: isRecording
+        id: displayTimer
+        interval: 100
+        running: true
         repeat: true
         onTriggered: {
-            var diff = Math.round((Date.now() - startTime) / 1000);
+            if (!isRecording)
+                return;
+
+            var diff = Math.floor((Date.now() - startTime) / 1000);
             var hrs = Math.floor(diff / 3600);
             var mins = Math.floor((diff % 3600) / 60);
             var secs = diff % 60;
-            recordingTime = hrs > 0 ? `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}` : `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            recordingTime = hrs > 0 ? `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}` : `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
         }
     }
 
@@ -94,9 +108,9 @@ Rectangle {
         y: targetPos.y + 14
 
         onVisibleChanged: {
-            if (visible) {
+            if (visible)
                 fadeIn.restart();
-            } else {
+            else {
                 tooltipContent.opacity = 0;
                 tooltipContent.scale = 0.9;
             }
@@ -148,14 +162,7 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 4
         leftPadding: 6
-        rightPadding: isRecording ? 3 : 6
-
-        Behavior on rightPadding {
-            NumberAnimation {
-                duration: 250
-                easing.type: Easing.OutCubic
-            }
-        }
+        rightPadding: 3
 
         ToolButton {
             visible: isEnabled("screenshot")
@@ -187,16 +194,17 @@ Rectangle {
             }
         }
 
-        Rectangle {
+        ClippingRectangle {
+            id: recordBtn
             visible: isEnabled("record")
 
-            width: isRecording ? 32 + timeMetrics.width + 6 : 32
-            height: 32
+            readonly property int textWidth: recordingTime.length > 5 ? 57 : 38
+            width: isRecording ? 32 + 8 + textWidth : 32
+            height: 26
             radius: 16
+            anchors.verticalCenter: parent.verticalCenter
 
             color: isRecording ? Qt.alpha(Colors.md3.error, 0.15) : (recordHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
-
-            anchors.verticalCenter: parent.verticalCenter
 
             Behavior on width {
                 NumberAnimation {
@@ -211,72 +219,34 @@ Rectangle {
                 }
             }
 
-            Row {
-                anchors.centerIn: parent
-                spacing: 0
-
-                Item {
-                    width: 18
-                    height: 18
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    RecordIcon {
-                        iconSize: 18
-                        anchors.centerIn: parent
-                        color: isRecording ? Colors.md3.error : Colors.md3.on_surface
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 200
-                            }
-                        }
+            RecordIcon {
+                id: recIcon
+                iconSize: 18
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left
+                anchors.leftMargin: 5
+                color: isRecording ? Colors.md3.error : Colors.md3.on_surface
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 200
                     }
                 }
+            }
 
-                Item {
-                    width: isRecording ? timeMetrics.width + 6 : 0
-                    height: recordingText.implicitHeight
-                    anchors.verticalCenter: parent.verticalCenter
-                    clip: true
-                    opacity: isRecording ? 1 : 0
-
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: 250
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 200
-                        }
-                    }
-
-                    TextMetrics {
-                        id: timeMetrics
-                        font: recordingText.font
-                        text: root.recordingTime.length > 5 ? "00:00:00" : "00:00"
-                    }
-
-                    Text {
-                        id: recordingText
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: root.recordingTime
-                        font.family: Config.fontFamily
-                        font.pixelSize: 13
-                        font.weight: Font.Medium
-                        color: Colors.md3.error
-                        scale: isRecording ? 1.0 : 0.8
-                        transformOrigin: Item.Left
-
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: 250
-                                easing.type: Easing.OutBack
-                            }
-                        }
+            Text {
+                id: recordingText
+                anchors.left: recIcon.right
+                anchors.leftMargin: 6
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.recordingTime
+                font.family: Config.fontMonospace
+                font.pixelSize: 13
+                font.weight: Font.Medium
+                color: Colors.md3.error
+                opacity: isRecording ? 1 : 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 200
                     }
                 }
             }

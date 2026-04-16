@@ -101,13 +101,13 @@ bind = $mainMod SHIFT, P, exec, qs ipc call media togglePlaying
 - **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
 - **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`
 - **Python Stack**: `python`, `python-numpy`, `python-pillow`, `python-scipy`, `python-matplotlib`, `python-gtts`
-- **Fonts**: `inter-font`
+- **Fonts**: `inter-font`, `ttf-roboto-mono`
 
 ```bash
 yay -Q quickshell hyprland hyprsunset hypridle matugen awww \
         networkmanager blueman pipewire wireplumber bluez bluez-utils \
         qt6-declarative qt6-5compat qt6-svg clipvault rdap kakasi \
         mpv wl-clipboard xdg-utils pavucontrol inter-font \
-        python python-numpy python-pillow python-scipy python-matplotlib python-gtts 
+        python python-numpy python-pillow python-scipy python-matplotlib python-gtts ttf-roboto-mono
 ```
 i might have missed some. lmk.
