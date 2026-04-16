@@ -99,7 +99,7 @@ bind = $mainMod SHIFT, P, exec, qs ipc call media togglePlaying
 - **Visuals**: `matugen`, `awww`
 - **Services**: `networkmanager`, `blueman`, `pipewire`, `wireplumber`, `bluez`, `bluez-utils`
 - **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
-- **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`
+- **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`
 - **Python Stack**: `python`, `python-numpy`, `python-pillow`, `python-scipy`, `python-matplotlib`, `python-gtts`
 - **Fonts**: `inter-font`, `ttf-roboto-mono`
 
@@ -108,6 +108,7 @@ yay -Q quickshell hyprland hyprsunset hypridle matugen awww \
         networkmanager blueman pipewire wireplumber bluez bluez-utils \
         qt6-declarative qt6-5compat qt6-svg clipvault rdap kakasi \
         mpv wl-clipboard xdg-utils pavucontrol inter-font \
-        python python-numpy python-pillow python-scipy python-matplotlib python-gtts ttf-roboto-mono
+        python python-numpy python-pillow python-scipy python-matplotlib python-gtts ttf-roboto-mono \
+        songrec wl-screenrec slurp grim hyprpicker tesseract ffmpeg libnotify jq satty file
 ```
 i might have missed some. lmk.
