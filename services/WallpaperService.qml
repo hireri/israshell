@@ -13,10 +13,13 @@ Singleton {
     property bool applying: false
     property bool loading: false
     property bool isDark: Config.darkMode
-    property string currentWall: Config.currentWall
-    property string currentDir: Config.currentWallDir !== "" ? Config.currentWallDir : Quickshell.env("HOME") + "/Pictures"
+    property string currentWall: ""
+    property string currentDir: Quickshell.env("HOME") + "/Pictures"
 
     property var entries: []
+
+    property int clockRenderWidth: 350
+    property int clockRenderHeight: 350
 
     function openFor(_panelWindow) {
         if (currentWall) {
@@ -81,12 +84,29 @@ Singleton {
         listProc.running = true;
     }
 
+    function reportClockSize(width, height) {
+        const padding = 10;
+        const w = width + (padding * 2);
+        const h = height + (padding * 2);
+
+        if (w > 0 && h > 0) {
+            const changed = (clockRenderWidth !== w || clockRenderHeight !== h);
+            clockRenderWidth = w;
+            clockRenderHeight = h;
+
+            if (changed && currentWall && !loading) {
+                _runClockPosition();
+            }
+        }
+    }
+
     function _runClockPosition() {
         if (!currentWall || !Config.desktopClock)
             return;
 
         const mode = isDark ? "dark" : "light";
-        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/leastbusy.py", root.currentWall, "--clock-w", "350", "--clock-h", "350", "--mode", mode];
+
+        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/leastbusy.py", root.currentWall, "--clock-w", String(root.clockRenderWidth), "--clock-h", String(root.clockRenderHeight), "--mode", mode];
 
         clockProc.running = false;
         clockProc.running = true;

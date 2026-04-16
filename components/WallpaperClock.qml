@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.style
+import qs.services
 
 PanelWindow {
     id: root
@@ -24,24 +25,44 @@ PanelWindow {
         right: true
     }
 
-    property real _cx: modelData.width * 0.82
-    property real _cy: modelData.height * 0.10
+    property var _pos: Config.clockPositions?.[modelData.name] ?? null
+
+    property real _cx: _pos ? _pos.x : modelData.width * 0.82
+    property real _cy: _pos ? _pos.y : modelData.height * 0.10
+
     property var _currentTime: new Date()
 
     function updatePosition() {
-        const pos = Config.clockPositions[modelData.name];
+        const pos = Config.clockPositions?.[modelData.name];
         if (pos) {
             _cx = pos.x;
             _cy = pos.y;
-        }
+        } else {}
     }
+
     Connections {
         target: Config
         function onClockPositionsChanged() {
             updatePosition();
         }
     }
-    Component.onCompleted: updatePosition()
+
+    Component.onCompleted: {
+        updatePosition();
+        if (WallpaperService.clockRenderWidth === 350) {
+            WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
+        }
+    }
+
+    Connections {
+        target: clockRoot
+        function onImplicitWidthChanged() {
+            WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
+        }
+        function onImplicitHeightChanged() {
+            WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
+        }
+    }
 
     Timer {
         interval: clockRoot._layoutMode === 3 ? 50 : 500
