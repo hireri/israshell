@@ -601,8 +601,6 @@ Item {
         Item {
             id: emptyState
             anchors.centerIn: parent
-            width: childrenRect.width
-            height: childrenRect.height
             visible: list.count === 0
 
             Behavior on opacity {
