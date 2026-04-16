@@ -14,7 +14,7 @@ Rectangle {
         return path.replace(/^~/, Quickshell.env("HOME"));
     }
 
-    visible: Config.screencapEnabled && Config.screencap.blacklist.length < 4
+    visible: Config.screencapEnabled && Config.screencap.blacklist.length < 5
 
     function isEnabled(name) {
         return Config.screencapEnabled && !Config.screencap.blacklist.includes(name);
@@ -24,6 +24,8 @@ Rectangle {
     property string recordingTime: "00:00"
     property double startTime: 0
     property int missCount: 0
+
+    property bool isRecognizing: false
 
     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.85) : Colors.md3.surface_container_high
     radius: 20
@@ -46,6 +48,10 @@ Rectangle {
         id: ocrScript
         command: ["sh", "-c", getScript(Config.screencap.ocrPath)]
     }
+    Process {
+        id: songrecScript
+        command: ["sh", "-c", getScript(Config.screencap.songrecPath)]
+    }
 
     Process {
         id: checkProcess
@@ -64,6 +70,18 @@ Rectangle {
         }
     }
 
+    Process {
+        id: checkSongrecProcess
+        command: ["sh", "-c", "test -f /tmp/songrec_script.pid && kill -0 $(cat /tmp/songrec_script.pid) 2>/dev/null && exit 0 || exit 1"]
+        running: false
+        onExited: exitCode => {
+            var currentlyRunning = (exitCode === 0);
+            if (currentlyRunning !== isRecognizing) {
+                isRecognizing = currentlyRunning;
+            }
+        }
+    }
+
     Timer {
         id: checkTimer
         interval: 1000
@@ -72,6 +90,9 @@ Rectangle {
         onTriggered: {
             if (!checkProcess.running) {
                 checkProcess.running = true;
+            }
+            if (!checkSongrecProcess.running) {
+                checkSongrecProcess.running = true;
             }
         }
     }
@@ -191,6 +212,69 @@ Rectangle {
             OcrIcon {
                 iconSize: 18
                 anchors.centerIn: parent
+            }
+        }
+
+        Rectangle {
+            id: songrecBtn
+            visible: isEnabled("songrec")
+
+            width: isRecognizing ? 38 : 32
+            height: isRecognizing ? 26 : 32
+            radius: 16
+            anchors.verticalCenter: parent.verticalCenter
+
+            color: isRecognizing ? Qt.alpha(Colors.md3.primary, 0.15) : (songrecHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
+
+            Behavior on height {
+                NumberAnimation {
+                    duration: 250
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on width {
+                NumberAnimation {
+                    duration: 250
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: 200
+                }
+            }
+
+            HoverHandler {
+                id: songrecHover
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    isRecognizing = !isRecognizing;
+                    songrecScript.startDetached();
+                }
+                onEntered: {
+                    tooltipWindow.targetPos = mapToGlobal(width / 2, height);
+                    tooltipWindow.title = isRecognizing ? "Stop Recognizing" : "Recognize Music";
+                    tooltipWindow.visible = true;
+                }
+                onExited: tooltipWindow.visible = false
+            }
+
+            SongrecIcon {
+                iconSize: 18
+                anchors.centerIn: parent
+                color: isRecognizing ? Colors.md3.primary : Colors.md3.on_surface
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 200
+                    }
+                }
             }
         }
 
