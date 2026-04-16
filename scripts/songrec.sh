@@ -55,7 +55,7 @@ while IFS= read -r line; do
     fi
 
     BODY="By $ARTIST"
-    [ -n "$ALBUM" ] && BODY="By $ARTIST\On $ALBUM"
+    [ -n "$ALBUM" ] && BODY="By $ARTIST\nOn $ALBUM"
 
     (
         ACTION=$(notify-send --wait --urgency=normal --icon="$NOTIFICATION_ICON" \
