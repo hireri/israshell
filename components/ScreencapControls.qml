@@ -126,7 +126,7 @@ Rectangle {
         property string title: ""
         property point targetPos: Qt.point(0, 0)
         x: targetPos.x - (width / 2)
-        y: targetPos.y + 14
+        y: targetPos.y + 8
 
         onVisibleChanged: {
             if (visible)
@@ -215,34 +215,46 @@ Rectangle {
             }
         }
 
-        Rectangle {
-            id: songrecBtn
+        Item {
             visible: isEnabled("songrec")
+            width: songrecBg.width
+            height: 32
 
-            width: isRecognizing ? 38 : 32
-            height: isRecognizing ? 26 : 32
-            radius: 16
-            anchors.verticalCenter: parent.verticalCenter
+            Rectangle {
+                id: songrecBg
+                anchors.verticalCenter: parent.verticalCenter
+                width: isRecognizing ? 38 : 32
+                height: isRecognizing ? 26 : 32
+                radius: 16
+                color: isRecognizing ? Qt.alpha(Colors.md3.primary, 0.15) : (songrecHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
 
-            color: isRecognizing ? Qt.alpha(Colors.md3.primary, 0.15) : (songrecHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
-
-            Behavior on height {
-                NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.OutCubic
+                Behavior on height {
+                    NumberAnimation {
+                        duration: 250
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 250
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 200
+                    }
                 }
             }
 
-            Behavior on width {
-                NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.OutCubic
-                }
-            }
-
-            Behavior on color {
-                ColorAnimation {
-                    duration: 200
+            SongrecIcon {
+                iconSize: 18
+                anchors.centerIn: parent
+                color: isRecognizing ? Colors.md3.primary : Colors.md3.on_surface
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 200
+                    }
                 }
             }
 
@@ -265,72 +277,63 @@ Rectangle {
                 }
                 onExited: tooltipWindow.visible = false
             }
-
-            SongrecIcon {
-                iconSize: 18
-                anchors.centerIn: parent
-                color: isRecognizing ? Colors.md3.primary : Colors.md3.on_surface
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 200
-                    }
-                }
-            }
         }
 
-        ClippingRectangle {
-            id: recordBtn
+        Item {
             visible: isEnabled("record")
+            height: 32
+            width: recordBg.width
 
-            readonly property int textWidth: recordingTime.length > 5 ? 57 : 38
-            width: isRecording ? 32 + 8 + textWidth : 32
-            height: 26
-            radius: 16
-            anchors.verticalCenter: parent.verticalCenter
-
-            color: isRecording ? Qt.alpha(Colors.md3.error, 0.15) : (recordHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
-
-            Behavior on width {
-                NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.OutCubic
-                }
-            }
-
-            Behavior on color {
-                ColorAnimation {
-                    duration: 200
-                }
-            }
-
-            RecordIcon {
-                id: recIcon
-                iconSize: 18
+            ClippingRectangle {
+                id: recordBg
                 anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-                anchors.leftMargin: 5
-                color: isRecording ? Colors.md3.error : Colors.md3.on_surface
+                readonly property int textWidth: recordingTime.length > 5 ? 57 : 38
+                width: isRecording ? 32 + 8 + textWidth : 32
+                height: 26
+                radius: 16
+                color: isRecording ? Qt.alpha(Colors.md3.error, 0.15) : (recordHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
+
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 250
+                        easing.type: Easing.OutCubic
+                    }
+                }
                 Behavior on color {
                     ColorAnimation {
                         duration: 200
                     }
                 }
-            }
 
-            Text {
-                id: recordingText
-                anchors.left: recIcon.right
-                anchors.leftMargin: 6
-                anchors.verticalCenter: parent.verticalCenter
-                text: root.recordingTime
-                font.family: Config.fontMonospace
-                font.pixelSize: 13
-                font.weight: Font.Medium
-                color: Colors.md3.error
-                opacity: isRecording ? 1 : 0
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 200
+                RecordIcon {
+                    id: recIcon
+                    iconSize: 18
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 5
+                    color: isRecording ? Colors.md3.error : Colors.md3.on_surface
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 200
+                        }
+                    }
+                }
+
+                Text {
+                    id: recordingText
+                    anchors.left: recIcon.right
+                    anchors.leftMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root.recordingTime
+                    font.family: Config.fontMonospace
+                    font.pixelSize: 13
+                    font.weight: Font.Medium
+                    color: Colors.md3.error
+                    opacity: isRecording ? 1 : 0
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                        }
                     }
                 }
             }
@@ -361,6 +364,7 @@ Rectangle {
         width: 32
         height: 32
         radius: 16
+
         color: hoverHandler.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent"
 
         HoverHandler {
