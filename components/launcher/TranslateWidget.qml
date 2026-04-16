@@ -42,6 +42,8 @@ Item {
         _romanized = "";
         _detectedSrc = "";
 
+        const url = "https://clients5.google.com/translate_a/single?dj=1&dt=sp&dt=t&dt=ld&dt=bd&client=dict-chrome-ex&sl=auto&tl=" + encodeURIComponent(root.targetLang) + "&q=" + encodeURIComponent(root.sourceText);
+
         const xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (xhr.readyState !== XMLHttpRequest.DONE)
@@ -69,12 +71,9 @@ Item {
                 _error = true;
             }
         };
-        xhr.open("POST", "https://chopped-gurt.imadeliciousegg.workers.dev");
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify({
-            text: root.sourceText,
-            dest: root.targetLang
-        }));
+        xhr.open("GET", url);
+        xhr.setRequestHeader("User-Agent", "Mozilla/5.0");
+        xhr.send();
     }
 
     function _speak(text, lang) {
