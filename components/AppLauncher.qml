@@ -444,7 +444,23 @@ Scope {
             id: stack
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.round(panel.height * 0.3)
-            width: 520
+
+            width: {
+                if (root.mode === "apps")
+                    return 420;
+                if (root.mode === "emoji")
+                    return 480;
+                return 520;
+            }
+
+            Behavior on width {
+                enabled: !root._opening
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                }
+            }
+
             height: listCard.y + listCard.height
 
             opacity: root.isOpen ? 1.0 : 0.0
@@ -649,8 +665,9 @@ Scope {
                 border.width: 1
                 border.color: Colors.md3.outline_variant
 
-                readonly property int _max: 400
+                readonly property int _max: root.mode === "clipboard" ? 600 : 400
                 height: launcherList.count === 0 ? 220 : Math.min(_max, Math.max(60, launcherList.listContentHeight + 40))
+
                 Behavior on height {
                     enabled: !root._opening
                     NumberAnimation {

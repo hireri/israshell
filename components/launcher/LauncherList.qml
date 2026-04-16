@@ -161,7 +161,7 @@ Item {
             list.positionViewAtBeginning();
             Qt.callLater(() => {
                 list.highlightMoveDuration = 160;
-                list.highlightResizeDuration = 160;
+                list.highlightResizeDuration = 0;
             });
         }
 
@@ -171,17 +171,25 @@ Item {
 
         highlightMoveDuration: 160
         highlightMoveVelocity: -1
-        highlightResizeDuration: 160
+        highlightResizeDuration: 0
         highlightResizeVelocity: -1
         highlightFollowsCurrentItem: true
 
         highlight: Item {
             Rectangle {
-                anchors {
-                    fill: parent
-                    leftMargin: 6
-                    rightMargin: 6
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: 6
+                anchors.rightMargin: 6
+                height: parent.height
+
+                Behavior on height {
+                    SmoothedAnimation {
+                        velocity: 400
+                        duration: 160
+                    }
                 }
+
                 radius: 14
                 color: Colors.md3.secondary_container
             }
