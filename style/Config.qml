@@ -73,8 +73,11 @@ Singleton {
             screencapEnabled: true,
             screencap: {
                 blacklist: ["cts", "ocr"],
-                screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
-                recordPath: "~/.config/hypr/scripts/record.sh"
+                screenshotPath: "~/.config/quickshell/scripts/screenshot.sh",
+                recordPath: "~/.config/quickshell/scripts/record.sh",
+                ctsPath: "~/.config/quickshell/scripts/cts.sh",
+                ocrPath: "~/.config/quickshell/scripts/ocr.sh",
+                songrecPath: "~/.config/quickshell/scripts/songrec.sh"
             },
             clock: {
                 fontFamily: "",

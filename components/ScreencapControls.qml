@@ -55,7 +55,7 @@ Rectangle {
 
     Process {
         id: checkProcess
-        command: ["sh", "-c", "pgrep -x wl-screenrec || pgrep -x gpu-screen-recorder"]
+        command: ["sh", "-c", "pgrep -x wl-screenrec || pgrep -x gpu-screen-reco"]
         running: false
         onExited: exitCode => {
             var currentlyRunning = (exitCode === 0);
