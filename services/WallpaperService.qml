@@ -84,18 +84,23 @@ Singleton {
         listProc.running = true;
     }
 
+    Timer {
+        id: debounceTimer
+        interval: 100
+        onTriggered: _runClockPosition()
+    }
+
     function reportClockSize(width, height) {
         const padding = 10;
         const w = width + (padding * 2);
         const h = height + (padding * 2);
 
-        if (w > 0 && h > 0) {
-            const changed = (clockRenderWidth !== w || clockRenderHeight !== h);
+        if (w > 0 && h > 0 && (clockRenderWidth !== w || clockRenderHeight !== h)) {
             clockRenderWidth = w;
             clockRenderHeight = h;
 
-            if (changed && currentWall && !loading) {
-                _runClockPosition();
+            if (currentWall && !loading) {
+                debounceTimer.restart();
             }
         }
     }
