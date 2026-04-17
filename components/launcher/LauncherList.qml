@@ -155,6 +155,7 @@ Item {
         }
 
         onCountChanged: {
+            resetToTop();
             list.highlightMoveDuration = 0;
             list.highlightResizeDuration = 0;
             list.currentIndex = 0;
