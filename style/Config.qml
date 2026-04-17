@@ -125,7 +125,6 @@ Singleton {
             const text = fileView.text();
             if (!text) {
                 __apply({});
-                __write();
                 return;
             }
             __apply(JSON.parse(text));
@@ -160,6 +159,12 @@ Singleton {
         __apply(data);
     }
 
+    Timer {
+        id: reloadDebouncer
+        interval: 150
+        onTriggered: fileView.reload()
+    }
+
     FileView {
         id: fileView
         path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
@@ -172,7 +177,7 @@ Singleton {
                 configRoot._selfWrite = false;
                 return;
             }
-            reload();
+            reloadDebouncer.restart();
         }
     }
 }
