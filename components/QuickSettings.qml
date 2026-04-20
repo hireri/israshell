@@ -15,6 +15,7 @@ Item {
     id: root
 
     required property var panelWindow
+    property string hostInfo: "loading..."
 
     implicitWidth: button.width
     height: button.height
@@ -93,7 +94,7 @@ Item {
             onStreamFinished: {
                 let lines = text.trim().split("\n");
                 if (lines.length >= 2) {
-                    hostText.text = lines[0] + " · " + lines[1].replace("up ", "").replace(" hours", "h").replace(" hour", "h").replace(" minutes", "m").replace(" minute", "m");
+                    root.hostInfo = lines[0] + " · " + lines[1].replace("up ", "").replace(" hours", "h").replace(" hour", "h").replace(" minutes", "m").replace(" minute", "m");
                 }
             }
         }
@@ -384,7 +385,7 @@ Item {
                                     id: hostText
                                     Layout.fillWidth: true
                                     elide: Text.ElideRight
-                                    text: "loading..."
+                                    text: root.hostInfo
                                     color: Colors.md3.on_surface_variant
                                     font.family: Config.fontFamily
                                     font.pixelSize: 12
