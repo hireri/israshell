@@ -14,11 +14,6 @@ ShellRoot {
     VolumeOSD {}
     AppLauncher {}
 
-    Variants {
-        model: Quickshell.screens
-        WallpaperClock {}
-    }
-
     Logout {
         LogoutButton {
             command: "loginctl lock-session"
@@ -111,6 +106,14 @@ ShellRoot {
         Scope {
             id: screenScope
             required property var modelData
+
+            LazyLoader {
+                activeAsync: Config.desktopClock
+
+                WallpaperClock {
+                    modelData: screenScope.modelData
+                }
+            }
 
             PanelWindow {
                 id: window

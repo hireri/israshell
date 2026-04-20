@@ -17,7 +17,7 @@ Scope {
     }
 
     Connections {
-        target: Pipewire.defaultAudioSink?.audio
+        target: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
 
         function onVolumeChanged() {
             root.showOsd();
@@ -34,8 +34,8 @@ Scope {
         hideTimer.restart();
     }
 
-    property bool isMuted: Pipewire.defaultAudioSink?.audio.muted ?? false
-    property real rawVolume: Pipewire.defaultAudioSink?.audio.volume ?? 0
+    property bool isMuted: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio.muted : false
+    property real rawVolume: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio.volume : 0
 
     property string volumeIcon: {
         if (root.isOverLimit)

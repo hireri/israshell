@@ -7,6 +7,23 @@ import Quickshell.Io
 Singleton {
     id: configRoot
 
+    property var ai: ({
+            name: "LLM",
+            systemPrompt: "You are a **helpful** desktop integrated assistant. User is on {distro}, using {compositor} compositor. It is {date}, {time}.",
+            temperature: 0.7,
+            tools: ["memory", "ddg-search"],
+            providers: [
+                {
+                    id: "lmstudio",
+                    type: "openai",
+                    label: "LM Studio",
+                    endpoint: "http://localhost:1234/v1",
+                    model: "llama-3-14b-instruct-v1",
+                    apiKey: ""
+                }
+            ],
+            activeProvider: "lmstudio"
+        })
     property bool spinningCover: true
     property bool showSeconds: false
     property int hourFormat: 0
@@ -16,8 +33,10 @@ Singleton {
     property string fontMonospace: "Roboto Mono"
     property var trayBlacklist: ["spotify", "blueman", "Network"]
     property bool tintTrayIcons: false
-    property int nightLightTemp: 4000
-    property int dayLightTemp: 6500
+    property var nightLight: ({
+            nightTemp: 4000,
+            dayTemp: 6500
+        })
     property bool floatingBar: false
     property bool huggingBar: true
     property bool screenCorners: true
@@ -52,6 +71,23 @@ Singleton {
 
     function __defaults() {
         return {
+            ai: {
+                name: "LLM",
+                systemPrompt: "You are a **helpful** desktop integrated assistant. User is on {distro}, using {compositor} compositor. It is {date}, {time}.",
+                temperature: 0.7,
+                tools: ["memory", "ddg-search"],
+                providers: [
+                    {
+                        id: "lmstudio",
+                        type: "openai",
+                        label: "LM Studio",
+                        endpoint: "http://localhost:1234/v1",
+                        model: "llama-3-14b-instruct-v1",
+                        apiKey: ""
+                    }
+                ],
+                activeProvider: "lmstudio"
+            },
             spinningCover: true,
             showSeconds: false,
             hourFormat: 0,
@@ -61,8 +97,10 @@ Singleton {
             fontMonospace: "Roboto Mono",
             trayBlacklist: ["spotify", "blueman", "Network"],
             tintTrayIcons: false,
-            nightLightTemp: 4000,
-            dayLightTemp: 6500,
+            nightLight: {
+                nightTemp: 4000,
+                dayTemp: 6500
+            },
             floatingBar: false,
             huggingBar: true,
             screenCorners: true,

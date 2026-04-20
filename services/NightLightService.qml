@@ -13,7 +13,7 @@ Singleton {
 
     Timer {
         id: pollTimer
-        interval: 5000
+        interval: 10000
         running: true
         repeat: true
         triggeredOnStart: true
@@ -29,10 +29,12 @@ Singleton {
 
             onStreamFinished: {
                 const currentTemp = parseInt(tempOutput.text.trim(), 10);
-                const dayTemp = Config.dayLightTemp || 6500;
-
+                const dayTemp = Config.nightLight.dayTemp ?? 6500;
                 if (!isNaN(currentTemp)) {
-                    root.active = (currentTemp < dayTemp);
+                    const shouldBeActive = currentTemp < dayTemp;
+
+                    if (shouldBeActive !== root.active)
+                        root.active = shouldBeActive;
                 }
             }
         }
@@ -40,25 +42,57 @@ Singleton {
 
     Process {
         id: enableProc
-        command: ["hyprctl", "hyprsunset", "temperature", String(Config.nightLightTemp || 4000)]
+        command: ["hyprctl", "hyprsunset", "temperature", String(Config.nightLight.temp ?? 4000)]
         onExited: tempProc.running = true
     }
 
     Process {
         id: disableProc
-        command: ["hyprctl", "hyprsunset", "temperature", String(Config.dayLightTemp || 6500)]
+        command: ["hyprctl", "hyprsunset", "temperature", String(Config.nightLight.dayTemp ?? 6500)]
         onExited: tempProc.running = true
     }
 
     function toggle() {
+        root.active = !root.active;
         if (root.active) {
-            root.active = false;
-            disableProc.running = true;
+            enableProc.command = ["hyprctl", "hyprsunset", "temperature", String(Config.nightLight.temp ?? 4000)];
+            enableProc.running = false;
+            enableProc.running = true;
         } else {
-            root.active = true;
+            disableProc.command = ["hyprctl", "hyprsunset", "temperature", String(Config.nightLight.dayTemp ?? 6500)];
+            disableProc.running = false;
+            disableProc.running = true;
+        }
+        pollTimer.restart();
+    }
+
+    function setNightTemp(temp) {
+        const nl = Object.assign({}, Config.nightLight, {
+            temp: temp
+        });
+        Config.update({
+            nightLight: nl
+        });
+
+        if (root.active) {
+            enableProc.command = ["hyprctl", "hyprsunset", "temperature", String(temp)];
+            enableProc.running = false;
             enableProc.running = true;
         }
+    }
 
-        pollTimer.restart();
+    function setDayTemp(temp) {
+        const nl = Object.assign({}, Config.nightLight, {
+            dayTemp: temp
+        });
+        Config.update({
+            nightLight: nl
+        });
+
+        if (!root.active) {
+            disableProc.command = ["hyprctl", "hyprsunset", "temperature", String(temp)];
+            disableProc.running = false;
+            disableProc.running = true;
+        }
     }
 }

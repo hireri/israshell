@@ -54,8 +54,8 @@ while IFS= read -r line; do
         file "$COVER_TEMP" | grep -qE "image|PNG|JPEG" && NOTIFICATION_ICON="$COVER_TEMP"
     fi
 
-    BODY="By $ARTIST"
-    [ -n "$ALBUM" ] && BODY="By $ARTIST\nOn $ALBUM"
+    BODY="$ARTIST"
+    [ -n "$ALBUM" ] && BODY="$ALBUM\n$ARTIST"
 
     (
         ACTION=$(notify-send --wait --urgency=normal --icon="$NOTIFICATION_ICON" \

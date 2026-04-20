@@ -192,6 +192,7 @@ Rectangle {
             ScreenshotIcon {
                 iconSize: 18
                 anchors.centerIn: parent
+                color: Colors.md3.on_surface
             }
         }
 
@@ -202,6 +203,7 @@ Rectangle {
             ImageSearchIcon {
                 iconSize: 18
                 anchors.centerIn: parent
+                color: Colors.md3.on_surface
             }
         }
 
@@ -212,6 +214,7 @@ Rectangle {
             OcrIcon {
                 iconSize: 18
                 anchors.centerIn: parent
+                color: Colors.md3.on_surface
             }
         }
 

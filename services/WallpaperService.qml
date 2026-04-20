@@ -20,6 +20,9 @@ Singleton {
 
     property int clockRenderWidth: 350
     property int clockRenderHeight: 350
+    property bool _pendingRandomize: false
+
+    Component.onCompleted: wallSyncProc.running = true
 
     function openFor(_panelWindow) {
         if (currentWall) {
@@ -52,10 +55,50 @@ Singleton {
     }
 
     function randomize() {
+        if (currentWall) {
+            const wallDir = currentWall.substring(0, currentWall.lastIndexOf("/"));
+            if (wallDir && wallDir !== currentDir) {
+                currentDir = wallDir;
+                _pendingRandomize = true;
+                return;
+            }
+        }
         const walls = entries.filter(e => !e.isDir);
         if (walls.length === 0)
             return;
         selectWall(walls[Math.floor(Math.random() * walls.length)].path);
+    }
+
+    function randomizeKonachan() {
+        if (applying || loading)
+            return;
+        const req = new XMLHttpRequest();
+        req.open("GET", "https://konachan.net/post.json?limit=1&tags=order:random+rating:s");
+        req.onreadystatechange = () => {
+            if (req.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (req.status !== 200) {
+                console.log("[Wallpaper] Konachan fetch failed:", req.status);
+                return;
+            }
+            try {
+                const posts = JSON.parse(req.responseText);
+                if (!posts || posts.length === 0)
+                    return;
+                const url = posts[0].file_url;
+                if (!url)
+                    return;
+                const ext = url.split(".").pop().split("?")[0];
+                const dest = Quickshell.env("HOME") + "/Pictures/Random/konachan_" + Date.now() + "." + ext;
+                konaDownloadProc.url = url;
+                konaDownloadProc.dest = dest;
+                konaDownloadProc.running = false;
+                konaDownloadProc.running = true;
+            } catch (e) {
+                console.log("[Wallpaper] Konachan parse error:", e);
+            }
+        };
+        req.send();
     }
 
     function openFolder() {
@@ -90,6 +133,35 @@ Singleton {
         onTriggered: _runClockPosition()
     }
 
+    Timer {
+        interval: 5000
+        running: true
+        repeat: true
+        onTriggered: {
+            if (!root.applying)
+                wallSyncProc.running = true;
+        }
+    }
+
+    Process {
+        id: wallSyncProc
+        command: ["readlink", "-f", Quickshell.env("HOME") + "/.config/hypr/current_wall"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const p = text.trim();
+                if (p && p !== root.currentWall) {
+                    root.currentWall = p;
+                    if (!root.isOpen) {
+                        const dir = p.substring(0, p.lastIndexOf("/"));
+                        if (dir && dir !== root.currentDir)
+                            root.currentDir = dir;
+                    }
+                }
+            }
+        }
+    }
+
     function reportClockSize(width, height) {
         const padding = 10;
         const w = width + (padding * 2);
@@ -120,7 +192,7 @@ Singleton {
     onCurrentDirChanged: _runList()
 
     onCurrentWallChanged: {
-        _runClockPosition();
+        debounceTimer.restart();
     }
 
     onIsDarkChanged: {
@@ -147,21 +219,40 @@ Singleton {
                         path: p[2] ?? ""
                     };
                 }).filter(e => e.name);
+
+                if (root._pendingRandomize) {
+                    root._pendingRandomize = false;
+                    root.randomize();
+                }
             }
         }
     }
 
-    Process {
-        id: currentWallProc
-        running: true
-        command: ["bash", "-c", "readlink -f ~/.config/hypr/current_wall 2>/dev/null || echo ''"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const p = text.trim();
-                if (p) {
-                    root.currentWall = p;
-                    root._runClockPosition();
+    FileView {
+        id: wallSymlink
+        path: Quickshell.env("HOME") + "/.config/hypr/current_wall"
+        watchChanges: true
+        onFileChanged: {
+            wallSymlink.reload();
+            const p = wallSymlink.text.trim();
+            if (p && p !== root.currentWall) {
+                root.currentWall = p;
+                if (!root.isOpen) {
+                    const dir = p.substring(0, p.lastIndexOf("/"));
+                    if (dir && dir !== root.currentDir)
+                        root.currentDir = dir;
                 }
+            }
+        }
+        Component.onCompleted: {
+            wallSymlink.reload();
+            const p = wallSymlink.text.trim();
+            if (p) {
+                root.currentWall = p;
+                const dir = p.substring(0, p.lastIndexOf("/"));
+                if (dir)
+                    root.currentDir = dir;
+                root.debounceTimer.restart();
             }
         }
     }
@@ -203,11 +294,22 @@ Singleton {
         running: false
         onExited: (code, _) => {
             root.applying = false;
-            if (code === 0) {
-                currentWallProc.running = false;
-                currentWallProc.running = true;
-                root._runClockPosition();
-            }
+            if (code === 0)
+                root.debounceTimer.restart();
+        }
+    }
+
+    Process {
+        id: konaDownloadProc
+        property string url: ""
+        property string dest: ""
+        command: ["bash", "-c", "mkdir -p " + JSON.stringify(Quickshell.env("HOME") + "/Pictures/Random") + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
+        running: false
+        onExited: (code, _) => {
+            if (code === 0 && konaDownloadProc.dest !== "")
+                selectWall(konaDownloadProc.dest);
+            else
+                console.log("[Wallpaper] Konachan download failed, code:", code);
         }
     }
 }

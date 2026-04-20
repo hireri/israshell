@@ -390,12 +390,19 @@ Scope {
         }
     }
 
+    HyprlandFocusGrab {
+        id: focusGrab
+        active: root.isOpen
+        windows: [panel]
+        onCleared: root.close()
+    }
+
     Variants {
         model: Quickshell.screens
         PanelWindow {
             required property var modelData
             screen: modelData
-            visible: root.isOpen && modelData !== panel.screen
+            visible: root.isOpen
             color: "transparent"
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None

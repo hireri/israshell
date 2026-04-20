@@ -14,7 +14,7 @@ convert_to_gif() {
     basename="${basename##*/}"
     local output="$GIF_DIR/${basename}.gif"
 
-    notify-send "Converting to GIF…" "${input##*/}" \
+    notify-send "Converting to GIF..." "${input##*/}" \
         -i "video-x-generic" -a "Screen Recorder" -t 4000
 
     ffmpeg -i "$input" \
