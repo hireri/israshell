@@ -57,40 +57,16 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     height: 40
-                    radius: 20
-                    color: Colors.md3.surface_container_high
+                    color: "transparent"
                     Layout.bottomMargin: 14
 
-                    RowLayout {
-                        anchors {
-                            fill: parent
-                            leftMargin: 14
-                            rightMargin: 14
-                        }
-                        spacing: 8
-
-                        Text {
-                            text: "󰍉"
-                            font.pixelSize: 16
-                            color: Colors.md3.outline
-                        }
-
-                        TextInput {
-                            Layout.fillWidth: true
-                            font.family: Config.fontFamily
-                            font.pixelSize: 13
-                            color: Colors.md3.on_surface
-                            clip: true
-
-                            Text {
-                                anchors.fill: parent
-                                text: "Search settings..."
-                                font: parent.font
-                                color: Colors.md3.outline
-                                visible: parent.text === ""
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                        }
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Settings"
+                        font.family: Config.fontFamily
+                        font.pixelSize: 18
+                        font.weight: Font.Bold
+                        color: Colors.md3.on_surface
                     }
                 }
 
