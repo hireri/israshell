@@ -17,7 +17,7 @@ Scope {
     }
 
     Connections {
-        target: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
+        target: Pipewire.defaultAudioSink?.audio
 
         function onVolumeChanged() {
             root.showOsd();
