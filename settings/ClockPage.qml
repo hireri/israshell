@@ -184,13 +184,13 @@ PageBase {
     RowLayout {
         Layout.fillWidth: true
         spacing: 10
+        visible: Config.clock.layout !== "analog"
 
         Rectangle {
             Layout.fillWidth: true
             height: 80
             radius: 16
             color: Colors.md3.surface_container
-            visible: Config.clock.layout !== "analog"
 
             ColumnLayout {
                 anchors {
@@ -270,13 +270,13 @@ PageBase {
             Layout.preferredWidth: 90
             height: 80
             radius: 16
+            visible: Config.clock.layout !== "word"
             color: Config.clock.showSeconds ? Colors.md3.tertiary_container : Colors.md3.surface_container
             Behavior on color {
                 ColorAnimation {
                     duration: 150
                 }
             }
-            visible: Config.clock.layout !== "analog"
 
             ColumnLayout {
                 anchors {
@@ -292,7 +292,6 @@ PageBase {
                     font.weight: Font.Medium
                     color: Config.clock.showSeconds ? Colors.md3.on_tertiary_container : Colors.md3.outline
                 }
-
                 Text {
                     text: Config.clock.showSeconds ? "22:03:42" : "22:03"
                     font.family: Config.fontMonospace
@@ -321,7 +320,6 @@ PageBase {
                     duration: 150
                 }
             }
-            visible: Config.clock.layout !== "analog"
 
             ColumnLayout {
                 anchors {
@@ -337,7 +335,6 @@ PageBase {
                     font.weight: Font.Medium
                     color: Config.clock.showDate ? Colors.md3.on_tertiary_container : Colors.md3.outline
                 }
-
                 Text {
                     text: Qt.formatDate(new Date(), "ddd d")
                     font.family: Config.fontMonospace
@@ -362,11 +359,20 @@ PageBase {
         visible: Config.clock.layout === "analog"
 
         SettingSwitch {
-            label: "Show seconds"
-            sublabel: "Second hand on analog clock"
+            label: "Show seconds hand"
+            sublabel: "Adds a sweeping seconds hand"
             checked: Config.clock.showSeconds
             onToggled: v => updateClock({
                     showSeconds: v
+                })
+        }
+        SettingSwitch {
+            isLast: true
+            label: "Show date"
+            sublabel: "Date label below the clock face"
+            checked: Config.clock.showDate
+            onToggled: v => updateClock({
+                    showDate: v
                 })
         }
     }
@@ -389,6 +395,7 @@ PageBase {
 
             ColumnLayout {
                 Layout.fillWidth: true
+                Layout.preferredWidth: 0
                 spacing: 6
 
                 Text {
@@ -406,7 +413,6 @@ PageBase {
                         model: ["primary", "secondary", "tertiary", "on_surface"]
                         delegate: Rectangle {
                             required property string modelData
-                            required property int index
                             Layout.fillWidth: true
                             height: 32
                             radius: Config.clock.colorRole === modelData ? 20 : 6
@@ -439,10 +445,11 @@ PageBase {
 
             ColumnLayout {
                 Layout.fillWidth: true
+                Layout.preferredWidth: 0
                 spacing: 6
 
                 Text {
-                    text: Config.clock.layout === "analog" ? "Seconds color" : "Date color"
+                    text: Config.clock.layout === "analog" ? "Seconds color" : "Date / minute color"
                     font.family: Config.fontFamily
                     font.pixelSize: 11
                     font.weight: Font.Medium
@@ -456,7 +463,6 @@ PageBase {
                         model: ["primary", "secondary", "tertiary", "on_surface"]
                         delegate: Rectangle {
                             required property string modelData
-                            required property int index
                             Layout.fillWidth: true
                             height: 32
                             radius: Config.clock.subColorRole === modelData ? 20 : 6
@@ -525,6 +531,103 @@ PageBase {
                     dateSpacing: v
                 })
         }
+        SettingSlider {
+            label: "Date size"
+            visible: Config.clock.showDate
+            from: 10
+            to: 60
+            stepSize: 1
+            value: Config.clock.dateSize
+            onMoved: v => updateClock({
+                    dateSize: v
+                })
+        }
+    }
+
+    SectionCard {
+        Layout.fillWidth: true
+        visible: Config.clock.layout === "word"
+
+        SettingSlider {
+            label: "Word size"
+            from: 20
+            to: 120
+            stepSize: 1
+            value: Config.clock.hourSize
+            onMoved: v => updateClock({
+                    hourSize: v
+                })
+        }
+        SettingSlider {
+            label: "Line spacing"
+            from: -40
+            to: 40
+            stepSize: 1
+            value: Config.clock.wordSpacing ?? -6
+            onMoved: v => updateClock({
+                    wordSpacing: v
+                })
+        }
+        SettingSlider {
+            label: "Date spacing"
+            visible: Config.clock.showDate
+            from: -60
+            to: 40
+            stepSize: 1
+            value: Config.clock.dateSpacing
+            onMoved: v => updateClock({
+                    dateSpacing: v
+                })
+        }
+        SettingSlider {
+            label: "Date size"
+            visible: Config.clock.showDate
+            from: 10
+            to: 60
+            stepSize: 1
+            value: Config.clock.dateSize
+            onMoved: v => updateClock({
+                    dateSize: v
+                })
+        }
+    }
+
+    SectionCard {
+        Layout.fillWidth: true
+        visible: Config.clock.layout === "analog"
+
+        SettingSlider {
+            label: "Clock size"
+            from: 80
+            to: 500
+            stepSize: 4
+            value: Config.clock.analogSize ?? 200
+            onMoved: v => updateClock({
+                    analogSize: v
+                })
+        }
+        SettingSlider {
+            label: "Date spacing"
+            visible: Config.clock.showDate
+            from: -60
+            to: 40
+            stepSize: 1
+            value: Config.clock.dateSpacing
+            onMoved: v => updateClock({
+                    dateSpacing: v
+                })
+        }
+        SettingSlider {
+            label: "Date size"
+            visible: Config.clock.showDate
+            from: 10
+            to: 60
+            stepSize: 1
+            value: Config.clock.dateSize
+            onMoved: v => updateClock({
+                    dateSize: v
+                })
+        }
     }
 
     SectionCard {
@@ -532,6 +635,7 @@ PageBase {
 
         SettingSlider {
             label: "Shadow blur"
+            isLast: true
             from: 0
             to: 64
             stepSize: 1

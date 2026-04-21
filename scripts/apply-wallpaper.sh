@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# $ apply-wallpaper.sh <wall-path> <mode>
-#   L mode: dark | light
+# apply-wallpaper.sh <wall-path> <mode>
+#   mode: dark | light
 set -euo pipefail
 
 WALL=$(readlink -f "${1:?Wall path required}")
@@ -17,3 +17,9 @@ awww img \
     "$HOME/.config/hypr/current_wall"
 
 matugen image "$HOME/.config/hypr/current_wall" -m "$MODE" --source-color-index 0
+
+if [ "$MODE" = "dark" ]; then
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+else
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+fi

@@ -9,19 +9,15 @@ import qs.settings.components
 import qs.settings
 import qs.icons
 
-ApplicationWindow {
+FloatingWindow {
     id: root
 
     visible: true
-    width: 960
-    height: 680
-    minimumWidth: 900
-    minimumHeight: 540
+    implicitWidth: 960
+    implicitHeight: 680
+    minimumSize: Qt.size(900, 540)
     title: "Settings"
     color: Colors.md3.background
-    flags: Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
-
-    onClosing: Qt.quit()
 
     readonly property int pageOverview: 0
     readonly property int pageNetwork: 1

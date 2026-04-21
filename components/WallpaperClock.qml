@@ -25,19 +25,32 @@ PanelWindow {
         right: true
     }
 
-    property var _pos: Config.clockPositions?.[modelData.name] ?? null
+    property real _cx: 0
+    property real _cy: 0
 
-    property real _cx: _pos ? _pos.x : modelData.width * 0.82
-    property real _cy: _pos ? _pos.y : modelData.height * 0.10
+    Behavior on _cx {
+        enabled: !Config.loading
+        NumberAnimation {
+            duration: 600
+            easing.type: Easing.InOutCubic
+        }
+    }
+    Behavior on _cy {
+        enabled: !Config.loading
+        NumberAnimation {
+            duration: 600
+            easing.type: Easing.InOutCubic
+        }
+    }
 
     property var _currentTime: new Date()
 
     function updatePosition() {
         const pos = Config.clockPositions?.[modelData.name];
-        if (pos) {
-            _cx = pos.x;
-            _cy = pos.y;
-        } else {}
+        if (!pos || (pos.x === _cx && pos.y === _cy))
+            return;
+        _cx = pos.x;
+        _cy = pos.y;
     }
 
     Connections {
@@ -49,18 +62,23 @@ PanelWindow {
 
     Component.onCompleted: {
         updatePosition();
-        if (WallpaperService.clockRenderWidth === 350) {
-            WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
+        if (!Config.clockPositions?.[modelData.name]) {
+            _cx = modelData.width * 0.82;
+            _cy = modelData.height * 0.10;
         }
+        if (modelData === Quickshell.screens[0])
+            WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
     }
 
     Connections {
         target: clockRoot
         function onImplicitWidthChanged() {
-            WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
+            if (root.modelData === Quickshell.screens[0])
+                Qt.callLater(() => WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight));
         }
         function onImplicitHeightChanged() {
-            WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
+            if (root.modelData === Quickshell.screens[0])
+                Qt.callLater(() => WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight));
         }
     }
 
@@ -73,9 +91,8 @@ PanelWindow {
             if (clockRoot._layoutMode === 3) {
                 root._currentTime = now;
             } else if (clockRoot._layoutMode === 1) {
-                if (now.getMinutes() !== root._currentTime.getMinutes()) {
+                if (now.getMinutes() !== root._currentTime.getMinutes())
                     root._currentTime = now;
-                }
             } else {
                 root._currentTime = now;
             }
@@ -86,20 +103,7 @@ PanelWindow {
         id: clockRoot
         x: root._cx - width / 2
         y: root._cy - height / 2
-        Behavior on x {
-            enabled: !Config.loading
-            NumberAnimation {
-                duration: 600
-                easing.type: Easing.InOutCubic
-            }
-        }
-        Behavior on y {
-            enabled: !Config.loading
-            NumberAnimation {
-                duration: 600
-                easing.type: Easing.InOutCubic
-            }
-        }
+
         layer.enabled: true
         layer.effect: DropShadow {
             transparentBorder: true
@@ -116,7 +120,6 @@ PanelWindow {
         readonly property int _analogSize: Config.clock.analogSize ?? 200
         readonly property bool _showSeconds: Config.clock.showSeconds ?? false
         readonly property bool _is12h: Config.hourFormat !== 0
-        readonly property bool _isHorizontal: _layoutMode === 0
 
         implicitWidth: _layoutMode === 0 ? timeRow.implicitWidth : _layoutMode === 1 ? Math.max(hoursLbl.implicitWidth, minsLbl.implicitWidth, Config.clock.showDate ? dateLbl.implicitWidth : 0) : _layoutMode === 2 ? wordClock.implicitWidth : analogClock.width
         implicitHeight: {
@@ -150,6 +153,7 @@ PanelWindow {
             color: clockRoot._textColor
             text: root._formatHours(root._currentTime)
         }
+
         Text {
             id: minsLbl
             visible: clockRoot._layoutMode === 1
@@ -311,9 +315,7 @@ PanelWindow {
                         width: 6
                         height: index % 3 === 0 ? 10 : 6
                         radius: width / 2
-
                         color: index % 3 === 0 ? Qt.alpha(clockRoot._subColor, 0.6) : Qt.alpha(clockRoot._subColor, 0.3)
-
                         anchors.top: parent.top
                         anchors.topMargin: 16
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -423,11 +425,10 @@ PanelWindow {
         const dh = (r >= 3 && mi + (5 - r) >= 60) ? (h + 1) % 24 : h;
         const displayHour = dh % 12 || 12, nextHour = (displayHour % 12) + 1;
         const names = ["", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN", "ELEVEN", "TWELVE"];
-        const isNum = w => names.includes(w);
         const w = (text, active) => ({
                     text,
                     active,
-                    isNumber: isNum(text)
+                    isNumber: names.includes(text)
                 });
         const itis = [w("IT", true), w("IS", true)];
 
@@ -588,9 +589,8 @@ PanelWindow {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (clockRoot._layoutMode === 2) {
+            if (clockRoot._layoutMode === 2)
                 wordRepeater.model = root._wordClockLines();
-            }
         }
     }
 }

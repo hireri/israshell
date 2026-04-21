@@ -24,6 +24,16 @@ Singleton {
 
     Component.onCompleted: wallSyncProc.running = true
 
+    onIsDarkChanged: {
+        Config.update({
+            darkMode: isDark
+        });
+        if (currentWall)
+            applyTheme();
+    }
+
+    onCurrentDirChanged: _runList()
+
     function openFor(_panelWindow) {
         if (currentWall) {
             const wallDir = currentWall.substring(0, currentWall.lastIndexOf("/"));
@@ -154,45 +164,21 @@ Singleton {
     }
 
     function reportClockSize(width, height) {
-        const padding = 10;
-        const w = width + (padding * 2);
-        const h = height + (padding * 2);
-
-        if (w > 0 && h > 0 && (clockRenderWidth !== w || clockRenderHeight !== h)) {
-            clockRenderWidth = w;
-            clockRenderHeight = h;
-            dimsFile.setText(w + "x" + h);
-
-            if (currentWall && !loading)
-                debounceTimer.restart();
-        }
-    }
-
-    Timer {
-        id: debounceTimer
-        interval: 100
-        onTriggered: _runClockPosition()
+        const w = Math.round(width + 20);
+        const h = Math.round(height + 20);
+        if (w <= 0 || h <= 0)
+            return;
+        clockRenderWidth = w;
+        clockRenderHeight = h;
+        _runClockPosition();
     }
 
     function _runClockPosition() {
         if (!currentWall || !Config.desktopClock)
             return;
-
-        const raw = dimsFile.text().trim();
-        const parts = raw.split("x");
-        const w = parts.length === 2 ? (parseInt(parts[0]) || clockRenderWidth) : clockRenderWidth;
-        const h = parts.length === 2 ? (parseInt(parts[1]) || clockRenderHeight) : clockRenderHeight;
-
-        const mode = isDark ? "dark" : "light";
-        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/leastbusy.py", root.currentWall, "--clock-w", String(w), "--clock-h", String(h), "--mode", mode];
+        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/leastbusy.py", root.currentWall, "--clock-w", String(clockRenderWidth), "--clock-h", String(clockRenderHeight), "--mode", isDark ? "dark" : "light"];
         clockProc.running = false;
         clockProc.running = true;
-    }
-
-    FileView {
-        id: dimsFile
-        path: "/tmp/qs-clock-dims"
-        blockLoading: true
     }
 
     Timer {
@@ -230,7 +216,7 @@ Singleton {
         watchChanges: true
         onFileChanged: {
             wallSymlink.reload();
-            const p = wallSymlink.text.trim();
+            const p = wallSymlink.text().trim();
             if (p && p !== root.currentWall) {
                 root.currentWall = p;
                 if (!root.isOpen) {
@@ -242,7 +228,7 @@ Singleton {
         }
         Component.onCompleted: {
             wallSymlink.reload();
-            const p = wallSymlink.text.trim();
+            const p = wallSymlink.text().trim();
             if (p) {
                 root.currentWall = p;
                 const dir = p.substring(0, p.lastIndexOf("/"));
@@ -250,16 +236,6 @@ Singleton {
                     root.currentDir = dir;
             }
         }
-    }
-
-    onCurrentDirChanged: _runList()
-
-    onIsDarkChanged: {
-        Config.update({
-            darkMode: isDark
-        });
-        if (currentWall)
-            applyTheme();
     }
 
     function _runList() {
@@ -326,13 +302,13 @@ Singleton {
         onExited: (code, _) => {
             root.applying = false;
             if (code === 0)
-                debounceTimer.restart();
+                _runClockPosition();
         }
     }
 
     Process {
         id: openFolderProc
-        command: ["bash", "-c", "export PATH=\"$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH\";" + "xdg-open " + JSON.stringify(root.currentDir)]
+        command: ["bash", "-c", "export PATH=\"$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH\"; xdg-open " + JSON.stringify(root.currentDir)]
         running: false
     }
 
@@ -349,6 +325,7 @@ Singleton {
                 console.log("[Wallpaper] Konachan download failed, code:", code);
         }
     }
+
     Process {
         id: wallhavenDownloadProc
         property string url: ""

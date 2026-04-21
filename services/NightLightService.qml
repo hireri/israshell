@@ -10,13 +10,17 @@ Singleton {
     property bool active: false
     property int currentTemp: Config.nightLight.dayTemp
 
-    Component.onCompleted: {
-        if (!pollProc.running)
-            pollProc.running = true;
-    }
+    property bool _manualOverride: false
+    property bool _lastIsNight: false
+    property bool _initialCheckDone: false
+
+    Component.onCompleted: pollProc.running = true
+
+    property var _watchedConfig: Config.nightLight
+    on_WatchedConfigChanged: _reapplySchedule()
 
     Timer {
-        interval: 1000
+        interval: 3000
         running: true
         repeat: true
         onTriggered: {
@@ -33,9 +37,28 @@ Singleton {
                 const temp = parseInt(data.trim(), 10);
                 if (!isNaN(temp)) {
                     root.currentTemp = temp;
-                    const nl = Config.nightLight;
-                    const mid = (nl.nightTemp + nl.dayTemp) / 2;
-                    root.active = temp <= mid;
+
+                    if (!root._initialCheckDone) {
+                        root._initialCheckDone = true;
+                        const nl = Config.nightLight;
+                        const isNight = _isNight(nl);
+                        root._lastIsNight = isNight;
+
+                        if (nl.scheduleEnabled) {
+                            root.active = isNight;
+                            const expected = isNight ? nl.nightTemp : nl.dayTemp;
+                            if (temp !== expected)
+                                _applyTemp(expected);
+                        }
+
+                        if (nl.autoDarkMode) {
+                            if (WallpaperService.isDark !== isNight) {
+                                WallpaperService.isDark = isNight;
+                            } else {
+                                WallpaperService.applyTheme();
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -45,71 +68,84 @@ Singleton {
         }
     }
 
-    property bool _lastIsNight: false
-    property bool _scheduleInitialized: false
-
-    Timer {
-        interval: 60000
-        running: true
-        repeat: true
-        onTriggered: {
-            if (!pollProc.running)
-                pollProc.running = true;
-
-            const nl = Config.nightLight;
-            const now = new Date();
-            const minutes = now.getHours() * 60 + now.getMinutes();
-            const isNight = minutes >= root._timeToMinutes(nl.sunset) || minutes < root._timeToMinutes(nl.sunrise);
-
-            if (!root._scheduleInitialized) {
-                root._lastIsNight = isNight;
-                root._scheduleInitialized = true;
-                return;
-            }
-
-            if (isNight === root._lastIsNight)
-                return;
-
-            root._lastIsNight = isNight;
-
-            if (nl.scheduleEnabled)
-                _applyTemp(isNight ? nl.nightTemp : nl.dayTemp);
-
-            if (nl.autoDarkMode)
-                WallpaperService.isDark = isNight;
-        }
-    }
-
     Process {
         id: checkProc
         command: ["pgrep", "-x", "hyprsunset"]
+        running: false
         stdout: SplitParser {
             onRead: data => {}
         }
         onExited: code => {
             if (code !== 0) {
                 Quickshell.execDetached(["hyprsunset"]);
-                applyTimer.targetTemp = _targetTemp();
-                applyTimer.start();
+                restartApplyTimer.start();
             }
         }
     }
 
     Timer {
-        id: applyTimer
+        id: restartApplyTimer
         interval: 400
         repeat: false
-        property int targetTemp: Config.nightLight.dayTemp
-        onTriggered: _applyTemp(targetTemp)
+        onTriggered: _applyTemp(root.active ? Config.nightLight.nightTemp : Config.nightLight.dayTemp)
     }
 
-    function _targetTemp() {
+    Timer {
+        interval: 60000
+        running: true
+        repeat: true
+        onTriggered: {
+            const nl = Config.nightLight;
+            const isNight = _isNight(nl);
+
+            if (isNight === root._lastIsNight)
+                return;
+
+            root._lastIsNight = isNight;
+            root._manualOverride = false;
+
+            if (nl.scheduleEnabled) {
+                root.active = isNight;
+                _applyTemp(isNight ? nl.nightTemp : nl.dayTemp);
+            }
+
+            if (nl.autoDarkMode) {
+                WallpaperService.isDark = isNight;
+                WallpaperService.applyTheme();
+            }
+        }
+    }
+
+    function _reapplySchedule() {
         const nl = Config.nightLight;
+        const isNight = _isNight(nl);
+        root._lastIsNight = isNight;
+        root._manualOverride = false;
+
+        if (nl.scheduleEnabled) {
+            root.active = isNight;
+            const expected = isNight ? nl.nightTemp : nl.dayTemp;
+            if (root.currentTemp !== expected)
+                _applyTemp(expected);
+        }
+
+        if (nl.autoDarkMode)
+            WallpaperService.isDark = isNight;
+    }
+
+    function _isNight(nl) {
         const now = new Date();
         const minutes = now.getHours() * 60 + now.getMinutes();
-        const isNight = minutes >= _timeToMinutes(nl.sunset) || minutes < _timeToMinutes(nl.sunrise);
-        root.active = isNight;
-        return isNight ? nl.nightTemp : nl.dayTemp;
+        const sunset = _timeToMinutes(nl.sunset);
+        const sunrise = _timeToMinutes(nl.sunrise);
+
+        if (sunset === sunrise)
+            return false;
+
+        if (sunset < sunrise)
+            return minutes >= sunset && minutes < sunrise;
+
+        return minutes >= sunset || minutes < sunrise;
     }
 
     function _applyTemp(temp) {
@@ -122,6 +158,7 @@ Singleton {
     }
 
     function toggle() {
+        root._manualOverride = true;
         root.active = !root.active;
         _applyTemp(root.active ? Config.nightLight.nightTemp : Config.nightLight.dayTemp);
     }
@@ -132,7 +169,7 @@ Singleton {
                 nightTemp: temp
             })
         });
-        if (root.active)
+        if (!Config.nightLight.scheduleEnabled && root.active)
             _applyTemp(temp);
     }
 
@@ -142,7 +179,7 @@ Singleton {
                 dayTemp: temp
             })
         });
-        if (!root.active)
+        if (!Config.nightLight.scheduleEnabled && !root.active)
             _applyTemp(temp);
     }
 

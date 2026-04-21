@@ -1,5 +1,6 @@
 //@ pragma UseQApplication
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import QtQuick
@@ -7,12 +8,40 @@ import QtQuick
 import qs.components
 import qs.style
 import qs.services
+import qs.settings
 
 ShellRoot {
 
     NotificationPopup {}
     VolumeOSD {}
     AppLauncher {}
+
+    Loader {
+        id: settingsLoader
+        active: false
+        sourceComponent: SettingsWindow {}
+    }
+
+    IpcHandler {
+        target: "settings"
+        function open(page: string): void {
+            const map = {
+                "overview": 0,
+                "network": 1,
+                "bar": 2,
+                "clock": 3,
+                "display": 4,
+                "sound": 5,
+                "immeria": 6,
+                "system": 7
+            };
+            settingsLoader.active = true;
+            settingsLoader.item.visible = true;
+            const p = map[page];
+            if (p !== undefined)
+                settingsLoader.item.currentPage = p;
+        }
+    }
 
     Logout {
         LogoutButton {
