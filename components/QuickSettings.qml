@@ -506,7 +506,7 @@ Item {
                                     onToggled: NetworkService.toggle()
                                     onRightClicked: {
                                         root.isOpen = false;
-                                        appletProc.command = ["qs", "ipc", "call", "settings", "open", 1];
+                                        appletProc.command = ["qs", "ipc", "call", "settings", "open", "network"];
                                         appletProc.running = true;
                                     }
                                 }
@@ -518,7 +518,7 @@ Item {
                                         Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
                                     onRightClicked: {
                                         root.isOpen = false;
-                                        appletProc.command = ["qs", "ipc", "call", "settings", "open", 1];
+                                        appletProc.command = ["qs", "ipc", "call", "settings", "open", "network"];
                                         appletProc.running = true;
                                     }
                                 }
@@ -543,7 +543,7 @@ Item {
                                 onMuteClicked: AudioService.toggleMute()
                                 onRightClicked: {
                                     root.isOpen = false;
-                                    appletProc.command = ["qs", "ipc", "call", "settings", "open", 5];
+                                    appletProc.command = ["qs", "ipc", "call", "settings", "open", "sound"];
                                     appletProc.running = true;
                                 }
                                 dimmed: AudioService.muted

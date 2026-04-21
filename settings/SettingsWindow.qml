@@ -30,7 +30,7 @@ FloatingWindow {
 
     property int currentPage: pageOverview
 
-    function openTo(page) {
+    function open(page) {
         currentPage = page;
     }
 
