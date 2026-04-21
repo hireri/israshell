@@ -267,7 +267,21 @@ Item {
             color: "transparent"
             visible: root._sidebarVisible
 
-            Keys.onEscapePressed: root.isOpen = false
+            onVisibleChanged: {
+                if (visible) {
+                    keyHandler.forceActiveFocus();
+                }
+            }
+
+            Item {
+                id: keyHandler
+                anchors.fill: parent
+
+                Keys.onEscapePressed: event => {
+                    event.accepted = true;
+                    root.isOpen = false;
+                }
+            }
 
             property bool _ready: false
             Component.onCompleted: Qt.callLater(() => _ready = true)
