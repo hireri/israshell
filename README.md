@@ -42,8 +42,8 @@ bind = $mainMod SHIFT, B, exec, qs ipc call media previous
 bind = $mainMod, I, exec, qs -n -p ~/.config/quickshell/settings.qml
 
 # open settings into a page
-# bind = $mainMod, N, exec, QS_PAGE=network qs -n -p ~/.config/quickshell/settings.qml 
-# overview | network | bar | clock | display | sound | immeria | system
+# bind = $mainMod, N, exec, qs ipc call settings open 0 
+# 0-7: overview, network, bar, clock, display, sound, immeria, system
 # immeria being ai btw.
 ```
 
