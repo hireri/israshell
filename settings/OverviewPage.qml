@@ -90,6 +90,8 @@ PageBase {
                         Layout.fillWidth: true
                         height: 34
                         radius: 17
+                        bottomRightRadius: 8
+                        topRightRadius: 8
                         color: Colors.md3.secondary_container
                         Text {
                             anchors.centerIn: parent
@@ -110,6 +112,8 @@ PageBase {
                         Layout.fillWidth: true
                         height: 34
                         radius: 17
+                        bottomLeftRadius: 8
+                        topLeftRadius: 8
                         color: Colors.md3.secondary_container
                         Text {
                             anchors.centerIn: parent

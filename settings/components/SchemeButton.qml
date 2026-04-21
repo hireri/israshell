@@ -12,9 +12,7 @@ Rectangle {
     implicitHeight: 52
     implicitWidth: row.implicitWidth + 24
     radius: 12
-    color: root.active ? Colors.md3.secondary_container : "transparent"
-    border.width: 1
-    border.color: root.active ? "transparent" : Colors.md3.outline_variant
+    color: root.active ? Colors.md3.secondary_container : Colors.md3.surface_container_high
 
     Behavior on color {
         ColorAnimation {
