@@ -522,7 +522,7 @@ Item {
                                     rightMargin: 4
                                     verticalCenter: parent.verticalCenter
                                 }
-                                text: "Search..."
+                                text: "󰍉  Search..."
                                 font.pixelSize: 13
                                 font.family: Config.fontFamily
                                 renderType: Text.NativeRendering
