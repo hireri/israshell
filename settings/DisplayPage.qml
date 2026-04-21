@@ -3,15 +3,12 @@ import QtQuick.Layouts
 import Quickshell.Io
 import qs.style
 import qs.services
+import qs.icons
 import qs.settings.components
 
 PageBase {
     title: "Display"
     subtitle: "Night light and color temperature"
-
-    Component.onCompleted: {
-        console.log("[Display] page loaded — active:", NightLightService.active, "nightTemp:", Config.nightLight.nightTemp, "dayTemp:", Config.nightLight.dayTemp);
-    }
 
     HeroCard {
         Layout.fillWidth: true
@@ -20,10 +17,8 @@ PageBase {
         iconBg: Colors.md3.tertiary_container
         cardColor: Colors.md3.surface_container
         checked: NightLightService.active
-        onToggled: v => {
-            console.log("[Display] toggle → active will become:", !NightLightService.active);
-            NightLightService.toggle();
-        }
+        onToggled: v => NightLightService.toggle()
+        NightlightIcon {}
     }
 
     SectionCard {
@@ -38,11 +33,7 @@ PageBase {
                 to: 10000
                 stepSize: 100
                 value: Config.nightLight.nightTemp
-                onMoved: v => {
-                    console.log("[Display] nightTemp moved →", Math.round(v));
-                    NightLightService.setNightTemp(Math.round(v));
-                }
-                Component.onCompleted: console.log("[Display] TempStrip night completed, value:", Config.nightLight.nightTemp)
+                onMoved: v => NightLightService.setNightTemp(Math.round(v))
             }
         }
 
@@ -55,11 +46,7 @@ PageBase {
                 to: 10000
                 stepSize: 100
                 value: Config.nightLight.dayTemp
-                onMoved: v => {
-                    console.log("[Display] dayTemp moved →", Math.round(v));
-                    NightLightService.setDayTemp(Math.round(v));
-                }
-                Component.onCompleted: console.log("[Display] TempStrip day completed, value:", Config.nightLight.dayTemp)
+                onMoved: v => NightLightService.setDayTemp(Math.round(v))
             }
         }
     }
@@ -68,15 +55,38 @@ PageBase {
         label: "Schedule"
         Layout.fillWidth: true
 
+        SettingSwitch {
+            label: "Auto night light"
+            sublabel: "Apply temperature on schedule"
+            checked: Config.nightLight.scheduleEnabled
+            onToggled: v => Config.update({
+                    nightLight: Object.assign({}, Config.nightLight, {
+                        scheduleEnabled: v
+                    })
+                })
+        }
+
+        SettingSwitch {
+            label: "Auto dark mode"
+            sublabel: "Switch theme at sunrise and sunset"
+            checked: Config.nightLight.autoDarkMode
+            onToggled: v => Config.update({
+                    nightLight: Object.assign({}, Config.nightLight, {
+                        autoDarkMode: v
+                    })
+                })
+        }
+
         TimeInput {
             label: "Sunrise"
-            sublabel: "Night light turns off"
+            sublabel: "Night light off · light mode"
             value: Config.nightLight.sunrise
             onCommitted: v => NightLightService.setSunrise(v)
         }
+
         TimeInput {
             label: "Sunset"
-            sublabel: "Night light turns on"
+            sublabel: "Night light on · dark mode"
             value: Config.nightLight.sunset
             onCommitted: v => NightLightService.setSunset(v)
         }

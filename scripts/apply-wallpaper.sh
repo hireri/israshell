@@ -3,7 +3,7 @@
 #   L mode: dark | light
 set -euo pipefail
 
-WALL="${1:?Wall path required}"
+WALL=$(readlink -f "${1:?Wall path required}")
 MODE="${2:-dark}"
 
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"

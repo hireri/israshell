@@ -114,23 +114,52 @@ Singleton {
         if (applying || !currentWall)
             return;
         applying = true;
-        applyProc.wallPath = currentWall;
+        applyProc.wallPath = Quickshell.env("HOME") + "/.config/hypr/current_wall";
         applyProc.mode = isDark ? "dark" : "light";
         applyProc.running = false;
         applyProc.running = true;
     }
 
-    function _runList() {
-        loading = true;
-        listProc.running = false;
-        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; } | sort -rn | cut -f2-"];
-        listProc.running = true;
+    function reportClockSize(width, height) {
+        const padding = 10;
+        const w = width + (padding * 2);
+        const h = height + (padding * 2);
+
+        if (w > 0 && h > 0 && (clockRenderWidth !== w || clockRenderHeight !== h)) {
+            clockRenderWidth = w;
+            clockRenderHeight = h;
+            dimsFile.setText(w + "x" + h);
+
+            if (currentWall && !loading)
+                debounceTimer.restart();
+        }
     }
 
     Timer {
         id: debounceTimer
         interval: 100
         onTriggered: _runClockPosition()
+    }
+
+    function _runClockPosition() {
+        if (!currentWall || !Config.desktopClock)
+            return;
+
+        const raw = dimsFile.text().trim();
+        const parts = raw.split("x");
+        const w = parts.length === 2 ? (parseInt(parts[0]) || clockRenderWidth) : clockRenderWidth;
+        const h = parts.length === 2 ? (parseInt(parts[1]) || clockRenderHeight) : clockRenderHeight;
+
+        const mode = isDark ? "dark" : "light";
+        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/leastbusy.py", root.currentWall, "--clock-w", String(w), "--clock-h", String(h), "--mode", mode];
+        clockProc.running = false;
+        clockProc.running = true;
+    }
+
+    FileView {
+        id: dimsFile
+        path: "/tmp/qs-clock-dims"
+        blockLoading: true
     }
 
     Timer {
@@ -162,47 +191,49 @@ Singleton {
         }
     }
 
-    function reportClockSize(width, height) {
-        const padding = 10;
-        const w = width + (padding * 2);
-        const h = height + (padding * 2);
-
-        if (w > 0 && h > 0 && (clockRenderWidth !== w || clockRenderHeight !== h)) {
-            clockRenderWidth = w;
-            clockRenderHeight = h;
-
-            if (currentWall && !loading) {
-                debounceTimer.restart();
+    FileView {
+        id: wallSymlink
+        path: Quickshell.env("HOME") + "/.config/hypr/current_wall"
+        watchChanges: true
+        onFileChanged: {
+            wallSymlink.reload();
+            const p = wallSymlink.text.trim();
+            if (p && p !== root.currentWall) {
+                root.currentWall = p;
+                if (!root.isOpen) {
+                    const dir = p.substring(0, p.lastIndexOf("/"));
+                    if (dir && dir !== root.currentDir)
+                        root.currentDir = dir;
+                }
+            }
+        }
+        Component.onCompleted: {
+            wallSymlink.reload();
+            const p = wallSymlink.text.trim();
+            if (p) {
+                root.currentWall = p;
+                const dir = p.substring(0, p.lastIndexOf("/"));
+                if (dir)
+                    root.currentDir = dir;
             }
         }
     }
 
-    function _runClockPosition() {
-        if (!currentWall || !Config.desktopClock)
-            return;
-
-        const mode = isDark ? "dark" : "light";
-
-        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/leastbusy.py", root.currentWall, "--clock-w", String(root.clockRenderWidth), "--clock-h", String(root.clockRenderHeight), "--mode", mode];
-
-        clockProc.running = false;
-        clockProc.running = true;
-    }
-
     onCurrentDirChanged: _runList()
-
-    onCurrentWallChanged: {
-        debounceTimer.restart();
-    }
 
     onIsDarkChanged: {
         Config.update({
             darkMode: isDark
         });
-        if (currentWall) {
+        if (currentWall)
             applyTheme();
-            _runClockPosition();
-        }
+    }
+
+    function _runList() {
+        loading = true;
+        listProc.running = false;
+        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; } | sort -rn | cut -f2-"];
+        listProc.running = true;
     }
 
     Process {
@@ -228,38 +259,8 @@ Singleton {
         }
     }
 
-    FileView {
-        id: wallSymlink
-        path: Quickshell.env("HOME") + "/.config/hypr/current_wall"
-        watchChanges: true
-        onFileChanged: {
-            wallSymlink.reload();
-            const p = wallSymlink.text.trim();
-            if (p && p !== root.currentWall) {
-                root.currentWall = p;
-                if (!root.isOpen) {
-                    const dir = p.substring(0, p.lastIndexOf("/"));
-                    if (dir && dir !== root.currentDir)
-                        root.currentDir = dir;
-                }
-            }
-        }
-        Component.onCompleted: {
-            wallSymlink.reload();
-            const p = wallSymlink.text.trim();
-            if (p) {
-                root.currentWall = p;
-                const dir = p.substring(0, p.lastIndexOf("/"));
-                if (dir)
-                    root.currentDir = dir;
-                root.debounceTimer.restart();
-            }
-        }
-    }
-
     Process {
         id: clockProc
-
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
@@ -272,18 +273,15 @@ Singleton {
                             y: parseInt(m[3])
                         };
                 });
-                if (Object.keys(positions).length > 0)
-                    Config.update({
-                        clockPositions: positions
-                    });
+                if (Object.keys(positions).length > 0) {
+                    const newJson = JSON.stringify(positions);
+                    if (newJson !== JSON.stringify(Config.clockPositions))
+                        Config.update({
+                            clockPositions: positions
+                        });
+                }
             }
         }
-    }
-
-    Process {
-        id: openFolderProc
-        command: ["bash", "-c", "export PATH=\"$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH\";" + "xdg-open " + JSON.stringify(root.currentDir)]
-        running: false
     }
 
     Process {
@@ -295,8 +293,14 @@ Singleton {
         onExited: (code, _) => {
             root.applying = false;
             if (code === 0)
-                root.debounceTimer.restart();
+                debounceTimer.restart();
         }
+    }
+
+    Process {
+        id: openFolderProc
+        command: ["bash", "-c", "export PATH=\"$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH\";" + "xdg-open " + JSON.stringify(root.currentDir)]
+        running: false
     }
 
     Process {

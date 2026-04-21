@@ -8,30 +8,20 @@ Singleton {
     id: root
 
     property bool active: false
-    property int currentTemp: 6300
+    property int currentTemp: Config.nightLight.dayTemp
 
-    Component.onCompleted: _poll()
+    Component.onCompleted: {
+        if (!pollProc.running)
+            pollProc.running = true;
+    }
 
     Timer {
         interval: 1000
         running: true
         repeat: true
-        onTriggered: _poll()
-    }
-
-    Timer {
-        interval: 60000
-        running: true
-        repeat: true
         onTriggered: {
-            const nl = Config.nightLight;
-            const now = new Date();
-            const minutes = now.getHours() * 60 + now.getMinutes();
-            const shouldBeNight = minutes >= root._timeToMinutes(nl.sunset) || minutes < root._timeToMinutes(nl.sunrise);
-            if (shouldBeNight !== root.active) {
-                root.active = shouldBeNight;
-                _applyTemp(shouldBeNight ? nl.nightTemp : nl.dayTemp);
-            }
+            if (!pollProc.running)
+                pollProc.running = true;
         }
     }
 
@@ -49,11 +39,31 @@ Singleton {
                 }
             }
         }
+        onExited: {
+            if (!checkProc.running)
+                checkProc.running = true;
+        }
     }
 
-    function _poll() {
-        pollProc.running = false;
-        pollProc.running = true;
+    Timer {
+        interval: 60000
+        running: true
+        repeat: true
+        onTriggered: {
+            if (!pollProc.running)
+                pollProc.running = true;
+
+            const nl = Config.nightLight;
+            const now = new Date();
+            const minutes = now.getHours() * 60 + now.getMinutes();
+            const isNight = minutes >= root._timeToMinutes(nl.sunset) || minutes < root._timeToMinutes(nl.sunrise);
+
+            if (nl.scheduleEnabled && isNight !== root.active)
+                _applyTemp(isNight ? nl.nightTemp : nl.dayTemp);
+
+            if (nl.autoDarkMode && isNight !== WallpaperService.isDark)
+                WallpaperService.isDark = isNight;
+        }
     }
 
     Process {
@@ -64,10 +74,28 @@ Singleton {
         }
         onExited: code => {
             if (code !== 0) {
-                const nl = Config.nightLight;
-                _applyTemp(root.active ? nl.nightTemp : nl.dayTemp);
+                Quickshell.execDetached(["hyprsunset"]);
+                applyTimer.targetTemp = _targetTemp();
+                applyTimer.start();
             }
         }
+    }
+
+    Timer {
+        id: applyTimer
+        interval: 400
+        repeat: false
+        property int targetTemp: Config.nightLight.dayTemp
+        onTriggered: _applyTemp(targetTemp)
+    }
+
+    function _targetTemp() {
+        const nl = Config.nightLight;
+        const now = new Date();
+        const minutes = now.getHours() * 60 + now.getMinutes();
+        const isNight = minutes >= _timeToMinutes(nl.sunset) || minutes < _timeToMinutes(nl.sunrise);
+        root.active = isNight;
+        return isNight ? nl.nightTemp : nl.dayTemp;
     }
 
     function _applyTemp(temp) {
@@ -80,9 +108,8 @@ Singleton {
     }
 
     function toggle() {
-        const nl = Config.nightLight;
         root.active = !root.active;
-        _applyTemp(root.active ? nl.nightTemp : nl.dayTemp);
+        _applyTemp(root.active ? Config.nightLight.nightTemp : Config.nightLight.dayTemp);
     }
 
     function setNightTemp(temp) {

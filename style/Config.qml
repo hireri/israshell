@@ -37,11 +37,12 @@ Singleton {
     property bool huggingBar: true
     property bool screenCorners: true
     property var nightLight: ({
+            scheduleEnabled: true,
+            autoDarkMode: false,
             nightTemp: 4500,
             dayTemp: 6300,
             sunrise: "07:30",
-            sunset: "21:00",
-            transitionDuration: 60
+            sunset: "21:00"
         })
     property int dateFormat: 0
     property int osdPosition: 1
@@ -104,11 +105,12 @@ Singleton {
             huggingBar: true,
             screenCorners: true,
             nightLight: {
+                scheduleEnabled: true,
+                autoDarkMode: false,
                 nightTemp: 4500,
                 dayTemp: 6300,
                 sunrise: "07:30",
-                sunset: "21:00",
-                transitionDuration: 60
+                sunset: "21:00"
             },
             dateFormat: 0,
             osdPosition: 1,
