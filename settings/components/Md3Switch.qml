@@ -72,8 +72,7 @@ Item {
         onClicked: {
             if (!root.enabled)
                 return;
-            root.checked = !root.checked;
-            root.toggled(root.checked);
+            root.toggled(!root.checked);
         }
     }
 }

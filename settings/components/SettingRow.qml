@@ -46,11 +46,11 @@ Item {
         anchors {
             left: parent.left
             right: parent.right
-            verticalCenter: parent.verticalCenter
             leftMargin: 18
             rightMargin: 18
         }
         spacing: 14
+        y: (root.implicitHeight - implicitHeight) / 2
 
         Rectangle {
             width: 34

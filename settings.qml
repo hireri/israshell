@@ -113,6 +113,13 @@ ApplicationWindow {
                         AnalogClockIcon {}
                     }
                     SidebarItem {
+                        page: root.pageDisplay
+                        label: "Display"
+                        sublabel: "Nightlight, gamma"
+                        onClicked: root.currentPage = page
+                        NightlightIcon {}
+                    }
+                    SidebarItem {
                         page: root.pageSound
                         label: "Sound & Notifications"
                         sublabel: "Audio, popups"

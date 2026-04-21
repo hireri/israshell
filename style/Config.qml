@@ -33,13 +33,16 @@ Singleton {
     property string fontMonospace: "Roboto Mono"
     property var trayBlacklist: ["spotify", "blueman", "Network"]
     property bool tintTrayIcons: false
-    property var nightLight: ({
-            nightTemp: 4000,
-            dayTemp: 6500
-        })
     property bool floatingBar: false
     property bool huggingBar: true
     property bool screenCorners: true
+    property var nightLight: ({
+            nightTemp: 4500,
+            dayTemp: 6300,
+            sunrise: "07:30",
+            sunset: "21:00",
+            transitionDuration: 60
+        })
     property int dateFormat: 0
     property int osdPosition: 1
     property bool darkMode: true
@@ -97,13 +100,16 @@ Singleton {
             fontMonospace: "Roboto Mono",
             trayBlacklist: ["spotify", "blueman", "Network"],
             tintTrayIcons: false,
-            nightLight: {
-                nightTemp: 4000,
-                dayTemp: 6500
-            },
             floatingBar: false,
             huggingBar: true,
             screenCorners: true,
+            nightLight: {
+                nightTemp: 4500,
+                dayTemp: 6300,
+                sunrise: "07:30",
+                sunset: "21:00",
+                transitionDuration: 60
+            },
             dateFormat: 0,
             osdPosition: 1,
             darkMode: true,
