@@ -16,65 +16,11 @@ A Quickshell shell for Hyprland. Uses matugen colors, smart desktop clock widget
 - **Desktop clock** — Horizontal, vertical, analog, or word (text) layouts. Auto positions finding the least busy spot for itself.
 - **Wallpaper picker** — Directory browser with breadcrumb and image preview.
 - **Overlays** — Power menu, volume OSD, optional rounded display corners.
+- **Settings app** — Configure your bar, connectivity and other options with a visual interface.
 
 ## Configuration
-
-example `config.json` (what i use):
-
-```json
-{
-{
-    "spinningCover": true,
-    "showSeconds": false,
-    "hourFormat": 1,
-    "carouselSpeed": 30,
-    "transparentBar": false,
-    "fontFamily": "Inter",
-    "trayBlacklist": [
-        "spotify",
-        "blueman",
-        "Network"
-    ],
-    "tintTrayIcons": true,
-    "nightLightTemp": 4000,
-    "dayLightTemp": 6500,
-    "floatingBar": false,
-    "huggingBar": true,
-    "screenCorners": true,
-    "dateFormat": 0,
-    "osdPosition": 1,
-    "darkMode": true,
-    "desktopClock": true,
-    "clock": {
-        "fontFamily": "Nunito ExtraBold", // yay -S ttf-nunito
-        "layout": "vertical",
-        "showSeconds": true,
-        "hourSize": 100,
-        "minuteSize": 100,
-        "hourWeight": 75,
-        "minuteWeight": 75,
-        "dateSize": 25,
-        "timeSpacing": -50,
-        "dateSpacing": -15,
-        "showDate": true,
-        "align": "left",
-        "colorRole": "primary",
-        "subColorRole": "secondary",
-        "shadowBlur": 16
-    },
-    "clockPositions": {
-        "DP-2": {
-            "x": 1941,
-            "y": 836
-        },
-        "HDMI-A-1": {
-            "x": 1420,
-            "y": 682
-        }
-    }
-}
-}
-```
+Most things are configurable through the settings app now, and is auto generated.
+config.json can be updated for finer control (some options may require a restart)
 
 ## Hyprland binds
 
@@ -91,6 +37,14 @@ bind = $mainMod, Period, exec, qs ipc call launcher openWith ":"
 
 bind = $mainMod SHIFT, N, exec, qs ipc call media next
 bind = $mainMod SHIFT, P, exec, qs ipc call media togglePlaying
+bind = $mainMod SHIFT, B, exec, qs ipc call media previous
+
+bind = $mainMod, I, exec, qs -n -p ~/.config/quickshell/settings.qml
+
+# open settings into a page
+# bind = $mainMod, N, exec, QS_PAGE=network qs -n -p ~/.config/quickshell/settings.qml 
+# overview | network | bar | clock | display | sound | immeria | system
+# immeria being ai btw.
 ```
 
 ## Dependencies
