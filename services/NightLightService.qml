@@ -45,6 +45,9 @@ Singleton {
         }
     }
 
+    property bool _lastIsNight: false
+    property bool _scheduleInitialized: false
+
     Timer {
         interval: 60000
         running: true
@@ -58,10 +61,21 @@ Singleton {
             const minutes = now.getHours() * 60 + now.getMinutes();
             const isNight = minutes >= root._timeToMinutes(nl.sunset) || minutes < root._timeToMinutes(nl.sunrise);
 
-            if (nl.scheduleEnabled && isNight !== root.active)
+            if (!root._scheduleInitialized) {
+                root._lastIsNight = isNight;
+                root._scheduleInitialized = true;
+                return;
+            }
+
+            if (isNight === root._lastIsNight)
+                return;
+
+            root._lastIsNight = isNight;
+
+            if (nl.scheduleEnabled)
                 _applyTemp(isNight ? nl.nightTemp : nl.dayTemp);
 
-            if (nl.autoDarkMode && isNight !== WallpaperService.isDark)
+            if (nl.autoDarkMode)
                 WallpaperService.isDark = isNight;
         }
     }
