@@ -72,6 +72,7 @@ Singleton {
             shadowBlur: 16
         })
     property var clockPositions: ({})
+    property bool allowNsfw: false
 
     function __defaults() {
         return {
@@ -142,7 +143,8 @@ Singleton {
                 subColorRole: "secondary",
                 shadowBlur: 16
             },
-            clockPositions: {}
+            clockPositions: {},
+            allowNsfw: false
         };
     }
 

@@ -69,11 +69,44 @@ Singleton {
         selectWall(walls[Math.floor(Math.random() * walls.length)].path);
     }
 
+    function randomizeWallhaven() {
+        if (applying || loading)
+            return;
+        const purity = Config.allowNsfw ? "110" : "100";
+        const req = new XMLHttpRequest();
+        req.open("GET", "https://wallhaven.cc/api/v1/search?sorting=random&purity=" + purity);
+        req.onreadystatechange = () => {
+            if (req.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (req.status !== 200) {
+                console.log("[Wallpaper] Wallhaven fetch failed:", req.status);
+                return;
+            }
+            try {
+                const res = JSON.parse(req.responseText);
+                if (!res.data || res.data.length === 0)
+                    return;
+                const url = res.data[0].path;
+                if (!url)
+                    return;
+                const ext = url.split(".").pop().split("?")[0];
+                const dest = Quickshell.env("HOME") + "/Pictures/Random/wallhaven_" + Date.now() + "." + ext;
+                wallhavenDownloadProc.url = url;
+                wallhavenDownloadProc.dest = dest;
+                wallhavenDownloadProc.running = false;
+                wallhavenDownloadProc.running = true;
+            } catch (e) {
+                console.log("[Wallpaper] Wallhaven parse error:", e);
+            }
+        };
+        req.send();
+    }
+
     function randomizeKonachan() {
         if (applying || loading)
             return;
         const req = new XMLHttpRequest();
-        req.open("GET", "https://konachan.net/post.json?limit=1&tags=order:random+rating:s");
+        req.open("GET", "https://konachan.net/post.json?limit=1&tags=order:random+" + (Config.allowNsfw ? "rating:e" : "rating:s"));
         req.onreadystatechange = () => {
             if (req.readyState !== XMLHttpRequest.DONE)
                 return;
@@ -314,6 +347,19 @@ Singleton {
                 selectWall(konaDownloadProc.dest);
             else
                 console.log("[Wallpaper] Konachan download failed, code:", code);
+        }
+    }
+    Process {
+        id: wallhavenDownloadProc
+        property string url: ""
+        property string dest: ""
+        command: ["bash", "-c", "mkdir -p " + JSON.stringify(Quickshell.env("HOME") + "/Pictures/Random") + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
+        running: false
+        onExited: (code, _) => {
+            if (code === 0 && wallhavenDownloadProc.dest !== "")
+                selectWall(wallhavenDownloadProc.dest);
+            else
+                console.log("[Wallpaper] Wallhaven download failed, code:", code);
         }
     }
 }

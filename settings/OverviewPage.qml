@@ -82,23 +82,48 @@ PageBase {
                         onClicked: WallpaperService.randomize()
                     }
                 }
-                Rectangle {
+                RowLayout {
                     Layout.fillWidth: true
-                    height: 34
-                    radius: 17
-                    color: Colors.md3.secondary_container
-                    Text {
-                        anchors.centerIn: parent
-                        text: "Random from Konachan"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 12
-                        font.weight: Font.Medium
-                        color: Colors.md3.on_secondary_container
+                    spacing: 6
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 34
+                        radius: 17
+                        color: Colors.md3.secondary_container
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Konachan"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            color: Colors.md3.on_secondary_container
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: WallpaperService.randomizeKonachan()
+                        }
                     }
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: WallpaperService.randomizeKonachan()
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 34
+                        radius: 17
+                        color: Colors.md3.secondary_container
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Wallhaven"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            color: Colors.md3.on_secondary_container
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: WallpaperService.randomizeWallhaven()
+                        }
                     }
                 }
                 RowLayout {
