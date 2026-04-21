@@ -280,19 +280,33 @@ Scope {
             if (mode === "emoji") {
                 if (!root._emojiLoaded)
                     return [];
-                if (q === "")
+                const words = q === "" ? [] : q.split(/\s+/).filter(Boolean);
+                if (words.length === 0)
                     return root._emojiData.map(e => Object.assign({
                             type: "emoji",
                             uid: "emoji_" + e.emoji
                         }, e));
-                const words = q.split(/\s+/).filter(Boolean);
-                return root._emojiData.filter(e => {
-                    const s = (e.name + " " + e.keywords.join(" ")).toLowerCase();
-                    return words.every(w => s.includes(w));
-                }).map(e => Object.assign({
+
+                return root._emojiData.map(e => {
+                    const name = e.name.toLowerCase();
+                    const keyStr = e.keywords.join(" ");
+                    if (!words.every(w => (name + " " + keyStr).includes(w)))
+                        return null;
+
+                    let score = 3;
+                    if (name === q)
+                        score = 0;
+                    else if (name.startsWith(q))
+                        score = 1;
+                    else if (name.includes(q))
+                        score = 2;
+
+                    return Object.assign({
                         type: "emoji",
-                        uid: "emoji_" + e.emoji
-                    }, e));
+                        uid: "emoji_" + e.emoji,
+                        _score: score
+                    }, e);
+                }).filter(Boolean).sort((a, b) => a._score - b._score || a.name.localeCompare(b.name));
             }
 
             return [];
