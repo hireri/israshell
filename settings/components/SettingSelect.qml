@@ -5,11 +5,9 @@ import qs.style
 
 SettingRow {
     id: root
-
     property var options: []
     property var currentValue: null
     signal selected(var value)
-
     property bool isLast: false
 
     ComboBox {
@@ -40,6 +38,11 @@ SettingRow {
             color: Colors.md3.surface_container_high
             border.width: 1
             border.color: combo.pressed ? Colors.md3.primary : Colors.md3.surface_variant
+            Behavior on border.color {
+                ColorAnimation {
+                    duration: 120
+                }
+            }
         }
 
         delegate: ItemDelegate {
@@ -56,6 +59,11 @@ SettingRow {
             }
             background: Rectangle {
                 color: hovered ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 100
+                    }
+                }
             }
         }
 
@@ -64,17 +72,54 @@ SettingRow {
             width: combo.width
             padding: 0
 
-            background: ClippingRectangle {
+            enter: Transition {
+                NumberAnimation {
+                    property: "opacity"
+                    from: 0.0
+                    to: 1.0
+                    duration: 150
+                    easing.type: Easing.OutCubic
+                }
+                NumberAnimation {
+                    property: "y"
+                    from: combo.height
+                    to: combo.height + 4
+                    duration: 150
+                    easing.type: Easing.OutCubic
+                }
+            }
+            exit: Transition {
+                NumberAnimation {
+                    property: "opacity"
+                    from: 1.0
+                    to: 0.0
+                    duration: 100
+                    easing.type: Easing.InCubic
+                }
+                NumberAnimation {
+                    property: "y"
+                    from: combo.height + 4
+                    to: combo.height
+                    duration: 100
+                    easing.type: Easing.InCubic
+                }
+            }
+
+            background: Item {}
+
+            contentItem: ClippingRectangle {
+                implicitHeight: listView.contentHeight
                 color: Colors.md3.surface_container_high
                 radius: 8
                 border.width: 1
                 border.color: Colors.md3.surface_variant
-            }
 
-            contentItem: ListView {
-                implicitHeight: contentHeight
-                model: combo.delegateModel
-                clip: true
+                ListView {
+                    id: listView
+                    anchors.fill: parent
+                    model: combo.delegateModel
+                    clip: false
+                }
             }
         }
 

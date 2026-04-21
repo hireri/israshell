@@ -74,6 +74,14 @@ MouseArea {
         return match ? match[1] : "";
     }
 
+    function _maybeStartTimer() {
+        const cfg = Config.notifications.popupTimeout;
+        const appTimeout = group.liveNotif?.expireTimeout ?? 0;
+        if (cfg === 0 && appTimeout <= 0)
+            return;
+        groupTimer.restart();
+    }
+
     readonly property string _mainIcon: {
         const m = group.latest;
         if (!m)
@@ -103,7 +111,7 @@ MouseArea {
     onMessagesChanged: {
         if (messages.length > 0) {
             if (group.popup && !containsMouse && group.liveNotif !== null)
-                groupTimer.restart();
+                _maybeStartTimer();
         }
     }
 
@@ -186,7 +194,7 @@ MouseArea {
         id: groupTimer
         interval: {
             const t = group.liveNotif?.expireTimeout ?? 0;
-            return t > 0 ? t : 5000;
+            return t > 0 ? t : (Config.notifications.popupTimeout * 1000);
         }
         running: false
         onTriggered: {
@@ -207,7 +215,7 @@ MouseArea {
         if (containsMouse)
             groupTimer.stop();
         else if (group.liveNotif)
-            groupTimer.restart();
+            _maybeStartTimer();
     }
 
     acceptedButtons: Qt.RightButton

@@ -44,6 +44,10 @@ Singleton {
             sunrise: "07:30",
             sunset: "21:00"
         })
+    property var notifications: ({
+            popupTimeout: 5,
+            showAllMonitors: false
+        })
     property int dateFormat: 0
     property int osdPosition: 1
     property bool darkMode: true
@@ -112,6 +116,10 @@ Singleton {
                 dayTemp: 6300,
                 sunrise: "07:30",
                 sunset: "21:00"
+            },
+            notifications: {
+                popupTimeout: 5,
+                showAllMonitors: false
             },
             dateFormat: 0,
             osdPosition: 1,

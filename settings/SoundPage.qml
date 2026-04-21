@@ -354,24 +354,26 @@ PageBase {
             options: [
                 {
                     label: "3 seconds",
-                    value: 3000
+                    value: 3
                 },
                 {
                     label: "5 seconds",
-                    value: 5000
+                    value: 5
                 },
                 {
                     label: "8 seconds",
-                    value: 8000
+                    value: 8
                 },
                 {
                     label: "Never",
                     value: 0
                 }
             ]
-            currentValue: Config.notificationTimeout ?? 5000
+            currentValue: Config.notifications.popupTimeout ?? 5
             onSelected: v => Config.update({
-                    notificationTimeout: v
+                    notifications: Object.assign({}, Config.notifications, {
+                        popupTimeout: v
+                    })
                 })
         }
 
@@ -380,9 +382,11 @@ PageBase {
             label: "Show on all monitors"
             sublabel: "Mirror popups across every screen"
             iconBg: Colors.md3.secondary_container
-            checked: Config.notificationsAllMonitors ?? false
+            checked: Config.notifications.showAllMonitors ?? false
             onToggled: v => Config.update({
-                    notificationsAllMonitors: v
+                    notifications: Object.assign({}, Config.notifications, {
+                        showAllMonitors: v
+                    })
                 })
         }
     }
