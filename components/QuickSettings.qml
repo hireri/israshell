@@ -882,12 +882,14 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 preventStealing: true
                 acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+                property int pressedButton: Qt.NoButton
 
                 property bool dragStarted: false
                 property real startX: 0
 
                 onWheel: wheel => sliderRow.moved(wheel.angleDelta.y > 0 ? Math.min(sliderRow.to, sliderRow.value + 0.05) : Math.max(sliderRow.from, sliderRow.value - 0.05))
                 onPressed: mouse => {
+                    pressedButton = mouse.button;
                     if (mouse.button === Qt.RightButton) {
                         sliderRow.rightClicked();
                         return;
@@ -901,7 +903,7 @@ Item {
                 }
 
                 onPositionChanged: mouse => {
-                    if (!pressed || mouse.button === Qt.MiddleButton)
+                    if (!pressed || pressedButton !== Qt.LeftButton)
                         return;
                     if (Math.abs(mouse.x - startX) > 4)
                         dragStarted = true;
@@ -913,7 +915,7 @@ Item {
                 }
 
                 onReleased: mouse => {
-                    if (mouse.button === Qt.MiddleButton)
+                    if (pressedButton !== Qt.LeftButton)
                         return;
                     if (!dragStarted) {
                         if (startX <= 48)
@@ -923,7 +925,6 @@ Item {
                             sliderRow.moved(sliderRow.from + ratio * (sliderRow.to - sliderRow.from));
                         }
                     }
-
                     sliderRow._dragRatio = -1;
                 }
             }
