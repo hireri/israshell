@@ -16,7 +16,7 @@ ApplicationWindow {
     width: 960
     height: 680
     minimumWidth: 900
-    minimumHeight: 360
+    minimumHeight: 540
     title: "Settings"
     color: Colors.md3.background
     flags: Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
