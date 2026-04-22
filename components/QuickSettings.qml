@@ -426,7 +426,7 @@ Item {
 
                                 Text {
                                     anchors.centerIn: parent
-                                    text: "󰏫"
+                                    text: "󰒓"
                                     font.pixelSize: 15
                                     font.family: Config.fontFamily
                                     color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
@@ -439,7 +439,7 @@ Item {
                                     hoverEnabled: true
                                     onClicked: {
                                         root.isOpen = false;
-                                        sysProc.command = ["code", Quickshell.env("HOME") + "/.config/hypr"];
+                                        sysProc.command = ["qs", "ipc", "call", "settings", "open", "overview"];
                                         sysProc.running = true;
                                     }
                                 }
