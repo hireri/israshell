@@ -153,7 +153,7 @@ PageBase {
 
         SettingInput {
             label: "CTS"
-            sublabel: "Click-to-search"
+            sublabel: "Circle-to-search"
             iconBg: Colors.md3.secondary_container
             value: Config.screencap.ctsPath ?? ""
             fieldWidth: 220
