@@ -533,6 +533,11 @@ Item {
                                     icon: NightLightService.active ? "󱩌" : "󰛨"
                                     active: NightLightService.active
                                     onToggled: NightLightService.toggle()
+                                    onRightClicked: {
+                                        root.isOpen = false;
+                                        appletProc.command = ["qs", "ipc", "call", "settings", "open", "display"];
+                                        appletProc.running = true;
+                                    }
                                 }
                             }
 
