@@ -20,10 +20,10 @@ Item {
         clip: true
 
         interactive: true
-        boundsBehavior: Flickable.StopAtBounds
+        boundsBehavior: Flickable.DragAndOvershootBounds
 
-        flickDeceleration: 1500
-        maximumFlickVelocity: 2500
+        flickDeceleration: 4000
+        maximumFlickVelocity: 2200
 
         WheelHandler {
             onWheel: event => {
