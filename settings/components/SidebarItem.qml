@@ -90,12 +90,15 @@ Rectangle {
     function _syncIcon() {
         for (let i = 0; i < iconSlot.children.length; i++) {
             const ico = iconSlot.children[i];
-            if (ico.hasOwnProperty("iconSize"))
+            if (ico.hasOwnProperty("iconSize")) {
                 ico.iconSize = 20;
-            if (ico.hasOwnProperty("color"))
-                ico.color = root.active ? Colors.md3.on_secondary_container : Colors.md3.outline;
-            if (ico.hasOwnProperty("filled"))
-                ico.filled = root.active;
+            }
+            if (ico.hasOwnProperty("color")) {
+                ico.color = Qt.binding(() => root.active ? Colors.md3.on_secondary_container : Colors.md3.outline);
+            }
+            if (ico.hasOwnProperty("filled")) {
+                ico.filled = Qt.binding(() => root.active);
+            }
         }
     }
 
