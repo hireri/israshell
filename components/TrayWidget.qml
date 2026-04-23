@@ -104,7 +104,7 @@ Item {
         Row {
             id: trayContent
             anchors.centerIn: parent
-            spacing: 8
+            spacing: 12
 
             Repeater {
                 model: SystemTray.items
