@@ -707,7 +707,7 @@ MouseArea {
                                     Text {
                                         id: aLbl
                                         anchors.centerIn: parent
-                                        text: modelData.text || ""
+                                        text: modelData.text || "Open"
                                         color: Colors.md3.on_surface
                                         font.family: Config.fontFamily
                                         font.pixelSize: 12
