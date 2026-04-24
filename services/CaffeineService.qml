@@ -41,12 +41,11 @@ Singleton {
     function toggle() {
         if (root.active) {
             root.active = false;
-            startProc.running = true;
+            startProc.startDetached();
         } else {
             root.active = true;
             killProc.running = true;
         }
-
         pollTimer.restart();
     }
 }
