@@ -662,12 +662,6 @@ Rectangle {
                                     }
                                 }
                             }
-                            scale: hpMa.pressed ? 0.9 : 1
-                            Behavior on scale {
-                                NumberAnimation {
-                                    duration: 100
-                                }
-                            }
                             MouseArea {
                                 id: hpMa
                                 anchors.fill: parent
@@ -685,7 +679,7 @@ Rectangle {
 
         Process {
             id: pavuProc
-            command: ["bash", "-c", "pavucontrol &"]
+            command: ['qs', 'ipc', 'call', 'settings', 'open', 'sound']
             running: false
         }
     }
