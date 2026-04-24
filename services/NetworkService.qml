@@ -68,6 +68,22 @@ Singleton {
         ethFindProc.running = true;
     }
 
+    function _updateAll() {
+        wifiRadioProc.running = false;
+        wifiRadioProc.running = true;
+        stateProc.running = false;
+        stateProc.running = true;
+        networksProc.running = false;
+        networksProc.running = true;
+        signalProc.running = false;
+        signalProc.running = true;
+    }
+
+    function refresh() {
+        _updateAll();
+        signalTimer.restart();
+    }
+
     Process {
         id: ethFindProc
         property bool wantDisconnect: false
@@ -96,15 +112,6 @@ Singleton {
         }
     }
 
-    function _updateAll() {
-        wifiRadioProc.running = false;
-        wifiRadioProc.running = true;
-        stateProc.running = false;
-        stateProc.running = true;
-        networksProc.running = false;
-        networksProc.running = true;
-    }
-
     Process {
         id: wifiRadioProc
         running: true
@@ -125,7 +132,7 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = text.trim().split("\n").filter(l => l.trim());
-                let eth = false, wifi = false, ssid = "", signal = 0;
+                let eth = false, wifi = false;
 
                 for (const line of lines) {
                     const parts = line.split(":");
@@ -162,6 +169,7 @@ Singleton {
     }
 
     Timer {
+        id: signalTimer
         interval: 10000
         running: root.wifiConnected
         repeat: true

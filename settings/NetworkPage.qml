@@ -17,7 +17,9 @@ PageBase {
     subtitle: "Wi-Fi and Bluetooth"
 
     onVisibleChanged: if (visible)
-        NetworkService._updateAll()
+        NetworkService.refresh()
+
+    Component.onCompleted: NetworkService.refresh()
 
     readonly property bool wifiBusy: NetworkService.wifiConnecting || NetworkService.scanning
 
