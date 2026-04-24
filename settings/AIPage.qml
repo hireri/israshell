@@ -208,7 +208,7 @@ PageBase {
             value: activeProvider().apiKey
             password: true
             fieldWidth: 180
-            placeholder: "sk-…"
+            placeholder: "sk-..."
             onCommitted: v => updateProvider({
                     apiKey: v
                 })

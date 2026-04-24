@@ -173,7 +173,7 @@ PageBase {
         onTint: Colors.md3.on_primary_container
         iconComponent: wifiIconComp
         title: NetworkService.wifiConnected ? NetworkService.wifiSsid : "Wi-Fi"
-        subtitle: NetworkService.wifiConnecting ? "Connecting…" : NetworkService.wifiConnected ? "Strength: " + NetworkService.wifiSignal + "%" : NetworkService.wifiEnabled ? "Not connected" : "Off"
+        subtitle: NetworkService.wifiConnecting ? "Connecting..." : NetworkService.wifiConnected ? "Strength: " + NetworkService.wifiSignal + "%" : NetworkService.wifiEnabled ? "Not connected" : "Off"
         hasSwitch: true
         switchChecked: NetworkService.wifiEnabled
         onSwitchToggled: NetworkService.toggle()
@@ -181,8 +181,9 @@ PageBase {
 
     Spinner {
         Layout.fillWidth: true
+        visible: running
         running: page.wifiBusy
-        color: Colors.md3.primary
+        color: Colors.md3.secondary
     }
 
     SectionCard {
@@ -234,7 +235,7 @@ PageBase {
                 }
 
                 Text {
-                    text: "Scanning…"
+                    text: "Scanning..."
                     font.family: Config.fontFamily
                     font.pixelSize: 11
                     color: Colors.md3.outline
@@ -441,7 +442,7 @@ PageBase {
         onTint: Colors.md3.on_secondary_container
         iconComponent: btCardIcon()
         title: BluetoothService.firstConnected?.name ?? "Bluetooth"
-        subtitle: !BluetoothService.bluetoothEnabled ? "Off" : BluetoothService.connectedDevices.length > 0 ? (BluetoothService.firstConnected?.batteryAvailable ? "Connected · " + Math.round(BluetoothService.firstConnected.battery * 100) + "% battery" : "Connected") : "No devices connected"
+        subtitle: !BluetoothService.bluetoothEnabled ? "Off" : BluetoothService.connectedDevices.length > 0 ? (BluetoothService.firstConnected?.batteryAvailable ? "Connected · " + BluetoothService.batteryIcon(Math.round(BluetoothService.firstConnected.battery * 100)) + " " + Math.round(BluetoothService.firstConnected.battery * 100) + "%" : "Connected") : "No devices connected"
         hasSwitch: true
         switchChecked: BluetoothService.bluetoothEnabled
         onSwitchToggled: BluetoothService.toggle()
@@ -449,14 +450,97 @@ PageBase {
 
     Spinner {
         Layout.fillWidth: true
-        running: page.btDeviceBusy
+        visible: running
+        running: page.btDeviceBusy || BluetoothService.discovering
         color: Colors.md3.secondary
     }
 
     SectionCard {
-        label: "Paired devices"
         Layout.fillWidth: true
         visible: BluetoothService.bluetoothEnabled && BluetoothService.allDevices.length > 0
+
+        Item {
+            implicitWidth: parent?.width ?? 0
+            implicitHeight: 36
+
+            RowLayout {
+                anchors {
+                    fill: parent
+                    leftMargin: 16
+                    rightMargin: 16
+                }
+                spacing: 8
+
+                Text {
+                    text: "Paired devices"
+                    font.family: Config.fontFamily
+                    font.pixelSize: 11
+                    color: Colors.md3.outline
+                    Layout.fillWidth: true
+                }
+
+                Rectangle {
+                    height: 24
+                    width: btScanTxt.implicitWidth + 14
+                    radius: 12
+                    color: Colors.md3.surface_container_high
+                    visible: !BluetoothService.discovering
+
+                    Text {
+                        id: btScanTxt
+                        anchors.centerIn: parent
+                        text: "Scan"
+                        font.family: Config.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        color: Colors.md3.on_surface_variant
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: BluetoothService.setDiscovering(true)
+                    }
+                }
+
+                Rectangle {
+                    height: 24
+                    width: btStopTxt.implicitWidth + 14
+                    radius: 12
+                    color: Colors.md3.surface_container_high
+                    visible: BluetoothService.discovering
+
+                    Text {
+                        id: btStopTxt
+                        anchors.centerIn: parent
+                        text: "Scanning..."
+                        font.family: Config.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        color: Colors.md3.on_surface_variant
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: BluetoothService.setDiscovering(false)
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors {
+                    bottom: parent.bottom
+                    left: parent.left
+                    leftMargin: 18
+                    right: parent.right
+                    rightMargin: 18
+                }
+                height: 1
+                color: Colors.md3.outline_variant
+                opacity: 0.5
+            }
+        }
 
         Repeater {
             id: btRepeater
@@ -505,7 +589,7 @@ PageBase {
                         }
 
                         Text {
-                            text: modelData.connected ? (modelData.batteryAvailable ? "Connected · " + Math.round(modelData.battery * 100) + "% battery" : "Connected") : modelData.pairing ? "Pairing…" : "Paired"
+                            text: modelData.connected ? (modelData.batteryAvailable ? "Connected · " + BluetoothService.batteryIcon(Math.round(modelData.battery * 100)) + " " + Math.round(modelData.battery * 100) + "%" : "Connected") : "Paired"
                             font.family: Config.fontFamily
                             font.pixelSize: 11
                             color: modelData.connected ? Colors.md3.primary : Colors.md3.outline
@@ -572,6 +656,144 @@ PageBase {
 
                 Rectangle {
                     visible: index < btRepeater.count - 1
+                    anchors {
+                        bottom: parent.bottom
+                        left: parent.left
+                        leftMargin: 18
+                        right: parent.right
+                        rightMargin: 18
+                    }
+                    height: 1
+                    color: Colors.md3.outline_variant
+                    opacity: 0.5
+                }
+            }
+        }
+    }
+
+    SectionCard {
+        label: "Available devices"
+        Layout.fillWidth: true
+        visible: BluetoothService.bluetoothEnabled && BluetoothService.newDevices.length > 0
+
+        Item {
+            implicitWidth: parent?.width ?? 0
+            implicitHeight: 36
+
+            RowLayout {
+                anchors {
+                    fill: parent
+                    leftMargin: 16
+                    rightMargin: 16
+                }
+
+                Text {
+                    text: "Available devices"
+                    font.family: Config.fontFamily
+                    font.pixelSize: 11
+                    color: Colors.md3.outline
+                    Layout.fillWidth: true
+                }
+            }
+
+            Rectangle {
+                anchors {
+                    bottom: parent.bottom
+                    left: parent.left
+                    leftMargin: 18
+                    right: parent.right
+                    rightMargin: 18
+                }
+                height: 1
+                color: Colors.md3.outline_variant
+                opacity: 0.5
+            }
+        }
+
+        Repeater {
+            id: newBtRepeater
+            model: BluetoothService.newDevices
+
+            delegate: Item {
+                required property BluetoothDevice modelData
+                required property int index
+
+                implicitWidth: parent?.width ?? 0
+                implicitHeight: 58
+
+                RowLayout {
+                    anchors {
+                        fill: parent
+                        leftMargin: 16
+                        rightMargin: 14
+                    }
+                    spacing: 12
+
+                    Item {
+                        width: 20
+                        height: 20
+                        Layout.alignment: Qt.AlignVCenter
+                        opacity: 0.6
+
+                        Loader {
+                            anchors.centerIn: parent
+                            sourceComponent: btRowIcon(modelData.icon)
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: 2
+
+                        Text {
+                            text: modelData.name || "Unknown device"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 13
+                            color: Colors.md3.on_surface
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            text: modelData.pairing ? "Pairing..." : "Not paired"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 11
+                            color: Colors.md3.outline
+                        }
+                    }
+
+                    Rectangle {
+                        height: 28
+                        width: pairTxt.implicitWidth + 16
+                        radius: 14
+                        color: Colors.md3.secondary_container
+                        opacity: modelData.pairing ? 0.5 : 1.0
+
+                        Text {
+                            id: pairTxt
+                            anchors.centerIn: parent
+                            text: modelData.pairing ? "Pairing..." : "Pair"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                            color: Colors.md3.on_secondary_container
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            enabled: !modelData.pairing
+                            onClicked: {
+                                page.btDeviceBusy = true;
+                                BluetoothService.pairDevice(modelData);
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    visible: index < newBtRepeater.count - 1
                     anchors {
                         bottom: parent.bottom
                         left: parent.left

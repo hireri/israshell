@@ -205,7 +205,7 @@ PageBase {
             TextField {
                 id: addField
                 Layout.fillWidth: true
-                placeholderText: "App name…"
+                placeholderText: "App name..."
                 font.family: Config.fontFamily
                 font.pixelSize: 12
                 color: Colors.md3.on_surface

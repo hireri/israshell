@@ -18,6 +18,8 @@ PageBase {
         Layout.fillWidth: true
         spacing: 12
 
+        readonly property real _previewHeight: width * 0.58 * 9 / 16
+
         Item {
             Layout.preferredWidth: parent.width * 0.58
             Layout.preferredHeight: Layout.preferredWidth * 9 / 16
@@ -51,7 +53,7 @@ PageBase {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: parent.children[0].Layout.preferredHeight
+            Layout.preferredHeight: parent._previewHeight
             Layout.alignment: Qt.AlignTop
             radius: 18
             color: Colors.md3.surface_container
