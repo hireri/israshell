@@ -470,7 +470,7 @@ Rectangle {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: height / 2
-                                color: root._frontCard.colSurface
+                                color: root._frontCard.colSurfaceContainerHigh
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 400
@@ -643,7 +643,7 @@ Rectangle {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: height / 2
-                                color: root._frontCard.colSurface
+                                color: root._frontCard.colSurfaceContainerHigh
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 400

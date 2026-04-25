@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -15,22 +14,16 @@ Item {
     property bool pinned: false
     property bool showPin: true
     property bool suppressAnimations: false
-    property real _dragPos: 0
-
-    readonly property bool darkMode: typeof Config.darkMode !== "undefined" ? Config.darkMode : true
 
     signal pinToggled
 
     implicitWidth: 380
-    implicitHeight: card.implicitHeight
+    implicitHeight: 160
 
     readonly property string artUrl: player?.trackArtUrl ?? ""
     property string localArtPath: ""
-    property bool _silentNextArtLoad: false
 
-    onPlayerChanged: {
-        _silentNextArtLoad = true;
-    }
+    onPlayerChanged: localArtPath = ""
 
     onArtUrlChanged: {
         if (artUrl === "") {
@@ -47,19 +40,8 @@ Item {
         artFetchProc.launchedUrl = artUrl;
         artFetchProc.launchedFile = file;
         artFetchProc.running = false;
-        artFetchProc.command = ["bash", "-c", `f='${file}'; t="$f.tmp";[ -f "$f" ] || { curl -4 -sSL '${artUrl}' -o "$t" && mv "$t" "$f"; }`];
+        artFetchProc.command = ["bash", "-c", `f='${file}'; t="$f.tmp"; [ -f "$f" ] || { curl -4 -sSL '${artUrl}' -o "$t" && mv "$t" "$f"; }`];
         artFetchProc.running = true;
-    }
-
-    Timer {
-        id: quantizerDelay
-        interval: 100
-        running: root.visible
-        onTriggered: {
-            if (root.artUrl === artFetchProc.launchedUrl) {
-                root.localArtPath = "file://" + artFetchProc.launchedFile;
-            }
-        }
     }
 
     Process {
@@ -68,9 +50,18 @@ Item {
         property string launchedFile: ""
         running: false
         onExited: code => {
-            if (code === 0 && launchedUrl === root.artUrl && launchedFile !== "") {
+            if (code === 0 && launchedUrl === root.artUrl && launchedFile !== "")
                 quantizerDelay.restart();
-            }
+        }
+    }
+
+    Timer {
+        id: quantizerDelay
+        interval: 100
+        running: root.visible
+        onTriggered: {
+            if (root.artUrl === artFetchProc.launchedUrl)
+                root.localArtPath = "file://" + artFetchProc.launchedFile;
         }
     }
 
@@ -80,6 +71,8 @@ Item {
         depth: 2
         rescaleSize: 8
     }
+
+    readonly property bool darkMode: typeof Config.darkMode !== "undefined" ? Config.darkMode : true
 
     readonly property color dominantColor: {
         const cols = quantizer.colors;
@@ -111,28 +104,28 @@ Item {
         return ColorUtils.m3CardScheme(dominantColor, darkMode);
     }
 
-    readonly property color colSurface: _scheme.surface
-    readonly property color colSurfaceContainer: _scheme.surfaceContainer
-    readonly property color colSurfaceContainerHigh: _scheme.surfaceContainerHigh
-    readonly property color colPrimary: _scheme.primary
-    readonly property color colOnPrimary: _scheme.onPrimary
-    readonly property color colPrimaryContainer: _scheme.primaryContainer
-    readonly property color colOnPrimaryContainer: _scheme.onPrimaryContainer
-    readonly property color colOnSurface: _scheme.onSurface
-    readonly property color colOnSurfaceVariant: _scheme.onSurfaceVariant
-    readonly property color colOutline: _scheme.outline
+    readonly property color colSurface: _scheme.surface ?? Colors.md3.surface_container_high
+    readonly property color colSurfaceContainer: _scheme.surfaceContainer ?? Colors.md3.surface_container
+    readonly property color colSurfaceContainerHigh: _scheme.surfaceContainerHigh ?? Colors.md3.surface_container_highest
+    readonly property color colPrimary: _scheme.primary ?? Colors.md3.primary
+    readonly property color colOnPrimary: _scheme.onPrimary ?? Colors.md3.on_primary
+    readonly property color colPrimaryContainer: _scheme.primaryContainer ?? Colors.md3.primary_container
+    readonly property color colOnPrimaryContainer: _scheme.onPrimaryContainer ?? Colors.md3.on_primary_container
+    readonly property color colOnSurface: _scheme.onSurface ?? Colors.md3.on_surface
+    readonly property color colOnSurfaceVariant: _scheme.onSurfaceVariant ?? Colors.md3.on_surface_variant
+    readonly property color colOutline: _scheme.outline ?? Colors.md3.outline_variant
 
+    readonly property color colHoverTint: Qt.rgba(colOnSurface.r, colOnSurface.g, colOnSurface.b, 0.12)
+    readonly property color colBarFill: colOnSurface
+    readonly property color colBarTrack: Qt.rgba(colOnSurface.r, colOnSurface.g, colOnSurface.b, 0.28)
+    readonly property color _overlayBase: darkMode ? Qt.rgba(0, 0, 0, 1) : Qt.rgba(1, 1, 1, 1)
+
+    property real currentPosition: 0
     property bool _snapProgress: false
     property bool _isDragging: false
+    property real _dragProgress: 0
     property real _prevPos: 0
     property string _prevTitle: ""
-    property real currentPosition: 0
-
-    Timer {
-        id: snapResetTimer
-        interval: 80
-        onTriggered: root._snapProgress = false
-    }
 
     function syncPosition() {
         if (!root.player) {
@@ -148,6 +141,12 @@ Item {
         root._prevTitle = title;
         root._prevPos = pos;
         root.currentPosition = pos;
+    }
+
+    Timer {
+        id: snapResetTimer
+        interval: 80
+        onTriggered: root._snapProgress = false
     }
 
     Timer {
@@ -173,24 +172,33 @@ Item {
         }
     }
 
-    Rectangle {
+    function formatTime(secs) {
+        const s = Math.max(0, Math.floor(secs));
+        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    }
+
+    function getIconSource(player) {
+        if (!player)
+            return "";
+        const de = (player.desktopEntry ?? "").trim();
+        const identity = (player.identity ?? "").trim().toLowerCase().replace(/\s+/g, "-");
+        const id = de !== "" ? de : identity;
+        if (id === "")
+            return "";
+        const entry = DesktopEntries.heuristicLookup(id);
+        if (entry && entry.icon)
+            return "image://icon/" + entry.icon + "?fallback=application-x-executable";
+        return "image://icon/" + id + "?fallback=application-x-executable";
+    }
+
+    readonly property real displayProgress: root._isDragging ? root._dragProgress : root.currentPosition / Math.max(root.player?.length ?? 1, 1)
+
+    ClippingRectangle {
         id: card
         anchors.fill: parent
         radius: 24
         color: root.colSurface
-        implicitHeight: col.implicitHeight + 28
-        clip: true
-        border.width: 1
-        border.color: root.colOutline
-
         Behavior on color {
-            enabled: !root.suppressAnimations
-            ColorAnimation {
-                duration: 500
-                easing.type: Easing.OutCubic
-            }
-        }
-        Behavior on border.color {
             enabled: !root.suppressAnimations
             ColorAnimation {
                 duration: 500
@@ -203,6 +211,7 @@ Item {
             anchors.fill: parent
             radius: card.radius
             color: "transparent"
+            property bool _aActive: false
 
             BgImage {
                 id: bgA
@@ -217,10 +226,8 @@ Item {
                 property: "opacity"
                 duration: 380
                 easing.type: Easing.OutCubic
-                onStopped: {
-                    if (bgA.opacity < 0.01)
-                        bgA.source = "";
-                }
+                onStopped: if (bgA.opacity < 0.01)
+                    bgA.source = ""
             }
             NumberAnimation {
                 id: bgAnim_B
@@ -228,49 +235,41 @@ Item {
                 property: "opacity"
                 duration: 380
                 easing.type: Easing.OutCubic
-                onStopped: {
-                    if (bgB.opacity < 0.01)
-                        bgB.source = "";
-                }
+                onStopped: if (bgB.opacity < 0.01)
+                    bgB.source = ""
             }
-
-            property bool _aActive: false
 
             function showBg(path) {
                 bgAnim_A.stop();
                 bgAnim_B.stop();
-                const a = _aActive;
-                const curr = a ? bgA : bgB;
-                const next = a ? bgB : bgA;
-                const animCurr = a ? bgAnim_A : bgAnim_B;
-                const animNext = a ? bgAnim_B : bgAnim_A;
-
+                const isA = _aActive;
+                const curr = isA ? bgA : bgB;
+                const animC = isA ? bgAnim_A : bgAnim_B;
+                const next = isA ? bgB : bgA;
                 if (path === "") {
-                    animCurr.to = 0;
-                    animCurr.start();
+                    animC.to = 0;
+                    animC.start();
                     return;
                 }
-
                 if (curr.opacity > 0.01) {
-                    animCurr.to = 0;
-                    animCurr.start();
+                    animC.to = 0;
+                    animC.start();
                 }
                 next.source = path;
-                _aActive = !a;
+                _aActive = !isA;
             }
 
             Connections {
-                target: coverRoot
-                function onShownPathChanged() {
-                    bgClip.showBg(coverRoot.shownPath);
+                target: root
+                function onLocalArtPathChanged() {
+                    bgClip.showBg(root.localArtPath);
                 }
             }
-
             Connections {
                 target: bgA
                 function onStatusChanged() {
                     if (bgA.status === Image.Ready) {
-                        bgAnim_A.to = 0.22;
+                        bgAnim_A.to = 1;
                         bgAnim_A.start();
                     }
                 }
@@ -279,480 +278,536 @@ Item {
                 target: bgB
                 function onStatusChanged() {
                     if (bgB.status === Image.Ready) {
-                        bgAnim_B.to = 0.22;
+                        bgAnim_B.to = 1;
                         bgAnim_B.start();
                     }
                 }
             }
         }
 
-        Column {
-            id: col
+        Rectangle {
+            anchors.fill: parent
+            color: Qt.rgba(root._overlayBase.r, root._overlayBase.g, root._overlayBase.b, 0.5)
+            Behavior on color {
+                ColorAnimation {
+                    duration: 400
+                }
+            }
+        }
+        Rectangle {
             anchors {
                 top: parent.top
                 left: parent.left
                 right: parent.right
-                margins: 14
-                topMargin: 14
             }
-            spacing: 10
-
-            Row {
-                width: parent.width
-                spacing: 14
-
-                Item {
-                    id: coverRoot
-                    width: 80
-                    height: 80
-                    property real flipAngle: 0
-                    property string shownPath: ""
-
-                    ClippingRectangle {
-                        anchors.fill: parent
-                        radius: 12
-                        color: root.colSurfaceContainerHigh
-                        antialiasing: true
-                        smooth: true
-                        layer.enabled: true
-                        layer.smooth: true
-                        layer.mipmap: true
-
-                        Behavior on color {
-                            enabled: !root.suppressAnimations
-                            ColorAnimation {
-                                duration: 500
-                            }
-                        }
-
-                        transform: Rotation {
-                            axis {
-                                x: 0
-                                y: 1
-                                z: 0
-                            }
-                            angle: coverRoot.flipAngle
-                            origin.x: 40
-                            origin.y: 40
-                            distanceToPlane: 200
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰝚"
-                            font.pixelSize: 30
-                            font.family: Config.fontFamily
-                            color: root.colOnSurfaceVariant
-                            opacity: 0.45
-                            visible: coverImg.status !== Image.Ready
-                        }
-
-                        Image {
-                            id: coverImg
-                            anchors.fill: parent
-                            source: coverRoot.shownPath
-                            fillMode: Image.PreserveAspectCrop
-                            sourceSize: Qt.size(256, 256)
-                            cache: true
-                            asynchronous: true
-                            antialiasing: true
-                            smooth: true
-                            mipmap: true
-
-                            opacity: status === Image.Ready ? 1 : 0
-                            Behavior on opacity {
-                                enabled: !root.suppressAnimations
-                                NumberAnimation {
-                                    duration: 200
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-                        }
-                    }
-
-                    Connections {
-                        target: root
-
-                        function onArtUrlChanged() {
-                            if (root._silentNextArtLoad) {
-                                coverFlipAnim.stop();
-                                coverRoot.flipAngle = 0;
-                                coverRoot.shownPath = root.artUrl;
-                                root._silentNextArtLoad = false;
-                                return;
-                            }
-
-                            if (root.artUrl === "") {
-                                coverFlipAnim.stop();
-                                coverRoot.flipAngle = 0;
-                                coverRoot.shownPath = "";
-                                return;
-                            }
-
-                            if (coverFlipAnim.running) {
-                                coverFlipAnim.stop();
-                                coverRoot.flipAngle = 0;
-                                coverRoot.shownPath = root.artUrl;
-                            } else {
-                                coverFlipAnim.start();
-                            }
-                        }
-                    }
-
-                    SequentialAnimation {
-                        id: coverFlipAnim
-                        NumberAnimation {
-                            target: coverRoot
-                            property: "flipAngle"
-                            to: 90
-                            duration: 140
-                            easing.type: Easing.InCubic
-                        }
-                        ScriptAction {
-                            script: {
-                                coverRoot.shownPath = root.artUrl;
-                                coverRoot.flipAngle = -90;
-                            }
-                        }
-                        NumberAnimation {
-                            target: coverRoot
-                            property: "flipAngle"
-                            to: 0
-                            duration: 780
-                            easing.type: Easing.OutElastic
-                            easing.period: 0.88
-                            easing.amplitude: 1.3
-                        }
-                    }
+            height: parent.height * 0.45
+            gradient: Gradient {
+                orientation: Gradient.TopToBottom
+                GradientStop {
+                    position: 0.0
+                    color: Qt.rgba(root._overlayBase.r, root._overlayBase.g, root._overlayBase.b, 0.45)
                 }
+                GradientStop {
+                    position: 1.0
+                    color: Qt.rgba(root._overlayBase.r, root._overlayBase.g, root._overlayBase.b, 0.0)
+                }
+            }
+        }
+        Rectangle {
+            anchors {
+                bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+            }
+            height: parent.height * 0.65
+            gradient: Gradient {
+                orientation: Gradient.TopToBottom
+                GradientStop {
+                    position: 0.0
+                    color: Qt.rgba(root._overlayBase.r, root._overlayBase.g, root._overlayBase.b, 0.0)
+                }
+                GradientStop {
+                    position: 1.0
+                    color: Qt.rgba(root._overlayBase.r, root._overlayBase.g, root._overlayBase.b, 0.65)
+                }
+            }
+        }
 
-                Item {
-                    width: parent.width - coverRoot.width - parent.spacing
-                    height: coverRoot.height
+        Item {
+            id: topRow
+            anchors {
+                top: parent.top
+                left: parent.left
+                right: parent.right
+                topMargin: 13
+                leftMargin: 14
+                rightMargin: 14
+            }
+            height: 22
 
-                    Row {
-                        width: parent.width
-                        anchors.top: parent.top
-                        spacing: 8
+            ClippingRectangle {
+                id: smallCover
+                width: 22
+                height: 22
+                radius: 5
+                anchors {
+                    left: parent.left
+                    verticalCenter: parent.verticalCenter
+                }
+                color: Qt.rgba(root.colOnSurface.r, root.colOnSurface.g, root.colOnSurface.b, 0.1)
 
-                        Column {
-                            width: parent.width - (root.showPin ? pinBtn.width + parent.spacing : 0)
-                            spacing: 3
-
-                            XfadeText {
-                                target: root.player?.trackTitle ?? "nothing playing"
-                                textColor: root.colOnSurface
-                                pixelSize: 14
-                                fontWeight: Font.Bold
-                            }
-                            XfadeText {
-                                target: root.player?.trackArtist ?? ""
-                                textColor: root.colOnSurfaceVariant
-                                pixelSize: 12
-                            }
-                        }
-
-                        Rectangle {
-                            id: pinBtn
-                            width: 28
-                            height: 28
-                            radius: 14
-                            visible: root.showPin
-                            color: root.pinned ? root.colPrimary : root.colSurfaceContainerHigh
-                            Behavior on color {
-                                enabled: !root.suppressAnimations
-                                ColorAnimation {
-                                    duration: 200
-                                }
-                            }
-                            Text {
-                                anchors.centerIn: parent
-                                text: "󰄬"
-                                font.pixelSize: 13
-                                color: root.pinned ? root.colOnPrimary : root.colOnSurfaceVariant
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.pinToggled()
-                            }
-                        }
+                Image {
+                    anchors {
+                        fill: parent
+                        margins: 2
                     }
-
-                    Column {
-                        width: parent.width
-                        anchors.bottom: parent.bottom
-                        spacing: 4
-
-                        Item {
-                            id: progressArea
-                            width: parent.width
-                            height: 16
-                            property bool hover: false
-
-                            Rectangle {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width
-                                height: 4
-                                radius: 2
-                                color: root.colSurfaceContainer
-                                Behavior on color {
-                                    enabled: !root.suppressAnimations
-                                    ColorAnimation {
-                                        duration: 400
-                                    }
-                                }
-
-                                Rectangle {
-                                    id: progFill
-                                    width: {
-                                        const p = root._isDragging ? root._dragPos : root.currentPosition / Math.max(root.player?.length ?? 1, 1);
-                                        return parent.width * Math.min(p, 1);
-                                    }
-                                    height: parent.height
-                                    radius: 2
-                                    color: root.colPrimary
-                                    Behavior on width {
-                                        enabled: !root.suppressAnimations && !root._snapProgress && !root._isDragging
-                                        NumberAnimation {
-                                            duration: 420
-                                            easing.type: Easing.OutCubic
-                                        }
-                                    }
-                                    Behavior on color {
-                                        enabled: !root.suppressAnimations
-                                        ColorAnimation {
-                                            duration: 400
-                                        }
-                                    }
-                                }
-
-                                Rectangle {
-                                    width: 12
-                                    height: 12
-                                    radius: 6
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    x: Math.max(0, Math.min(parent.width - width, progFill.width - width / 2))
-                                    color: root.colPrimary
-                                    visible: root.player?.canSeek ?? false
-                                    opacity: progressArea.hover ? 1 : 0
-                                    scale: progressArea.hover ? 1 : 0.5
-                                    Behavior on opacity {
-                                        NumberAnimation {
-                                            duration: 150
-                                        }
-                                    }
-                                    Behavior on scale {
-                                        NumberAnimation {
-                                            duration: 150
-                                            easing.type: Easing.OutBack
-                                            easing.overshoot: 2
-                                        }
-                                    }
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: (root.player?.canSeek ?? false) ? Qt.SizeHorCursor : Qt.ArrowCursor
-                                onEntered: progressArea.hover = true
-                                onExited: {
-                                    if (!pressed)
-                                        progressArea.hover = false;
-                                }
-                                onPressed: mouse => {
-                                    if (!(root.player?.canSeek ?? false))
-                                        return;
-                                    root._isDragging = true;
-                                    root._dragPos = mouse.x / width;
-                                }
-                                onPositionChanged: mouse => {
-                                    if (root._isDragging)
-                                        root._dragPos = Math.max(0, Math.min(mouse.x / width, 1));
-                                }
-                                onReleased: mouse => {
-                                    if (root._isDragging && (root.player?.canSeek ?? false)) {
-                                        root.player.position = root._dragPos * (root.player.length ?? 0);
-                                        root.syncPosition();
-                                    }
-                                    root._isDragging = false;
-                                    progressArea.hover = containsMouse;
-                                }
-                            }
-                        }
-
-                        RowLayout {
-                            width: parent.width
-                            Text {
-                                text: {
-                                    const s = Math.floor(root.currentPosition);
-                                    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
-                                }
-                                color: root.colOnSurfaceVariant
-                                font.pixelSize: 10
-                                font.family: Config.fontFamily
-                            }
-                            Item {
-                                Layout.fillWidth: true
-                            }
-                            Text {
-                                text: {
-                                    const r = Math.max(0, Math.floor((root.player?.length ?? 0) - root.currentPosition));
-                                    return "−" + Math.floor(r / 60) + ":" + String(r % 60).padStart(2, "0");
-                                }
-                                color: root.colOnSurfaceVariant
-                                font.pixelSize: 10
-                                font.family: Config.fontFamily
-                            }
+                    source: root.getIconSource(root.player)
+                    fillMode: Image.PreserveAspectFit
+                    sourceSize: Qt.size(44, 44)
+                    cache: true
+                    asynchronous: true
+                }
+                Image {
+                    anchors.fill: parent
+                    source: root.localArtPath
+                    fillMode: Image.PreserveAspectCrop
+                    sourceSize: Qt.size(44, 44)
+                    cache: true
+                    asynchronous: true
+                    opacity: status === Image.Ready && root.localArtPath !== "" ? 1 : 0
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
                         }
                     }
                 }
             }
 
-            Row {
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 12
-                height: 44
+            Text {
+                anchors {
+                    left: smallCover.right
+                    leftMargin: 7
+                    right: timestampLabel.left
+                    rightMargin: 8
+                    verticalCenter: parent.verticalCenter
+                }
+                text: root.player?.trackAlbum ?? ""
+                color: root.colOnSurfaceVariant
+                font.pixelSize: 11
+                font.family: Config.fontFamily
+                elide: Text.ElideRight
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 400
+                    }
+                }
+            }
 
-                Rectangle {
-                    width: 48
-                    height: 34
-                    radius: height / 2
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: root.colPrimaryContainer
-                    opacity: (root.player?.canGoPrevious ?? false) ? 1.0 : 0.4
+            Text {
+                id: timestampLabel
+                anchors {
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                }
+                text: root.formatTime(root.displayProgress * (root.player?.length ?? 0)) + " / " + root.formatTime(root.player?.length ?? 0)
+                color: root.colOnSurfaceVariant
+                font.pixelSize: 11
+                font.family: Config.fontFamily
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 400
+                    }
+                }
+            }
+        }
+
+        Item {
+            id: middleRow
+            anchors {
+                left: parent.left
+                right: parent.right
+                top: topRow.bottom
+                bottom: bottomRow.top
+                leftMargin: 14
+                rightMargin: 14
+            }
+
+            readonly property bool isPlaying: root.player?.playbackState === MprisPlaybackState.Playing
+
+            Column {
+                anchors {
+                    left: parent.left
+                    right: playBtn.left
+                    rightMargin: 12
+                    verticalCenter: parent.verticalCenter
+                }
+                spacing: 4
+
+                XfadeText {
+                    target: root.player?.trackTitle ?? "Nothing playing"
+                    textColor: root.colOnSurface
+                    pixelSize: 19
+                    fontWeight: Font.Medium
+                }
+                XfadeText {
+                    target: root.player?.trackArtist ?? ""
+                    textColor: root.colOnSurfaceVariant
+                    pixelSize: 12
+                }
+            }
+
+            Rectangle {
+                id: playBtn
+                width: 52
+                height: 52
+                anchors {
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                }
+                radius: middleRow.isPlaying ? 14 : 26
+                color: root.colPrimary
+
+                Behavior on radius {
+                    enabled: !root.suppressAnimations
+                    NumberAnimation {
+                        duration: 220
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on color {
+                    enabled: !root.suppressAnimations
+                    ColorAnimation {
+                        duration: 400
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: middleRow.isPlaying ? "󰏤" : "󰐊"
+                    font.family: Config.fontFamily
+                    font.pixelSize: 18
+                    color: root.colOnPrimary
                     Behavior on color {
-                        enabled: !root.suppressAnimations
                         ColorAnimation {
                             duration: 400
                         }
                     }
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰒮"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 16
-                        color: root.colOnPrimaryContainer
+                }
+
+                MouseArea {
+                    id: playMa
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        root.player?.togglePlaying();
+                        root.syncPosition();
                     }
-                    scale: prevMa.pressed ? 0.92 : 1
-                    Behavior on scale {
-                        NumberAnimation {
-                            duration: 100
-                        }
-                    }
-                    MouseArea {
-                        id: prevMa
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.player?.previous();
-                            root.syncPosition();
-                        }
+                }
+            }
+        }
+
+        Item {
+            id: bottomRow
+            anchors {
+                bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+                bottomMargin: 12
+                leftMargin: 14
+                rightMargin: 14
+            }
+            height: 28
+
+            Item {
+                id: prevBtn
+                width: 28
+                height: 28
+                anchors {
+                    left: parent.left
+                    verticalCenter: parent.verticalCenter
+                }
+                opacity: (root.player?.canGoPrevious ?? false) ? 1.0 : 0.4
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
                     }
                 }
 
                 Rectangle {
-                    id: playBtn
-                    readonly property bool isPlaying: root.player?.playbackState === MprisPlaybackState.Playing
-                    width: 60
-                    height: 40
-                    radius: isPlaying ? 12 : height / 2
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: root.colPrimary
+                    anchors.fill: parent
+                    radius: 14
+                    color: prevMa.containsMouse ? root.colHoverTint : "transparent"
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 120
+                        }
+                    }
+                }
+                Text {
+                    anchors.centerIn: parent
+                    text: "󰒮"
+                    font.family: Config.fontFamily
+                    font.pixelSize: 16
+                    color: root.colOnSurface
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 400
+                        }
+                    }
+                }
+                MouseArea {
+                    id: prevMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: (root.player?.canGoNext ?? false) ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: {
+                        root.player?.previous();
+                        root.syncPosition();
+                    }
+                }
+            }
+
+            Item {
+                id: scrubber
+                anchors {
+                    left: prevBtn.right
+                    leftMargin: 8
+                    right: nextBtn.left
+                    rightMargin: 8
+                    verticalCenter: parent.verticalCenter
+                }
+                height: 28
+
+                property bool scrubHover: false
+                property real thumbW: scrubHover ? 2 : 0
+                property real thumbGap: scrubHover ? 4 : 2
+
+                Behavior on thumbW {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on thumbGap {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                property real smoothProgress: root.displayProgress
+                Behavior on smoothProgress {
+                    enabled: !root.suppressAnimations && !root._snapProgress && !root._isDragging
+                    NumberAnimation {
+                        duration: 420
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Rectangle {
+                    id: barLeft
+                    anchors {
+                        left: parent.left
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: scrubber.smoothProgress * (parent.width - scrubber.thumbW - scrubber.thumbGap * 2)
+                    height: 4
+                    radius: 3
+                    color: root.colBarFill
                     Behavior on height {
-                        enabled: !root.suppressAnimations
                         NumberAnimation {
-                            duration: 220
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                    Behavior on radius {
-                        enabled: !root.suppressAnimations
-                        NumberAnimation {
-                            duration: 220
-                            easing.type: Easing.OutCubic
+                            duration: 150
                         }
                     }
                     Behavior on color {
-                        enabled: !root.suppressAnimations
                         ColorAnimation {
                             duration: 400
-                        }
-                    }
-                    Text {
-                        anchors.centerIn: parent
-                        text: playBtn.isPlaying ? "󰏤" : "󰐊"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 16
-                        color: root.colOnPrimary
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.player?.togglePlaying();
-                            root.syncPosition();
                         }
                     }
                 }
 
                 Rectangle {
-                    width: 48
-                    height: 34
-                    radius: height / 2
+                    id: thumbRect
                     anchors.verticalCenter: parent.verticalCenter
-                    color: root.colPrimaryContainer
-                    opacity: (root.player?.canGoNext ?? false) ? 1.0 : 0.4
+                    x: barLeft.width + scrubber.thumbGap
+                    width: scrubber.thumbW
+                    height: scrubber.scrubHover ? 16 : 14
+                    radius: 1
+                    color: root.colOnSurface
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: 150
+                        }
+                    }
                     Behavior on color {
-                        enabled: !root.suppressAnimations
                         ColorAnimation {
                             duration: 400
                         }
                     }
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰒭"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 16
-                        color: root.colOnPrimaryContainer
+                }
+
+                Rectangle {
+                    anchors {
+                        left: thumbRect.right
+                        leftMargin: scrubber.thumbGap
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
                     }
-                    scale: nextMa.pressed ? 0.92 : 1
-                    Behavior on scale {
+                    height: 4
+                    radius: 3
+                    color: root.colBarTrack
+                    Behavior on height {
                         NumberAnimation {
-                            duration: 100
+                            duration: 150
                         }
                     }
-                    MouseArea {
-                        id: nextMa
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.player?.next();
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 400
+                        }
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: (root.player?.canSeek ?? false) ? Qt.SizeHorCursor : Qt.ArrowCursor
+                    onEntered: scrubber.scrubHover = true
+                    onExited: if (!pressed)
+                        scrubber.scrubHover = false
+                    onPressed: mouse => {
+                        if (!(root.player?.canSeek ?? false))
+                            return;
+                        root._isDragging = true;
+                        root._dragProgress = Math.max(0, Math.min(mouse.x / width, 1));
+                    }
+                    onPositionChanged: mouse => {
+                        if (root._isDragging)
+                            root._dragProgress = Math.max(0, Math.min(mouse.x / width, 1));
+                    }
+                    onReleased: mouse => {
+                        if (root._isDragging && (root.player?.canSeek ?? false)) {
+                            root.player.position = root._dragProgress * (root.player.length ?? 0);
                             root.syncPosition();
                         }
+                        root._isDragging = false;
+                        scrubber.scrubHover = containsMouse;
                     }
+                }
+            }
+
+            Item {
+                id: nextBtn
+                width: 28
+                height: 28
+                anchors {
+                    right: pinBtn.left
+                    rightMargin: 4
+                    verticalCenter: parent.verticalCenter
+                }
+                opacity: (root.player?.canGoNext ?? false) ? 1.0 : 0.4
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                    }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 14
+                    color: nextMa.containsMouse ? root.colHoverTint : "transparent"
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 120
+                        }
+                    }
+                }
+                Text {
+                    anchors.centerIn: parent
+                    text: "󰒭"
+                    font.family: Config.fontFamily
+                    font.pixelSize: 16
+                    color: root.colOnSurface
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 400
+                        }
+                    }
+                }
+                MouseArea {
+                    id: nextMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: (root.player?.canGoNext ?? false) ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: {
+                        root.player?.next();
+                        root.syncPosition();
+                    }
+                }
+            }
+
+            Item {
+                id: pinBtn
+                width: 28
+                height: 28
+                anchors {
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                }
+                visible: root.showPin
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 14
+                    color: root.pinned ? root.colPrimary : pinMa.containsMouse ? root.colHoverTint : "transparent"
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
+                        }
+                    }
+                }
+                Text {
+                    anchors.centerIn: parent
+                    text: "󰐃"
+                    font.family: Config.fontFamily
+                    font.pixelSize: 13
+                    color: root.pinned ? root.colOnPrimary : root.colOnSurfaceVariant
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
+                        }
+                    }
+                }
+                MouseArea {
+                    id: pinMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.pinToggled()
+                }
+            }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: card.radius
+            color: "transparent"
+            border.width: 1
+            border.color: root.colOutline
+            Behavior on border.color {
+                ColorAnimation {
+                    duration: 500
                 }
             }
         }
     }
 
     component BgImage: Image {
-        anchors {
-            fill: parent
-            margins: -40
-        }
+        anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
         opacity: 0
         cache: true
         asynchronous: true
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            blurEnabled: true
-            blur: 1.0
-            blurMax: 64
-            saturation: 0.04
-        }
     }
 
     component XfadeText: Item {
@@ -797,6 +852,7 @@ Item {
             elide: Text.ElideRight
             Component.onCompleted: text = xft.target
         }
+
         ParallelAnimation {
             id: xAnim
             NumberAnimation {
