@@ -275,7 +275,7 @@ Rectangle {
         function onPlayerSwitched(oldPlayer, newPlayer) {
             _backCard.suppressAnimations = true;
             _backCard.player = newPlayer;
-            _backCard.syncPosition();
+            _backCard.resyncPosition();
             Qt.callLater(() => {
                 _backCard.suppressAnimations = false;
                 swapOut.start();
@@ -316,8 +316,8 @@ Rectangle {
             anchors.fill: parent
             implicitHeight: popupCol.implicitHeight + 32
             opacity: root.isOpen ? 1 : 0
-            scale: root.isOpen ? 1 : 0.94
-            transformOrigin: Item.Top
+            scale: root.isOpen ? 1 : 0.93
+            transformOrigin: Item.Center
 
             Behavior on opacity {
                 NumberAnimation {

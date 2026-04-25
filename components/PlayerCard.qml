@@ -26,9 +26,7 @@ Item {
 
     onPlayerChanged: {
         localArtPath = "";
-        currentPosition = 0;
-        _snapProgress = true;
-        snapResetTimer.restart();
+        snapToPosition();
     }
 
     onArtUrlChanged: {
@@ -69,6 +67,12 @@ Item {
             if (root.artUrl === artFetchProc.launchedUrl)
                 root.localArtPath = "file://" + artFetchProc.launchedFile;
         }
+    }
+
+    Timer {
+        id: skipSyncTimer
+        interval: 150
+        onTriggered: root.resetToPosition()
     }
 
     ColorQuantizer {
@@ -127,54 +131,122 @@ Item {
     readonly property color _overlayBase: darkMode ? Qt.rgba(0, 0, 0, 1) : Qt.rgba(1, 1, 1, 1)
 
     property real currentPosition: 0
-    property bool _snapProgress: false
     property bool _isDragging: false
     property real _dragProgress: 0
-    property real _prevPos: 0
+    property bool _isResetting: false
     property string _prevTitle: ""
 
-    function syncPosition() {
+    NumberAnimation {
+        id: positionAnim
+        target: root
+        property: "currentPosition"
+        easing.type: Easing.Linear
+    }
+
+    NumberAnimation {
+        id: positionResetAnim
+        target: root
+        property: "currentPosition"
+        duration: 400
+        easing.type: Easing.OutCubic
+        onStopped: {
+            root._isResetting = false;
+            if (!root.player)
+                return;
+            if (root.player.playbackState !== MprisPlaybackState.Playing)
+                return;
+            const len = root.player.length ?? 0;
+            const remaining = len - root.currentPosition;
+            if (remaining <= 0)
+                return;
+            positionAnim.to = len;
+            positionAnim.duration = remaining * 1000;
+            positionAnim.start();
+        }
+    }
+
+    function snapToPosition() {
+        _isResetting = false;
+        positionAnim.stop();
+        positionResetAnim.stop();
         if (!root.player) {
-            root.currentPosition = 0;
+            currentPosition = 0;
             return;
         }
-        const title = root.player.trackTitle ?? "";
         const pos = root.player.position ?? 0;
-        if (title !== root._prevTitle || pos < root._prevPos - 2.0) {
-            root._snapProgress = true;
-            snapResetTimer.restart();
+        const len = root.player.length ?? 0;
+        currentPosition = pos;
+        if (root.player.playbackState === MprisPlaybackState.Playing && len > 0) {
+            positionAnim.to = len;
+            positionAnim.duration = (len - pos) * 1000;
+            positionAnim.start();
         }
-        root._prevTitle = title;
-        root._prevPos = pos;
-        root.currentPosition = pos;
+    }
+
+    function resetToPosition() {
+        positionAnim.stop();
+        positionResetAnim.stop();
+        if (!root.player) {
+            snapToPosition();
+            return;
+        }
+        const pos = root.player.position ?? 0;
+        const len = root.player.length ?? 0;
+        if (root.player.playbackState !== MprisPlaybackState.Playing || len <= 0) {
+            currentPosition = pos;
+            return;
+        }
+        _isResetting = true;
+        const target = Math.min(pos + positionResetAnim.duration / 1000, len);
+        positionResetAnim.to = target;
+        positionResetAnim.start();
+    }
+
+    function resyncPosition() {
+        if (_isResetting)
+            return;
+        positionAnim.stop();
+        if (!root.player) {
+            currentPosition = 0;
+            return;
+        }
+        const pos = root.player.position ?? 0;
+        const len = root.player.length ?? 0;
+        currentPosition = pos;
+        if (root.player.playbackState === MprisPlaybackState.Playing && len > 0) {
+            positionAnim.to = len;
+            positionAnim.duration = (len - pos) * 1000;
+            positionAnim.start();
+        }
     }
 
     Timer {
         id: snapResetTimer
         interval: 80
-        onTriggered: root._snapProgress = false
+        onTriggered: {
+            root._snapReason = 2;
+            root.resyncPosition();
+            snapResetTimer.restart();
+        }
     }
 
     Timer {
         id: positionPoller
         running: root.visible && root.player !== null
-        interval: 1000
+        interval: 5000
         repeat: true
         triggeredOnStart: true
-        onTriggered: root.syncPosition()
+        onTriggered: root.resyncPosition()
     }
 
     Connections {
         target: root.player
         ignoreUnknownSignals: true
         function onPlaybackStateChanged() {
-            root.syncPosition();
+            root.resyncPosition();
         }
         function onTrackTitleChanged() {
-            root.syncPosition();
-        }
-        function onPositionChanged() {
-            root.syncPosition();
+            root.snapToPosition();
         }
     }
 
@@ -506,7 +578,7 @@ Item {
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
                         root.player?.togglePlaying();
-                        root.syncPosition();
+                        root.resyncPosition();
                     }
                 }
             }
@@ -567,8 +639,10 @@ Item {
                     hoverEnabled: true
                     cursorShape: (root.player?.canGoNext ?? false) ? Qt.PointingHandCursor : Qt.ArrowCursor
                     onClicked: {
-                        root.player?.previous();
-                        root.syncPosition();
+                        if (!(root.player?.canGoPrevious ?? false))
+                            return;
+                        root.player.previous();
+                        skipSyncTimer.restart();
                     }
                 }
             }
@@ -601,22 +675,13 @@ Item {
                     }
                 }
 
-                property real smoothProgress: root.displayProgress
-                Behavior on smoothProgress {
-                    enabled: !root.suppressAnimations && !root._snapProgress && !root._isDragging
-                    NumberAnimation {
-                        duration: 420
-                        easing.type: Easing.OutCubic
-                    }
-                }
-
                 Rectangle {
                     id: barLeft
                     anchors {
                         left: parent.left
                         verticalCenter: parent.verticalCenter
                     }
-                    width: scrubber.smoothProgress * (parent.width - scrubber.thumbW - scrubber.thumbGap * 2)
+                    width: root.displayProgress * (parent.width - scrubber.thumbW - scrubber.thumbGap * 2)
                     height: 4
                     radius: 3
                     color: root.colBarFill
@@ -694,7 +759,7 @@ Item {
                     onReleased: mouse => {
                         if (root._isDragging && (root.player?.canSeek ?? false)) {
                             root.player.position = root._dragProgress * (root.player.length ?? 0);
-                            root.syncPosition();
+                            root.resyncPosition();
                         }
                         root._isDragging = false;
                         scrubber.scrubHover = containsMouse;
@@ -746,8 +811,10 @@ Item {
                     hoverEnabled: true
                     cursorShape: (root.player?.canGoNext ?? false) ? Qt.PointingHandCursor : Qt.ArrowCursor
                     onClicked: {
-                        root.player?.next();
-                        root.syncPosition();
+                        if (!(root.player?.canGoNext ?? false))
+                            return;
+                        root.player.next();
+                        skipSyncTimer.restart();
                     }
                 }
             }
