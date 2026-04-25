@@ -23,7 +23,12 @@ Item {
     readonly property string artUrl: player?.trackArtUrl ?? ""
     property string localArtPath: ""
 
-    onPlayerChanged: localArtPath = ""
+    onPlayerChanged: {
+        localArtPath = "";
+        currentPosition = 0;
+        _snapProgress = true;
+        snapResetTimer.restart();
+    }
 
     onArtUrlChanged: {
         if (artUrl === "") {
@@ -116,8 +121,8 @@ Item {
     readonly property color colOutline: _scheme.outline ?? Colors.md3.outline_variant
 
     readonly property color colHoverTint: Qt.rgba(colOnSurface.r, colOnSurface.g, colOnSurface.b, 0.12)
-    readonly property color colBarFill: colOnSurface
-    readonly property color colBarTrack: Qt.rgba(colOnSurface.r, colOnSurface.g, colOnSurface.b, 0.28)
+    readonly property color colBarFill: colPrimary
+    readonly property color colBarTrack: Qt.rgba(colPrimary.r, colPrimary.g, colPrimary.b, 0.35)
     readonly property color _overlayBase: darkMode ? Qt.rgba(0, 0, 0, 1) : Qt.rgba(1, 1, 1, 1)
 
     property real currentPosition: 0
@@ -536,7 +541,7 @@ Item {
                 Rectangle {
                     anchors.fill: parent
                     radius: 14
-                    color: prevMa.containsMouse ? root.colHoverTint : "transparent"
+                    color: prevMa.containsMouse && (root.player?.canGoPrevious ?? false) ? root.colHoverTint : "transparent"
                     Behavior on color {
                         ColorAnimation {
                             duration: 120
@@ -633,7 +638,7 @@ Item {
                     width: scrubber.thumbW
                     height: scrubber.scrubHover ? 16 : 14
                     radius: 1
-                    color: root.colOnSurface
+                    color: root.colPrimary
                     Behavior on height {
                         NumberAnimation {
                             duration: 150
@@ -702,7 +707,7 @@ Item {
                 height: 28
                 anchors {
                     right: pinBtn.left
-                    rightMargin: 4
+                    rightMargin: root.showPin ? 4 : 0
                     verticalCenter: parent.verticalCenter
                 }
                 opacity: (root.player?.canGoNext ?? false) ? 1.0 : 0.4
@@ -715,7 +720,7 @@ Item {
                 Rectangle {
                     anchors.fill: parent
                     radius: 14
-                    color: nextMa.containsMouse ? root.colHoverTint : "transparent"
+                    color: nextMa.containsMouse && (root.player?.canGoNext ?? false) ? root.colHoverTint : "transparent"
                     Behavior on color {
                         ColorAnimation {
                             duration: 120
@@ -748,7 +753,7 @@ Item {
 
             Item {
                 id: pinBtn
-                width: 28
+                width: root.showPin ? 28 : 0
                 height: 28
                 anchors {
                     right: parent.right
