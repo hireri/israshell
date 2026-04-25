@@ -183,8 +183,6 @@ Scope {
         }
     }
 
-    Component.onCompleted: emojiLoader.running = true
-
     property var _clipEntries: []
 
     Process {
@@ -231,6 +229,8 @@ Scope {
             clipLoader.running = false;
             clipLoader.running = true;
         }
+        if (mode === "emoji" && !root._emojiLoaded)
+            emojiLoader.running = true;
     }
 
     ScriptModel {

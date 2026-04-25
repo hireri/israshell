@@ -1,4 +1,3 @@
-//@ pragma UseQApplication
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -198,8 +197,6 @@ Singleton {
     }
 
     function update(changes) {
-        console.log("[Config] update() called with keys:", Object.keys(changes).join(", "));
-        console.trace();
         const data = {};
         for (const key in __defaults()) {
             data[key] = configRoot[key];
@@ -212,7 +209,6 @@ Singleton {
         }
 
         _selfWrite = true;
-        console.log("[Config] update() writing file, _selfWrite set");
         fileView.setText(JSON.stringify(data, null, 4));
 
         __apply(data);
@@ -231,7 +227,6 @@ Singleton {
         blockLoading: true
         Component.onCompleted: __load()
         onLoaded: {
-            console.log("[Config] onLoaded, _selfWrite=", configRoot._selfWrite);
             if (configRoot._selfWrite) {
                 configRoot._selfWrite = false;
                 return;
@@ -239,9 +234,6 @@ Singleton {
             __load();
         }
 
-        onFileChanged: {
-            console.log("[Config] onFileChanged, _selfWrite=", configRoot._selfWrite);
-            reloadDebouncer.restart();
-        }
+        onFileChanged: reloadDebouncer.restart()
     }
 }

@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
@@ -105,11 +105,11 @@ PanelWindow {
         y: root._cy - height / 2
 
         layer.enabled: true
-        layer.effect: DropShadow {
-            transparentBorder: true
-            radius: Config.clock.shadowBlur ?? 16
-            samples: 32
-            color: Qt.alpha("black", 0.2)
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowBlur: ((Config.clock.shadowBlur ?? 16) / 32)
+            shadowColor: Qt.alpha("black", 0.2)
+            shadowScale: 1.04
         }
 
         readonly property string _font: Config.clock.fontFamily !== "" ? Config.clock.fontFamily : Config.fontFamily
@@ -298,11 +298,11 @@ PanelWindow {
                 color: Colors.md3.surface_container_high ?? Colors.md3.surface_container ?? Qt.rgba(0.95, 0.95, 0.95, 1)
 
                 layer.enabled: true
-                layer.effect: DropShadow {
-                    transparentBorder: true
-                    radius: Config.clock.shadowBlur ?? 16
-                    samples: 32
-                    color: Qt.alpha("black", 0.15)
+                layer.effect: MultiEffect {
+                    shadowEnabled: true
+                    shadowBlur: ((Config.clock.shadowBlur ?? 16) / 32)
+                    shadowColor: Qt.alpha("black", 0.2)
+                    shadowScale: 1.04
                 }
             }
 

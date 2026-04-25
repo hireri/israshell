@@ -230,7 +230,6 @@ Item {
                         fillMode: Image.PreserveAspectCrop
                         antialiasing: true
                         smooth: true
-                        cache: false
                     }
                 }
             }
@@ -376,7 +375,6 @@ Item {
                                         antialiasing: true
                                         smooth: true
                                         mipmap: true
-                                        cache: false
                                     }
                                 }
                             }

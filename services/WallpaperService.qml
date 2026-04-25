@@ -22,8 +22,6 @@ Singleton {
     property int clockRenderHeight: 350
     property bool _pendingRandomize: false
 
-    Component.onCompleted: wallSyncProc.running = true
-
     onIsDarkChanged: {
         Config.update({
             darkMode: isDark
@@ -181,16 +179,6 @@ Singleton {
         clockProc.running = true;
     }
 
-    Timer {
-        interval: 5000
-        running: true
-        repeat: true
-        onTriggered: {
-            if (!root.applying)
-                wallSyncProc.running = true;
-        }
-    }
-
     Process {
         id: wallSyncProc
         command: ["readlink", "-f", Quickshell.env("HOME") + "/.config/hypr/current_wall"]
@@ -215,27 +203,10 @@ Singleton {
         path: Quickshell.env("HOME") + "/.config/hypr/current_wall"
         watchChanges: true
         onFileChanged: {
-            wallSymlink.reload();
-            const p = wallSymlink.text().trim();
-            if (p && p !== root.currentWall) {
-                root.currentWall = p;
-                if (!root.isOpen) {
-                    const dir = p.substring(0, p.lastIndexOf("/"));
-                    if (dir && dir !== root.currentDir)
-                        root.currentDir = dir;
-                }
-            }
+            wallSyncProc.running = false;
+            wallSyncProc.running = true;
         }
-        Component.onCompleted: {
-            wallSymlink.reload();
-            const p = wallSymlink.text().trim();
-            if (p) {
-                root.currentWall = p;
-                const dir = p.substring(0, p.lastIndexOf("/"));
-                if (dir)
-                    root.currentDir = dir;
-            }
-        }
+        Component.onCompleted: wallSyncProc.running = true
     }
 
     function _runList() {

@@ -1,9 +1,8 @@
-//@ pragma UseQApplication
 import Quickshell
 import Quickshell.Services.SystemTray
 import QtQuick
 import QtQuick.Controls
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 
 import qs.style
 
@@ -125,30 +124,18 @@ Item {
                         anchors.fill: parent
                         sourceSize: Qt.size(20, 20)
                         fillMode: Image.PreserveAspectFit
-                        visible: false
-                    }
-
-                    Desaturate {
-                        id: grayIcon
-                        anchors.fill: iconImg
-                        source: iconImg
-                        desaturation: 1.0
-                        visible: false
-                    }
-
-                    ColorOverlay {
-                        anchors.fill: iconImg
-                        source: grayIcon
-                        color: Qt.alpha(Colors.md3.on_surface, 0.4)
-                        visible: Config.tintTrayIcons
-                    }
-
-                    Image {
-                        anchors.fill: parent
-                        source: modelData?.icon ?? ""
-                        sourceSize: Qt.size(20, 20)
-                        fillMode: Image.PreserveAspectFit
                         visible: !Config.tintTrayIcons
+                    }
+
+                    Loader {
+                        active: Config.tintTrayIcons
+                        anchors.fill: iconImg
+                        sourceComponent: MultiEffect {
+                            source: iconImg
+                            saturation: -1.0
+                            colorization: 1.0
+                            colorizationColor: Qt.alpha(Colors.md3.on_surface, 0.4)
+                        }
                     }
 
                     MouseArea {

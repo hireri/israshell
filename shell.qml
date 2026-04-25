@@ -7,7 +7,6 @@ import QtQuick
 
 import qs.components
 import qs.style
-import qs.services
 import qs.settings
 
 ShellRoot {
