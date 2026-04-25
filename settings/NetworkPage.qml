@@ -678,40 +678,6 @@ PageBase {
         Layout.fillWidth: true
         visible: BluetoothService.bluetoothEnabled && BluetoothService.newDevices.length > 0
 
-        Item {
-            implicitWidth: parent?.width ?? 0
-            implicitHeight: 36
-
-            RowLayout {
-                anchors {
-                    fill: parent
-                    leftMargin: 16
-                    rightMargin: 16
-                }
-
-                Text {
-                    text: "Available devices"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 11
-                    color: Colors.md3.outline
-                    Layout.fillWidth: true
-                }
-            }
-
-            Rectangle {
-                anchors {
-                    bottom: parent.bottom
-                    left: parent.left
-                    leftMargin: 18
-                    right: parent.right
-                    rightMargin: 18
-                }
-                height: 1
-                color: Colors.md3.outline_variant
-                opacity: 0.5
-            }
-        }
-
         Repeater {
             id: newBtRepeater
             model: BluetoothService.newDevices
