@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
+import QtQuick.Effects
 import Quickshell.Services.Mpris
 import qs.style
 import qs.services
@@ -63,7 +64,7 @@ Item {
     Timer {
         id: quantizerDelay
         interval: 100
-        running: root.visible
+        running: false
         onTriggered: {
             if (root.artUrl === artFetchProc.launchedUrl)
                 root.localArtPath = "file://" + artFetchProc.launchedFile;
@@ -463,8 +464,8 @@ Item {
 
             Rectangle {
                 id: playBtn
-                width: 52
-                height: 52
+                width: 44
+                height: 44
                 anchors {
                     right: parent.right
                     verticalCenter: parent.verticalCenter
@@ -475,7 +476,7 @@ Item {
                 Behavior on radius {
                     enabled: !root.suppressAnimations
                     NumberAnimation {
-                        duration: 220
+                        duration: 320
                         easing.type: Easing.OutCubic
                     }
                 }
@@ -813,6 +814,12 @@ Item {
         opacity: 0
         cache: true
         asynchronous: true
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            blurEnabled: true
+            blur: 1.0
+            blurMax: 30
+        }
     }
 
     component XfadeText: Item {
