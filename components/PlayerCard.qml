@@ -71,8 +71,8 @@ Item {
 
     Timer {
         id: skipSyncTimer
-        interval: 150
-        onTriggered: root.resetToPosition()
+        interval: 380
+        onTriggered: root.snapToPosition()
     }
 
     ColorQuantizer {
@@ -135,50 +135,52 @@ Item {
     property real _dragProgress: 0
     property bool _isResetting: false
     property string _prevTitle: ""
+    property real progress: 0
+    property real _displayLength: 1
 
     NumberAnimation {
         id: positionAnim
         target: root
-        property: "currentPosition"
+        property: "progress"
+        to: 1
         easing.type: Easing.Linear
     }
 
     NumberAnimation {
-        id: positionResetAnim
+        id: trackChangeAnim
         target: root
-        property: "currentPosition"
-        duration: 400
+        property: "progress"
+        to: 0
+        duration: 380
         easing.type: Easing.OutCubic
-        onStopped: {
-            root._isResetting = false;
-            if (!root.player)
-                return;
-            if (root.player.playbackState !== MprisPlaybackState.Playing)
-                return;
-            const len = root.player.length ?? 0;
-            const remaining = len - root.currentPosition;
-            if (remaining <= 0)
-                return;
-            positionAnim.to = len;
-            positionAnim.duration = remaining * 1000;
-            positionAnim.start();
-        }
+    }
+
+    function handleTrackChange() {
+        _isResetting = false;
+        positionAnim.stop();
+        trackChangeAnim.restart();
+        skipSyncTimer.restart();
     }
 
     function snapToPosition() {
         _isResetting = false;
         positionAnim.stop();
-        positionResetAnim.stop();
+        trackChangeAnim.stop();
         if (!root.player) {
-            currentPosition = 0;
+            progress = 0;
+            _displayLength = 1;
             return;
         }
         const pos = root.player.position ?? 0;
         const len = root.player.length ?? 0;
-        currentPosition = pos;
-        if (root.player.playbackState === MprisPlaybackState.Playing && len > 0) {
-            positionAnim.to = len;
-            positionAnim.duration = (len - pos) * 1000;
+        if (len <= 0) {
+            progress = 0;
+            return;
+        }
+        _displayLength = len;
+        progress = pos / len;
+        if (root.player.playbackState === MprisPlaybackState.Playing) {
+            positionAnim.duration = (1 - progress) * len * 1000;
             positionAnim.start();
         }
     }
@@ -203,19 +205,33 @@ Item {
     }
 
     function resyncPosition() {
-        if (_isResetting)
+        if (_isResetting || trackChangeAnim.running)
             return;
-        positionAnim.stop();
         if (!root.player) {
-            currentPosition = 0;
+            positionAnim.stop();
+            progress = 0;
             return;
         }
         const pos = root.player.position ?? 0;
         const len = root.player.length ?? 0;
-        currentPosition = pos;
-        if (root.player.playbackState === MprisPlaybackState.Playing && len > 0) {
-            positionAnim.to = len;
-            positionAnim.duration = (len - pos) * 1000;
+        const isPlaying = root.player.playbackState === MprisPlaybackState.Playing;
+        const drift = Math.abs((progress * len) - pos);
+
+        if (isPlaying && len > 0 && drift < 3.0) {
+            if (positionAnim.running && positionAnim.to === 1)
+                return;
+            positionAnim.duration = (1 - progress) * len * 1000;
+            positionAnim.start();
+            return;
+        }
+
+        positionAnim.stop();
+        if (len > 0) {
+            _displayLength = len;
+            progress = pos / len;
+        }
+        if (isPlaying && len > 0) {
+            positionAnim.duration = (1 - progress) * len * 1000;
             positionAnim.start();
         }
     }
@@ -243,10 +259,20 @@ Item {
         target: root.player
         ignoreUnknownSignals: true
         function onPlaybackStateChanged() {
-            root.resyncPosition();
+            if (_isResetting || trackChangeAnim.running)
+                return;
+            positionAnim.stop();
+            if (!root.player)
+                return;
+            const len = root.player.length ?? 0;
+            const isPlaying = root.player.playbackState === MprisPlaybackState.Playing;
+            if (isPlaying && len > 0 && progress < 1) {
+                positionAnim.duration = (1 - progress) * len * 1000;
+                positionAnim.start();
+            }
         }
         function onTrackTitleChanged() {
-            root.snapToPosition();
+            root.handleTrackChange();
         }
     }
 
@@ -269,7 +295,10 @@ Item {
         return "image://icon/" + id + "?fallback=application-x-executable";
     }
 
-    readonly property real displayProgress: root._isDragging ? root._dragProgress : root.currentPosition / Math.max(root.player?.length ?? 1, 1)
+    readonly property real displayProgress: {
+        const raw = root._isDragging ? root._dragProgress : root.progress;
+        return Math.max(0, Math.min(raw, 1));
+    }
 
     ClippingRectangle {
         id: card
@@ -487,7 +516,7 @@ Item {
                     right: parent.right
                     verticalCenter: parent.verticalCenter
                 }
-                text: root.formatTime(root.displayProgress * (root.player?.length ?? 0)) + " / " + root.formatTime(root.player?.length ?? 0)
+                text: root.formatTime(root.displayProgress * root._displayLength) + " / " + root.formatTime(root._displayLength)
                 color: root.colOnSurfaceVariant
                 font.pixelSize: 11
                 font.family: Config.fontFamily
@@ -642,6 +671,7 @@ Item {
                         if (!(root.player?.canGoPrevious ?? false))
                             return;
                         root.player.previous();
+                        root.handleTrackChange();
                         skipSyncTimer.restart();
                     }
                 }
@@ -758,7 +788,7 @@ Item {
                     }
                     onReleased: mouse => {
                         if (root._isDragging && (root.player?.canSeek ?? false)) {
-                            root.player.position = root._dragProgress * (root.player.length ?? 0);
+                            root.player.position = root._dragProgress * (root._displayLength);
                             root.resyncPosition();
                         }
                         root._isDragging = false;
@@ -814,6 +844,7 @@ Item {
                         if (!(root.player?.canGoNext ?? false))
                             return;
                         root.player.next();
+                        root.handleTrackChange();
                         skipSyncTimer.restart();
                     }
                 }
