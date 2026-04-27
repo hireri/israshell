@@ -13,6 +13,7 @@ Scope {
 
     property bool isOpen: false
     property bool _opening: false
+    property bool _animating: false
 
     property string _query: ""
 
@@ -360,6 +361,10 @@ Scope {
     }
 
     function open(prefix) {
+        closeAnim.stop();
+        stack.opacity = 1.0;
+        stack.scale = 1.0;
+        _animating = false;
         _opening = true;
         isOpen = true;
         launcherInput.reset();
@@ -373,9 +378,12 @@ Scope {
     }
 
     function close() {
-        isOpen = false;
+        if (_animating)
+            return;
+        _animating = true;
         _query = "";
         launcherList.resetToTop();
+        closeAnim.start();
     }
 
     Timer {
@@ -416,7 +424,7 @@ Scope {
         PanelWindow {
             required property var modelData
             screen: modelData
-            visible: root.isOpen
+            visible: root.isOpen || root._animating
             color: "transparent"
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -483,22 +491,32 @@ Scope {
             }
 
             height: listCard.y + listCard.height
-
-            opacity: root.isOpen ? 1.0 : 0.0
-            scale: root.isOpen ? 1.0 : 0.80
             transformOrigin: Item.Center
-            Behavior on opacity {
-                enabled: !root._opening
+
+            opacity: 1.0
+            scale: 1.0
+
+            ParallelAnimation {
+                id: closeAnim
                 NumberAnimation {
-                    duration: 200
-                    easing.type: Easing.OutCubic
+                    target: stack
+                    property: "opacity"
+                    to: 0.0
+                    duration: 100
+                    easing.type: Easing.InCubic
                 }
-            }
-            Behavior on scale {
-                enabled: !root._opening
                 NumberAnimation {
-                    duration: 260
-                    easing.type: Easing.OutExpo
+                    target: stack
+                    property: "scale"
+                    to: 0.80
+                    duration: 200
+                    easing.type: Easing.OutSine
+                }
+                onFinished: {
+                    root.isOpen = false;
+                    root._animating = false;
+                    stack.opacity = 1.0;
+                    stack.scale = 1.0;
                 }
             }
 
