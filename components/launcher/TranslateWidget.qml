@@ -81,7 +81,7 @@ Item {
         fallbackProc.command = ["espeak-ng", "-v", lang, "--", text];
 
         speakProc.running = false;
-        speakProc.command = ["sh", "-c", "gtts-cli " + JSON.stringify(text) + " -l " + lang + " 2>/dev/null | mpv --no-terminal - 2>/dev/null"];
+        speakProc.command = ["bash", "-c", "TMP=$(mktemp /tmp/qs-trans-XXXXXX.mp3); " + "gtts-cli " + JSON.stringify(text) + " -l " + lang + " -o \"$TMP\" 2>/dev/null && " + "mpv --no-terminal --no-config --keep-open=no --force-window=no \"$TMP\" 2>/dev/null; " + "rm -f \"$TMP\""];
         speakProc.running = true;
     }
 

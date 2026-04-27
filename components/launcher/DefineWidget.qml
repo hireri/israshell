@@ -107,7 +107,7 @@ Item {
         fallbackProc.command = ["espeak-ng", text];
 
         speakProc.running = false;
-        speakProc.command = ["sh", "-c", "gtts-cli " + JSON.stringify(text) + " -l en 2>/dev/null | mpv --no-terminal - 2>/dev/null"];
+        speakProc.command = ["bash", "-c", "TMP=$(mktemp /tmp/qs-dict-XXXXXX.mp3); " + "gtts-cli " + JSON.stringify(text) + " -l en -o \"$TMP\" 2>/dev/null && " + "mpv --no-terminal --no-config --keep-open=no --force-window=no \"$TMP\" 2>/dev/null; " + "rm -f \"$TMP\""];
         speakProc.running = true;
     }
 
