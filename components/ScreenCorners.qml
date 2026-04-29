@@ -2,12 +2,13 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import qs.services
 
 Scope {
     id: root
 
     property int cornerRadius: 26
-    property string cornerColor: "black"
+    property string cornerColor: !GameModeService.active ? "black" : "transparent"
 
     component CornerBlock: Item {
         id: block

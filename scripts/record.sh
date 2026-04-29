@@ -1,3 +1,4 @@
+#!/bin/bash
 PIDFILE="/tmp/gsr-region.pid"
 TIMERPID_FILE="/tmp/gsr-region.timer.pid"
 FILEPATH_FILE="/tmp/gsr-region.filepath"

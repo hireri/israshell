@@ -15,7 +15,6 @@ Item {
     id: root
 
     required property var panelWindow
-    property string hostInfo: "loading..."
 
     implicitWidth: button.width
     height: button.height
@@ -58,21 +57,23 @@ Item {
     }
 
     function getNetworkIcon() {
+        if (NetworkService.wifiEnabled) {
+            if (!NetworkService.wifiConnected)
+                return "󰤫";
+            if (NetworkService.wifiSignal >= 80)
+                return "󰤨";
+            if (NetworkService.wifiSignal >= 75)
+                return "󰤥";
+            if (NetworkService.wifiSignal >= 50)
+                return "󰤢";
+            if (NetworkService.wifiSignal >= 25)
+                return "󰤟";
+            else
+                return "󰤯";
+        }
         if (NetworkService.ethConnected)
-            return "󰌗";
-        if (!NetworkService.wifiEnabled)
-            return "󰤮";
-        if (!NetworkService.wifiConnected)
-            return "󰤫";
-        if (NetworkService.wifiSignal >= 80)
-            return "󰤨";
-        if (NetworkService.wifiSignal >= 75)
-            return "󰤥";
-        if (NetworkService.wifiSignal >= 50)
-            return "󰤢";
-        if (NetworkService.wifiSignal >= 25)
-            return "󰤟";
-        return "󰤯";
+            return "󰂗";
+        return "󰤮";
     }
 
     function getBluetoothIcon() {
@@ -85,27 +86,6 @@ Item {
         if (devices.some(d => d.connected))
             return "󰂱";
         return "󰂯";
-    }
-
-    Process {
-        id: infoProc
-        command: ["sh", "-c", "hostname; uptime -p"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let lines = text.trim().split("\n");
-                if (lines.length >= 2) {
-                    root.hostInfo = lines[0] + " · " + lines[1].replace("up ", "").replace(" hours", "h").replace(" hour", "h").replace(" minutes", "m").replace(" minute", "m");
-                }
-            }
-        }
-    }
-
-    Timer {
-        interval: 60000
-        running: root.isOpen
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: infoProc.running = true
     }
 
     Rectangle {
@@ -179,7 +159,6 @@ Item {
                             duration: 150
                         }
                     }
-
                     Behavior on opacity {
                         NumberAnimation {
                             duration: 150
@@ -202,7 +181,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: Quickshell.env("USER").charAt(0).toUpperCase()
+                        text: SystemInfo.username.charAt(0).toUpperCase()
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
                         font.family: Config.fontFamily
@@ -251,6 +230,7 @@ Item {
         active: root.isOpen && sidebarLoader.active
         onCleared: root.isOpen = false
     }
+
     LazyLoader {
         id: sidebarLoader
         active: root._sidebarVisible
@@ -267,15 +247,13 @@ Item {
             visible: root._sidebarVisible
 
             onVisibleChanged: {
-                if (visible) {
+                if (visible)
                     keyHandler.forceActiveFocus();
-                }
             }
 
             Item {
                 id: keyHandler
                 anchors.fill: parent
-
                 Keys.onEscapePressed: event => {
                     event.accepted = true;
                     root.isOpen = false;
@@ -294,13 +272,6 @@ Item {
                 }
             }
 
-            Behavior on slideX {
-                NumberAnimation {
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
-            }
-
             Rectangle {
                 id: sidebarCard
                 anchors.top: parent.top
@@ -308,7 +279,6 @@ Item {
                 anchors.right: parent.right
                 anchors.rightMargin: 12
                 width: 420
-
                 radius: 18
                 color: Colors.md3.surface_container_low
                 border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
@@ -324,159 +294,140 @@ Item {
                     anchors.margins: 14
                     spacing: 12
 
-                    Rectangle {
+                    RowLayout {
+                        id: userRow
                         Layout.fillWidth: true
-                        Layout.preferredHeight: userRow.implicitHeight + 28
-                        color: Colors.md3.surface_container
-                        radius: 24
+                        Layout.topMargin: 4
+                        spacing: 10
 
-                        RowLayout {
-                            id: userRow
-                            anchors.fill: parent
-                            anchors.margins: 14
-                            spacing: 10
+                        Item {
+                            Layout.preferredWidth: 44
+                            Layout.preferredHeight: 44
 
-                            Item {
-                                Layout.preferredWidth: 44
-                                Layout.preferredHeight: 44
-
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: 22
-                                    color: Colors.md3.primary_container
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: Quickshell.env("USER").charAt(0).toUpperCase()
-                                        font.pixelSize: 18
-                                        font.weight: Font.DemiBold
-                                        font.family: Config.fontFamily
-                                        color: Colors.md3.on_primary_container
-                                        visible: profileImage.status !== Image.Ready
-                                    }
-                                }
-
-                                ClippingRectangle {
-                                    anchors.fill: parent
-                                    radius: 22
-                                    clip: true
-                                    layer.enabled: true
-                                    layer.smooth: true
-                                    antialiasing: true
-                                    visible: profileImage.status === Image.Ready
-                                    color: "transparent"
-
-                                    Image {
-                                        id: profileImage
-                                        source: "file://" + Quickshell.env("HOME") + "/.face"
-                                        anchors.fill: parent
-                                        sourceSize: Qt.size(144, 144)
-                                        fillMode: Image.PreserveAspectCrop
-                                        antialiasing: true
-                                        smooth: true
-                                        mipmap: true
-                                    }
-                                }
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 1
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 22
+                                color: Colors.md3.primary_container
 
                                 Text {
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideRight
-                                    text: Quickshell.env("USER")
-                                    color: Colors.md3.on_surface
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 15
+                                    anchors.centerIn: parent
+                                    text: SystemInfo.username.charAt(0).toUpperCase()
+                                    font.pixelSize: 18
                                     font.weight: Font.DemiBold
-                                }
-
-                                Text {
-                                    id: hostText
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideRight
-                                    text: root.hostInfo
-                                    color: Colors.md3.on_surface_variant
                                     font.family: Config.fontFamily
-                                    font.pixelSize: 12
+                                    color: Colors.md3.on_primary_container
+                                    visible: profileImage.status !== Image.Ready
                                 }
                             }
 
-                            Rectangle {
-                                Layout.preferredWidth: 36
-                                Layout.preferredHeight: 36
-                                radius: 12
-                                color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                            ClippingRectangle {
+                                anchors.fill: parent
+                                radius: 22
+                                clip: true
+                                layer.enabled: true
+                                layer.smooth: true
+                                antialiasing: true
+                                visible: profileImage.status === Image.Ready
+                                color: "transparent"
 
-                                Behavior on scale {
-                                    NumberAnimation {
-                                        duration: 150
-                                        easing.type: Easing.OutCubic
-                                    }
-                                }
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 150
-                                    }
-                                }
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "󰒓"
-                                    font.pixelSize: 15
-                                    font.family: Config.fontFamily
-                                    color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                                }
-
-                                MouseArea {
-                                    id: editMouse
+                                Image {
+                                    id: profileImage
+                                    source: "file://" + Quickshell.env("HOME") + "/.face"
                                     anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        root.isOpen = false;
-                                        sysProc.command = ["qs", "ipc", "call", "settings", "open", "overview"];
-                                        sysProc.running = true;
-                                    }
+                                    sourceSize: Qt.size(144, 144)
+                                    fillMode: Image.PreserveAspectCrop
+                                    antialiasing: true
+                                    smooth: true
+                                    mipmap: true
+                                }
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 1
+
+                            Text {
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                                text: SystemInfo.username
+                                color: Colors.md3.on_surface
+                                font.family: Config.fontFamily
+                                font.pixelSize: 15
+                                font.weight: Font.DemiBold
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                                text: SystemInfo.hostname + " · " + SystemInfo.distroName
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: 12
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 36
+                            radius: 12
+                            color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
                                 }
                             }
 
-                            Rectangle {
-                                Layout.preferredWidth: 36
-                                Layout.preferredHeight: 36
-                                radius: 12
-                                color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.error_container
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰒓"
+                                font.pixelSize: 15
+                                font.family: Config.fontFamily
+                                color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+                            }
 
-                                Behavior on scale {
-                                    NumberAnimation {
-                                        duration: 150
-                                        easing.type: Easing.OutCubic
-                                    }
+                            MouseArea {
+                                id: editMouse
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: {
+                                    root.isOpen = false;
+                                    sysProc.command = ["qs", "ipc", "call", "settings", "open", "overview"];
+                                    sysProc.running = true;
                                 }
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 150
-                                    }
-                                }
+                            }
+                        }
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "󰐥"
-                                    font.pixelSize: 17
-                                    font.family: Config.fontFamily
-                                    color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
+                        Rectangle {
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 36
+                            radius: 12
+                            color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.error_container
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
                                 }
-                                MouseArea {
-                                    id: pwrMouse
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        root.isOpen = false;
-                                        onClicked: PowerMenuState.toggle();
-                                    }
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰐥"
+                                font.pixelSize: 17
+                                font.family: Config.fontFamily
+                                color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
+                            }
+
+                            MouseArea {
+                                id: pwrMouse
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: {
+                                    root.isOpen = false;
+                                    PowerMenuState.toggle();
                                 }
                             }
                         }
@@ -498,9 +449,28 @@ Item {
                                 Layout.fillWidth: true
                                 spacing: 8
 
-                                QsToggleChip {
+                                QsWideChip {
                                     icon: root.getNetworkIcon()
                                     active: NetworkService.wifiEnabled || NetworkService.ethConnected
+                                    label: {
+                                        if (NetworkService.wifiEnabled) {
+                                            if (NetworkService.wifiConnecting)
+                                                return "Connecting...";
+                                            if (NetworkService.wifiConnected && NetworkService.wifiSsid !== "")
+                                                return NetworkService.wifiSsid;
+                                            return "Not Connected";
+                                        }
+                                        if (NetworkService.ethConnected)
+                                            return "Ethernet";
+                                        return "Wi-Fi Off";
+                                    }
+                                    sublabel: {
+                                        if (NetworkService.wifiConnected)
+                                            return NetworkService.wifiSignal + "% signal";
+                                        if (NetworkService.ethConnected && !NetworkService.wifiEnabled)
+                                            return "Wired";
+                                        return "";
+                                    }
                                     onToggled: NetworkService.toggle()
                                     onRightClicked: {
                                         root.isOpen = false;
@@ -509,9 +479,29 @@ Item {
                                     }
                                 }
 
-                                QsToggleChip {
+                                QsWideChip {
                                     icon: root.getBluetoothIcon()
                                     active: Bluetooth.defaultAdapter?.enabled ?? false
+                                    label: {
+                                        const adapter = Bluetooth.defaultAdapter;
+                                        if (!adapter?.enabled)
+                                            return "Bluetooth Off";
+                                        const dev = BluetoothService.firstConnected;
+                                        if (dev)
+                                            return dev.name;
+                                        if (adapter.discovering)
+                                            return "Scanning...";
+                                        return "Bluetooth On";
+                                    }
+                                    sublabel: {
+                                        const dev = BluetoothService.firstConnected;
+                                        if (dev && dev.battery > 0)
+                                            return BluetoothService.batteryIcon(Math.round(dev.battery * 100)) + " " + Math.round(dev.battery * 100) + "%";
+                                        const n = BluetoothService.connectedDevices.length;
+                                        if (n > 1)
+                                            return n + " devices";
+                                        return "";
+                                    }
                                     onToggled: if (Bluetooth.defaultAdapter)
                                         Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
                                     onRightClicked: {
@@ -520,6 +510,11 @@ Item {
                                         appletProc.running = true;
                                     }
                                 }
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
 
                                 QsToggleChip {
                                     icon: CaffeineService.active ? "󰅶" : "󰾪"
@@ -537,6 +532,9 @@ Item {
                                         appletProc.running = true;
                                     }
                                 }
+
+                                QsPowerProfileChip {}
+                                QsGameModeChip {}
                             }
 
                             QsSliderRow {
@@ -563,7 +561,6 @@ Item {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 44
                             color: Colors.md3.surface_container
-
                             topRightRadius: 22
                             topLeftRadius: 22
 
@@ -719,7 +716,6 @@ Item {
                                         width: parent.width
                                         implicitHeight: contentHeight
                                         height: contentHeight
-
                                         model: NotificationService.qsGroupModel
 
                                         delegate: NotificationGroup {
@@ -754,6 +750,247 @@ Item {
         id: settingsProc
     }
 
+    component QsWideChip: Rectangle {
+        id: wideChip
+        property string icon: ""
+        property string label: ""
+        property string sublabel: ""
+        property bool active: false
+        signal toggled
+        signal rightClicked
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 64
+        radius: active ? 24 : 32
+        color: (bodyMouse.containsMouse || iconMouse.containsMouse) ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 150
+            }
+        }
+        Behavior on radius {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 8
+            spacing: 10
+
+            Rectangle {
+                id: iconContainer
+                Layout.preferredWidth: 48
+                Layout.preferredHeight: 48
+                radius: wideChip.active ? 16 : 24
+                color: wideChip.active ? Colors.md3.primary : Colors.md3.surface_container
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+                }
+                Behavior on radius {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: wideChip.icon
+                    font.pixelSize: 22
+                    font.family: Config.fontFamily
+                    color: wideChip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                }
+
+                MouseArea {
+                    id: iconMouse
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    hoverEnabled: true
+                    onClicked: wideChip.toggled()
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 2
+
+                Text {
+                    Layout.fillWidth: true
+                    text: wideChip.label
+                    font.pixelSize: 13
+                    font.weight: Font.Medium
+                    font.family: Config.fontFamily
+                    color: Colors.md3.on_surface
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: wideChip.sublabel
+                    font.pixelSize: 11
+                    font.family: Config.fontFamily
+                    color: Colors.md3.on_surface_variant
+                    elide: Text.ElideRight
+                    visible: wideChip.sublabel !== ""
+                }
+            }
+        }
+
+        MouseArea {
+            id: bodyMouse
+            anchors.fill: parent
+            anchors.leftMargin: 56
+            cursorShape: Qt.PointingHandCursor
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            hoverEnabled: true
+            onClicked: wideChip.rightClicked()
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.RightButton
+            onClicked: wideChip.rightClicked()
+        }
+    }
+
+    component QsPowerProfileChip: Rectangle {
+        id: ppChip
+
+        readonly property var profiles: ["balanced", "power-saver", "performance"]
+        readonly property var profileIcons: ["󰾅", "󰌪", "󰈸"]
+        readonly property var profileColors: [Colors.md3.secondary_container, Colors.md3.surface_container_high, Colors.md3.primary]
+        readonly property var profileColorsHover: [Qt.lighter(Colors.md3.secondary_container, 1.12), Colors.md3.surface_container_highest, Colors.md3.primary]
+        readonly property var profileTextColors: [Colors.md3.on_secondary_container, Colors.md3.on_surface_variant, Colors.md3.on_primary]
+
+        property int profileIndex: 1
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 52
+        radius: profileIndex === 2 ? 14 : (profileIndex === 0 ? 20 : 26)
+        color: ppMouse.containsMouse ? ppChip.profileColorsHover[ppChip.profileIndex] : ppChip.profileColors[ppChip.profileIndex]
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 150
+            }
+        }
+        Behavior on radius {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Process {
+            id: ppGetProc
+            running: true
+            command: ["powerprofilesctl", "get"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    const v = text.trim();
+                    const i = ppChip.profiles.indexOf(v);
+                    if (i >= 0)
+                        ppChip.profileIndex = i;
+                }
+            }
+        }
+
+        Process {
+            id: ppSetProc
+        }
+
+        function cycle(direction) {
+            const n = ppChip.profiles.length;
+            ppChip.profileIndex = (ppChip.profileIndex + direction + n) % n;
+            ppSetProc.command = ["powerprofilesctl", "set", ppChip.profiles[ppChip.profileIndex]];
+            ppSetProc.running = false;
+            ppSetProc.running = true;
+        }
+
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 1
+
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: ppChip.profileIcons[ppChip.profileIndex]
+                font.pixelSize: 20
+                font.family: Config.fontFamily
+                color: ppChip.profileTextColors[ppChip.profileIndex]
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+                }
+            }
+        }
+
+        MouseArea {
+            id: ppMouse
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: mouse => mouse.button === Qt.RightButton ? ppChip.cycle(-1) : ppChip.cycle(1)
+        }
+    }
+
+    component QsGameModeChip: Rectangle {
+        id: gmChip
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 52
+        radius: GameModeService.active ? 18 : 26
+        color: {
+            if (GameModeService.active)
+                return Colors.md3.primary;
+            if (gmMouse.containsMouse)
+                return Colors.md3.surface_container_highest;
+            return Colors.md3.surface_container_high;
+        }
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 150
+            }
+        }
+        Behavior on radius {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 1
+
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: GameModeService.active ? "󰊖" : "󱤙"
+                font.pixelSize: 20
+                font.family: Config.fontFamily
+                color: GameModeService.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+            }
+        }
+
+        MouseArea {
+            id: gmMouse
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onClicked: GameModeService.toggle()
+        }
+    }
+
     component QsToggleChip: Rectangle {
         id: chip
         property string icon: ""
@@ -763,8 +1000,7 @@ Item {
 
         Layout.fillWidth: true
         Layout.preferredHeight: 52
-
-        radius: active ? 18 : 14
+        radius: active ? 18 : 26
         color: {
             if (active)
                 return Colors.md3.primary;
@@ -780,7 +1016,6 @@ Item {
                 duration: 150
             }
         }
-
         Behavior on radius {
             NumberAnimation {
                 duration: 150
@@ -824,7 +1059,7 @@ Item {
         Rectangle {
             id: trackBg
             anchors.fill: parent
-            radius: 14
+            radius: 18
             color: Colors.md3.surface_container_high
 
             Rectangle {
@@ -832,7 +1067,7 @@ Item {
                 x: 4
                 y: 4
                 height: parent.height - 8
-                radius: 10
+                radius: 14
                 readonly property real minW: height
                 readonly property real usable: trackBg.width - 8 - minW
                 implicitWidth: minW + sliderRow._displayRatio * usable
@@ -844,7 +1079,6 @@ Item {
                         easing.type: Easing.OutQuart
                     }
                 }
-
                 Behavior on color {
                     ColorAnimation {
                         duration: 75
@@ -886,7 +1120,6 @@ Item {
                 preventStealing: true
                 acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                 property int pressedButton: Qt.NoButton
-
                 property bool dragStarted: false
                 property real startX: 0
 
@@ -904,7 +1137,6 @@ Item {
                     startX = mouse.x;
                     dragStarted = false;
                 }
-
                 onPositionChanged: mouse => {
                     if (!pressed || pressedButton !== Qt.LeftButton)
                         return;
@@ -916,7 +1148,6 @@ Item {
                         sliderRow.moved(sliderRow.from + ratio * (sliderRow.to - sliderRow.from));
                     }
                 }
-
                 onReleased: mouse => {
                     if (pressedButton !== Qt.LeftButton)
                         return;
@@ -951,13 +1182,11 @@ Item {
                 easing.type: Easing.OutExpo
             }
         }
-
         Behavior on opacity {
             NumberAnimation {
                 duration: 250
             }
         }
-
         Behavior on scale {
             NumberAnimation {
                 duration: 400

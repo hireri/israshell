@@ -8,12 +8,14 @@ import QtQuick
 import qs.components
 import qs.style
 import qs.settings
+import qs.services
 
 ShellRoot {
 
     NotificationPopup {}
     VolumeOSD {}
     AppLauncher {}
+    Screenshot {}
 
     Loader {
         id: settingsLoader
@@ -39,6 +41,13 @@ ShellRoot {
             const p = map[page];
             if (p !== undefined)
                 settingsLoader.item.currentPage = p;
+        }
+    }
+
+    IpcHandler {
+        target: "gamemode"
+        function toggle(): void {
+            GameModeService.toggle();
         }
     }
 
@@ -121,7 +130,7 @@ ShellRoot {
             color: "transparent"
 
             border.width: block.radiusSize
-            border.color: block.cornerColor
+            border.color: GameModeService.active ? "transparent" : block.cornerColor
 
             x: (block.type === 1) ? -block.radiusSize * 2 : -block.radiusSize
             y: -block.radiusSize
