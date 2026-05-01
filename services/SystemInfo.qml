@@ -13,6 +13,8 @@ Singleton {
     property string uptime: "unknown"
     property string kernel: "unknown"
     property string session: "unknown"
+    property string username: "unknown"
+    property string hostname: "unknown"
 
     property string cpu: "Unknown CPU"
     property string gpu: "Unknown GPU"
@@ -20,6 +22,7 @@ Singleton {
     property string motherboard: "Unknown"
     property string shellName: "Unknown SHELL"
     property string shellVersion: "Unknown SHELLVER"
+    property string quickshellVersion: "Unknown"
 
     function formatUptime(seconds) {
         let s = Math.floor(seconds);
@@ -44,9 +47,11 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
+            identityProc.running = true;
             kernelProc.running = true;
             hardwareProc.running = true;
             shellProc.running = true;
+            quickshellProc.running = true;
             fileOsRelease.reload();
             fileUptime.reload();
             fileSessionType.reload();
@@ -96,6 +101,32 @@ Singleton {
                 }
                 if (parts[1])
                     root.shellVersion = parts[1];
+            }
+        }
+    }
+
+    Process {
+        id: quickshellProc
+        command: ["qs", "--version"]
+        stdout: SplitParser {
+            onRead: data => {
+                const match = data.trim().match(/^(Quickshell\s+[\d.]+)/);
+                if (match)
+                    root.quickshellVersion = match[1];
+            }
+        }
+    }
+
+    Process {
+        id: identityProc
+        command: ["sh", "-c", "echo \"$(whoami)|$(hostname)\""]
+        stdout: SplitParser {
+            onRead: data => {
+                let parts = data.trim().split('|');
+                if (parts[0])
+                    root.username = parts[0];
+                if (parts[1])
+                    root.hostname = parts[1];
             }
         }
     }

@@ -89,7 +89,7 @@ PageBase {
                     }
 
                     Text {
-                        text: "Quickshell Environment"
+                        text: SystemInfo.quickshellVersion
                         font.family: Config.fontFamily
                         font.pixelSize: 13
                         font.weight: Font.Medium
