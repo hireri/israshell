@@ -7,7 +7,11 @@ mkdir -p "$OUTPUT_DIR" 2>/dev/null || {
 	notify-send "Screenshot Error" "Cannot create directory: $OUTPUT_DIR" -u critical -t 3000
 	exit 1
 }
-pkill slurp 2>/dev/null && exit 0
+
+pkill -9 slurp 2>/dev/null || true
+pkill -9 hyprpicker 2>/dev/null || true
+sleep 0.1
+
 ARGS=()
 for arg in "$@"; do
 	if [[ $arg == --editor=* ]]; then
@@ -17,11 +21,22 @@ for arg in "$@"; do
 	fi
 done
 set -- "${ARGS[@]}"
+
 cleanup() {
-	kill $HYPRPICKER_PID 2>/dev/null || true
+	local exit_code=$?
+	
+	kill -9 $HYPRPICKER_PID 2>/dev/null || true
+	pkill -9 -P $$ slurp 2>/dev/null || true
+	pkill -9 -P $$ hyprpicker 2>/dev/null || true
 	wait $HYPRPICKER_PID 2>/dev/null || true
+	
+	pgrep -a hyprpicker 2>/dev/null | while read -r pid cmd; do
+		[[ "$cmd" == *"-r -z"* ]] && kill -9 "$pid" 2>/dev/null || true
+	done
+	exit $exit_code
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
+
 open_editor() {
     local filepath="$1"
     if [[ $SCREENSHOT_EDITOR == "satty" ]]; then
@@ -35,9 +50,11 @@ open_editor() {
         $SCREENSHOT_EDITOR "$filepath"
     fi
 }
+
 MODE="${1:-smart}"
 PROCESSING="${2:-slurp}"
 PAD=4
+
 JQ_MONITOR_GEO='
   def format_geo:
     .x as $x | .y as $y |
@@ -50,6 +67,7 @@ JQ_MONITOR_GEO='
       "\($x),\($y) \($w)x\($h)"
     end;
 '
+
 get_rectangles() {
 	local monitor_json active_workspaces fullscreen_workspaces
 
@@ -68,11 +86,15 @@ get_rectangles() {
 			([.workspace.id] | inside($fws) | not)
 		) | "\(.at[0] - $pad),\(.at[1] - $pad) \(.size[0] + $pad*2)x\(.size[1] + $pad*2)"'
 }
+
 start_hyprpicker() {
+	pkill -9 hyprpicker 2>/dev/null || true
+	sleep 0.1
 	hyprpicker -r -z >/dev/null 2>&1 &
 	HYPRPICKER_PID=$!
 	sleep 0.25
 }
+
 case "$MODE" in
 region)
 	start_hyprpicker
@@ -110,9 +132,15 @@ smart | *)
 	fi
 	;;
 esac
+
 [[ -z $SELECTION ]] && exit 0
+
+kill -9 $HYPRPICKER_PID 2>/dev/null || true
+wait $HYPRPICKER_PID 2>/dev/null || true
+
 FILENAME="screenshot-$(date +'%Y-%m-%d_%H-%M-%S').png"
 FILEPATH="$OUTPUT_DIR/$FILENAME"
+
 if [[ $PROCESSING == "slurp" ]]; then
 	grim -g "$SELECTION" "$FILEPATH" || exit 1
 	wl-copy <"$FILEPATH"
