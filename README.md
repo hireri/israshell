@@ -4,7 +4,25 @@
 ![Distro](https://img.shields.io/badge/optimized_for-Arch_Linux-1793d1.svg?logo=arch-linux)
 ![Compositor](https://img.shields.io/badge/compositor-Hyprland-brightgreen.svg)
 
-https://github.com/user-attachments/assets/a8801fbd-5926-4c2e-8c5f-b0d1f30682bb
+
+<details>
+<summary><b>📷 Screenshots</b></summary>
+<br>
+<table>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/c69f75ea-e886-48ea-a32e-86bbb0829aef" width="100%"></td>
+    <td><img src="https://github.com/user-attachments/assets/055668bf-24a6-496c-8927-300f42cb8b3c" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/5a79ac19-a0f0-4c84-ab42-b3852192b268" width="100%"></td>
+    <td><img src="https://github.com/user-attachments/assets/cb233eeb-7078-4e86-90db-7ea8fec2dd19" width="100%"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="https://github.com/user-attachments/assets/5a8d74c3-1f82-440a-84ce-d48ca19d84d3" width="50%"></td>
+  </tr>
+</table>
+</details>
+
 
 A Quickshell shell for Hyprland. Uses matugen colors, smart desktop clock widget, and provides its own notification/tray implementation. Configurable font with default Inter NerdFont.
 
