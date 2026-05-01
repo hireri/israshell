@@ -285,6 +285,31 @@ Item {
                                 readonly property real h: active ? sessionRoot.globalHlH : 0
                             }
 
+                            CornerDim {
+                                type: 0
+                                visible: currentHole.active
+                                x: currentHole.x
+                                y: currentHole.y
+                            }
+                            CornerDim {
+                                type: 1
+                                visible: currentHole.active
+                                x: currentHole.x + currentHole.w - radiusSize
+                                y: currentHole.y
+                            }
+                            CornerDim {
+                                type: 2
+                                visible: currentHole.active
+                                x: currentHole.x
+                                y: currentHole.y + currentHole.h - radiusSize
+                            }
+                            CornerDim {
+                                type: 3
+                                visible: currentHole.active
+                                x: currentHole.x + currentHole.w - radiusSize
+                                y: currentHole.y + currentHole.h - radiusSize
+                            }
+
                             Item {
                                 anchors.fill: parent
                                 Rectangle {
@@ -321,12 +346,14 @@ Item {
                             }
 
                             Rectangle {
+                                id: selectionOutline
                                 visible: currentHole.active
                                 x: currentHole.x
                                 y: currentHole.y
                                 width: currentHole.w
                                 height: currentHole.h
                                 color: "transparent"
+                                radius: 22
                                 border.color: root.crosshairColor
                                 border.width: 2
                             }
@@ -533,6 +560,27 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    component CornerDim: Item {
+        id: block
+        property int type: 0
+        property color dimColor: "#8C000000"
+        property int radiusSize: Math.min(22, selectionOutline.width / 2, selectionOutline.height / 2)
+        width: radiusSize
+        height: radiusSize
+        clip: true
+
+        Rectangle {
+            width: block.radiusSize * 4
+            height: block.radiusSize * 4
+            radius: block.radiusSize * 2
+            color: "transparent"
+            border.width: block.radiusSize
+            border.color: block.dimColor
+            x: (block.type === 1 || block.type === 3) ? -block.radiusSize * 2 : -block.radiusSize
+            y: (block.type === 2 || block.type === 3) ? -block.radiusSize * 2 : -block.radiusSize
         }
     }
 }
