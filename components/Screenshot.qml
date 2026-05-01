@@ -3,7 +3,9 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import Quickshell.Io
+import QtQuick.Shapes
 import qs.style
+import qs.icons
 
 Item {
     id: root
@@ -20,6 +22,7 @@ Item {
     property string forcedAction: "smart"
 
     property string pendingEditPath: ""
+    property string pendingNotifyCmd: ""
 
     IpcHandler {
         target: "screenshot"
@@ -104,8 +107,12 @@ Item {
     }
 
     function captureGlobal(gx, gy, gw, gh) {
-        if (uiLoader.item)
+        let sleepCmd = "";
+        if (uiLoader.item) {
             uiLoader.item.capturing = true;
+
+            sleepCmd = "sleep 0.2 && ";
+        }
 
         const ts = Qt.formatDateTime(new Date(), "yyyy-MM-dd_hh-mm-ss");
         const path = root.outputDir + "/screenshot-" + ts + ".png";
@@ -116,14 +123,23 @@ Item {
 
         const cmd = `
         mkdir -p '${root.outputDir}' && \
-        grim -g "${cx},${cy} ${cw}x${ch}" '${path}' && \
-        wl-copy < '${path}' && \
-        res=$(notify-send "Screenshot saved" "<img src=\\"${path}\\"/>Saved to ${root.outputDir}" -i camera-photo -a Screenshot -A "default=Edit") && \
-        if [ "$res" = "default" ]; then echo "OPEN_EDITOR"; fi
+        ${sleepCmd}grim -g "${cx},${cy} ${cw}x${ch}" '${path}' && \
+        wl-copy < '${path}'
     `;
 
         captureProc.command = ["sh", "-c", cmd];
         captureProc.running = true;
+
+        root.pendingNotifyCmd = `
+        res=$(notify-send "Screenshot saved" "<img src=\\"${path}\\"/>Saved to ${root.outputDir}" -i camera-photo -a Screenshot -A "default=Edit")
+        if [ "$res" = "default" ]; then
+            if[ "${root.editor}" = "satty" ]; then
+                satty --filename "${path}" --output-filename "${path}" --early-exit
+            else
+                ${root.editor} "${path}"
+            fi
+        fi
+    `;
     }
 
     Process {
@@ -149,15 +165,11 @@ Item {
         onExited: {
             root.active = false;
             uiLoader.active = false;
-        }
-    }
 
-    Process {
-        id: editProc
-        running: false
-        stderr: StdioCollector {
-            onStreamFinished: if (text.length)
-                console.error("editor:", text)
+            if (root.pendingNotifyCmd !== "") {
+                Quickshell.execDetached(["sh", "-c", root.pendingNotifyCmd]);
+                root.pendingNotifyCmd = "";
+            }
         }
     }
 
@@ -192,6 +204,36 @@ Item {
 
                 property var focusedScreen: null
 
+                property real animHlX: 0
+                property real animHlY: 0
+                property real animHlW: 0
+                property real animHlH: 0
+
+                Behavior on animHlX {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on animHlY {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on animHlW {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on animHlH {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
                 function resetDrag() {
                     dragging = false;
                     pressing = false;
@@ -205,6 +247,10 @@ Item {
                     globalHlY = 0;
                     globalHlW = 0;
                     globalHlH = 0;
+                    sessionRoot.animHlX = tx;
+                    sessionRoot.animHlY = ty;
+                    sessionRoot.animHlW = tw;
+                    sessionRoot.animHlH = th;
                 }
 
                 function windowAtGlobal(gx, gy) {
@@ -253,6 +299,8 @@ Item {
                         property real monX: modelData.x
                         property real monY: modelData.y
 
+                        property int cornerRadius: sessionRoot.dragging ? 10 : 22
+
                         Component.onCompleted: {
                             if (Hyprland.focusedMonitor?.name === modelData.name)
                                 sessionRoot.focusedScreen = modelData;
@@ -279,10 +327,10 @@ Item {
                             QtObject {
                                 id: currentHole
                                 readonly property bool active: sessionRoot.dragging || sessionRoot.hovering
-                                readonly property real x: (active ? sessionRoot.globalHlX : 0) - overlay.monX
-                                readonly property real y: (active ? sessionRoot.globalHlY : 0) - overlay.monY
-                                readonly property real w: active ? sessionRoot.globalHlW : 0
-                                readonly property real h: active ? sessionRoot.globalHlH : 0
+                                readonly property real x: (active ? (sessionRoot.dragging ? sessionRoot.globalTargetX : sessionRoot.animHlX) : 0) - overlay.monX
+                                readonly property real y: (active ? (sessionRoot.dragging ? sessionRoot.globalTargetY : sessionRoot.animHlY) : 0) - overlay.monY
+                                readonly property real w: active ? (sessionRoot.dragging ? sessionRoot.globalTargetW : sessionRoot.animHlW) : 0
+                                readonly property real h: active ? (sessionRoot.dragging ? sessionRoot.globalTargetH : sessionRoot.animHlH) : 0
                             }
 
                             CornerDim {
@@ -353,46 +401,75 @@ Item {
                                 width: currentHole.w
                                 height: currentHole.h
                                 color: "transparent"
-                                radius: 22
+                                radius: overlay.cornerRadius
                                 border.color: root.crosshairColor
-                                border.width: 2
+                                border.width: 1
                             }
 
-                            Rectangle {
+                            Shape {
                                 visible: isFocused
-                                x: 0
-                                y: sessionRoot.globalMouseY - overlay.monY
-                                width: parent.width
-                                height: 1
-                                color: root.crosshairColor
-                                opacity: 0.35
+                                anchors.fill: parent
+
+                                ShapePath {
+                                    strokeColor: Qt.alpha(root.crosshairColor, 0.35)
+                                    strokeWidth: 1
+                                    strokeStyle: ShapePath.DashLine
+                                    dashPattern: [4, 8]
+                                    fillColor: "transparent"
+                                    startX: 0
+                                    startY: sessionRoot.globalMouseY - overlay.monY
+                                    PathLine {
+                                        x: overlay.width
+                                        y: sessionRoot.globalMouseY - overlay.monY
+                                    }
+                                }
+
+                                ShapePath {
+                                    strokeColor: sessionRoot.dragging ? Qt.alpha(root.crosshairColor, 0.55) : "transparent"
+                                    strokeWidth: 1
+                                    strokeStyle: ShapePath.DashLine
+                                    dashPattern: [4, 8]
+                                    fillColor: "transparent"
+                                    startX: 0
+                                    startY: sessionRoot.globalPressY - overlay.monY
+                                    PathLine {
+                                        x: overlay.width
+                                        y: sessionRoot.globalPressY - overlay.monY
+                                    }
+                                }
                             }
-                            Rectangle {
+
+                            Shape {
                                 visible: isFocused
-                                x: sessionRoot.globalMouseX - overlay.monX
-                                y: 0
-                                width: 1
-                                height: parent.height
-                                color: root.crosshairColor
-                                opacity: 0.35
-                            }
-                            Rectangle {
-                                visible: isFocused && sessionRoot.dragging
-                                x: 0
-                                y: sessionRoot.globalPressY - overlay.monY
-                                width: parent.width
-                                height: 1
-                                color: root.crosshairColor
-                                opacity: 0.55
-                            }
-                            Rectangle {
-                                visible: isFocused && sessionRoot.dragging
-                                x: sessionRoot.globalPressX - overlay.monX
-                                y: 0
-                                width: 1
-                                height: parent.height
-                                color: root.crosshairColor
-                                opacity: 0.55
+                                anchors.fill: parent
+
+                                ShapePath {
+                                    strokeColor: Qt.alpha(root.crosshairColor, 0.35)
+                                    strokeWidth: 1
+                                    strokeStyle: ShapePath.DashLine
+                                    dashPattern: [4, 8]
+                                    fillColor: "transparent"
+                                    startX: sessionRoot.globalMouseX - overlay.monX
+                                    startY: 0
+                                    PathLine {
+                                        x: sessionRoot.globalMouseX - overlay.monX
+                                        y: overlay.height
+                                    }
+                                }
+
+                                ShapePath {
+                                    strokeColor: sessionRoot.dragging ? Qt.alpha(root.crosshairColor, 0.55) : "transparent"
+                                    strokeWidth: 1
+                                    strokeStyle: ShapePath.DashLine
+                                    dashPattern: [4, 8]
+                                    fillColor: "transparent"
+                                    startX: sessionRoot.globalPressX - overlay.monX
+                                    startY: 0
+                                    PathLine {
+                                        x: sessionRoot.globalPressX - overlay.monX
+                                        y: overlay.height
+                                    }
+                                }
                             }
 
                             MouseArea {
@@ -456,6 +533,10 @@ Item {
                                         sessionRoot.globalHlY = ty;
                                         sessionRoot.globalHlW = tw;
                                         sessionRoot.globalHlH = th;
+                                        sessionRoot.animHlX = tx;
+                                        sessionRoot.animHlY = ty;
+                                        sessionRoot.animHlW = tw;
+                                        sessionRoot.animHlH = th;
                                         sessionRoot.hovering = true;
                                     } else {
                                         sessionRoot.hovering = false;
@@ -528,33 +609,369 @@ Item {
                                 visible: isFocused
                                 x: Math.min(sessionRoot.globalMouseX - overlay.monX + 16, parent.width - width - 16)
                                 y: Math.min(sessionRoot.globalMouseY - overlay.monY + 16, parent.height - height - 16)
-                                width: coordsText.implicitWidth + 16
-                                height: coordsText.implicitHeight + 8
+
+                                width: tooltipContent.implicitWidth + 24
+                                height: tooltipContent.implicitHeight + 20
 
                                 Rectangle {
                                     anchors.fill: parent
-                                    radius: 16
+                                    radius: 20
+                                    topLeftRadius: 8
                                     color: root.surfaceColor
                                     border.width: 1
                                     border.color: Colors.md3.outline_variant
                                 }
-                                Text {
-                                    id: coordsText
+
+                                Column {
+                                    id: tooltipContent
                                     anchors.centerIn: parent
-                                    color: Colors.md3.on_surface
-                                    font.pixelSize: 12
-                                    font.family: Config.fontMonospace
-                                    text: {
-                                        const cx = Math.round(sessionRoot.globalMouseX);
-                                        const cy = Math.round(sessionRoot.globalMouseY);
-                                        if (sessionRoot.dragging) {
-                                            const sx = Math.round(sessionRoot.globalPressX);
-                                            const sy = Math.round(sessionRoot.globalPressY);
-                                            return `${sx}, ${sy} 󱦰 ${cx}, ${cy} | ${Math.round(sessionRoot.globalHlW)} × ${Math.round(sessionRoot.globalHlH)}`;
+                                    spacing: 6
+
+                                    Row {
+                                        visible: sessionRoot.dragging
+                                        spacing: 4
+
+                                        Text {
+                                            text: Math.round(sessionRoot.globalHlW)
+                                            font.pixelSize: 14
+                                            font.weight: Font.Medium
+                                            color: Colors.md3.on_surface
                                         }
-                                        return `${cx}, ${cy}`;
+                                        Text {
+                                            text: "×"
+                                            font.pixelSize: 10
+                                            color: Colors.md3.on_surface_variant
+                                            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+                                        }
+                                        Text {
+                                            text: Math.round(sessionRoot.globalHlH)
+                                            font.pixelSize: 14
+                                            font.weight: Font.Medium
+                                            color: Colors.md3.on_surface
+                                        }
+                                        Text {
+                                            text: "px"
+                                            font.pixelSize: 9
+                                            color: Colors.md3.outline
+                                            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        visible: sessionRoot.dragging
+                                        width: tooltipContent.implicitWidth
+                                        height: 1
+                                        color: Colors.md3.outline_variant
+                                        opacity: 0.5
+                                    }
+
+                                    Column {
+                                        spacing: 4
+
+                                        Row {
+                                            visible: sessionRoot.dragging
+                                            spacing: 6
+
+                                            Text {
+                                                text: "FROM"
+                                                font.pixelSize: 8
+                                                font.letterSpacing: 1
+                                                color: Colors.md3.outline
+                                                anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+                                            }
+                                            Text {
+                                                text: Math.round(sessionRoot.globalPressX) + ",  " + Math.round(sessionRoot.globalPressY)
+                                                font.pixelSize: 10
+                                                font.family: Config.fontMonospace
+                                                color: Colors.md3.on_surface_variant
+                                            }
+                                        }
+
+                                        Row {
+                                            spacing: 6
+
+                                            Text {
+                                                text: sessionRoot.dragging ? "TO     " : "POS"
+                                                font.pixelSize: 8
+                                                font.letterSpacing: 1
+                                                color: Colors.md3.outline
+                                                anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+                                            }
+                                            Text {
+                                                text: Math.round(sessionRoot.globalMouseX) + ",  " + Math.round(sessionRoot.globalMouseY)
+                                                font.pixelSize: 10
+                                                font.family: Config.fontMonospace
+                                                color: Colors.md3.on_surface_variant
+                                            }
+                                        }
                                     }
                                 }
+                            }
+                        }
+
+                        Item {
+                            id: floatingPill
+
+                            property bool showPill: isFocused && !sessionRoot.dragging
+
+                            visible: showPill || opacity > 0
+
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+
+                            anchors.bottomMargin: showPill ? 32 : -80
+
+                            width: pillRow.implicitWidth + 16
+                            height: 56
+
+                            opacity: showPill ? 1.0 : 0.0
+
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: 250
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            Behavior on anchors.bottomMargin {
+                                NumberAnimation {
+                                    duration: 250
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: height / 2
+                                color: Colors.md3.surface_container
+                                border.width: 1
+                                border.color: Colors.md3.outline_variant
+                            }
+
+                            Row {
+                                id: pillRow
+                                anchors.centerIn: parent
+                                spacing: 0
+
+                                Item {
+                                    width: 40
+                                    height: 56
+
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: 40
+                                        height: 40
+                                        radius: 20
+                                        color: Colors.md3.primary
+
+                                        SnippingIcon {
+                                            anchors.centerIn: parent
+                                            iconSize: overlay.cornerRadius
+                                            color: Colors.md3.on_primary
+                                        }
+                                    }
+                                }
+
+                                Item {
+                                    width: 17
+                                    height: 56
+
+                                    Rectangle {
+                                        width: 1
+                                        height: 28
+                                        anchors.centerIn: parent
+                                        color: Colors.md3.outline_variant
+                                        opacity: 0.6
+                                    }
+                                }
+
+                                Item {
+                                    id: modeTrack
+                                    readonly property real btnW: 52
+                                    readonly property real btnH: 40
+                                    readonly property int activeIndex: root.forcedAction === "smart" ? 0 : root.forcedAction === "window" ? 1 : 2
+
+                                    width: btnW * 3
+                                    height: btnH
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: height / 2
+                                        color: Colors.md3.surface_container_highest
+                                    }
+
+                                    Rectangle {
+                                        id: thumb
+                                        width: modeTrack.btnW
+                                        height: modeTrack.btnH
+                                        radius: height / 2
+                                        color: Colors.md3.primary
+                                        x: modeTrack.activeIndex * modeTrack.btnW
+
+                                        Behavior on x {
+                                            NumberAnimation {
+                                                duration: 200
+                                                easing.type: Easing.OutCubic
+                                            }
+                                        }
+                                    }
+
+                                    Row {
+                                        anchors.fill: parent
+
+                                        Repeater {
+                                            model: [
+                                                {
+                                                    action: "smart",
+                                                    filled: root.forcedAction === "smart"
+                                                },
+                                                {
+                                                    action: "window",
+                                                    filled: root.forcedAction === "window"
+                                                },
+                                                {
+                                                    action: "fullscreen",
+                                                    filled: root.forcedAction === "fullscreen"
+                                                }
+                                            ]
+
+                                            Item {
+                                                required property var modelData
+                                                width: modeTrack.btnW
+                                                height: modeTrack.btnH
+
+                                                Loader {
+                                                    anchors.centerIn: parent
+                                                    sourceComponent: {
+                                                        if (modelData.action === "smart")
+                                                            return regionIconComp;
+                                                        if (modelData.action === "window")
+                                                            return windowIconComp;
+                                                        return screenIconComp;
+                                                    }
+
+                                                    onLoaded: {
+                                                        item.filled = modelData.filled;
+                                                        item.color = modelData.filled ? Colors.md3.on_primary : Colors.md3.on_surface;
+                                                        item.iconSize = 20;
+                                                    }
+                                                }
+
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: root.forcedAction = modelData.action
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Item {
+                                    width: 17
+                                    height: 56
+
+                                    Rectangle {
+                                        width: 1
+                                        height: 28
+                                        anchors.centerIn: parent
+                                        color: Colors.md3.outline_variant
+                                        opacity: 0.6
+                                    }
+                                }
+
+                                Row {
+                                    height: 56
+                                    spacing: 0
+
+                                    Item {
+                                        width: 40
+                                        height: 56
+
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: 36
+                                            height: 36
+                                            radius: 18
+                                            color: folderMouse.containsMouse ? Colors.md3.surface_variant : Colors.md3.surface_container
+
+                                            Behavior on color {
+                                                ColorAnimation {
+                                                    duration: 150
+                                                }
+                                            }
+
+                                            FolderIcon {
+                                                anchors.centerIn: parent
+                                                iconSize: 20
+                                                color: Colors.md3.on_surface_variant
+                                            }
+
+                                            MouseArea {
+                                                id: folderMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    Qt.openUrlExternally("file://" + root.outputDir);
+                                                    root.active = false;
+                                                    uiLoader.active = false;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Item {
+                                        width: 40
+                                        height: 56
+
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: 36
+                                            height: 36
+                                            radius: 18
+
+                                            color: closeMouse.containsMouse ? Colors.md3.surface_variant : Colors.md3.surface_container
+
+                                            Behavior on color {
+                                                ColorAnimation {
+                                                    duration: 150
+                                                }
+                                            }
+
+                                            CloseIcon {
+                                                anchors.centerIn: parent
+                                                iconSize: 20
+                                                color: Colors.md3.on_surface_variant
+                                            }
+
+                                            MouseArea {
+                                                id: closeMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    root.active = false;
+                                                    uiLoader.active = false;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Component {
+                                id: regionIconComp
+                                RegionIcon {}
+                            }
+                            Component {
+                                id: windowIconComp
+                                WindowIcon {}
+                            }
+                            Component {
+                                id: screenIconComp
+                                ScreenIcon {}
                             }
                         }
                     }
@@ -567,7 +984,7 @@ Item {
         id: block
         property int type: 0
         property color dimColor: "#8C000000"
-        property int radiusSize: Math.min(22, selectionOutline.width / 2, selectionOutline.height / 2)
+        property int radiusSize: Math.min(overlay.cornerRadius, selectionOutline.width / 2, selectionOutline.height / 2)
         width: radiusSize
         height: radiusSize
         clip: true
