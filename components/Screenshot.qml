@@ -712,7 +712,7 @@ Item {
                         Item {
                             id: floatingPill
 
-                            property bool showPill: isFocused && !sessionRoot.dragging
+                            property bool showPill: isFocused && !sessionRoot.dragging && !sessionRoot.capturing
 
                             visible: showPill || opacity > 0
 
@@ -727,6 +727,7 @@ Item {
                             opacity: showPill ? 1.0 : 0.0
 
                             Behavior on opacity {
+                                enabled: !sessionRoot.capturing
                                 NumberAnimation {
                                     duration: 250
                                     easing.type: Easing.OutCubic
