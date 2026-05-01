@@ -178,15 +178,6 @@ Item {
                     radius: 10
                     color: Colors.md3.primary_container
                     visible: btnProfileImage.status !== Image.Ready
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: SystemInfo.username.charAt(0).toUpperCase()
-                        font.pixelSize: 10
-                        font.weight: Font.DemiBold
-                        font.family: Config.fontFamily
-                        color: Colors.md3.on_primary_container
-                    }
                 }
 
                 ClippingRectangle {
@@ -304,22 +295,6 @@ Item {
                             Layout.preferredWidth: 44
                             Layout.preferredHeight: 44
 
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: 22
-                                color: Colors.md3.primary_container
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: SystemInfo.username.charAt(0).toUpperCase()
-                                    font.pixelSize: 18
-                                    font.weight: Font.DemiBold
-                                    font.family: Config.fontFamily
-                                    color: Colors.md3.on_primary_container
-                                    visible: profileImage.status !== Image.Ready
-                                }
-                            }
-
                             ClippingRectangle {
                                 anchors.fill: parent
                                 radius: 22
@@ -360,7 +335,7 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
-                                text: SystemInfo.hostname + " · " + SystemInfo.distroName
+                                text: SystemInfo.hostname + " · " + SystemInfo.uptime
                                 color: Colors.md3.on_surface_variant
                                 font.family: Config.fontFamily
                                 font.pixelSize: 12
