@@ -133,7 +133,7 @@ Item {
         root.pendingNotifyCmd = `
         res=$(notify-send "Screenshot saved" "<img src=\\"${path}\\"/>Saved to ${root.outputDir}" -i camera-photo -a Screenshot -A "default=Edit")
         if [ "$res" = "default" ]; then
-            if[ "${root.editor}" = "satty" ]; then
+            if [ "${root.editor}" = "satty" ]; then
                 satty --filename "${path}" --output-filename "${path}" --early-exit
             else
                 ${root.editor} "${path}"
