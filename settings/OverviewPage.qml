@@ -105,7 +105,7 @@ PageBase {
                     readonly property real swatchWidth: (width - hGap * (cols - 1)) / cols
                     readonly property real swatchHeight: (height - vGap * (rows - 1)) / rows
 
-                    readonly property var schemes: ["scheme-tonal-spot", "scheme-content", "scheme-neutral", "scheme-expressive", "scheme-fruit-salad", "scheme-monochrome"]
+                    readonly property var schemes: ["scheme-tonal-spot", "scheme-content", "scheme-vibrant", "scheme-expressive", "scheme-fruit-salad", "scheme-monochrome"]
 
                     Repeater {
                         model: parent.schemes

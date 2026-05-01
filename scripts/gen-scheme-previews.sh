@@ -14,10 +14,10 @@ VALID_SCHEMES=(
     scheme-expressive
     scheme-fruit-salad
     scheme-monochrome
-    scheme-neutral
+    scheme-vibrant
     scheme-tonal-spot
 )
-
+    
 WALL_HASH=$(echo -n "$WALL" | md5sum | cut -d' ' -f1)
 OUT="/tmp/qs_scheme_previews_${WALL_HASH}_${MODE}.json"
 
