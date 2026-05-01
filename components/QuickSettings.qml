@@ -72,7 +72,7 @@ Item {
                 return "󰤯";
         }
         if (NetworkService.ethConnected)
-            return "󰂗";
+            return "󰌗";
         return "󰤮";
     }
 
