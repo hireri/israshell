@@ -24,9 +24,7 @@ SettingRow {
                 height: 30
                 width: chipLabel.implicitWidth + 24
                 radius: height / 2
-                color: active ? Colors.md3.secondary_container : "transparent"
-                border.width: 1
-                border.color: active ? "transparent" : Colors.md3.surface_variant
+                color: active ? Colors.md3.primary : Colors.md3.surface_container_high
 
                 Behavior on color {
                     ColorAnimation {
@@ -41,7 +39,7 @@ SettingRow {
                     font.family: Config.fontFamily
                     font.pixelSize: 12
                     font.weight: active ? Font.Medium : Font.Normal
-                    color: active ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
+                    color: active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
                 }
 
                 MouseArea {

@@ -1,6 +1,5 @@
 pragma Singleton
 pragma ComponentBehavior: Bound
-
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -8,12 +7,19 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    property string distroName: "Linux"
-    property string distroId: "unknown"
-    property string logo: "linux-symbolic"
-    property string username: "user"
-    property string hostname: "localhost"
+    property string distroName: "Arch Linux"
+    property string distroId: "arch"
+    property string logo: "archlinux-logo"
     property string uptime: "unknown"
+    property string kernel: "unknown"
+    property string session: "unknown"
+
+    property string cpu: "Unknown CPU"
+    property string gpu: "Unknown GPU"
+    property string memory: "Unknown RAM"
+    property string motherboard: "Unknown"
+    property string shellName: "Unknown SHELL"
+    property string shellVersion: "Unknown SHELLVER"
 
     function formatUptime(seconds) {
         let s = Math.floor(seconds);
@@ -22,7 +28,6 @@ Singleton {
         let h = Math.floor(s / 3600);
         s %= 3600;
         let m = Math.floor(s / 60);
-
         let parts = [];
         if (d > 0)
             parts.push(d + "d");
@@ -30,8 +35,7 @@ Singleton {
             parts.push(h + "h");
         if (m > 0 || parts.length === 0)
             parts.push(m + "m");
-
-        return "up " + parts.join(" ");
+        return parts.join(" ");
     }
 
     Timer {
@@ -39,35 +43,86 @@ Singleton {
         running: true
         repeat: true
         triggeredOnStart: true
-
         onTriggered: {
-            usernameProc.running = true;
-            hostnameProc.running = true;
+            kernelProc.running = true;
+            hardwareProc.running = true;
+            shellProc.running = true;
             fileOsRelease.reload();
             fileUptime.reload();
+            fileSessionType.reload();
         }
     }
 
     Process {
-        id: usernameProc
-        command: ["whoami"]
+        id: kernelProc
+        command: ["uname", "-r"]
         stdout: SplitParser {
-            onRead: data => root.username = data.trim()
+            onRead: data => root.kernel = data.trim()
         }
     }
 
     Process {
-        id: hostnameProc
-        command: ["hostname"]
+        id: hardwareProc
+        command: ["sh", "-c", "cpu=$(grep -m1 'model name' /proc/cpuinfo | sed 's/.*: //; s/ Processor//g; s/ CPU//g; s/ @ .*//; s/(R)//g; s/(TM)//g; s/  */ /g; s/^ *//; s/ *$//'); " + "gpu=$(/usr/bin/lspci -nn 2>/dev/null | grep -iE 'vga|3d|display' | sed 's/ \\[[0-9a-f:]\\+\\]//g; s/.*: //' | sed 's/.*\\[\\([^]]*\\)\\].*/\\1/' | grep -iE 'Radeon|GeForce|RTX|GTX|Iris|UHD|Arc|Quadro|Tesla|Mali|Adreno' | sed 's/ \\/ .*//' | head -1); " + "if [ -z \"$gpu\" ]; then " + "  gpu=$(/usr/bin/lspci -nn 2>/dev/null | grep -iE 'vga|3d|display' | sed 's/ \\[[0-9a-f:]\\+\\]//g; s/.*: //; s/.*\\[\\([^]]*\\)\\].*/\\1/; s/ Corporation//g; s/ Inc\\.//g; s/ (rev.*)//g' | head -1); " + "fi; " + "[ -z \"$gpu\" ] && gpu='Unknown GPU'; " + "mem=$(/usr/bin/free -h 2>/dev/null | awk '/^Mem:/ {print $2}'); " + "board='Unknown'; " + "if [ -r /sys/class/dmi/id/board_name ]; then " + "  board=$(cat /sys/class/dmi/id/board_name 2>/dev/null | sed 's/ Corporation//g; s/ Inc\\.//g; s/ Ltd\\.//g; s/ Co\\.//g; s/  */ /g; s/^ *//; s/ *$//'); " + "fi; " + "if [ \"$board\" = 'Unknown' ] || [ -z \"$board\" ]; then " + "  if command -v dmidecode >/dev/null 2>&1 && [ -r /dev/mem ] || [ -r /sys/firmware/dmi/tables/DMI ]; then " + "    board=$(dmidecode -s baseboard-product-name 2>/dev/null | sed 's/ Corporation//g; s/ Inc\\.//g; s/ Ltd\\.//g; s/ Co\\.//g; s/  */ /g; s/^ *//; s/ *$//' | head -1); " + "  fi; " + "fi; " + "[ -z \"$board\" ] && board='Unknown'; " + "echo \"${cpu:-Unknown}|${gpu}|${mem:-Unknown}|${board}\""]
         stdout: SplitParser {
-            onRead: data => root.hostname = data.trim()
+            onRead: data => {
+                let parts = data.trim().split('|');
+                console.log("Hardware raw:", data.trim());
+                if (parts[0] && parts[0] !== "Unknown")
+                    root.cpu = parts[0];
+                if (parts[1] && parts[1] !== "Unknown GPU" && parts[1] !== "")
+                    root.gpu = parts[1];
+                if (parts[2] && parts[2] !== "Unknown") {
+                    root.memory = parts[2].toUpperCase().replace("I", "i") + "B RAM";
+                }
+                if (parts[3] && parts[3] !== "Unknown" && parts[3] !== "")
+                    root.motherboard = parts[3];
+            }
+        }
+        stderr: SplitParser {
+            onRead: data => console.warn("Hardware stderr:", data.trim())
+        }
+    }
+
+    Process {
+        id: shellProc
+        command: ["sh", "-c", "echo \"$(basename $SHELL)|$($SHELL --version 2>/dev/null | grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+' | head -1)\""]
+        stdout: SplitParser {
+            onRead: data => {
+                let parts = data.trim().split('|');
+                if (parts[0]) {
+                    let sName = parts[0];
+                    root.shellName = sName.charAt(0).toUpperCase() + sName.slice(1) + " shell";
+                }
+                if (parts[1])
+                    root.shellVersion = parts[1];
+            }
+        }
+    }
+
+    FileView {
+        id: fileSessionType
+        path: "/proc/self/environ"
+        onTextChanged: {
+            const text = fileSessionType.text();
+            if (!text)
+                return;
+            const vars = {};
+            text.split("\0").forEach(entry => {
+                const idx = entry.indexOf("=");
+                if (idx !== -1)
+                    vars[entry.slice(0, idx)] = entry.slice(idx + 1);
+            });
+
+            const compositor = vars["HYPRLAND_INSTANCE_SIGNATURE"] ? "Hyprland" : vars["SWAYSOCK"] ? "Sway" : vars["DISPLAY"] && !vars["WAYLAND_DISPLAY"] ? "X11" : vars["COMPOSITOR_NAME"] ?? "";
+            const type = vars["WAYLAND_DISPLAY"] ? "Wayland" : vars["DISPLAY"] ? "X11" : "unknown";
+            root.session = compositor ? compositor + " + " + type : type;
         }
     }
 
     FileView {
         id: fileOsRelease
         path: "/etc/os-release"
-
         onTextChanged: {
             const text = fileOsRelease.text();
             if (!text)
@@ -81,47 +136,10 @@ Singleton {
             root.distroId = idMatch ? idMatch[1].toLowerCase() : "unknown";
 
             const logoMatch = text.match(/^LOGO="?(.+?)"?$/m);
-            const logoField = logoMatch ? logoMatch[1].trim() : "";
-
-            if (logoField.length > 0) {
-                root.logo = logoField;
+            if (logoMatch && logoMatch[1].trim().length > 0) {
+                root.logo = logoMatch[1].trim();
             } else {
-                switch (root.distroId) {
-                case "arch":
-                case "artix":
-                    root.logo = "arch-symbolic";
-                    break;
-                case "endeavouros":
-                    root.logo = "endeavouros-symbolic";
-                    break;
-                case "cachyos":
-                    root.logo = "cachyos-symbolic";
-                    break;
-                case "nixos":
-                    root.logo = "nixos-symbolic";
-                    break;
-                case "fedora":
-                    root.logo = "fedora-symbolic";
-                    break;
-                case "ubuntu":
-                case "linuxmint":
-                case "popos":
-                case "zorin":
-                    root.logo = "ubuntu-symbolic";
-                    break;
-                case "debian":
-                case "kali":
-                case "raspbian":
-                    root.logo = "debian-symbolic";
-                    break;
-                case "gentoo":
-                case "funtoo":
-                    root.logo = "gentoo-symbolic";
-                    break;
-                default:
-                    root.logo = "linux-symbolic";
-                    break;
-                }
+                root.logo = "distributor-logo-" + root.distroId;
             }
         }
     }
@@ -129,7 +147,6 @@ Singleton {
     FileView {
         id: fileUptime
         path: "/proc/uptime"
-
         onTextChanged: {
             const content = fileUptime.text();
             if (!content)

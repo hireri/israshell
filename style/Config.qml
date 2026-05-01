@@ -50,6 +50,7 @@ Singleton {
     property int dateFormat: 0
     property int osdPosition: 1
     property bool darkMode: true
+    property string colorScheme: "scheme-tonal-spot"
     property bool desktopClock: true
     property bool screencapEnabled: true
     property var screencap: ({
@@ -123,6 +124,7 @@ Singleton {
             dateFormat: 0,
             osdPosition: 1,
             darkMode: true,
+            colorScheme: "scheme-tonal-spot",
             desktopClock: true,
             screencapEnabled: true,
             screencap: {

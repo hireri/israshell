@@ -14,7 +14,7 @@ FloatingWindow {
     visible: true
     implicitWidth: 960
     implicitHeight: 680
-    minimumSize: Qt.size(900, 540)
+    minimumSize: Qt.size(970, 540)
     title: "Settings"
     color: Colors.md3.background
 

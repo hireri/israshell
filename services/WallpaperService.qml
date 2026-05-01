@@ -16,6 +16,10 @@ Singleton {
     property string currentWall: ""
     property string currentDir: Quickshell.env("HOME") + "/Pictures"
 
+    property string currentScheme: Config.colorScheme || "scheme-tonal-spot"
+    property var schemePreviews: ({})
+    property bool previewsLoading: false
+
     property var entries: []
 
     property int clockRenderWidth: 350
@@ -58,8 +62,21 @@ Singleton {
         isOpen = false;
         applyProc.wallPath = path;
         applyProc.mode = isDark ? "dark" : "light";
+        applyProc.scheme = currentScheme;
         applyProc.running = false;
         applyProc.running = true;
+    }
+
+    function selectScheme(scheme) {
+        if (applying || !currentWall)
+            return;
+        if (currentScheme === scheme)
+            return;
+        currentScheme = scheme;
+        Config.update({
+            colorScheme: scheme
+        });
+        applyTheme();
     }
 
     function randomize() {
@@ -142,6 +159,14 @@ Singleton {
         req.send();
     }
 
+    function randomizeReddit() {
+        if (applying || loading || redditFetchProc.running)
+            return;
+        const subreddits = ["wallpaper", "ImaginaryLandscapes", "EarthPorn", "SpacePorn"];
+        redditFetchProc.subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
+        redditFetchProc.running = true;
+    }
+
     function openFolder() {
         openFolderProc.running = false;
         openFolderProc.running = true;
@@ -157,6 +182,7 @@ Singleton {
         applying = true;
         applyProc.wallPath = Quickshell.env("HOME") + "/.config/hypr/current_wall";
         applyProc.mode = isDark ? "dark" : "light";
+        applyProc.scheme = currentScheme;
         applyProc.running = false;
         applyProc.running = true;
     }
@@ -194,6 +220,46 @@ Singleton {
                             root.currentDir = dir;
                     }
                 }
+                previewDebounce.restart();
+            }
+        }
+    }
+
+    Timer {
+        id: previewDebounce
+        interval: 800
+        repeat: false
+        onTriggered: {
+            if (!root.currentWall || root.applying)
+                return;
+            root.previewsLoading = true;
+            previewProc.running = false;
+            previewProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/gen-scheme-previews.sh", root.currentWall, root.isDark ? "dark" : "light"];
+            previewProc.running = true;
+        }
+    }
+
+    Process {
+        id: previewProc
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.previewsLoading = false;
+                const outPath = text.trim();
+                if (!outPath)
+                    return;
+                const req = new XMLHttpRequest();
+                req.open("GET", "file://" + outPath);
+                req.onreadystatechange = () => {
+                    if (req.readyState !== XMLHttpRequest.DONE)
+                        return;
+                    try {
+                        root.schemePreviews = JSON.parse(req.responseText);
+                    } catch (e) {
+                        console.log("[Wallpaper] Failed to parse scheme previews:", e);
+                    }
+                };
+                req.send();
             }
         }
     }
@@ -268,12 +334,15 @@ Singleton {
         id: applyProc
         property string wallPath: ""
         property string mode: "dark"
-        command: [Quickshell.env("HOME") + "/.config/quickshell/scripts/apply-wallpaper.sh", applyProc.wallPath, applyProc.mode]
+        property string scheme: "scheme-tonal-spot"
+        command: [Quickshell.env("HOME") + "/.config/quickshell/scripts/apply-wallpaper.sh", applyProc.wallPath, applyProc.mode, applyProc.scheme]
         running: false
         onExited: (code, _) => {
             root.applying = false;
-            if (code === 0)
+            if (code === 0) {
                 _runClockPosition();
+                previewDebounce.restart();
+            }
         }
     }
 
@@ -308,6 +377,64 @@ Singleton {
                 selectWall(wallhavenDownloadProc.dest);
             else
                 console.log("[Wallpaper] Wallhaven download failed, code:", code);
+        }
+    }
+
+    Process {
+        id: redditFetchProc
+        property string subreddit: ""
+        property string outputBuffer: ""
+
+        command: ["curl", "-s", "-H", "User-Agent: WallpaperPicker/1.0 (by /u/brian518)", "-H", "Accept: application/json", "https://www.reddit.com/r/" + subreddit + "/hot.json?limit=30"]
+
+        stdout: SplitParser {
+            splitMarker: ""
+            onRead: data => redditFetchProc.outputBuffer += data
+        }
+
+        onRunningChanged: {
+            if (running) {
+                outputBuffer = "";
+            } else {
+                try {
+                    const response = JSON.parse(outputBuffer);
+                    const posts = response.data.children;
+                    const validPosts = posts.filter(post => {
+                        const p = post.data;
+                        return !p.is_self && !p.is_video && p.post_hint === "image" && p.url_overridden_by_dest;
+                    });
+
+                    if (validPosts.length === 0) {
+                        console.log("No valid images found in r/" + subreddit);
+                        return;
+                    }
+
+                    const randomPost = validPosts[Math.floor(Math.random() * validPosts.length)].data;
+                    const finalUrl = (randomPost.url_overridden_by_dest || randomPost.url).replace(/&amp;/g, '&');
+                    const ext = finalUrl.split('.').pop().split(/[?#]/)[0] || "jpg";
+                    const dest = Quickshell.env("HOME") + "/Pictures/Random/reddit_" + Date.now() + "." + ext;
+
+                    redditDownloadProc.url = finalUrl;
+                    redditDownloadProc.dest = dest;
+                    redditDownloadProc.running = false;
+                    redditDownloadProc.running = true;
+                } catch (e) {
+                    console.error("Reddit JSON parse error:", e);
+                    console.error("Buffer preview:", outputBuffer.substring(0, 300));
+                }
+            }
+        }
+    }
+
+    Process {
+        id: redditDownloadProc
+        property string url: ""
+        property string dest: ""
+        command: ["bash", "-c", "mkdir -p " + JSON.stringify(Quickshell.env("HOME") + "/Pictures/Random") + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
+        running: false
+        onExited: (code, _) => {
+            if (code === 0 && redditDownloadProc.dest !== "")
+                selectWall(redditDownloadProc.dest);
         }
     }
 }
