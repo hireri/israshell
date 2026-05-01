@@ -571,7 +571,7 @@ Item {
                     right: parent.right
                     verticalCenter: parent.verticalCenter
                 }
-                radius: middleRow.isPlaying ? 14 : 26
+                radius: middleRow.isPlaying ? 14 : 22
                 color: root.colPrimary
 
                 Behavior on radius {
