@@ -1,4 +1,8 @@
 # **israshell**
+> [!NOTE]
+> This is my Quickshell configuration **alone**, you'll have to configure your system around it / edit it to your liking.
+> 
+> Full dots will probably be available at some point along with an install script.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Distro](https://img.shields.io/badge/optimized_for-Arch_Linux-1793d1.svg?logo=arch-linux)
