@@ -63,6 +63,14 @@ bind = $mainMod, I, exec, qs ipc call settings open overview
 # bind = $mainMod, N, exec, qs ipc call settings open network
 # overview | network | bar | clock | display | sound | immeria | system
 # immeria being ai btw.
+
+bind = $mainMod SHIFT, S, exec, qs ipc call screenshot activate
+
+# screenshot has 4 modes
+# smart | region | window | screen
+# region ig if you dont want to calculate rects
+
+bind = $mainMod, G, exec, qs ipc call gamemode toggle
 ```
 
 ## Dependencies
