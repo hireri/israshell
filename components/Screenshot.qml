@@ -497,10 +497,19 @@ Item {
                                                 sessionRoot.dragging = true;
                                         }
                                         if (sessionRoot.dragging) {
-                                            sessionRoot.globalTargetX = Math.min(sessionRoot.globalPressX, gmx);
-                                            sessionRoot.globalTargetY = Math.min(sessionRoot.globalPressY, gmy);
-                                            sessionRoot.globalTargetW = Math.abs(gmx - sessionRoot.globalPressX);
-                                            sessionRoot.globalTargetH = Math.abs(gmy - sessionRoot.globalPressY);
+                                            let dx = gmx - sessionRoot.globalPressX;
+                                            let dy = gmy - sessionRoot.globalPressY;
+
+                                            if (mouse.modifiers & Qt.ShiftModifier) {
+                                                const size = Math.max(Math.abs(dx), Math.abs(dy));
+                                                dx = dx >= 0 ? size : -size;
+                                                dy = dy >= 0 ? size : -size;
+                                            }
+
+                                            sessionRoot.globalTargetX = dx >= 0 ? sessionRoot.globalPressX : sessionRoot.globalPressX + dx;
+                                            sessionRoot.globalTargetY = dy >= 0 ? sessionRoot.globalPressY : sessionRoot.globalPressY + dy;
+                                            sessionRoot.globalTargetW = Math.abs(dx);
+                                            sessionRoot.globalTargetH = Math.abs(dy);
                                         }
                                         return;
                                     }
