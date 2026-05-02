@@ -38,9 +38,9 @@ fi
 ln -sf "$WALL" "$HOME/.config/hypr/current_wall"
 
 awww img \
-    --transition-type     fade \
-    --transition-fps      180  \
-    --transition-duration 2    \
+    --transition-type     grow \
+    --transition-fps      60   \
+    --transition-duration 1    \
     "$HOME/.config/hypr/current_wall"
 
 matugen image "$HOME/.config/hypr/current_wall" -m "$MODE" -t "$SCHEME" --source-color-index 0
