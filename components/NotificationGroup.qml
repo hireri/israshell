@@ -397,6 +397,7 @@ MouseArea {
 
             radius: 18
             color: group.isCritical ? Colors.md3.secondary_container : (group.inPanel ? Colors.md3.surface_container_high : Colors.md3.surface_container)
+            border.color: group.inPanel ? "transparent" : Qt.alpha(group.isCritical ? Colors.md3.primary : Colors.md3.outline_variant, 0.5)
             clip: true
 
             Row {
