@@ -396,8 +396,7 @@ MouseArea {
             height: group._cardHeight >= 0 ? group._cardHeight : cardCol.implicitHeight + 28
 
             radius: 18
-            color: group.inPanel ? Colors.md3.surface_container_high : Colors.md3.surface_container
-            border.color: group.isCritical ? Colors.md3.on_error_container : (group.inPanel ? "transparent" : Qt.alpha(Colors.md3.outline_variant, 0.5))
+            color: group.isCritical ? Colors.md3.secondary_container : (group.inPanel ? Colors.md3.surface_container_high : Colors.md3.surface_container)
             clip: true
 
             Row {
@@ -412,7 +411,7 @@ MouseArea {
 
                 Text {
                     text: group.relativeTime
-                    color: Colors.md3.on_surface_variant
+                    color: group.isCritical ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
                     font.family: Config.fontFamily
                     font.pixelSize: 11
                     opacity: 0.65
@@ -425,7 +424,7 @@ MouseArea {
                     implicitWidth: pillRow.implicitWidth + 20
                     implicitHeight: 20
                     radius: 10
-                    color: Colors.md3.surface_container_highest
+                    color: group.isCritical ? Qt.alpha(Colors.md3.secondary, 0.1) : Colors.md3.surface_container_highest
                     Behavior on color {
                         ColorAnimation {
                             duration: 120
@@ -439,14 +438,14 @@ MouseArea {
                         Text {
                             visible: group.count > 1
                             text: group.count
-                            color: Colors.md3.on_surface_variant
+                            color: group.isCritical ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
                             font.family: Config.fontFamily
                             font.pixelSize: 10
                             font.bold: true
                         }
                         Text {
                             text: ""
-                            color: Colors.md3.on_surface_variant
+                            color: group.isCritical ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
                             font.family: Config.fontFamily
                             font.pixelSize: 11
                             rotation: group.expandedState ? 180 : 0
@@ -494,11 +493,11 @@ MouseArea {
                         ClippingRectangle {
                             anchors.fill: parent
                             radius: 14
-                            color: group.inPanel ? Colors.md3.surface_container : Colors.md3.surface_container_high
+                            color: group.isCritical ? Colors.md3.primary : (group.inPanel ? Colors.md3.surface_container : Colors.md3.surface_container_high)
 
                             Text {
                                 text: "󰂚"
-                                color: Colors.md3.on_surface_variant
+                                color: group.isCritical ? Colors.md3.on_primary : Colors.md3.on_surface_variant
                                 anchors.centerIn: parent
                                 font.pixelSize: 24
                                 font.family: Config.fontFamily
@@ -519,7 +518,7 @@ MouseArea {
                             implicitWidth: 22
                             implicitHeight: 22
                             radius: 12
-                            color: Colors.md3.surface_container
+                            color: group.isCritical ? Colors.md3.primary : Colors.md3.surface_container
                             anchors.right: parent.right
                             anchors.bottom: parent.bottom
                             anchors.rightMargin: -3
@@ -698,7 +697,7 @@ MouseArea {
                                     implicitWidth: aLbl.implicitWidth + 20
                                     implicitHeight: 28
                                     radius: 14
-                                    color: aHov.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_highest
+                                    color: group.isCritical ? Qt.alpha(Colors.md3.secondary, 0.1) : (aHov.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_highest)
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 100
@@ -753,7 +752,7 @@ MouseArea {
                                 orientation: Gradient.Horizontal
                                 GradientStop {
                                     position: 0.0
-                                    color: Colors.md3.surface_container_high
+                                    color: group.isCritical ? Colors.md3.secondary_container : Colors.md3.surface_container_high
                                 }
                                 GradientStop {
                                     position: 1.0
@@ -783,7 +782,7 @@ MouseArea {
                                 }
                                 GradientStop {
                                     position: 1.0
-                                    color: Colors.md3.surface_container_high
+                                    color: group.isCritical ? Colors.md3.secondary_container : Colors.md3.surface_container_high
                                 }
                             }
                         }

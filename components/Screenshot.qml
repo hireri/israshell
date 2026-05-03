@@ -23,7 +23,11 @@ Item {
 
     property string pendingEditPath: ""
     property string pendingNotifyCmd: ""
+    property string pendingPreviewPath: ""
 
+    ScreenshotPreview {
+        id: screenshotPreview
+    }
     IpcHandler {
         target: "screenshot"
         function activate(): void {
@@ -119,7 +123,7 @@ Item {
         const cx = Math.round(gx), cy = Math.round(gy);
         const cw = Math.round(gw), ch = Math.round(gh);
 
-        root.pendingEditPath = path;
+        root.pendingPreviewPath = path;
 
         const cmd = `
         mkdir -p '${root.outputDir}' && \
@@ -166,9 +170,9 @@ Item {
             root.active = false;
             uiLoader.active = false;
 
-            if (root.pendingNotifyCmd !== "") {
-                Quickshell.execDetached(["sh", "-c", root.pendingNotifyCmd]);
-                root.pendingNotifyCmd = "";
+            if (root.pendingPreviewPath !== "") {
+                screenshotPreview.show(root.pendingPreviewPath);
+                root.pendingPreviewPath = "";
             }
         }
     }
