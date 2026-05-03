@@ -245,21 +245,13 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.previewsLoading = false;
-                const outPath = text.trim();
-                if (!outPath)
+                if (!text.trim())
                     return;
-                const req = new XMLHttpRequest();
-                req.open("GET", "file://" + outPath);
-                req.onreadystatechange = () => {
-                    if (req.readyState !== XMLHttpRequest.DONE)
-                        return;
-                    try {
-                        root.schemePreviews = JSON.parse(req.responseText);
-                    } catch (e) {
-                        console.log("[Wallpaper] Failed to parse scheme previews:", e);
-                    }
-                };
-                req.send();
+                try {
+                    root.schemePreviews = JSON.parse(text.trim());
+                } catch (e) {
+                    console.log("[Wallpaper] Failed to parse scheme previews:", e);
+                }
             }
         }
     }

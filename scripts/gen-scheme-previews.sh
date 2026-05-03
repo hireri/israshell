@@ -17,7 +17,7 @@ VALID_SCHEMES=(
 WALL_HASH=$(md5sum "$WALL" | cut -d' ' -f1)
 OUT="/tmp/qs_scheme_previews_${WALL_HASH}_${MODE}.json"
 
-[[ -f "$OUT" ]] && { echo "$OUT"; exit 0; }
+[[ -f "$OUT" ]] && { cat "$OUT"; exit 0; }
 
 TMPDIR_WORK=$(mktemp -d)
 trap 'rm -rf "$TMPDIR_WORK"' EXIT
@@ -51,4 +51,4 @@ done
 result+="}"
 
 echo "$result" > "$OUT"
-echo "$OUT"
+echo "$result"
