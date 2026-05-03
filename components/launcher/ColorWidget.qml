@@ -19,7 +19,10 @@ Item {
     onQueryChanged: _update(query.trim())
 
     function _update(str) {
-        if (str === "") { _valid = false; return; }
+        if (str === "") {
+            _valid = false;
+            return;
+        }
 
         let c = Qt.color("transparent");
         let ok = false;
@@ -38,7 +41,10 @@ Item {
             }
         }
 
-        if (!ok) { _valid = false; return; }
+        if (!ok) {
+            _valid = false;
+            return;
+        }
 
         _color = c;
         _valid = true;
@@ -48,9 +54,7 @@ Item {
         const b = Math.round(c.b * 255);
         const a = Math.round(c.a * 255);
 
-        const hex6 = r.toString(16).padStart(2, "0") +
-                     g.toString(16).padStart(2, "0") +
-                     b.toString(16).padStart(2, "0");
+        const hex6 = r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0");
         _hex = "#" + hex6 + (a < 255 ? a.toString(16).padStart(2, "0") : "");
         _rgb = "rgb(" + r + ", " + g + ", " + b + ")";
 
@@ -61,9 +65,12 @@ Item {
         if (mx !== mn) {
             const d = mx - mn;
             s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
-            if (mx === rf)      h = ((gf - bf) / d + (gf < bf ? 6 : 0)) / 6;
-            else if (mx === gf) h = ((bf - rf) / d + 2) / 6;
-            else                h = ((rf - gf) / d + 4) / 6;
+            if (mx === rf)
+                h = ((gf - bf) / d + (gf < bf ? 6 : 0)) / 6;
+            else if (mx === gf)
+                h = ((bf - rf) / d + 2) / 6;
+            else
+                h = ((rf - gf) / d + 4) / 6;
         }
         _hsl = "hsl(" + Math.round(h * 360) + ", " + Math.round(s * 100) + "%, " + Math.round(l * 100) + "%)";
     }
@@ -81,8 +88,6 @@ Item {
             Layout.fillHeight: true
             radius: 14
             color: root._valid ? root._color : Colors.md3.surface_container_high
-            border.width: 1
-            border.color: root._valid ? Qt.rgba(0, 0, 0, 0.15) : Colors.md3.outline_variant
 
             Text {
                 anchors.centerIn: parent
@@ -102,9 +107,18 @@ Item {
 
             Repeater {
                 model: [
-                    { label: "hex", value: root._hex },
-                    { label: "rgb", value: root._rgb },
-                    { label: "hsl", value: root._hsl }
+                    {
+                        label: "hex",
+                        value: root._hex
+                    },
+                    {
+                        label: "rgb",
+                        value: root._rgb
+                    },
+                    {
+                        label: "hsl",
+                        value: root._hsl
+                    }
                 ]
 
                 delegate: Item {
@@ -114,7 +128,11 @@ Item {
                     Layout.fillHeight: true
 
                     RowLayout {
-                        anchors { fill: parent; topMargin: 4; bottomMargin: 4 }
+                        anchors {
+                            fill: parent
+                            topMargin: 4
+                            bottomMargin: 4
+                        }
                         spacing: 8
 
                         Text {
@@ -142,7 +160,11 @@ Item {
                             radius: 12
                             color: cpHov.containsMouse ? Colors.md3.primary_container : Colors.md3.surface_container_high
                             visible: root._valid
-                            Behavior on color { ColorAnimation { duration: 80 } }
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 80
+                                }
+                            }
 
                             Text {
                                 id: cpLbl
@@ -163,7 +185,11 @@ Item {
                     }
 
                     Rectangle {
-                        anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+                        anchors {
+                            bottom: parent.bottom
+                            left: parent.left
+                            right: parent.right
+                        }
                         height: 1
                         color: Colors.md3.outline_variant
                         opacity: 0.4

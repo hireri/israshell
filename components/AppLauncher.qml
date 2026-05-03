@@ -553,7 +553,7 @@ Scope {
                 color: Colors.md3.surface_container
                 clip: true
 
-                height: root._widgetShown ? (widgetInner.implicitHeight + 28) : 0
+                height: root._widgetShown ? (widgetInner.implicitHeight + 32) : 0
                 opacity: root._widgetShown ? 1.0 : 0.0
                 scale: root._widgetShown ? 1.0 : 0.80
                 transformOrigin: Item.Top

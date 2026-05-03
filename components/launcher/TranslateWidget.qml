@@ -19,7 +19,13 @@ Item {
 
     implicitHeight: col.implicitHeight
 
-    onSourceTextChanged: _deb.restart()
+    onSourceTextChanged: {
+        _translated = "";
+        _romanized = "";
+        _detectedSrc = "";
+        _error = false;
+        _deb.restart();
+    }
     onTargetLangChanged: {
         if (targetLang !== "")
             _deb.restart();

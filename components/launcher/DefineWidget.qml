@@ -22,6 +22,11 @@ Item {
     onWordChanged: {
         if (word.trim() === "")
             return;
+        _word = "";
+        _phonetic = "";
+        _meanings = [];
+        _error = false;
+        _errMsg = "";
         _deb.restart();
     }
 
@@ -153,6 +158,16 @@ Item {
         }
         spacing: 10
 
+        Text {
+            visible: !root._loading && !root._error && root._word === ""
+            Layout.fillWidth: true
+            text: "type a word to look up"
+            color: Colors.md3.on_surface_variant
+            font.pixelSize: 13
+            font.family: Config.fontFamily
+            opacity: 0.4
+        }
+
         RowLayout {
             visible: root._loading
             Layout.fillWidth: true
@@ -253,8 +268,6 @@ Item {
                     height: 22
                     radius: 11
                     color: Colors.md3.secondary_container
-                    border.width: 1
-                    border.color: Colors.md3.outline_variant
 
                     Text {
                         id: posLbl
@@ -306,8 +319,6 @@ Item {
                             height: 20
                             radius: 10
                             color: Colors.md3.surface_container_high
-                            border.width: 1
-                            border.color: Colors.md3.outline_variant
 
                             Text {
                                 id: synLbl
@@ -321,7 +332,6 @@ Item {
 
                             MouseArea {
                                 anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
                                 onClicked: root.copyResult(modelData)
                             }
                         }

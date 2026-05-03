@@ -23,6 +23,10 @@ Item {
     onSubjectChanged: {
         if (subject.trim() === "")
             return;
+        _info = {};
+        _raw = "";
+        _error = false;
+        _errorMsg = "";
         _deb.restart();
     }
 

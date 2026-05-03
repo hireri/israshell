@@ -38,10 +38,9 @@ Item {
 
     onQueryChanged: {
         const q = query.trim();
-        if (q === "" || !_looksLikeMath(q)) {
-            _result = "";
+        _result = "";
+        if (q === "" || !_looksLikeMath(q))
             return;
-        }
         debounce.restart();
     }
 
@@ -307,13 +306,6 @@ Item {
                     }
                 }
             }
-        }
-
-        Rectangle {
-            Layout.fillWidth: true
-            height: 1
-            color: Colors.md3.outline_variant
-            opacity: 0.4
         }
 
         Flow {
