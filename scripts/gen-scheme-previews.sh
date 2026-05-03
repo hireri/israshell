@@ -14,6 +14,8 @@ VALID_SCHEMES=(
   scheme-tonal-spot
 )
 
+MAX_JOBS=2
+
 WALL_HASH=$(md5sum "$WALL" | cut -d' ' -f1)
 OUT="/tmp/qs_scheme_previews_${WALL_HASH}_${MODE}.json"
 
@@ -38,15 +40,22 @@ for SCHEME in "${VALID_SCHEMES[@]}"; do
       "$SCHEME" "$primary" "$secondary" "$tertiary" \
       > "$TMPDIR_WORK/$SCHEME"
   ) &
+
+  if [[ $(jobs -rp | wc -l) -ge $MAX_JOBS ]]; then
+    wait -n
+  fi
 done
+
 wait
 
 result="{"
 first=1
 for SCHEME in "${VALID_SCHEMES[@]}"; do
-  [[ $first -eq 0 ]] && result+=","
-  result+=$(cat "$TMPDIR_WORK/$SCHEME")
-  first=0
+  if [[ -f "$TMPDIR_WORK/$SCHEME" ]]; then
+    [[ $first -eq 0 ]] && result+=","
+    result+=$(cat "$TMPDIR_WORK/$SCHEME")
+    first=0
+  fi
 done
 result+="}"
 
