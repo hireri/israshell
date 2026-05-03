@@ -381,8 +381,6 @@ Scope {
         if (_animating)
             return;
         _animating = true;
-        _query = "";
-        launcherList.resetToTop();
         closeAnim.start();
     }
 
@@ -513,6 +511,9 @@ Scope {
                     easing.type: Easing.OutSine
                 }
                 onFinished: {
+                    _query = "";
+                    launcherList.resetToTop();
+
                     root.isOpen = false;
                     root._animating = false;
                     stack.opacity = 1.0;
