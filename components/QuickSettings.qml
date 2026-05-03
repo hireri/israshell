@@ -369,7 +369,7 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     root.isOpen = false;
-                                    Quickshell.execDetached(["bash", "-c", "pkill qs; sleep 0.3; qs"]);
+                                    Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs"]);
                                 }
                             }
                         }
