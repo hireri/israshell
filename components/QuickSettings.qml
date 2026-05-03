@@ -346,6 +346,38 @@ Item {
                             Layout.preferredWidth: 36
                             Layout.preferredHeight: 36
                             radius: 12
+                            color: reloadMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰑓"
+                                font.pixelSize: 15
+                                font.family: Config.fontFamily
+                                color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+                            }
+
+                            MouseArea {
+                                id: reloadMouse
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: {
+                                    root.isOpen = false;
+                                    Quickshell.execDetached(["bash", "-c", "pkill qs; sleep 0.3; qs"]);
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 36
+                            radius: 12
                             color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
 
                             Behavior on color {
