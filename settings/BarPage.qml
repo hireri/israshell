@@ -16,23 +16,102 @@ PageBase {
         label: "Layout"
         Layout.fillWidth: true
 
-        SettingSwitch {
-            label: "Hugging bar"
-            sublabel: "Attach bar to screen edge"
-            checked: Config.huggingBar
-            onToggled: v => Config.update({
-                    huggingBar: v,
-                    floatingBar: v ? false : Config.floatingBar
-                })
-        }
+        SettingRow {
+            label: "Bar mode"
+            sublabel: {
+                switch (triSwitch.currentMode) {
+                case 0:
+                    return "Hugging screen edge";
+                case 1:
+                    return "Attached to screen edge";
+                case 2:
+                    return "Floating, detached";
+                default:
+                    return "";
+                }
+            }
 
-        SettingSwitch {
-            label: "Floating bar"
-            sublabel: "Detach from screen edge"
-            checked: Config.floatingBar
-            onToggled: v => Config.update({
-                    floatingBar: v
-                })
+            Item {
+                id: triSwitch
+                implicitWidth: 132
+                implicitHeight: 34
+
+                readonly property int count: 3
+                readonly property real optionWidth: 40
+                readonly property real padding: 3
+                readonly property real spacing: 3
+                readonly property int currentMode: Config.huggingBar ? 0 : Config.floatingBar ? 2 : 1
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: height / 2
+                    color: Colors.md3.surface_container_high
+                }
+
+                Rectangle {
+                    id: triBall
+                    y: triSwitch.padding
+                    x: triSwitch.padding + triSwitch.currentMode * (triSwitch.optionWidth + triSwitch.spacing)
+                    width: triSwitch.optionWidth
+                    height: parent.height - triSwitch.padding * 2
+                    radius: height / 2
+                    color: Colors.md3.primary
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: 220
+                            easing.type: Easing.OutCubic
+                            easing.overshoot: 1.2
+                        }
+                    }
+                }
+
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: triSwitch.padding
+                    spacing: triSwitch.spacing
+
+                    Repeater {
+                        model: 3
+
+                        delegate: Item {
+                            required property int index
+                            readonly property bool active: triSwitch.currentMode === index
+
+                            width: triSwitch.optionWidth
+                            height: parent.height
+
+                            HuggingBarIcon {
+                                anchors.centerIn: parent
+                                iconSize: 16
+                                color: parent.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                                visible: parent.index === 0
+                            }
+                            StraightBarIcon {
+                                anchors.centerIn: parent
+                                iconSize: 16
+                                color: parent.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                                visible: parent.index === 1
+                            }
+                            FloatingBarIcon {
+                                anchors.centerIn: parent
+                                iconSize: 16
+                                color: parent.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                                visible: parent.index === 2
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Config.update({
+                                    huggingBar: index === 0,
+                                    floatingBar: index === 2
+                                })
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         SettingSwitch {
@@ -169,6 +248,82 @@ PageBase {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: addDialog.open()
+                    }
+                }
+            }
+        }
+    }
+
+    SectionCard {
+        label: "Screen capture"
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: "Enable screen capture"
+            sublabel: "Expose capture actions in the bar"
+            checked: Config.screencapEnabled
+            onToggled: v => Config.update({
+                    screencapEnabled: v
+                })
+        }
+
+        SettingRow {
+            isLast: true
+            label: "Actions"
+            sublabel: "Toggle individual capture actions"
+            enabled: Config.screencapEnabled
+            opacity: Config.screencapEnabled ? 1 : 0.45
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
+                }
+            }
+
+            Flow {
+                width: 220
+                spacing: 6
+
+                readonly property var actions: [
+                    {
+                        key: "screenshot",
+                        label: "Screenshot"
+                    },
+                    {
+                        key: "record",
+                        label: "Record"
+                    },
+                    {
+                        key: "cts",
+                        label: "Color picker"
+                    },
+                    {
+                        key: "ocr",
+                        label: "OCR"
+                    },
+                    {
+                        key: "songrec",
+                        label: "Song ID"
+                    }
+                ]
+
+                Repeater {
+                    model: parent.actions
+
+                    ToolChip {
+                        required property var modelData
+                        label: modelData.label
+                        active: !Config.screencap.blacklist.includes(modelData.key)
+                        onToggled: isActive => {
+                            const key = modelData.key;
+                            const bl = Config.screencap.blacklist;
+                            const updated = isActive ? bl.filter(x => x !== key) : bl.concat([key]);
+                            Config.update({
+                                screencap: Object.assign({}, Config.screencap, {
+                                    blacklist: updated
+                                })
+                            });
+                        }
                     }
                 }
             }
