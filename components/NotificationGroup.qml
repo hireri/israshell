@@ -381,7 +381,7 @@ MouseArea {
             anchors.fill: card
             radius: card.radius
             blur: 20
-            color: Qt.rgba(0, 0, 0, 0.22)
+            color: Qt.rgba(0, 0, 0, 0.3)
             offset: Qt.vector2d(0, 4)
             antialiasing: true
             visible: !group.inPanel

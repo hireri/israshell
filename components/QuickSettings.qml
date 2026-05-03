@@ -629,7 +629,7 @@ Item {
                             }
                         }
 
-                        Rectangle {
+                        ClippingRectangle {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             radius: 24
