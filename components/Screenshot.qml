@@ -134,7 +134,7 @@ Item {
         res=$(notify-send "Screenshot saved" "<img src=\\"${path}\\"/>Saved to ${root.outputDir}" -i camera-photo -a Screenshot -A "default=Edit")
         if [ "$res" = "default" ]; then
             if [ "${root.editor}" = "satty" ]; then
-                satty --filename "${path}" --output-filename "${path}" --early-exit
+                satty --filename "${path}" --output-filename "${path}" --early-exit --copy-command wl-copy --actions-on-enter save-to-clipboard --save-after-copy
             else
                 ${root.editor} "${path}"
             fi
