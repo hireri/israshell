@@ -295,7 +295,7 @@ PageBase {
                     },
                     {
                         key: "cts",
-                        label: "Color picker"
+                        label: "Circle To Search"
                     },
                     {
                         key: "ocr",
