@@ -80,7 +80,7 @@ bind = $mainMod, G, exec, qs ipc call gamemode toggle
 ## Dependencies
 
 - **Core**: `quickshell`, `hyprland`, `hyprsunset`, `hypridle`
-- **Visuals**: `matugen`, `awww`
+- **Visuals**: `matugen`, `awww`, `cava`
 - **Services**: `networkmanager`, `blueman`, `pipewire`, `wireplumber`, `bluez`, `bluez-utils`
 - **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
 - **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`
@@ -88,7 +88,7 @@ bind = $mainMod, G, exec, qs ipc call gamemode toggle
 - **Fonts**: `inter-font`, `ttf-roboto-mono`
 
 ```bash
-yay -Q quickshell hyprland hyprsunset hypridle matugen awww \
+yay -Q quickshell hyprland hyprsunset hypridle matugen awww cava\
         networkmanager blueman pipewire wireplumber bluez bluez-utils \
         qt6-declarative qt6-5compat qt6-svg clipvault rdap kakasi \
         mpv wl-clipboard xdg-utils pavucontrol inter-font \
