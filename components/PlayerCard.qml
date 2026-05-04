@@ -319,7 +319,7 @@ raw_target = /dev/stdout
 data_format = ascii
 ascii_max_range = 1000
 CAVAEOF`]
-        running: root.visible && (root.player?.playbackState === MprisPlaybackState.Playing ?? false)
+        running: root.visible && root.player !== null
 
         stdout: SplitParser {
             splitMarker: "\n"
@@ -338,12 +338,6 @@ CAVAEOF`]
                 const left = mono.slice(0, half).reverse();
                 const right = mono.slice(0, half);
                 root.cavaBars = left.concat(right);
-            }
-        }
-
-        onRunningChanged: {
-            if (!running) {
-                root.cavaBars = Array(root.cavaBarCount).fill(0);
             }
         }
     }
@@ -943,7 +937,7 @@ CAVAEOF`]
         Canvas {
             id: cavaViz
             anchors.fill: parent
-            opacity: (root.player?.playbackState === MprisPlaybackState.Playing ?? false) ? 0.28 : 0
+            opacity: root.player !== null ? 0.28 : 0
             Behavior on opacity {
                 NumberAnimation {
                     duration: 600
