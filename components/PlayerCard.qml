@@ -29,6 +29,12 @@ Item {
         snapToPosition();
     }
 
+    onVisibleChanged: {
+        if (!visible) {
+            cavaBars = Array(cavaBarCount).fill(0);
+        }
+    }
+
     onArtUrlChanged: {
         if (artUrl === "") {
             localArtPath = "";
