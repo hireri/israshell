@@ -22,10 +22,9 @@ Item {
     implicitHeight: 160
 
     readonly property string artUrl: player?.trackArtUrl ?? ""
-    property string localArtPath: ""
+    property string _quantizerPath: ""
 
     onPlayerChanged: {
-        localArtPath = "";
         snapToPosition();
     }
 
@@ -36,17 +35,15 @@ Item {
     }
 
     onArtUrlChanged: {
-        if (artUrl === "") {
-            localArtPath = "";
-            return;
-        }
-        if (artUrl.startsWith("file://")) {
-            localArtPath = artUrl;
+        if (artUrl === "" || artUrl.startsWith("file://") || artUrl.startsWith("/")) {
+            _quantizerPath = artUrl.startsWith("/") ? "file://" + artUrl : artUrl;
             return;
         }
 
-        localArtPath = "";
         const file = "/tmp/qs_art_" + Qt.md5(artUrl);
+        if (_quantizerPath === "file://" + file)
+            return;
+
         artFetchProc.launchedUrl = artUrl;
         artFetchProc.launchedFile = file;
         artFetchProc.running = false;
@@ -61,31 +58,21 @@ Item {
         running: false
         onExited: code => {
             if (code === 0 && launchedUrl === root.artUrl && launchedFile !== "")
-                quantizerDelay.restart();
+                root._quantizerPath = "file://" + launchedFile;
         }
     }
 
-    Timer {
-        id: quantizerDelay
-        interval: 100
-        running: false
-        onTriggered: {
-            if (root.artUrl === artFetchProc.launchedUrl)
-                root.localArtPath = "file://" + artFetchProc.launchedFile;
-        }
+    ColorQuantizer {
+        id: quantizer
+        source: root._quantizerPath
+        depth: 2
+        rescaleSize: 8
     }
 
     Timer {
         id: skipSyncTimer
         interval: 380
         onTriggered: root.snapToPosition()
-    }
-
-    ColorQuantizer {
-        id: quantizer
-        source: root.localArtPath
-        depth: 2
-        rescaleSize: 8
     }
 
     readonly property bool darkMode: typeof Config.darkMode !== "undefined" ? Config.darkMode : true
@@ -103,7 +90,7 @@ Item {
 
     readonly property var _scheme: {
         const cols = quantizer.colors;
-        if (!cols || cols.length === 0 || localArtPath === "") {
+        if (!cols || cols.length === 0 || _quantizerPath === "") {
             return {
                 surface: Colors.md3.surface_container_high,
                 surfaceContainer: Colors.md3.surface_container,
@@ -366,13 +353,14 @@ CAVAEOF`]
             anchors.fill: parent
             radius: card.radius
             color: "transparent"
-            property bool _aActive: false
 
             BgImage {
                 id: bgA
+                opacity: 0
             }
             BgImage {
                 id: bgB
+                opacity: 0
             }
 
             NumberAnimation {
@@ -381,8 +369,6 @@ CAVAEOF`]
                 property: "opacity"
                 duration: 380
                 easing.type: Easing.OutCubic
-                onStopped: if (bgA.opacity < 0.01)
-                    bgA.source = ""
             }
             NumberAnimation {
                 id: bgAnim_B
@@ -390,52 +376,88 @@ CAVAEOF`]
                 property: "opacity"
                 duration: 380
                 easing.type: Easing.OutCubic
-                onStopped: if (bgB.opacity < 0.01)
-                    bgB.source = ""
+            }
+
+            property int frontSlot: 0
+            property string targetUrl: ""
+
+            function front() {
+                return frontSlot === 0 ? bgA : bgB;
+            }
+            function back() {
+                return frontSlot === 0 ? bgB : bgA;
+            }
+            function frontAnim() {
+                return frontSlot === 0 ? bgAnim_A : bgAnim_B;
+            }
+            function backAnim() {
+                return frontSlot === 0 ? bgAnim_B : bgAnim_A;
             }
 
             function showBg(path) {
-                bgAnim_A.stop();
-                bgAnim_B.stop();
-                const isA = _aActive;
-                const curr = isA ? bgA : bgB;
-                const animC = isA ? bgAnim_A : bgAnim_B;
-                const next = isA ? bgB : bgA;
+                targetUrl = path;
+
                 if (path === "") {
-                    animC.to = 0;
-                    animC.start();
+                    bgAnim_A.stop();
+                    bgAnim_B.stop();
+                    bgAnim_A.to = 0;
+                    bgAnim_B.to = 0;
+                    bgAnim_A.start();
+                    bgAnim_B.start();
                     return;
                 }
-                if (curr.opacity > 0.01) {
-                    animC.to = 0;
-                    animC.start();
+
+                if (front().source.toString() === path && front().status === Image.Ready)
+                    return;
+                if (back().source.toString() === path && back().status === Image.Ready) {
+                    _crossfade(1 - frontSlot);
+                    return;
                 }
-                next.source = path;
-                _aActive = !isA;
+
+                back().source = path;
+
+                frontAnim().stop();
+                frontAnim().to = 1;
+                frontAnim().start();
+            }
+
+            function _crossfade(slot) {
+                var loaded = (slot === 0) ? bgA : bgB;
+
+                if (slot === frontSlot)
+                    return;
+                if (loaded.source.toString() !== targetUrl)
+                    return;
+
+                frontSlot = slot;
+
+                frontAnim().stop();
+                frontAnim().to = 1;
+                frontAnim().start();
+
+                backAnim().stop();
+                backAnim().to = 0;
+                backAnim().start();
             }
 
             Connections {
                 target: root
-                function onLocalArtPathChanged() {
-                    bgClip.showBg(root.localArtPath);
+                function onArtUrlChanged() {
+                    bgClip.showBg(root.artUrl);
                 }
             }
             Connections {
                 target: bgA
                 function onStatusChanged() {
-                    if (bgA.status === Image.Ready) {
-                        bgAnim_A.to = 1;
-                        bgAnim_A.start();
-                    }
+                    if (bgA.status === Image.Ready)
+                        bgClip._crossfade(0);
                 }
             }
             Connections {
                 target: bgB
                 function onStatusChanged() {
-                    if (bgB.status === Image.Ready) {
-                        bgAnim_B.to = 1;
-                        bgAnim_B.start();
-                    }
+                    if (bgB.status === Image.Ready)
+                        bgClip._crossfade(1);
                 }
             }
         }
@@ -524,12 +546,12 @@ CAVAEOF`]
                 }
                 Image {
                     anchors.fill: parent
-                    source: root.localArtPath
+                    source: root.artUrl
                     fillMode: Image.PreserveAspectCrop
                     sourceSize: Qt.size(44, 44)
                     cache: true
                     asynchronous: true
-                    opacity: status === Image.Ready && root.localArtPath !== "" ? 1 : 0
+                    opacity: status === Image.Ready && root.artUrl !== "" ? 1 : 0
                     Behavior on opacity {
                         NumberAnimation {
                             duration: 200
