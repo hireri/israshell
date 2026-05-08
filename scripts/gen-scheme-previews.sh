@@ -6,7 +6,7 @@ MODE="${2:-dark}"
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 VALID_SCHEMES=(
-  scheme-content
+  scheme-rainbow
   scheme-expressive
   scheme-fruit-salad
   scheme-monochrome
