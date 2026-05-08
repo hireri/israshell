@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import Quickshell
 import Quickshell.Io
+import Quickshell.Widgets
 import qs.style
 import qs.settings.components
 import qs.settings
@@ -14,7 +15,6 @@ FloatingWindow {
     visible: true
     implicitWidth: 960
     implicitHeight: 680
-    minimumSize: Qt.size(970, 540)
     title: "Settings"
     color: Colors.md3.background
 
@@ -42,110 +42,132 @@ FloatingWindow {
             Layout.fillHeight: true
             color: Colors.md3.surface_container_low
 
-            ColumnLayout {
+            Flickable {
                 anchors {
                     fill: parent
                     margins: 12
                 }
-                spacing: 0
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 40
-                    color: "transparent"
-                    Layout.bottomMargin: 14
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "Settings"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 18
-                        font.weight: Font.Bold
-                        color: Colors.md3.on_surface
-                    }
+                contentWidth: width
+                contentHeight: sidebarContent.implicitHeight
+                clip: true
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AsNeeded
                 }
 
-                SidebarGroup {
-                    Layout.fillWidth: true
-                    Layout.bottomMargin: 8
-                    currentPage: root.currentPage
-                    onNavigate: p => root.currentPage = p
+                ColumnLayout {
+                    id: sidebarContent
+                    width: parent.width
+                    spacing: 0
 
-                    SidebarItem {
-                        page: root.pageOverview
-                        label: "Overview"
-                        sublabel: "Wallpaper, appearance"
-                        onClicked: root.currentPage = page
-                        OverviewIcon {}
-                    }
-                    SidebarItem {
-                        page: root.pageNetwork
-                        label: "Connectivity"
-                        sublabel: "Wi-Fi, Bluetooth"
-                        onClicked: root.currentPage = page
-                        NetworkingIcon {}
-                    }
-                }
+                    Item {
+                        Layout.fillWidth: true
+                        height: 40
+                        Layout.bottomMargin: 14
 
-                SidebarGroup {
-                    Layout.fillWidth: true
-                    Layout.bottomMargin: 8
-                    currentPage: root.currentPage
-                    onNavigate: p => root.currentPage = p
+                        ClippingRectangle {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 32
+                            height: 32
+                            radius: 16
 
-                    SidebarItem {
-                        page: root.pageBar
-                        label: "Bar"
-                        sublabel: "Layout, clock"
-                        onClicked: root.currentPage = page
-                        CustomizationIcon {}
-                    }
-                    SidebarItem {
-                        page: root.pageClock
-                        label: "Desktop Clock"
-                        sublabel: "Mode, colors"
-                        onClicked: root.currentPage = page
-                        AnalogClockIcon {}
-                    }
-                    SidebarItem {
-                        page: root.pageDisplay
-                        label: "Display"
-                        sublabel: "Nightlight, gamma"
-                        onClicked: root.currentPage = page
-                        NightlightIcon {}
-                    }
-                    SidebarItem {
-                        page: root.pageSound
-                        label: "Sound & Notifications"
-                        sublabel: "Audio, popups"
-                        onClicked: root.currentPage = page
-                        NotificationsIcon {}
-                    }
-                }
+                            Image {
+                                anchors.fill: parent
+                                source: "file://" + Quickshell.env("HOME") + "/.face"
+                                fillMode: Image.PreserveAspectCrop
+                                sourceSize: Qt.size(40, 40)
+                                smooth: true
+                            }
+                        }
 
-                SidebarGroup {
-                    Layout.fillWidth: true
-                    currentPage: root.currentPage
-                    onNavigate: p => root.currentPage = p
-
-                    SidebarItem {
-                        page: root.pageImmeria
-                        label: Config.ai.name
-                        sublabel: "AI, backend, tools"
-                        onClicked: root.currentPage = page
-                        ScriptsIcon {}
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Settings"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 18
+                            font.weight: Font.Bold
+                            color: Colors.md3.on_surface
+                        }
                     }
-                    SidebarItem {
-                        page: root.pageSystem
-                        label: "System"
-                        sublabel: "About, paths, keybinds"
-                        onClicked: root.currentPage = page
-                        AboutIcon {}
-                    }
-                }
 
-                Item {
-                    Layout.fillHeight: true
+                    SidebarGroup {
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: 8
+                        currentPage: root.currentPage
+                        onNavigate: p => root.currentPage = p
+
+                        SidebarItem {
+                            page: root.pageOverview
+                            label: "Overview"
+                            sublabel: "Wallpaper, appearance"
+                            onClicked: root.currentPage = page
+                            OverviewIcon {}
+                        }
+                        SidebarItem {
+                            page: root.pageNetwork
+                            label: "Connectivity"
+                            sublabel: "Wi-Fi, Bluetooth"
+                            onClicked: root.currentPage = page
+                            NetworkingIcon {}
+                        }
+                    }
+
+                    SidebarGroup {
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: 8
+                        currentPage: root.currentPage
+                        onNavigate: p => root.currentPage = p
+
+                        SidebarItem {
+                            page: root.pageBar
+                            label: "Bar"
+                            sublabel: "Layout, clock"
+                            onClicked: root.currentPage = page
+                            CustomizationIcon {}
+                        }
+                        SidebarItem {
+                            page: root.pageClock
+                            label: "Desktop Clock"
+                            sublabel: "Mode, colors"
+                            onClicked: root.currentPage = page
+                            AnalogClockIcon {}
+                        }
+                        SidebarItem {
+                            page: root.pageDisplay
+                            label: "Display"
+                            sublabel: "Nightlight, gamma"
+                            onClicked: root.currentPage = page
+                            NightlightIcon {}
+                        }
+                        SidebarItem {
+                            page: root.pageSound
+                            label: "Sound & Notifications"
+                            sublabel: "Audio, popups"
+                            onClicked: root.currentPage = page
+                            NotificationsIcon {}
+                        }
+                    }
+
+                    SidebarGroup {
+                        Layout.fillWidth: true
+                        currentPage: root.currentPage
+                        onNavigate: p => root.currentPage = p
+
+                        SidebarItem {
+                            page: root.pageImmeria
+                            label: Config.ai.name
+                            sublabel: "AI, backend, tools"
+                            onClicked: root.currentPage = page
+                            ScriptsIcon {}
+                        }
+                        SidebarItem {
+                            page: root.pageSystem
+                            label: "System"
+                            sublabel: "About, paths, keybinds"
+                            onClicked: root.currentPage = page
+                            AboutIcon {}
+                        }
+                    }
                 }
             }
         }
