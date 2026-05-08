@@ -64,12 +64,17 @@ Scope {
         active: root.shouldShowOsd
 
         PanelWindow {
-            anchors.top: Config.osdPosition === 1
+            anchors.top: Config.osdPosition === 0 || Config.osdPosition === 1
             anchors.right: Config.osdPosition === 2
             anchors.bottom: Config.osdPosition === 3
             anchors.left: Config.osdPosition === 4
 
-            margins.top: Config.osdPosition === 1 ? 24 : 0
+            margins.top: {
+                if (Config.osdPosition === 0) {
+                    return screen.height * 0.57;
+                }
+                return Config.osdPosition === 1 ? 24 : 0;
+            }
             margins.right: Config.osdPosition === 2 ? 24 : 0
             margins.bottom: Config.osdPosition === 3 ? 24 : 0
             margins.left: Config.osdPosition === 4 ? 24 : 0

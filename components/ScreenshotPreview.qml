@@ -16,6 +16,15 @@ Item {
     property bool panelActive: false
     property string dismissMode: "slide"
 
+    readonly property bool isBottom: {
+        const pos = Config.notifications.popupPosition ?? 0;
+        if (pos === 1)
+            return false;
+        if (pos === 2)
+            return true;
+        return (Config.barPosition ?? 0) === 1;
+    }
+
     function show(path) {
         imagePath = path;
         if (!panelActive)
@@ -35,12 +44,15 @@ Item {
         required property string outputDir
 
         anchors.left: true
-        anchors.top: true
+        anchors.top: !outer.isBottom
+        anchors.bottom: outer.isBottom
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "quickshell:screenshotPreview"
         WlrLayershell.screen: targetScreen
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusiveZone: 0
+        margins.top: outer.isBottom ? 0 : 12
+        margins.bottom: outer.isBottom ? 12 : 0
         color: "transparent"
 
         implicitWidth: 400

@@ -9,6 +9,15 @@ Item {
     id: outer
     property bool keepActive: false
 
+    readonly property bool isBottom: {
+        const pos = Config.notifications.popupPosition ?? 0;
+        if (pos === 1)
+            return false;
+        if (pos === 2)
+            return true;
+        return (Config.barPosition ?? 0) === 1;
+    }
+
     Timer {
         id: deactivateTimer
         interval: 400
@@ -37,7 +46,8 @@ Item {
         WlrLayershell.namespace: "quickshell:notificationPopup"
         WlrLayershell.screen: targetScreen
         exclusiveZone: 0
-        margins.top: 12
+        margins.top: outer.isBottom ? 0 : 12
+        margins.bottom: outer.isBottom ? 2 : 0
         implicitWidth: 700
         color: "transparent"
         mask: Region {
@@ -46,9 +56,16 @@ Item {
 
         NotificationListView {
             id: notifList
-            anchors.top: parent.top
+            property int hoveredCount: 0
+            property bool anyHovered: hoveredCount > 0
+
+            anchors.top: outer.isBottom ? undefined : parent.top
+            anchors.bottom: outer.isBottom ? parent.bottom : undefined
             anchors.right: parent.right
             anchors.rightMargin: 12
+
+            verticalLayoutDirection: outer.isBottom ? ListView.BottomToTop : ListView.TopToBottom
+
             implicitWidth: 320
             implicitHeight: contentHeight
             height: contentHeight

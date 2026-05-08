@@ -110,7 +110,11 @@ MouseArea {
 
     onMessagesChanged: {
         if (messages.length > 0) {
-            if (group.popup && !containsMouse && group.liveNotif !== null)
+            let globallyHovered = false;
+            if (group.popup && group.listRef && group.listRef.anyHovered !== undefined) {
+                globallyHovered = group.listRef.anyHovered;
+            }
+            if (group.popup && !containsMouse && !globallyHovered && group.liveNotif !== null)
                 _maybeStartTimer();
         }
     }
@@ -209,13 +213,34 @@ MouseArea {
     }
 
     hoverEnabled: true
+    property bool _wasHovered: false
+
+    Component.onDestruction: {
+        if (_wasHovered && group.listRef && group.listRef.hoveredCount !== undefined) {
+            group.listRef.hoveredCount--;
+        }
+    }
+
     onContainsMouseChanged: {
         if (!group.popup)
             return;
-        if (containsMouse)
-            groupTimer.stop();
-        else if (group.liveNotif)
-            _maybeStartTimer();
+
+        if (containsMouse && !_wasHovered) {
+            _wasHovered = true;
+            if (group.listRef && group.listRef.hoveredCount !== undefined)
+                group.listRef.hoveredCount++;
+        } else if (!containsMouse && _wasHovered) {
+            _wasHovered = false;
+            if (group.listRef && group.listRef.hoveredCount !== undefined)
+                group.listRef.hoveredCount--;
+        }
+
+        if (!group.listRef || group.listRef.anyHovered === undefined) {
+            if (containsMouse)
+                groupTimer.stop();
+            else if (group.liveNotif)
+                _maybeStartTimer();
+        }
     }
 
     acceptedButtons: Qt.RightButton
@@ -261,6 +286,14 @@ MouseArea {
                 return;
             if (group.listRef.dragIndex < 0)
                 group.cardX = 0;
+        }
+        function onAnyHoveredChanged() {
+            if (!group.popup || !group.listRef)
+                return;
+            if (group.listRef.anyHovered)
+                groupTimer.stop();
+            else if (group.liveNotif)
+                _maybeStartTimer();
         }
     }
 
@@ -497,10 +530,10 @@ MouseArea {
                             color: group.isCritical ? Colors.md3.primary : (group.inPanel ? Colors.md3.surface_container : Colors.md3.surface_container_high)
 
                             Text {
-                                text: "󰂚"
+                                text: group.isCritical ? "" : "󰂚"
                                 color: group.isCritical ? Colors.md3.on_primary : Colors.md3.on_surface_variant
                                 anchors.centerIn: parent
-                                font.pixelSize: 24
+                                font.pixelSize: 26
                                 font.family: Config.fontFamily
                                 visible: group._mainIcon === ""
                             }

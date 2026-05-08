@@ -347,6 +347,18 @@ PageBase {
         label: "Notifications"
         Layout.fillWidth: true
 
+        SettingSwitch {
+            isLast: true
+            label: "Show on all monitors"
+            sublabel: "Mirror popups across every screen"
+            iconBg: Colors.md3.secondary_container
+            checked: Config.notifications.showAllMonitors ?? false
+            onToggled: v => Config.update({
+                    notifications: Object.assign({}, Config.notifications, {
+                        showAllMonitors: v
+                    })
+                })
+        }
         SettingSelect {
             label: "Popup timeout"
             sublabel: "How long popups stay visible"
@@ -376,16 +388,26 @@ PageBase {
                     })
                 })
         }
-
-        SettingSwitch {
-            isLast: true
-            label: "Show on all monitors"
-            sublabel: "Mirror popups across every screen"
-            iconBg: Colors.md3.secondary_container
-            checked: Config.notifications.showAllMonitors ?? false
-            onToggled: v => Config.update({
+        SettingChips {
+            label: "Position"
+            options: [
+                {
+                    label: "Follow Bar",
+                    value: 0
+                },
+                {
+                    label: "Always Top",
+                    value: 1
+                },
+                {
+                    label: "Always Bottom",
+                    value: 2
+                }
+            ]
+            currentValue: Config.notifications.popupPosition ?? 0
+            onSelected: v => Config.update({
                     notifications: Object.assign({}, Config.notifications, {
-                        showAllMonitors: v
+                        popupPosition: v
                     })
                 })
         }

@@ -46,7 +46,8 @@ Singleton {
         })
     property var notifications: ({
             popupTimeout: 5,
-            showAllMonitors: false
+            showAllMonitors: false,
+            popupPosition: 0
         })
     property int dateFormat: 0
     property int osdPosition: 1
@@ -121,7 +122,8 @@ Singleton {
             },
             notifications: {
                 popupTimeout: 5,
-                showAllMonitors: false
+                showAllMonitors: false,
+                popupPosition: 0
             },
             dateFormat: 0,
             osdPosition: 1,
