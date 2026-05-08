@@ -218,7 +218,7 @@ Rectangle {
                 onEntered: {
                     var yPos = Config.barPosition === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.title = isRecognizing ? "Stop Recognizing" : "Recognize Music";
+                    tooltipWindow.tipTitle = isRecognizing ? "Stop Recognizing" : "Recognize Music";
                     tooltipWindow.visible = true;
                 }
                 onExited: tooltipWindow.visible = false
@@ -296,7 +296,7 @@ Rectangle {
                 onEntered: {
                     var yPos = Config.barPosition === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.title = isRecording ? "Stop Recording" : "Start Recording";
+                    tooltipWindow.tipTitle = isRecording ? "Stop Recording" : "Start Recording";
                     tooltipWindow.visible = true;
                 }
                 onExited: tooltipWindow.visible = false
@@ -325,7 +325,7 @@ Rectangle {
             onEntered: {
                 var yPos = Config.barPosition === 1 ? 0 : height;
                 tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                tooltipWindow.title = parent.tooltip;
+                tooltipWindow.tipTitle = parent.tooltip;
                 tooltipWindow.visible = true;
             }
             onExited: tooltipWindow.visible = false
