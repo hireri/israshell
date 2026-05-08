@@ -57,14 +57,26 @@ Item {
         property string launchedFile: ""
         running: false
         onExited: code => {
-            if (code === 0 && launchedUrl === root.artUrl && launchedFile !== "")
+            if (code === 0 && launchedUrl === root.artUrl && launchedFile !== "") {
                 root._quantizerPath = "file://" + launchedFile;
+                root._tryUpdateQuantizer();
+            }
         }
+    }
+
+    function _tryUpdateQuantizer() {
+        if (root._quantizerPath === "") {
+            quantizer.source = "";
+            return;
+        }
+        const front = bgClip.front();
+        if (front.status === Image.Ready)
+            quantizer.source = root._quantizerPath;
     }
 
     ColorQuantizer {
         id: quantizer
-        source: root._quantizerPath
+        source: ""
         depth: 2
         rescaleSize: 8
     }
@@ -398,6 +410,7 @@ CAVAEOF`]
                 targetUrl = path;
 
                 if (path === "") {
+                    quantizer.source = "";
                     bgAnim_A.stop();
                     bgAnim_B.stop();
                     bgAnim_A.to = 0;
@@ -438,6 +451,8 @@ CAVAEOF`]
                 backAnim().stop();
                 backAnim().to = 0;
                 backAnim().start();
+
+                root._tryUpdateQuantizer();
             }
 
             Connections {
