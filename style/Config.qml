@@ -35,6 +35,7 @@ Singleton {
     property bool floatingBar: false
     property bool huggingBar: true
     property bool screenCorners: true
+    property int barPosition: 0
     property var nightLight: ({
             scheduleEnabled: true,
             autoDarkMode: false,
@@ -109,6 +110,7 @@ Singleton {
             floatingBar: false,
             huggingBar: true,
             screenCorners: true,
+            barPosition: 0,
             nightLight: {
                 scheduleEnabled: true,
                 autoDarkMode: false,

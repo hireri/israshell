@@ -18,6 +18,7 @@ Rectangle {
     height: 32
 
     readonly property bool isOpen: MediaPlayerState.openScreen === panelScreen
+    readonly property bool _barAtBottom: Config.barPosition === 1
     property bool popupWindowVisible: false
 
     onIsOpenChanged: {
@@ -294,14 +295,14 @@ Rectangle {
     PopupWindow {
         id: popup
         anchor.item: root
-        anchor.rect {
-            x: Math.round(root.width / 2 - implicitWidth / 2)
-            y: root.height + 2
-            width: implicitWidth
-            height: 1
-        }
+
+        anchor.edges: root._barAtBottom ? Edges.Top : Edges.Bottom
+        anchor.gravity: root._barAtBottom ? Edges.Top : Edges.Bottom
+        anchor.rect: Qt.rect(0, root._barAtBottom ? -8 : 8, root.width, root.height)
+
         implicitWidth: 380
-        implicitHeight: animContainer.implicitHeight
+        implicitHeight: cardStack.height + 44 + 10 + 32
+
         color: "transparent"
         visible: root.popupWindowVisible
 
@@ -314,10 +315,10 @@ Rectangle {
         Item {
             id: animContainer
             anchors.fill: parent
-            implicitHeight: popupCol.implicitHeight + 32
             opacity: root.isOpen ? 1 : 0
             scale: root.isOpen ? 1 : 0.93
-            transformOrigin: Item.Center
+
+            transformOrigin: root._barAtBottom ? Item.Bottom : Item.Top
 
             Behavior on opacity {
                 NumberAnimation {
@@ -338,19 +339,15 @@ Rectangle {
                 Keys.onEscapePressed: root.closePopup()
             }
 
-            Column {
-                id: popupCol
-                anchors {
-                    top: parent.top
-                    left: parent.left
-                    right: parent.right
-                    margins: 16
-                    topMargin: 16
-                }
-                spacing: 10
+            Item {
+                id: popupContent
+                anchors.fill: parent
+                anchors.margins: 16
 
                 Item {
                     id: cardStack
+
+                    y: root._barAtBottom ? chipItem.height + 10 : 0
                     width: parent.width
                     height: cardA.implicitHeight
 
@@ -434,6 +431,9 @@ Rectangle {
                 }
 
                 Item {
+                    id: chipItem
+
+                    y: root._barAtBottom ? 0 : cardStack.height + 10
                     anchors.horizontalCenter: parent.horizontalCenter
                     height: 44
                     implicitWidth: chipRow.implicitWidth + 10

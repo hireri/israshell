@@ -118,6 +118,7 @@ ShellRoot {
         property int type: 0
         property string cornerColor
         property int radiusSize: 16
+        property bool flipped: Config.barPosition === 1
 
         width: radiusSize
         height: radiusSize
@@ -133,7 +134,7 @@ ShellRoot {
             border.color: GameModeService.active ? "transparent" : block.cornerColor
 
             x: (block.type === 1) ? -block.radiusSize * 2 : -block.radiusSize
-            y: -block.radiusSize
+            y: block.flipped ? -block.radiusSize * 2 : -block.radiusSize
         }
     }
 
@@ -162,7 +163,8 @@ ShellRoot {
                 WlrLayershell.namespace: "quickshell:bar"
                 WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
 
-                anchors.top: true
+                anchors.top: Config.barPosition === 0
+                anchors.bottom: Config.barPosition === 1
                 anchors.left: true
                 anchors.right: true
 
@@ -176,7 +178,8 @@ ShellRoot {
                     anchors.fill: parent
                     anchors.leftMargin: Config.floatingBar ? 12 : 0
                     anchors.rightMargin: Config.floatingBar ? 12 : 0
-                    anchors.topMargin: Config.floatingBar ? 10 : 0
+                    anchors.topMargin: Config.floatingBar && Config.barPosition === 0 ? 10 : 0
+                    anchors.bottomMargin: Config.floatingBar && Config.barPosition === 1 ? 10 : 0
 
                     Rectangle {
                         id: barContainer
@@ -241,10 +244,13 @@ ShellRoot {
 
                 visible: !Config.floatingBar && Config.huggingBar
 
-                anchors.top: true
+                anchors.top: Config.barPosition === 0
+                anchors.bottom: Config.barPosition === 1
                 anchors.left: true
                 anchors.right: true
-                margins.top: window.implicitHeight
+
+                margins.top: Config.barPosition === 0 ? window.implicitHeight : 0
+                margins.bottom: Config.barPosition === 1 ? window.implicitHeight : 0
 
                 property int cornerRadius: 26
                 implicitHeight: cornerRadius

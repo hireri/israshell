@@ -112,12 +112,12 @@ Item {
             }
 
             anchor.window: root.panelWindow
-            anchor.edges: Edges.Top | Edges.Left
-            anchor.gravity: Edges.Bottom | Edges.Right
-            anchor.rect: Qt.rect(Math.round((root.panelWindow.width - panel.width) / 2), 0, panel.width, root.panelWindow.height + panel.height + 16)
+            anchor.rect: Qt.rect(Math.round((root.panelWindow.width - panel.width) / 2), 0, panel.width, root.panelWindow.height)
+            anchor.edges: (Config.barPosition === 1 ? Edges.Top : Edges.Bottom) | Edges.Left
+            anchor.gravity: (Config.barPosition === 1 ? Edges.Top : Edges.Bottom) | Edges.Right
 
             implicitWidth: panel.width
-            implicitHeight: root.panelWindow.height + panel.height + 16
+            implicitHeight: panel.height + 8
             color: "transparent"
 
             onVisibleChanged: {
@@ -152,16 +152,6 @@ Item {
                         event.accepted = true;
                     }
                 }
-            }
-
-            MouseArea {
-                anchors {
-                    top: parent.top
-                    left: parent.left
-                    right: parent.right
-                }
-                height: root.panelWindow.height + 8
-                onClicked: root.isOpen = false
             }
 
             Rectangle {
@@ -215,18 +205,11 @@ Item {
 
                 Component.onCompleted: Qt.callLater(() => _ready = true)
 
-                y: (_ready && root.isOpen) ? root.panelWindow.height + 8 : -(height + 8)
-                Behavior on y {
-                    NumberAnimation {
-                        duration: 360
-                        easing.type: Easing.OutExpo
-                    }
-                }
-                Behavior on y {
-                    NumberAnimation {
-                        duration: 360
-                        easing.type: Easing.OutExpo
-                    }
+                y: {
+                    const open = _ready && root.isOpen;
+                    if (Config.barPosition === 1)
+                        return open ? 0 : height + 8;
+                    return open ? 8 : -height;
                 }
 
                 Item {

@@ -115,67 +115,9 @@ Rectangle {
         }
     }
 
-    Window {
+    BarTooltip {
         id: tooltipWindow
-        visible: false
-        width: tooltipContent.width
-        height: tooltipContent.height
-        color: "transparent"
-        flags: Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowTransparentForInput
-
-        property string title: ""
-        property point targetPos: Qt.point(0, 0)
-        x: targetPos.x - (width / 2)
-        y: targetPos.y + 8
-
-        onVisibleChanged: {
-            if (visible)
-                fadeIn.restart();
-            else {
-                tooltipContent.opacity = 0;
-                tooltipContent.scale = 0.9;
-            }
-        }
-
-        ParallelAnimation {
-            id: fadeIn
-            NumberAnimation {
-                target: tooltipContent
-                property: "opacity"
-                from: 0
-                to: 1
-                duration: 150
-                easing.type: Easing.OutCubic
-            }
-            NumberAnimation {
-                target: tooltipContent
-                property: "scale"
-                from: 0.9
-                to: 1.0
-                duration: 150
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Rectangle {
-            id: tooltipContent
-            opacity: 0
-            scale: 0.9
-            implicitWidth: tooltipText.implicitWidth + 16
-            height: tooltipText.implicitHeight + 12
-            color: Colors.md3.surface_container_highest
-            radius: 8
-            border.width: 1
-            border.color: Qt.alpha(Colors.md3.outline, 0.5)
-
-            Text {
-                id: tooltipText
-                anchors.centerIn: parent
-                text: tooltipWindow.title
-                color: Colors.md3.on_surface
-                font.pixelSize: 11
-            }
-        }
+        yOffset: 8
     }
 
     Row {
@@ -274,7 +216,8 @@ Rectangle {
                     songrecScript.startDetached();
                 }
                 onEntered: {
-                    tooltipWindow.targetPos = mapToGlobal(width / 2, height);
+                    var yPos = Config.barPosition === 1 ? 0 : height;
+                    tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                     tooltipWindow.title = isRecognizing ? "Stop Recognizing" : "Recognize Music";
                     tooltipWindow.visible = true;
                 }
@@ -351,7 +294,8 @@ Rectangle {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: recordScript.startDetached()
                 onEntered: {
-                    tooltipWindow.targetPos = mapToGlobal(width / 2, height);
+                    var yPos = Config.barPosition === 1 ? 0 : height;
+                    tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                     tooltipWindow.title = isRecording ? "Stop Recording" : "Start Recording";
                     tooltipWindow.visible = true;
                 }
@@ -367,7 +311,6 @@ Rectangle {
         width: 32
         height: 32
         radius: 16
-
         color: hoverHandler.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent"
 
         HoverHandler {
@@ -380,7 +323,8 @@ Rectangle {
             cursorShape: Qt.PointingHandCursor
             onClicked: parent.clicked()
             onEntered: {
-                tooltipWindow.targetPos = mapToGlobal(width / 2, height);
+                var yPos = Config.barPosition === 1 ? 0 : height;
+                tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                 tooltipWindow.title = parent.tooltip;
                 tooltipWindow.visible = true;
             }

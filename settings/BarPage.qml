@@ -114,6 +114,24 @@ PageBase {
             }
         }
 
+        SettingChips {
+            label: "Position"
+            options: [
+                {
+                    label: "Top",
+                    value: 0
+                },
+                {
+                    label: "Bottom",
+                    value: 1
+                }
+            ]
+            currentValue: Config.barPosition
+            onSelected: v => Config.update({
+                    barPosition: v
+                })
+        }
+
         SettingSwitch {
             isLast: true
             label: "Transparent bar"
