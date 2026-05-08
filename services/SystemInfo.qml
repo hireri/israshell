@@ -72,7 +72,6 @@ Singleton {
         stdout: SplitParser {
             onRead: data => {
                 let parts = data.trim().split('|');
-                console.log("Hardware raw:", data.trim());
                 if (parts[0] && parts[0] !== "Unknown")
                     root.cpu = parts[0];
                 if (parts[1] && parts[1] !== "Unknown GPU" && parts[1] !== "")

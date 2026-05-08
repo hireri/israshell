@@ -1,66 +1,85 @@
 import Quickshell
 import Quickshell.Services.SystemTray
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Effects
 
+import qs.components
 import qs.style
 
 Item {
-    id: trayRoot
+    id: root
     required property var panelWindow
 
-    implicitWidth: Math.max(trayContent.implicitWidth + 20, 0)
-    height: 32
-    visible: (SystemTray.items?.values.length ?? 0) > 0
+    readonly property bool hasItems: (SystemTray.items?.values.length ?? 0) > 0
+    readonly property real contentW: trayRow.implicitWidth
 
-    function getTrayName(item) {
-        if (item.tooltipTitle && !item.tooltipTitle.includes("chrome_status_icon")) {
-            return item.tooltipTitle;
+    implicitWidth: contentW > 0 ? contentW + 20 : 0
+    height: 32
+    visible: hasItems || implicitWidth > 0.1
+
+    Behavior on implicitWidth {
+        NumberAnimation {
+            duration: 250
+            easing.type: Easing.OutCubic
         }
-        if (item.title && !item.title.includes("chrome_status_icon")) {
-            return item.title;
-        }
-        if (item.tooltipDescription && !item.tooltipDescription.includes("chrome_status_icon")) {
-            return item.tooltipDescription;
-        }
-        if (item.id && !item.id.includes("chrome_status_icon")) {
-            return item.id.charAt(0).toUpperCase() + item.id.slice(1);
+    }
+
+    function itemName(item) {
+        if (!item)
+            return "Application";
+        for (const v of [item.tooltipTitle, item.title, item.tooltipDescription, item.id]) {
+            if (v && !v.includes("chrome_status_icon"))
+                return item.id === v ? v.charAt(0).toUpperCase() + v.slice(1) : v;
         }
         return "Application";
     }
 
     BarTooltip {
-        id: tooltipWindow
+        id: tooltip
         yOffset: 14
     }
 
+    TrayMenuWindow {
+        id: menu
+        panelWindow: root.panelWindow
+    }
+
     Rectangle {
-        anchors.fill: parent
+        anchors {
+            right: parent.right
+            top: parent.top
+            bottom: parent.bottom
+        }
+        width: parent.width
         color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
         radius: 18
+        clip: true
 
         Row {
-            id: trayContent
-            anchors.centerIn: parent
+            id: trayRow
+            anchors {
+                right: parent.right
+                rightMargin: 10
+                verticalCenter: parent.verticalCenter
+            }
             spacing: 12
 
             Repeater {
                 model: SystemTray.items
-
                 delegate: Item {
-                    id: delegateRoot
+                    id: cell
                     required property var modelData
 
-                    readonly property bool isBlacklisted: Config.trayBlacklist.includes(modelData.id) || Config.trayBlacklist.includes(modelData.title)
-                    visible: !isBlacklisted
+                    readonly property bool blacklisted: Config.trayBlacklist.includes(modelData?.id ?? "") || Config.trayBlacklist.includes(modelData?.title ?? "")
+                    visible: !blacklisted
+                    width: visible ? 20 : 0
                     implicitWidth: visible ? 20 : 0
                     height: 20
                     anchors.verticalCenter: parent.verticalCenter
 
                     Image {
-                        id: iconImg
-                        source: modelData?.icon ?? ""
+                        id: img
+                        source: cell.modelData?.icon ?? ""
                         anchors.fill: parent
                         sourceSize: Qt.size(20, 20)
                         fillMode: Image.PreserveAspectFit
@@ -69,9 +88,9 @@ Item {
 
                     Loader {
                         active: Config.tintTrayIcons
-                        anchors.fill: iconImg
+                        anchors.fill: img
                         sourceComponent: MultiEffect {
-                            source: iconImg
+                            source: img
                             saturation: -1.0
                             colorization: 1.0
                             colorizationColor: Qt.alpha(Colors.md3.on_surface, 0.4)
@@ -79,32 +98,30 @@ Item {
                     }
 
                     MouseArea {
-                        id: mouseArea
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
 
                         onEntered: {
-                            var prettyName = trayRoot.getTrayName(modelData);
-
-                            if (prettyName) {
-                                var yPos = Config.barPosition === 1 ? 0 : delegateRoot.height;
-                                var globalCoord = delegateRoot.mapToGlobal(delegateRoot.width / 2, yPos);
-                                tooltipWindow.targetPos = globalCoord;
-                                tooltipWindow.title = prettyName;
-                                tooltipWindow.visible = true;
-                            }
+                            var name = root.itemName(cell.modelData);
+                            if (!name)
+                                return;
+                            var yPos = Config.barPosition === 1 ? 0 : cell.height;
+                            tooltip.targetPos = cell.mapToGlobal(cell.width / 2, yPos);
+                            tooltip.tipTitle = name;
+                            tooltip.visible = true;
                         }
-
-                        onExited: tooltipWindow.visible = false
+                        onExited: tooltip.visible = false
 
                         onClicked: mouse => {
                             if (mouse.button === Qt.LeftButton) {
-                                modelData?.activate();
+                                cell.modelData?.activate();
                             } else if (mouse.button === Qt.RightButton) {
-                                const pos = mapToItem(panelWindow.contentItem, mouse.x, mouse.y);
-                                modelData?.display(panelWindow, pos.x, pos.y);
+                                tooltip.visible = false;
+                                var yEdge = Config.barPosition === 1 ? 0 : cell.height;
+                                var globalPos = cell.mapToGlobal(cell.width / 2, yEdge);
+                                menu.open(cell.modelData, globalPos);
                             }
                         }
                     }

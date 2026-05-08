@@ -10,7 +10,7 @@ Window {
     color: "transparent"
     flags: Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowTransparentForInput
 
-    property string title: ""
+    property string tipTitle: ""
     property point targetPos: Qt.point(0, 0)
     property int yOffset: 8
 
@@ -60,7 +60,7 @@ Window {
         Text {
             id: tooltipText
             anchors.centerIn: parent
-            text: root.title
+            text: root.tipTitle
             color: Colors.md3.on_surface
             font.pixelSize: 11
         }
