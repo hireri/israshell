@@ -157,13 +157,9 @@ Singleton {
             if (code === 0) {
                 const doneLine = out.split("\n").find(l => l.startsWith("done:")) ?? "";
                 const newVer = doneLine.replace("done:", "").trim() || root._latestVersion;
-                console.log("[Updater] update applied, now on", newVer);
+                console.log("[Updater] update applied, expecting shell restart shortly...");
                 root._currentVersion = newVer;
                 root._updateAvailable = false;
-
-                _notify("Shell updated", "Now running " + newVer + "\nRestarting QuickShell...", "software-update-available", "low", 4000);
-
-                Quickshell.execDetached(["bash", "-c", "sleep 0.4; kill $(pidof quickshell); sleep 0.1; qs -c isra"]);
             } else {
                 console.warn("[Updater] do-update.sh failed:\n" + out);
                 _notify("Update failed", "Something went wrong, check journalctl for details.", "dialog-error", "critical", 0);
