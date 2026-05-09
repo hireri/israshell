@@ -163,20 +163,11 @@ Singleton {
 
                 _notify("Shell updated", "Now running " + newVer + "\nRestarting QuickShell...", "software-update-available", "low", 4000);
 
-                _restartProc.running = true;
+                Quickshell.execDetached(["bash", "-c", "sleep 0.4; kill $(pidof quickshell); sleep 0.1; qs -c isra"]);
             } else {
                 console.warn("[Updater] do-update.sh failed:\n" + out);
                 _notify("Update failed", "Something went wrong, check journalctl for details.", "dialog-error", "critical", 0);
             }
-        }
-    }
-
-    Process {
-        id: _restartProc
-        command: ["bash", "-c", "sleep 0.4; setsid bash -c 'sleep 0.4; kill $(pidof quickshell); sleep 0.1; qs -c isra' &"]
-
-        onExited: (code, _status) => {
-            console.log("[Updater] restart dispatched (code " + code + ")");
         }
     }
 
@@ -220,7 +211,7 @@ Singleton {
             console.log("[Updater] prompt already visible, skipping");
             return;
         }
-        _updatePromptProc.command = ["notify-send", "--action=update=  Update Now", "--action=later=  Later", "-u", "normal", "-i", "software-update-available", "-a", "QuickShell", "-t", "0", "Update available  " + root._latestVersion, "Currently on " + root._currentVersion + "\nUpdate will restart the shell when done."];
+        _updatePromptProc.command = ["notify-send", "--action=update=  Update Now", "--action=later=  Later", "-u", "normal", "-i", "software-update-available", "-a", "QuickShell", "-t", "0", "Update available: " + root._latestVersion, "Currently on " + root._currentVersion + "\nUpdate will restart the shell when done."];
         _updatePromptProc.running = true;
     }
 
