@@ -17,19 +17,17 @@ echo "Now at: $new_tag"
 notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
     "Shell updated" "Restarting..."
 
-(
+setsid bash -c '
     sleep 0.5
     kill $(pidof quickshell) 2>/dev/null || true
     sleep 0.2
     qs -c isra
-) >/dev/null 2>&1 &
-disown
+' >/dev/null 2>&1 &
 
-(
+setsid bash -c '
     sleep 2
     notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
-        "Shell updated" "Now running $new_tag"
-) >/dev/null 2>&1 &
-disown
+        "Shell updated" "Now running '"$new_tag"'"
+' >/dev/null 2>&1 &
 
 echo "done:$new_tag"
