@@ -15,7 +15,7 @@ new_tag="$(git -C "$REPO_ROOT" describe --tags --abbrev=0 2>/dev/null || echo "u
 echo "Now at: $new_tag"
 
 notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
-    "Shell updated" "Now running $new_tag\nRestarting QuickShell..."
+    "Shell updated" "Restarting..."
 
 (
     sleep 0.5
@@ -24,5 +24,8 @@ notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
     qs -c isra
 ) >/dev/null 2>&1 &
 disown
+
+notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
+    "Shell updated" "Now running $new_tag"
 
 echo "done:$new_tag"
