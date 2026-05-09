@@ -25,7 +25,11 @@ notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
 ) >/dev/null 2>&1 &
 disown
 
-notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
-    "Shell updated" "Now running $new_tag"
+(
+    sleep 2
+    notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
+        "Shell updated" "Now running $new_tag"
+) >/dev/null 2>&1 &
+disown
 
 echo "done:$new_tag"
