@@ -136,7 +136,7 @@ PageBase {
                         anchors.fill: parent
                         enabled: !Updater.applying
                         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: Updater.checkNow()
+                        onClicked: Updater.applyUpdate()
                     }
                 }
 

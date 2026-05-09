@@ -128,7 +128,7 @@ Singleton {
 
             if (action === "update") {
                 console.log("[Updater] user accepted update");
-                _applyUpdate();
+                applyUpdate();
             } else {
                 console.log("[Updater] user deferred update (action: '" + action + "')");
             }
@@ -224,9 +224,9 @@ Singleton {
         _updatePromptProc.running = true;
     }
 
-    function _applyUpdate() {
+    function applyUpdate() {
         if (_applyProc.running) {
-            console.warn("[Updater] _applyUpdate skipped — already running");
+            console.warn("[Updater] applyUpdate skipped — already running");
             return;
         }
         console.log("[Updater] starting apply");
