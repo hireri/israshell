@@ -10,6 +10,7 @@ import qs.settings
 import qs.services
 
 ShellRoot {
+
     NotificationPopup {}
     VolumeOSD {}
     AppLauncher {}
