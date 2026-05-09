@@ -208,6 +208,30 @@ PageBase {
         }
 
         SectionCard {
+            label: "Updates"
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                label: "Check for updates"
+                sublabel: "Poll GitHub for new releases hourly"
+                checked: Config.checkUpdates
+                onToggled: v => Config.update({
+                        checkUpdates: v
+                    })
+            }
+
+            SettingSwitch {
+                isLast: true
+                label: "Check dependencies"
+                sublabel: "Warn about missing packages on startup"
+                checked: Config.checkDeps
+                onToggled: v => Config.update({
+                        checkDeps: v
+                    })
+            }
+        }
+
+        SectionCard {
             label: "Script paths"
             Layout.fillWidth: true
 
@@ -268,30 +292,6 @@ PageBase {
                         screencap: Object.assign({}, Config.screencap, {
                             songrecPath: v
                         })
-                    })
-            }
-        }
-
-        SectionCard {
-            label: "Updates"
-            Layout.fillWidth: true
-
-            SettingSwitch {
-                label: "Check for updates"
-                sublabel: "Poll GitHub for new releases hourly"
-                checked: Config.checkUpdates
-                onToggled: v => Config.update({
-                        checkUpdates: v
-                    })
-            }
-
-            SettingSwitch {
-                isLast: true
-                label: "Check dependencies"
-                sublabel: "Warn about missing packages on startup"
-                checked: Config.checkDeps
-                onToggled: v => Config.update({
-                        checkDeps: v
                     })
             }
         }
