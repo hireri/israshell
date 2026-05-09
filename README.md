@@ -85,7 +85,7 @@ bind = $mainMod, G, exec, qs ipc call gamemode toggle
 - **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
 - **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`
 - **Python Stack**: `python`, `python-numpy`, `python-pillow`, `python-scipy`, `python-matplotlib`, `python-gtts`
-- **Fonts**: `inter-font`, `ttf-roboto-mono`
+- **Fonts**: `inter-font`, `ttf-roboto-mono` (fonts are configurable)
 
 ```bash
 yay -Q quickshell hyprland hyprsunset hypridle matugen awww cava\

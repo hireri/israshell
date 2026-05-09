@@ -10,11 +10,12 @@ import qs.settings
 import qs.services
 
 ShellRoot {
-
     NotificationPopup {}
     VolumeOSD {}
     AppLauncher {}
     Screenshot {}
+
+    readonly property var _updater: Updater
 
     Loader {
         id: settingsLoader

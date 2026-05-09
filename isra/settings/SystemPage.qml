@@ -12,8 +12,9 @@ PageBase {
     subtitle: "About and script paths"
 
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 24
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        Layout.margins: 24
         spacing: 16
 
         ColumnLayout {
@@ -81,7 +82,7 @@ PageBase {
                     spacing: 4
 
                     Text {
-                        text: "Israshell v0.5.1"
+                        text: "Israshell " + (Updater.currentVersion || "...")
                         font.family: Config.fontFamily
                         font.pixelSize: 20
                         font.weight: Font.Bold
@@ -105,6 +106,43 @@ PageBase {
                 Rectangle {
                     Layout.alignment: Qt.AlignVCenter
                     implicitHeight: 40
+                    implicitWidth: updateLbl.implicitWidth + 32
+                    radius: 20
+                    visible: Updater.updateAvailable || Updater.applying
+                    opacity: Updater.applying ? 0.6 : 1.0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
+                        }
+                    }
+
+                    color: Qt.rgba(Qt.color(Colors.md3.on_primary).r, Qt.color(Colors.md3.on_primary).g, Qt.color(Colors.md3.on_primary).b, 0.2)
+
+                    border.width: 1.5
+                    border.color: Colors.md3.on_primary
+
+                    Text {
+                        id: updateLbl
+                        anchors.centerIn: parent
+                        text: Updater.applying ? "Updating..." : "↑ " + Updater.latestVersion
+                        font.family: Config.fontFamily
+                        font.pixelSize: 14
+                        font.weight: Font.Bold
+                        color: Colors.md3.on_primary
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: !Updater.applying
+                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onClicked: Updater.checkNow()
+                    }
+                }
+
+                Rectangle {
+                    Layout.alignment: Qt.AlignVCenter
+                    implicitHeight: 40
                     implicitWidth: ghLbl.implicitWidth + 32
                     radius: 20
                     color: Colors.md3.on_primary
@@ -120,11 +158,10 @@ PageBase {
                     }
 
                     MouseArea {
-                        id: ghMouseArea
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Qt.openUrlExternally("https://github.com/hireri/israshell")
+                        onClicked: Qt.openUrlExternally("https://github.com/" + Config.githubRepo)
                     }
                 }
             }
@@ -231,6 +268,30 @@ PageBase {
                         screencap: Object.assign({}, Config.screencap, {
                             songrecPath: v
                         })
+                    })
+            }
+        }
+
+        SectionCard {
+            label: "Updates"
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                label: "Check for updates"
+                sublabel: "Poll GitHub for new releases hourly"
+                checked: Config.checkUpdates
+                onToggled: v => Config.update({
+                        checkUpdates: v
+                    })
+            }
+
+            SettingSwitch {
+                isLast: true
+                label: "Check dependencies"
+                sublabel: "Warn about missing packages on startup"
+                checked: Config.checkDeps
+                onToggled: v => Config.update({
+                        checkDeps: v
                     })
             }
         }

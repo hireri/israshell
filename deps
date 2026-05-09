@@ -1,0 +1,53 @@
+# Quickshell config dependencies
+# All entries are checked via `yay -Q`
+# Core shell & compositor
+quickshell
+hyprland
+hyprsunset
+hypridle
+# Theme & color
+matugen
+# Media
+mpv
+cava
+pipewire
+wireplumber
+pavucontrol
+# Networking
+networkmanager
+# Bluetooth
+blueman
+bluez
+bluez-utils
+# Clipboard & screenshots
+wl-clipboard
+wl-screenrec
+slurp
+grim
+hyprpicker
+satty
+# Qt / QML runtime
+qt6-declarative
+qt6-5compat
+qt6-svg
+# Utilities
+clipvault
+rdap
+kakasi
+xdg-utils
+tesseract
+ffmpeg
+libnotify
+jq
+file
+# AI / audio features
+songrec
+python
+python-numpy
+python-pillow
+python-scipy
+python-matplotlib
+python-gtts
+# Fonts
+inter-font
+ttf-roboto-mono

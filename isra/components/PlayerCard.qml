@@ -494,7 +494,6 @@ CAVAEOF`]
             }
             height: parent.height * 0.45
             gradient: Gradient {
-                orientation: Gradient.TopToBottom
                 GradientStop {
                     position: 0.0
                     color: Qt.rgba(root._overlayBase.r, root._overlayBase.g, root._overlayBase.b, 0.45)
@@ -513,7 +512,6 @@ CAVAEOF`]
             }
             height: parent.height * 0.65
             gradient: Gradient {
-                orientation: Gradient.TopToBottom
                 GradientStop {
                     position: 0.0
                     color: Qt.rgba(root._overlayBase.r, root._overlayBase.g, root._overlayBase.b, 0.0)

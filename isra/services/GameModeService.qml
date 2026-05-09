@@ -27,7 +27,7 @@ Singleton {
     }
 
     function toggle() {
-        toggleProc.command = ["bash", Quickshell.env("HOME") + "/.config/quickshell/scripts/gamemode.sh"];
+        toggleProc.command = ["bash", Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/gamemode.sh"];
         toggleProc.running = false;
         toggleProc.running = true;
     }

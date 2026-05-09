@@ -78,6 +78,10 @@ Singleton {
             shadowBlur: 16
         })
     property var clockPositions: ({})
+    property bool checkUpdates: true
+    property bool checkDeps: true
+    property string githubRepo: "hireri/israshell"
+
     property bool allowNsfw: false
 
     function __defaults() {
@@ -133,11 +137,11 @@ Singleton {
             screencapEnabled: true,
             screencap: {
                 blacklist: ["cts", "ocr"],
-                screenshotPath: "~/.config/quickshell/scripts/screenshot.sh",
-                recordPath: "~/.config/quickshell/scripts/record.sh",
-                ctsPath: "~/.config/quickshell/scripts/cts.sh",
-                ocrPath: "~/.config/quickshell/scripts/ocr.sh",
-                songrecPath: "~/.config/quickshell/scripts/songrec.sh"
+                screenshotPath: "~/.config/quickshell/isra/scripts/screenshot.sh",
+                recordPath: "~/.config/quickshell/isra/scripts/record.sh",
+                ctsPath: "~/.config/quickshell/isra/scripts/cts.sh",
+                ocrPath: "~/.config/quickshell/isra/scripts/ocr.sh",
+                songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
             },
             clock: {
                 fontFamily: "",
@@ -157,6 +161,9 @@ Singleton {
                 shadowBlur: 16
             },
             clockPositions: {},
+            checkUpdates: true,
+            checkDeps: true,
+            githubRepo: "hireri/israshell",
             allowNsfw: false
         };
     }
@@ -228,7 +235,7 @@ Singleton {
 
     FileView {
         id: fileView
-        path: Quickshell.env("HOME") + "/.config/quickshell/config.json"
+        path: Quickshell.env("HOME") + "/.config/quickshell/isra/config.json"
         watchChanges: true
         blockLoading: true
         Component.onCompleted: __load()

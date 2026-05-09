@@ -370,7 +370,7 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     root.isOpen = false;
-                                    Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs"]);
+                                    Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -c isra"]);
                                 }
                             }
                         }
@@ -402,7 +402,7 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     root.isOpen = false;
-                                    sysProc.command = ["qs", "ipc", "call", "settings", "open", "overview"];
+                                    sysProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"];
                                     sysProc.running = true;
                                 }
                             }
@@ -482,7 +482,7 @@ Item {
                                     onToggled: NetworkService.toggle()
                                     onRightClicked: {
                                         root.isOpen = false;
-                                        appletProc.command = ["qs", "ipc", "call", "settings", "open", "network"];
+                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
                                         appletProc.running = true;
                                     }
                                 }
@@ -514,7 +514,7 @@ Item {
                                         Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
                                     onRightClicked: {
                                         root.isOpen = false;
-                                        appletProc.command = ["qs", "ipc", "call", "settings", "open", "network"];
+                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
                                         appletProc.running = true;
                                     }
                                 }
@@ -536,7 +536,7 @@ Item {
                                     onToggled: NightLightService.toggle()
                                     onRightClicked: {
                                         root.isOpen = false;
-                                        appletProc.command = ["qs", "ipc", "call", "settings", "open", "display"];
+                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
                                         appletProc.running = true;
                                     }
                                 }
@@ -552,7 +552,7 @@ Item {
                                 onMuteClicked: AudioService.toggleMute()
                                 onRightClicked: {
                                     root.isOpen = false;
-                                    appletProc.command = ["qs", "ipc", "call", "settings", "open", "sound"];
+                                    appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "sound"];
                                     appletProc.running = true;
                                 }
                                 dimmed: AudioService.muted

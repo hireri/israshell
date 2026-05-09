@@ -200,7 +200,7 @@ Singleton {
     function _runClockPosition() {
         if (!currentWall || !Config.desktopClock)
             return;
-        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/leastbusy.py", root.currentWall, "--clock-w", String(clockRenderWidth), "--clock-h", String(clockRenderHeight), "--mode", isDark ? "dark" : "light"];
+        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/leastbusy.py", root.currentWall, "--clock-w", String(clockRenderWidth), "--clock-h", String(clockRenderHeight), "--mode", isDark ? "dark" : "light"];
         clockProc.running = false;
         clockProc.running = true;
     }
@@ -234,7 +234,7 @@ Singleton {
                 return;
             root.previewsLoading = true;
             previewProc.running = false;
-            previewProc.command = [Quickshell.env("HOME") + "/.config/quickshell/scripts/gen-scheme-previews.sh", root.currentWall, root.isDark ? "dark" : "light"];
+            previewProc.command = [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/gen-scheme-previews.sh", root.currentWall, root.isDark ? "dark" : "light"];
             previewProc.running = true;
         }
     }
@@ -327,7 +327,7 @@ Singleton {
         property string wallPath: ""
         property string mode: "dark"
         property string scheme: "scheme-tonal-spot"
-        command: [Quickshell.env("HOME") + "/.config/quickshell/scripts/apply-wallpaper.sh", applyProc.wallPath, applyProc.mode, applyProc.scheme]
+        command: [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/apply-wallpaper.sh", applyProc.wallPath, applyProc.mode, applyProc.scheme]
         running: false
         onExited: (code, _) => {
             root.applying = false;

@@ -161,7 +161,7 @@ Scope {
 
     Process {
         id: emojiLoader
-        command: ["sh", "-c", ["dir=\"$HOME/.config/quickshell/components/emojis\"", "files=\"emojis_smileys_emotion.csv emojis_people_body.csv emojis_activities.csv emojis_animals_nature.csv emojis_food_drink.csv emojis_objects.csv emojis_travel_places.csv emojis_symbols.csv emojis_flags.csv\"", "for f in $files; do cat \"$dir/$f\" 2>/dev/null; done"].join("\n")]
+        command: ["sh", "-c", ["dir=\"$HOME/.config/quickshell/isra/components/emojis\"", "files=\"emojis_smileys_emotion.csv emojis_people_body.csv emojis_activities.csv emojis_animals_nature.csv emojis_food_drink.csv emojis_objects.csv emojis_travel_places.csv emojis_symbols.csv emojis_flags.csv\"", "for f in $files; do cat \"$dir/$f\" 2>/dev/null; done"].join("\n")]
         stdout: StdioCollector {
             onStreamFinished: {
                 const re = /^(\S+)\s+(.*?)\s*(?:<small>\(([^)]*)\)<\/small>)?\s*$/;
