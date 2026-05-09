@@ -15,7 +15,7 @@ PanelWindow {
     readonly property real itemH: 34
     readonly property real sepH: 14
     readonly property real pad: 4
-    readonly property real barGap: 15
+    readonly property real barGap: 3
 
     property var activeSubmenu: null
     property bool submenuOpen: false
@@ -36,7 +36,6 @@ PanelWindow {
     readonly property real cardH: submenuOpen ? subH : mainH
 
     property real cardX: 0
-    property real cardY: 0
 
     readonly property bool barAtBottom: Config.barPosition === 1
     screen: panelWindow.screen
@@ -77,17 +76,9 @@ PanelWindow {
         trayItem = item;
 
         var sx = panelWindow.screen?.x ?? 0;
-        var sy = panelWindow.screen?.y ?? 0;
         var sw = panelWindow.screen?.width ?? 1920;
-        var sh = panelWindow.screen?.height ?? 1080;
 
         cardX = Math.max(8, Math.min(globalIconPos.x - sx - cardW / 2, sw - cardW - 8));
-
-        if (barAtBottom) {
-            cardY = (globalIconPos.y - sy) - barGap - cardH;
-        } else {
-            cardY = (globalIconPos.y - sy) + barGap;
-        }
 
         card._wiping = true;
         card.height = 0;
@@ -174,7 +165,7 @@ PanelWindow {
 
         x: root.cardX
         width: root.cardW
-        y: root.barAtBottom ? root.cardY + root.cardH - height : root.cardY
+        y: root.barAtBottom ? (root.height - panelWindow.height - barGap - height) : (panelWindow.height + barGap)
 
         Behavior on height {
             enabled: !card._wiping
