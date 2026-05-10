@@ -11,6 +11,8 @@ PageBase {
     title: "System"
     subtitle: "About and script paths"
 
+    Component.onCompleted: Updater.checkNow()
+
     ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
