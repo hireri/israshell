@@ -19,6 +19,8 @@ Singleton {
     property string currentScheme: Config.colorScheme || "scheme-tonal-spot"
     property var schemePreviews: ({})
     property bool previewsLoading: false
+    property var sourceColorCandidates: []
+    property int currentSourceIndex: Config.sourceColorIndex ?? 0
 
     property var entries: []
 
@@ -63,6 +65,8 @@ Singleton {
         applyProc.wallPath = path;
         applyProc.mode = isDark ? "dark" : "light";
         applyProc.scheme = currentScheme;
+        applyProc.sourceColorIndex = Config.sourceColorIndex ?? 0;
+        applyProc.wallChanged = true;
         applyProc.running = false;
         applyProc.running = true;
     }
@@ -176,6 +180,26 @@ Singleton {
         _runList();
     }
 
+    function _fetchCandidates() {
+        if (!currentWall)
+            return;
+        candidatesProc.command = ["matugen", "image", currentWall, "--list-candidates"];
+        candidatesProc.running = false;
+        candidatesProc.running = true;
+    }
+
+    function selectSourceColor(index) {
+        if (applying || !currentWall)
+            return;
+        if (currentSourceIndex === index)
+            return;
+        currentSourceIndex = index;
+        Config.update({
+            sourceColorIndex: index
+        });
+        applyTheme();
+    }
+
     function applyTheme() {
         if (applying || !currentWall)
             return;
@@ -183,6 +207,7 @@ Singleton {
         applyProc.wallPath = Quickshell.env("HOME") + "/.config/hypr/current_wall";
         applyProc.mode = isDark ? "dark" : "light";
         applyProc.scheme = currentScheme;
+        applyProc.sourceColorIndex = Config.sourceColorIndex ?? 0;
         applyProc.running = false;
         applyProc.running = true;
     }
@@ -221,6 +246,7 @@ Singleton {
                     }
                 }
                 previewDebounce.restart();
+                _fetchCandidates();
             }
         }
     }
@@ -327,11 +353,17 @@ Singleton {
         property string wallPath: ""
         property string mode: "dark"
         property string scheme: "scheme-tonal-spot"
-        command: [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/apply-wallpaper.sh", applyProc.wallPath, applyProc.mode, applyProc.scheme]
+        property int sourceColorIndex: 0
+        property bool wallChanged: false
+
+        command: [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/apply-wallpaper.sh", applyProc.wallPath, applyProc.mode, applyProc.scheme, String(applyProc.sourceColorIndex)]
         running: false
         onExited: (code, _) => {
             root.applying = false;
             if (code === 0) {
+                if (wallChanged)
+                    root._fetchCandidates();
+                wallChanged = false;
                 _runClockPosition();
                 previewDebounce.restart();
             }
@@ -427,6 +459,22 @@ Singleton {
         onExited: (code, _) => {
             if (code === 0 && redditDownloadProc.dest !== "")
                 selectWall(redditDownloadProc.dest);
+        }
+    }
+
+    Process {
+        id: candidatesProc
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (!text.trim())
+                    return;
+                try {
+                    root.sourceColorCandidates = JSON.parse(text.trim());
+                } catch (e) {
+                    console.log("[Wallpaper] Failed to parse candidates:", e);
+                }
+            }
         }
     }
 }

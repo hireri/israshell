@@ -53,6 +53,7 @@ Singleton {
     property int osdPosition: 1
     property bool darkMode: true
     property string colorScheme: "scheme-tonal-spot"
+    property int sourceColorIndex: 0
     property bool desktopClock: true
     property bool screencapEnabled: true
     property var screencap: ({
@@ -133,6 +134,7 @@ Singleton {
             osdPosition: 1,
             darkMode: true,
             colorScheme: "scheme-tonal-spot",
+            sourceColorIndex: 0,
             desktopClock: true,
             screencapEnabled: true,
             screencap: {

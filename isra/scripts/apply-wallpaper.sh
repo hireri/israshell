@@ -7,6 +7,7 @@ set -euo pipefail
 WALL=$(readlink -f "${1:?Wall path required}")
 MODE="${2:-dark}"
 SCHEME="${3:-scheme-tonal-spot}"
+SOURCE_INDEX="${4:-0}"
 
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
@@ -43,7 +44,7 @@ awww img \
     --transition-duration 1    \
     "$HOME/.config/hypr/current_wall"
 
-matugen image "$HOME/.config/hypr/current_wall" -m "$MODE" -t "$SCHEME" --source-color-index 0
+matugen image "$HOME/.config/hypr/current_wall" -m "$MODE" -t "$SCHEME" --source-color-index "$SOURCE_INDEX"
 
 if [ "$MODE" = "dark" ]; then
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'

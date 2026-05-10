@@ -54,6 +54,83 @@ PageBase {
                         color: Colors.md3.outline
                         visible: WallpaperService.currentWall === ""
                     }
+
+                    Item {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.margins: 10
+                        width: 244
+                        height: 32
+
+                        Rectangle {
+                            id: containerBg
+                            anchors.fill: parent
+
+                            readonly property int lastIndex: WallpaperService.sourceColorCandidates.length - 1
+                            readonly property bool firstSelected: WallpaperService.currentSourceIndex === 0
+                            readonly property bool lastSelected: WallpaperService.currentSourceIndex === lastIndex
+
+                            topLeftRadius: firstSelected ? 20 : 18
+                            topRightRadius: lastSelected ? 20 : 18
+                            bottomLeftRadius: firstSelected ? 20 : 18
+                            bottomRightRadius: lastSelected ? 20 : 18
+
+                            color: Colors.md3.surface_container_high
+
+                            Behavior on topLeftRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Behavior on topRightRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Behavior on bottomLeftRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Behavior on bottomRightRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 4
+                            anchors.rightMargin: 4
+                            spacing: 4
+
+                            ColorPill {
+                                pillIndex: 0
+                                isFirst: true
+                                isLast: false
+                                pillColor: WallpaperService.sourceColorCandidates[0] ?? "transparent"
+                            }
+                            ColorPill {
+                                pillIndex: 1
+                                isFirst: false
+                                isLast: false
+                                pillColor: WallpaperService.sourceColorCandidates[1] ?? "transparent"
+                            }
+                            ColorPill {
+                                pillIndex: 2
+                                isFirst: false
+                                isLast: false
+                                pillColor: WallpaperService.sourceColorCandidates[2] ?? "transparent"
+                            }
+                            ColorPill {
+                                pillIndex: 3
+                                isFirst: false
+                                isLast: true
+                                pillColor: WallpaperService.sourceColorCandidates[3] ?? "transparent"
+                            }
+                        }
+                    }
                 }
             }
 
@@ -486,6 +563,66 @@ PageBase {
                 hoverEnabled: true
                 onClicked: Qt.openUrlExternally("file://" + Quickshell.env("HOME") + "/.config/quickshell/isra/config.json")
             }
+        }
+    }
+
+    component ColorPill: Rectangle {
+        required property string pillColor
+        required property int pillIndex
+        required property bool isFirst
+        required property bool isLast
+        readonly property bool isSelected: WallpaperService.currentSourceIndex === pillIndex
+
+        width: 56
+        height: 24
+        color: pillColor === "transparent" ? Colors.md3.surface_container_highest : pillColor
+
+        topLeftRadius: isSelected ? 20 : (isFirst ? 14 : 6)
+        topRightRadius: isSelected ? 20 : (isLast ? 14 : 6)
+        bottomLeftRadius: isSelected ? 20 : (isFirst ? 14 : 6)
+        bottomRightRadius: isSelected ? 20 : (isLast ? 14 : 6)
+
+        Text {
+            anchors.centerIn: parent
+            text: pillIndex + 1
+            font.family: Config.fontFamily
+            font.pixelSize: 11
+            font.weight: Font.Medium
+            color: Colors.md3.on_surface_variant
+            visible: pillColor === "transparent"
+        }
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 150
+            }
+        }
+        Behavior on topLeftRadius {
+            NumberAnimation {
+                duration: 150
+            }
+        }
+        Behavior on topRightRadius {
+            NumberAnimation {
+                duration: 150
+            }
+        }
+        Behavior on bottomLeftRadius {
+            NumberAnimation {
+                duration: 150
+            }
+        }
+        Behavior on bottomRightRadius {
+            NumberAnimation {
+                duration: 150
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            enabled: !WallpaperService.applying
+            onClicked: WallpaperService.selectSourceColor(pillIndex)
         }
     }
 }

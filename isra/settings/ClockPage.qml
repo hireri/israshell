@@ -409,19 +409,48 @@ PageBase {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 4
+
                     Repeater {
                         model: ["primary", "secondary", "tertiary", "on_surface"]
                         delegate: Rectangle {
                             required property string modelData
+                            required property int index
+
+                            readonly property int lastIndex: 3
+                            readonly property bool isFirst: index === 0
+                            readonly property bool isLast: index === lastIndex
+                            readonly property bool isSelected: Config.clock.colorRole === modelData
+
                             Layout.fillWidth: true
                             height: 32
-                            radius: Config.clock.colorRole === modelData ? 20 : 6
                             color: Colors.md3[modelData] ?? Colors.md3.primary
-                            Behavior on radius {
+
+                            topLeftRadius: isFirst ? 20 : (isSelected ? 20 : 6)
+                            topRightRadius: isLast ? 20 : (isSelected ? 20 : 6)
+                            bottomLeftRadius: isFirst ? 20 : (isSelected ? 20 : 6)
+                            bottomRightRadius: isLast ? 20 : (isSelected ? 20 : 6)
+
+                            Behavior on topLeftRadius {
                                 NumberAnimation {
                                     duration: 150
                                 }
                             }
+                            Behavior on topRightRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Behavior on bottomLeftRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Behavior on bottomRightRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
@@ -459,19 +488,48 @@ PageBase {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 4
+
                     Repeater {
                         model: ["primary", "secondary", "tertiary", "on_surface"]
                         delegate: Rectangle {
                             required property string modelData
+                            required property int index
+
+                            readonly property int lastIndex: 3
+                            readonly property bool isFirst: index === 0
+                            readonly property bool isLast: index === lastIndex
+                            readonly property bool isSelected: Config.clock.subColorRole === modelData
+
                             Layout.fillWidth: true
                             height: 32
-                            radius: Config.clock.subColorRole === modelData ? 20 : 6
                             color: Colors.md3[modelData] ?? Colors.md3.secondary
-                            Behavior on radius {
+
+                            topLeftRadius: isFirst ? 20 : (isSelected ? 20 : 6)
+                            topRightRadius: isLast ? 20 : (isSelected ? 20 : 6)
+                            bottomLeftRadius: isFirst ? 20 : (isSelected ? 20 : 6)
+                            bottomRightRadius: isLast ? 20 : (isSelected ? 20 : 6)
+
+                            Behavior on topLeftRadius {
                                 NumberAnimation {
                                     duration: 150
                                 }
                             }
+                            Behavior on topRightRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Behavior on bottomLeftRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Behavior on bottomRightRadius {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
