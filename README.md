@@ -28,7 +28,7 @@
 </details>
 
 
-A Quickshell shell for Hyprland. Uses matugen colors, smart desktop clock widget, and provides its own notification/tray implementation. Configurable font with default Inter NerdFont.
+A Quickshell shell for Hyprland 0.55+. Uses matugen colors, smart desktop clock widget, and provides its own notification/tray implementation. Configurable font with default Inter NerdFont.
 
 ## Features
 
@@ -53,28 +53,28 @@ bind = $mainMod, O, global, quickshell:openQuickSettings
 bind = $mainMod, M, global, quickshell:openPowerMenu
 bind = $mainMod, W, global, quickshell:openWallpaperPicker
 
-bindr = $mainMod, super_l, exec, qs ipc call launcher toggle
-bind = $mainMod, V, exec, qs ipc call launcher openWith ";"
-bind = $mainMod, Period, exec, qs ipc call launcher openWith ":"
+bindr = $mainMod, super_l, exec, qs -c isra ipc call launcher toggle
+bind = $mainMod, V, exec, qs -c isra ipc call launcher openWith ";"
+bind = $mainMod, Period, exec, qs -c isra ipc call launcher openWith ":"
 
-bind = $mainMod SHIFT, N, exec, qs ipc call media next
-bind = $mainMod SHIFT, P, exec, qs ipc call media togglePlaying
-bind = $mainMod SHIFT, B, exec, qs ipc call media previous
+bind = $mainMod SHIFT, N, exec, qs -c isra ipc call media next
+bind = $mainMod SHIFT, P, exec, qs -c isra ipc call media togglePlaying
+bind = $mainMod SHIFT, B, exec, qs -c isra ipc call media previous
 
-bind = $mainMod, I, exec, qs ipc call settings open overview
+bind = $mainMod, I, exec, qs -c isra ipc call settings open overview
 
 # open settings into a page
-# bind = $mainMod, N, exec, qs ipc call settings open network
+# bind = $mainMod, N, exec, qs -c isra ipc call settings open network
 # overview | network | bar | clock | display | sound | immeria | system
 # immeria being ai btw.
 
-bind = $mainMod SHIFT, S, exec, qs ipc call screenshot activate
+bind = $mainMod SHIFT, S, exec, qs -c isra ipc call screenshot activate
 
 # screenshot has 4 modes
 # smart | region | window | screen
 # region ig if you dont want to calculate rects
 
-bind = $mainMod, G, exec, qs ipc call gamemode toggle
+bind = $mainMod, G, exec, qs -c isra ipc call gamemode toggle
 ```
 
 ## Dependencies

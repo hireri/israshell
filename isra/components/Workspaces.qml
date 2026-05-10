@@ -76,7 +76,7 @@ Rectangle {
             } while (otherMonitorWorkspaces.has(target) && target !== currentId)
 
             if (target !== currentId && !otherMonitorWorkspaces.has(target))
-                Hyprland.dispatch("workspace " + target);
+                Hyprland.dispatch("hl.dsp.focus({ workspace = " + target + " })");
         }
     }
 
@@ -272,7 +272,7 @@ Rectangle {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Hyprland.dispatch("workspace " + wsItem.wsId)
+                        onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + wsItem.wsId + " })")
                     }
                 }
             }
