@@ -29,6 +29,7 @@ PageBase {
                 Layout.preferredWidth: parent.width * 0.58
                 Layout.preferredHeight: Layout.preferredWidth * 9 / 16
                 Layout.alignment: Qt.AlignTop
+                visible: WallpaperService.sourceColorCandidates.length > 0
 
                 ClippingRectangle {
                     id: previewClip
@@ -56,10 +57,12 @@ PageBase {
                     }
 
                     Item {
+                        readonly property int pillCount: WallpaperService.sourceColorCandidates.length
+
                         anchors.bottom: parent.bottom
                         anchors.left: parent.left
                         anchors.margins: 10
-                        width: 244
+                        width: pillCount * 56 + Math.max(0, pillCount - 1) * 4 + 8
                         height: 32
 
                         Rectangle {
@@ -104,29 +107,34 @@ PageBase {
                             anchors.leftMargin: 4
                             anchors.rightMargin: 4
                             spacing: 4
+                            readonly property int count: WallpaperService.sourceColorCandidates.length
 
                             ColorPill {
                                 pillIndex: 0
                                 isFirst: true
-                                isLast: false
+                                isLast: parent.count === 1
+                                visible: parent.count >= 1
                                 pillColor: WallpaperService.sourceColorCandidates[0] ?? "transparent"
                             }
                             ColorPill {
                                 pillIndex: 1
                                 isFirst: false
-                                isLast: false
+                                isLast: parent.count === 2
+                                visible: parent.count >= 2
                                 pillColor: WallpaperService.sourceColorCandidates[1] ?? "transparent"
                             }
                             ColorPill {
                                 pillIndex: 2
                                 isFirst: false
-                                isLast: false
+                                isLast: parent.count === 3
+                                visible: parent.count >= 3
                                 pillColor: WallpaperService.sourceColorCandidates[2] ?? "transparent"
                             }
                             ColorPill {
                                 pillIndex: 3
                                 isFirst: false
                                 isLast: true
+                                visible: parent.count >= 4
                                 pillColor: WallpaperService.sourceColorCandidates[3] ?? "transparent"
                             }
                         }
