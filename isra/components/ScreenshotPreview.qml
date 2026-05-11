@@ -7,6 +7,7 @@ import qs.style
 import qs.icons
 import Quickshell.Widgets
 import QtQuick.Effects
+import qs.services
 
 Item {
     id: outer

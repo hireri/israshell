@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.style
 import qs.icons
+import qs.services
 import Quickshell.Widgets
 
 Rectangle {
@@ -20,13 +21,6 @@ Rectangle {
         return Config.screencapEnabled && !Config.screencap.blacklist.includes(name);
     }
 
-    property bool isRecording: false
-    property string recordingTime: "00:00"
-    property double startTime: 0
-    property int missCount: 0
-
-    property bool isRecognizing: false
-
     color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.85) : Colors.md3.surface_container_high
     radius: 20
     implicitHeight: 32
@@ -34,85 +28,23 @@ Rectangle {
 
     Process {
         id: recordScript
-        command: ["sh", "-c", getScript(Config.screencap.recordPath)]
+        command: ["sh", "-c", "qs -c isra ipc call screenshot record"]
     }
     Process {
         id: screenshotScript
-        command: ["sh", "-c", getScript(Config.screencap.screenshotPath)]
+        command: ["sh", "-c", "qs -c isra ipc call screenshot activate"]
     }
     Process {
         id: ctsScript
-        command: ["sh", "-c", getScript(Config.screencap.ctsPath)]
+        command: ["sh", "-c", "qs -c isra ipc call screenshot cts"]
     }
     Process {
         id: ocrScript
-        command: ["sh", "-c", getScript(Config.screencap.ocrPath)]
+        command: ["sh", "-c", "qs -c isra ipc call screenshot ocr"]
     }
     Process {
         id: songrecScript
         command: ["sh", "-c", getScript(Config.screencap.songrecPath)]
-    }
-
-    Process {
-        id: checkProcess
-        command: ["sh", "-c", "pgrep -x wl-screenrec || pgrep -x gpu-screen-reco"]
-        running: false
-        onExited: exitCode => {
-            var currentlyRunning = (exitCode === 0);
-
-            if (currentlyRunning && !isRecording) {
-                isRecording = true;
-                startTime = Date.now();
-            } else if (!currentlyRunning && isRecording) {
-                isRecording = false;
-                recordingTime = "00:00";
-            }
-        }
-    }
-
-    Process {
-        id: checkSongrecProcess
-        command: ["sh", "-c", "test -f /tmp/songrec_script.pid && kill -0 $(cat /tmp/songrec_script.pid) 2>/dev/null && exit 0 || exit 1"]
-        running: false
-        onExited: exitCode => {
-            var currentlyRunning = (exitCode === 0);
-            if (currentlyRunning !== isRecognizing) {
-                isRecognizing = currentlyRunning;
-            }
-        }
-    }
-
-    Timer {
-        id: checkTimer
-        interval: 1000
-        running: true
-        repeat: true
-        onTriggered: {
-            if (!checkProcess.running) {
-                checkProcess.running = true;
-            }
-            if (!checkSongrecProcess.running) {
-                checkSongrecProcess.running = true;
-            }
-        }
-    }
-
-    Timer {
-        id: displayTimer
-        interval: 100
-        running: true
-        repeat: true
-        onTriggered: {
-            if (!isRecording)
-                return;
-
-            var diff = Math.floor((Date.now() - startTime) / 1000);
-            var hrs = Math.floor(diff / 3600);
-            var mins = Math.floor((diff % 3600) / 60);
-            var secs = diff % 60;
-
-            recordingTime = hrs > 0 ? `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}` : `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-        }
     }
 
     BarTooltip {
@@ -168,10 +100,10 @@ Rectangle {
             Rectangle {
                 id: songrecBg
                 anchors.verticalCenter: parent.verticalCenter
-                width: isRecognizing ? 38 : 32
-                height: isRecognizing ? 26 : 32
+                width: ScreencapService.isRecognizing ? 38 : 32
+                height: ScreencapService.isRecognizing ? 26 : 32
                 radius: 16
-                color: isRecognizing ? Qt.alpha(Colors.md3.primary, 0.15) : (songrecHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
+                color: ScreencapService.isRecognizing ? Qt.alpha(Colors.md3.primary, 0.15) : (songrecHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
 
                 Behavior on height {
                     NumberAnimation {
@@ -195,7 +127,7 @@ Rectangle {
             SongrecIcon {
                 iconSize: 18
                 anchors.centerIn: parent
-                color: isRecognizing ? Colors.md3.primary : Colors.md3.on_surface
+                color: ScreencapService.isRecognizing ? Colors.md3.primary : Colors.md3.on_surface
                 Behavior on color {
                     ColorAnimation {
                         duration: 200
@@ -212,13 +144,13 @@ Rectangle {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    isRecognizing = !isRecognizing;
+                    ScreencapService.isRecognizing = !ScreencapService.isRecognizing;
                     songrecScript.startDetached();
                 }
                 onEntered: {
                     var yPos = Config.barPosition === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = isRecognizing ? "Stop Recognizing" : "Recognize Music";
+                    tooltipWindow.tipTitle = ScreencapService.isRecognizing ? "Stop Recognizing" : "Recognize Music";
                     tooltipWindow.visible = true;
                 }
                 onExited: tooltipWindow.visible = false
@@ -233,11 +165,11 @@ Rectangle {
             ClippingRectangle {
                 id: recordBg
                 anchors.verticalCenter: parent.verticalCenter
-                readonly property int textWidth: recordingTime.length > 5 ? 57 : 38
-                width: isRecording ? 32 + 8 + textWidth : 32
+                readonly property int textWidth: ScreencapService.recordingTime.length > 5 ? 57 : 38
+                width: ScreencapService.isRecording ? 32 + 8 + textWidth : 32
                 height: 26
                 radius: 16
-                color: isRecording ? Qt.alpha(Colors.md3.error, 0.15) : (recordHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
+                color: ScreencapService.isRecording ? Qt.alpha(Colors.md3.error, 0.15) : (recordHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
 
                 Behavior on width {
                     NumberAnimation {
@@ -257,7 +189,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left
                     anchors.leftMargin: 5
-                    color: isRecording ? Colors.md3.error : Colors.md3.on_surface
+                    color: ScreencapService.isRecording ? Colors.md3.error : Colors.md3.on_surface
                     Behavior on color {
                         ColorAnimation {
                             duration: 200
@@ -270,12 +202,12 @@ Rectangle {
                     anchors.left: recIcon.right
                     anchors.leftMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.recordingTime
+                    text: ScreencapService.recordingTime
                     font.family: Config.fontMonospace
                     font.pixelSize: 13
                     font.weight: Font.Medium
                     color: Colors.md3.error
-                    opacity: isRecording ? 1 : 0
+                    opacity: ScreencapService.isRecording ? 1 : 0
                     Behavior on opacity {
                         NumberAnimation {
                             duration: 200
@@ -296,7 +228,7 @@ Rectangle {
                 onEntered: {
                     var yPos = Config.barPosition === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = isRecording ? "Stop Recording" : "Start Recording";
+                    tooltipWindow.tipTitle = ScreencapService.isRecording ? "Stop Recording" : "Start Recording";
                     tooltipWindow.visible = true;
                 }
                 onExited: tooltipWindow.visible = false
