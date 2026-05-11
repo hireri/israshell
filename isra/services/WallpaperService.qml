@@ -38,6 +38,14 @@ Singleton {
 
     onCurrentDirChanged: _runList()
 
+    Connections {
+        target: Config
+        function onClockChanged() {
+            if (!(Config.clock.manualPos ?? false))
+                root._runClockPosition();
+        }
+    }
+
     function openFor(_panelWindow) {
         if (currentWall) {
             const wallDir = currentWall.substring(0, currentWall.lastIndexOf("/"));
@@ -223,7 +231,7 @@ Singleton {
     }
 
     function _runClockPosition() {
-        if (!currentWall || !Config.desktopClock)
+        if (!currentWall || !Config.desktopClock || (Config.clock.manualPos ?? false))
             return;
         clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/leastbusy.py", root.currentWall, "--clock-w", String(clockRenderWidth), "--clock-h", String(clockRenderHeight), "--mode", isDark ? "dark" : "light"];
         clockProc.running = false;

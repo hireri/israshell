@@ -76,7 +76,11 @@ Singleton {
             align: "left",
             colorRole: "primary",
             subColorRole: "secondary",
-            shadowBlur: 16
+            shadowBlur: 16,
+            manualPos: false,
+            shadowX: 0,
+            shadowY: 0,
+            shadowOpacity: 0.2
         })
     property var clockPositions: ({})
     property bool checkUpdates: true
@@ -160,7 +164,11 @@ Singleton {
                 align: "left",
                 colorRole: "primary",
                 subColorRole: "secondary",
-                shadowBlur: 16
+                shadowBlur: 16,
+                manualPos: false,
+                shadowX: 0,
+                shadowY: 0,
+                shadowOpacity: 0.2
             },
             clockPositions: {},
             checkUpdates: true,

@@ -356,6 +356,19 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
+        SettingSwitch {
+            label: "Manual positioning"
+            sublabel: "Drag the clock freely instead of auto-placing it"
+            isLast: true
+            checked: Config.clock.manualPos ?? false
+            onToggled: v => updateClock({
+                    manualPos: v
+                })
+        }
+    }
+
+    SectionCard {
+        Layout.fillWidth: true
         visible: Config.clock.layout === "analog"
 
         SettingSwitch {
@@ -693,13 +706,43 @@ PageBase {
 
         SettingSlider {
             label: "Shadow blur"
-            isLast: true
             from: 0
             to: 64
             stepSize: 1
             value: Config.clock.shadowBlur
             onMoved: v => updateClock({
                     shadowBlur: v
+                })
+        }
+        SettingSlider {
+            label: "Shadow X"
+            from: -40
+            to: 40
+            stepSize: 1
+            value: Config.clock.shadowX ?? 0
+            onMoved: v => updateClock({
+                    shadowX: v
+                })
+        }
+        SettingSlider {
+            label: "Shadow Y"
+            from: -40
+            to: 40
+            stepSize: 1
+            value: Config.clock.shadowY ?? 0
+            onMoved: v => updateClock({
+                    shadowY: v
+                })
+        }
+        SettingSlider {
+            label: "Shadow opacity"
+            isLast: true
+            from: 0
+            to: 100
+            stepSize: 1
+            value: Math.round((Config.clock.shadowOpacity ?? 0.2) * 100)
+            onMoved: v => updateClock({
+                    shadowOpacity: v / 100
                 })
         }
     }

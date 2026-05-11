@@ -13,7 +13,7 @@ PanelWindow {
     screen: modelData
     exclusiveZone: 0
     exclusionMode: ExclusionMode.Ignore
-    focusable: false
+    focusable: Config.clock.manualPos ?? false
     color: "transparent"
     visible: Config.desktopClock
     WlrLayershell.namespace: "quickshell:clock"
@@ -29,14 +29,14 @@ PanelWindow {
     property real _cy: 0
 
     Behavior on _cx {
-        enabled: !Config.loading
+        enabled: !Config.loading && !(Config.clock.manualPos ?? false)
         NumberAnimation {
             duration: 600
             easing.type: Easing.InOutCubic
         }
     }
     Behavior on _cy {
-        enabled: !Config.loading
+        enabled: !Config.loading && !(Config.clock.manualPos ?? false)
         NumberAnimation {
             duration: 600
             easing.type: Easing.InOutCubic
@@ -46,11 +46,24 @@ PanelWindow {
     property var _currentTime: new Date()
 
     function updatePosition() {
+        if (Config.clock.manualPos ?? false)
+            return;
         const pos = Config.clockPositions?.[modelData.name];
         if (!pos || (pos.x === _cx && pos.y === _cy))
             return;
         _cx = pos.x;
         _cy = pos.y;
+    }
+
+    function loadSavedPosition() {
+        const pos = Config.clockPositions?.[modelData.name];
+        if (pos) {
+            _cx = pos.x;
+            _cy = pos.y;
+        } else {
+            _cx = modelData.width * 0.82;
+            _cy = modelData.height * 0.10;
+        }
     }
 
     Connections {
@@ -61,11 +74,7 @@ PanelWindow {
     }
 
     Component.onCompleted: {
-        updatePosition();
-        if (!Config.clockPositions?.[modelData.name]) {
-            _cx = modelData.width * 0.82;
-            _cy = modelData.height * 0.10;
-        }
+        loadSavedPosition();
         if (modelData === Quickshell.screens[0])
             WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
     }
@@ -99,16 +108,62 @@ PanelWindow {
         }
     }
 
+    property real _dragDx: 0
+    property real _dragDy: 0
+
     Item {
         id: clockRoot
-        x: root._cx - width / 2
-        y: root._cy - height / 2
+        x: root._cx - width / 2 + root._dragDx
+        y: root._cy - height / 2 + root._dragDy
+
+        scale: dragHandler.active ? 1.06 : 1.0
+        transformOrigin: Item.Center
+        Behavior on scale {
+            NumberAnimation {
+                duration: 220
+                easing.type: Easing.OutCubic
+            }
+        }
 
         layer.enabled: true
         layer.effect: MultiEffect {
             shadowEnabled: true
             shadowBlur: ((Config.clock.shadowBlur ?? 16) / 32)
-            shadowColor: Qt.alpha("black", 0.2)
+            shadowColor: Qt.alpha("black", Config.clock.shadowOpacity ?? 0.2)
+            shadowHorizontalOffset: Config.clock.shadowX ?? 0
+            shadowVerticalOffset: Config.clock.shadowY ?? 4
+        }
+
+        HoverHandler {
+            cursorShape: dragHandler.active ? Qt.ClosedHandCursor : (Config.clock.manualPos ?? false) ? Qt.OpenHandCursor : Qt.ArrowCursor
+        }
+
+        DragHandler {
+            id: dragHandler
+            enabled: Config.clock.manualPos ?? false
+            target: null
+            onActiveChanged: {
+                if (!active) {
+                    root._cx += root._dragDx;
+                    root._cy += root._dragDy;
+                    root._dragDx = 0;
+                    root._dragDy = 0;
+                    const positions = Object.assign({}, Config.clockPositions ?? {});
+                    positions[root.modelData.name] = {
+                        x: root._cx,
+                        y: root._cy
+                    };
+                    Config.update({
+                        clockPositions: positions
+                    });
+                }
+            }
+            onTranslationChanged: {
+                if (active) {
+                    root._dragDx = translation.x;
+                    root._dragDy = translation.y;
+                }
+            }
         }
 
         readonly property string _font: Config.clock.fontFamily !== "" ? Config.clock.fontFamily : Config.fontFamily
@@ -300,7 +355,7 @@ PanelWindow {
                 layer.effect: MultiEffect {
                     shadowEnabled: true
                     shadowBlur: ((Config.clock.shadowBlur ?? 16) / 32)
-                    shadowColor: Qt.alpha("black", 0.2)
+                    shadowColor: Qt.alpha("black", Config.clock.shadowOpacity ?? 0.2)
                     shadowScale: 1.04
                 }
             }
