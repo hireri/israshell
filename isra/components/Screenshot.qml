@@ -348,7 +348,6 @@ Item {
                         ScreencopyView {
                             anchors.fill: parent
                             captureSource: overlay.screen
-                            visible: !sessionRoot.capturing
                         }
 
                         Item {

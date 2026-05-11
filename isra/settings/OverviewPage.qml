@@ -29,7 +29,6 @@ PageBase {
                 Layout.preferredWidth: parent.width * 0.58
                 Layout.preferredHeight: Layout.preferredWidth * 9 / 16
                 Layout.alignment: Qt.AlignTop
-                visible: WallpaperService.sourceColorCandidates.length > 0
 
                 ClippingRectangle {
                     id: previewClip
@@ -64,6 +63,7 @@ PageBase {
                         anchors.margins: 10
                         width: pillCount * 56 + Math.max(0, pillCount - 1) * 4 + 8
                         height: 32
+                        visible: WallpaperService.sourceColorCandidates.length > 0
 
                         Rectangle {
                             id: containerBg
