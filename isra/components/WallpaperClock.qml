@@ -109,7 +109,6 @@ PanelWindow {
             shadowEnabled: true
             shadowBlur: ((Config.clock.shadowBlur ?? 16) / 32)
             shadowColor: Qt.alpha("black", 0.2)
-            shadowScale: 1.04
         }
 
         readonly property string _font: Config.clock.fontFamily !== "" ? Config.clock.fontFamily : Config.fontFamily
