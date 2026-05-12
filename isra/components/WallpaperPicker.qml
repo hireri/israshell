@@ -185,13 +185,28 @@ Item {
                     const src = entries ?? WallpaperService.entries;
                     const filtered = q ? src.filter(e => e.name.toLowerCase().includes(q)) : src;
                     const sorted = [...filtered].sort((a, b) => {
-                        if (a.isDir === b.isDir)
-                            return 0;
-                        return a.isDir ? -1 : 1;
+                        if (a.isDir !== b.isDir)
+                            return a.isDir ? -1 : 1;
+                        return a.name.localeCompare(b.name, undefined, {
+                            sensitivity: 'base'
+                        });
                     });
                     panel.gridModel.clear();
                     for (const e of sorted)
                         panel.gridModel.append(e);
+
+                    if (root.isOpen && !q && WallpaperService.currentWall) {
+                        Qt.callLater(() => {
+                            for (let i = 0; i < panel.gridModel.count; i++) {
+                                const e = panel.gridModel.get(i);
+                                if (!e.isDir && e.path === WallpaperService.currentWall) {
+                                    grid.currentIndex = i;
+                                    grid.positionViewAtIndex(i, GridView.Center);
+                                    break;
+                                }
+                            }
+                        });
+                    }
                 }
 
                 onSearchQueryChanged: rebuildModel(panel.searchQuery, WallpaperService.entries)
@@ -317,26 +332,6 @@ Item {
                             footer: Item {
                                 width: 1
                                 height: panel.pillH + panel.pillMargin + panel.gridPad
-                            }
-
-                            onVisibleChanged: {
-                                if (visible && WallpaperService.currentWall) {
-                                    Qt.callLater(() => {
-                                        let idx = -1;
-                                        for (let i = 0; i < panel.gridModel.count; i++) {
-                                            const e = panel.gridModel.get(i);
-                                            if (!e.isDir && e.path === WallpaperService.currentWall) {
-                                                idx = i;
-                                                break;
-                                            }
-                                        }
-
-                                        if (idx >= 0) {
-                                            grid.currentIndex = idx;
-                                            grid.positionViewAtIndex(idx, GridView.Center);
-                                        }
-                                    });
-                                }
                             }
 
                             Text {
