@@ -428,7 +428,7 @@ MouseArea {
             implicitWidth: group.width > 0 ? group.width : 320
             height: group._cardHeight >= 0 ? group._cardHeight : cardCol.implicitHeight + 28
 
-            radius: 18
+            radius: 26
             color: group.isCritical ? Colors.md3.secondary_container : (group.inPanel ? Colors.md3.surface_container_high : Colors.md3.surface_container)
             border.color: group.inPanel ? "transparent" : Qt.alpha(group.isCritical ? Colors.md3.primary : Colors.md3.outline_variant, 0.5)
             clip: true
