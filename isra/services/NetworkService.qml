@@ -18,6 +18,9 @@ Singleton {
     property bool wifiAvailable: true
     property bool ethAvailable: false
 
+    property string pendingPasswordSsid: ""
+    property bool awaitingPassword: false
+
     readonly property var networks: []
     readonly property var activeNetwork: networks.find(n => n.active) ?? null
 
@@ -50,6 +53,28 @@ Singleton {
         connectProc.running = true;
     }
 
+    function connectWithPassword(ssid, password) {
+        wifiConnecting = true;
+        awaitingPassword = false;
+        pendingPasswordSsid = "";
+        connectPasswordProc.environment = ({
+                "SSID": ssid,
+                "PASSWORD": password
+            });
+        connectPasswordProc.command = ["pkexec", "nmcli", "dev", "wifi", "connect", ssid, "password", password];
+        connectPasswordProc.running = false;
+        connectPasswordProc.running = true;
+    }
+
+    function changePassword(ssid, password) {
+        wifiConnecting = true;
+        awaitingPassword = false;
+        pendingPasswordSsid = "";
+        changePasswordProc.command = ["pkexec", "bash", "-c", `nmcli connection modify "${ssid}" wifi-sec.psk "${password}" && nmcli dev wifi connect "${ssid}"`];
+        changePasswordProc.running = false;
+        changePasswordProc.running = true;
+    }
+
     function disconnectNetwork(ssid) {
         disconnectProc.command = ["nmcli", "connection", "down", ssid];
         disconnectProc.running = false;
@@ -69,19 +94,28 @@ Singleton {
     }
 
     function _updateAll() {
-        wifiRadioProc.running = false;
-        wifiRadioProc.running = true;
-        stateProc.running = false;
-        stateProc.running = true;
-        networksProc.running = false;
-        networksProc.running = true;
-        signalProc.running = false;
-        signalProc.running = true;
+        updateDebounce.restart();
     }
 
     function refresh() {
         _updateAll();
         signalTimer.restart();
+    }
+
+    Timer {
+        id: updateDebounce
+        interval: 300
+        repeat: false
+        onTriggered: {
+            wifiRadioProc.running = false;
+            wifiRadioProc.running = true;
+            stateProc.running = false;
+            stateProc.running = true;
+            networksProc.running = false;
+            networksProc.running = true;
+            signalProc.running = false;
+            signalProc.running = true;
+        }
     }
 
     Process {
@@ -107,7 +141,7 @@ Singleton {
         stdout: SplitParser {
             onRead: data => {
                 if (data.trim() !== "")
-                    _updateAll();
+                    root._updateAll();
             }
         }
     }
@@ -157,8 +191,10 @@ Singleton {
             onStreamFinished: {
                 const line = text.trim();
                 if (!line) {
-                    root.wifiSsid = "";
-                    root.wifiSignal = 0;
+                    if (!root.wifiConnecting) {
+                        root.wifiSsid = "";
+                        root.wifiSignal = 0;
+                    }
                     return;
                 }
                 const parts = line.split(":");
@@ -210,9 +246,21 @@ Singleton {
                         map.set(n.ssid, n);
                 }
 
-                root.networks.length = 0;
-                for (const n of map.values())
-                    root.networks.push(n);
+                const newNets = Array.from(map.values());
+
+                for (const n of newNets) {
+                    const existing = root.networks.find(e => e.ssid === n.ssid);
+                    if (existing) {
+                        Object.assign(existing, n);
+                    } else {
+                        root.networks.push(n);
+                    }
+                }
+                for (let i = root.networks.length - 1; i >= 0; i--) {
+                    if (!newNets.find(n => n.ssid === root.networks[i].ssid))
+                        root.networks.splice(i, 1);
+                }
+
                 root.networksChanged();
             }
         }
@@ -236,32 +284,72 @@ Singleton {
         id: enableWifiProc
         onExited: root._updateAll()
     }
+
     Process {
         id: ethToggleProc
         onExited: root._updateAll()
     }
+
     Process {
         id: connectProc
-        onExited: {
+        environment: ({
+                LANG: "C",
+                LC_ALL: "C"
+            })
+        stderr: SplitParser {
+            onRead: line => {
+                if (line.includes("Secrets were required") || line.includes("password")) {
+                    const ssid = connectProc.command[connectProc.command.length - 1];
+                    root.pendingPasswordSsid = ssid;
+                    root.awaitingPassword = true;
+                }
+            }
+        }
+        onExited: (code, status) => {
             root.wifiConnecting = false;
             root._updateAll();
         }
     }
+
+    Process {
+        id: connectPasswordProc
+        environment: ({
+                LANG: "C",
+                LC_ALL: "C"
+            })
+        onExited: (code, status) => {
+            root.wifiConnecting = false;
+            root._updateAll();
+        }
+    }
+
+    Process {
+        id: changePasswordProc
+        onExited: (code, status) => {
+            root.wifiConnecting = false;
+            root._updateAll();
+        }
+    }
+
     Process {
         id: disconnectProc
         onExited: root._updateAll()
     }
+
     Process {
         id: forgetProc
         onExited: root._updateAll()
     }
+
     Process {
         id: rescanProc
         command: ["nmcli", "dev", "wifi", "list", "--rescan", "yes"]
-        onExited: {
+        onExited: (code, status) => {
             root.scanning = false;
-            networksProc.running = false;
-            networksProc.running = true;
+            if (code === 0) {
+                networksProc.running = false;
+                networksProc.running = true;
+            }
         }
     }
 

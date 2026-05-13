@@ -1,5 +1,6 @@
 pragma Singleton
 pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
@@ -8,16 +9,51 @@ Singleton {
     id: root
 
     readonly property bool available: Bluetooth.adapters.values.length > 0
-    readonly property bool bluetoothEnabled: Bluetooth.defaultAdapter?.enabled ?? false
+    readonly property bool enabled: Bluetooth.defaultAdapter?.enabled ?? false
+    readonly property bool discovering: Bluetooth.defaultAdapter?.discovering ?? false
 
-    readonly property list<var> connectedDevices: Bluetooth.devices.values.filter(d => d.connected)
-    readonly property list<var> pairedDevices: Bluetooth.devices.values.filter(d => d.paired && !d.connected)
-    readonly property list<var> allDevices: Bluetooth.devices.values.filter(d => d.paired || d.connected)
-    readonly property list<var> newDevices: Bluetooth.devices.values.filter(d => !d.paired && !d.connected)
     readonly property var firstConnected: Bluetooth.devices.values.find(d => d.connected) ?? null
+    readonly property int connectedCount: Bluetooth.devices.values.filter(d => d.connected).length
 
-    property bool discovering: false
-    property bool _knr: false
+    readonly property list<var> connectedDevices: Bluetooth.devices.values.filter(d => d.connected).sort(sortFunction)
+    readonly property list<var> pairedDevices: Bluetooth.devices.values.filter(d => d.paired && !d.connected).sort(sortFunction)
+    readonly property list<var> newDevices: Bluetooth.devices.values.filter(d => !d.paired && !d.connected).sort(sortFunction)
+    readonly property list<var> allDevices: [...connectedDevices, ...pairedDevices, ...newDevices]
+    readonly property list<var> knownDevices: [...connectedDevices, ...pairedDevices]
+
+    function toggle() {
+        const adapter = Bluetooth.defaultAdapter;
+        if (adapter)
+            adapter.enabled = !adapter.enabled;
+    }
+
+    function setDiscovering(value) {
+        const adapter = Bluetooth.defaultAdapter;
+        if (adapter)
+            adapter.discovering = value;
+    }
+
+    function connectDevice(device) {
+        device.connect();
+    }
+    function disconnectDevice(device) {
+        device.disconnect();
+    }
+    function pairDevice(device) {
+        device.pair();
+    }
+    function forgetDevice(device) {
+        device.forget();
+    }
+
+    function sortFunction(a, b) {
+        const macRegex = /^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$/;
+        const aIsMac = macRegex.test(a.name);
+        const bIsMac = macRegex.test(b.name);
+        if (aIsMac !== bIsMac)
+            return aIsMac ? 1 : -1;
+        return a.name.localeCompare(b.name);
+    }
 
     function batteryIcon(level) {
         if (level >= 90)
@@ -39,47 +75,5 @@ Singleton {
         if (level >= 10)
             return "󰁻";
         return "󰁺";
-    }
-
-    function toggle() {
-        const adapter = Bluetooth.defaultAdapter;
-        if (adapter)
-            adapter.enabled = !adapter.enabled;
-    }
-
-    onBluetoothEnabledChanged: {
-        if (!bluetoothEnabled) {
-            root.discovering = false;
-            root._knr = false;
-        }
-    }
-
-    function setDiscovering(value) {
-        const adapter = Bluetooth.defaultAdapter;
-        if (!adapter)
-            return;
-        if (value) {
-            adapter.discovering = true;
-            root._knr = true;
-            root.discovering = true;
-        } else {
-            if (root._knr)
-                adapter.discovering = false;
-            root._knr = false;
-            root.discovering = false;
-        }
-    }
-
-    function connectDevice(device) {
-        device.connect();
-    }
-    function disconnectDevice(device) {
-        device.disconnect();
-    }
-    function forgetDevice(device) {
-        device.forget();
-    }
-    function pairDevice(device) {
-        device.pair();
     }
 }

@@ -18,11 +18,9 @@ PageBase {
 
     onVisibleChanged: if (visible)
         NetworkService.refresh()
-
     Component.onCompleted: NetworkService.refresh()
 
     readonly property bool wifiBusy: NetworkService.wifiConnecting || NetworkService.scanning
-
     property bool btDeviceBusy: false
 
     function signalIcon(s) {
@@ -43,6 +41,26 @@ PageBase {
         editProc.running = true;
     }
 
+    function btCardIcon() {
+        const ico = BluetoothService.firstConnected?.icon ?? "";
+        if (ico.includes("headset") || ico.includes("headphone"))
+            return headphonesComp;
+        if (ico.includes("phone"))
+            return phoneComp;
+        if (ico.includes("keyboard"))
+            return keyboardComp;
+        return btIconComp;
+    }
+
+    function btRowIcon(iconStr) {
+        const s = iconStr ?? "";
+        if (s.includes("headset") || s.includes("headphone"))
+            return btRowHeadphones;
+        if (s.includes("phone"))
+            return btRowPhone;
+        return btRowGeneric;
+    }
+
     Process {
         id: editProc
     }
@@ -50,9 +68,6 @@ PageBase {
     Connections {
         target: BluetoothService
         function onConnectedDevicesChanged() {
-            page.btDeviceBusy = false;
-        }
-        function onAllDevicesChanged() {
             page.btDeviceBusy = false;
         }
     }
@@ -85,8 +100,8 @@ PageBase {
         id: btIconComp
         BluetoothIcon {
             iconSize: 22
-            filled: BluetoothService.bluetoothEnabled
-            color: BluetoothService.bluetoothEnabled ? Colors.md3.on_secondary_container : Colors.md3.outline
+            filled: BluetoothService.enabled
+            color: BluetoothService.enabled ? Colors.md3.on_secondary_container : Colors.md3.outline
         }
     }
     Component {
@@ -110,7 +125,6 @@ PageBase {
             color: Colors.md3.on_secondary_container
         }
     }
-
     Component {
         id: btRowHeadphones
         HeadphonesIcon {
@@ -132,26 +146,6 @@ PageBase {
             filled: true
             color: Colors.md3.on_surface
         }
-    }
-
-    function btCardIcon() {
-        const ico = BluetoothService.firstConnected?.icon ?? "";
-        if (ico.includes("headset") || ico.includes("headphone"))
-            return headphonesComp;
-        if (ico.includes("phone"))
-            return phoneComp;
-        if (ico.includes("keyboard"))
-            return keyboardComp;
-        return btIconComp;
-    }
-
-    function btRowIcon(iconStr) {
-        const s = iconStr ?? "";
-        if (s.includes("headset") || s.includes("headphone"))
-            return btRowHeadphones;
-        if (s.includes("phone"))
-            return btRowPhone;
-        return btRowGeneric;
     }
 
     NetworkCard {
@@ -439,14 +433,14 @@ PageBase {
     NetworkCard {
         id: btCard
         Layout.fillWidth: true
-        enabled: BluetoothService.bluetoothEnabled
+        enabled: BluetoothService.enabled
         tint: Colors.md3.secondary_container
         onTint: Colors.md3.on_secondary_container
         iconComponent: btCardIcon()
         title: BluetoothService.firstConnected?.name ?? "Bluetooth"
-        subtitle: !BluetoothService.bluetoothEnabled ? "Off" : BluetoothService.connectedDevices.length > 0 ? (BluetoothService.firstConnected?.batteryAvailable ? "Connected · " + BluetoothService.batteryIcon(Math.round(BluetoothService.firstConnected.battery * 100)) + " " + Math.round(BluetoothService.firstConnected.battery * 100) + "%" : "Connected") : "No devices connected"
+        subtitle: !BluetoothService.enabled ? "Off" : BluetoothService.connectedDevices.length > 0 ? (BluetoothService.firstConnected?.batteryAvailable ? "Connected · " + BluetoothService.batteryIcon(Math.round(BluetoothService.firstConnected.battery * 100)) + " " + Math.round(BluetoothService.firstConnected.battery * 100) + "%" : "Connected") : "No devices connected"
         hasSwitch: true
-        switchChecked: BluetoothService.bluetoothEnabled
+        switchChecked: BluetoothService.enabled
         onSwitchToggled: BluetoothService.toggle()
     }
 
@@ -459,7 +453,7 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
-        visible: BluetoothService.bluetoothEnabled && BluetoothService.allDevices.length > 0
+        visible: BluetoothService.enabled
 
         Item {
             implicitWidth: parent?.width ?? 0
@@ -540,13 +534,13 @@ PageBase {
                 }
                 height: 1
                 color: Colors.md3.outline_variant
-                opacity: 0.5
+                opacity: BluetoothService.knownDevices.length > 0 ? 0.5 : 0
             }
         }
 
         Repeater {
             id: btRepeater
-            model: BluetoothService.allDevices
+            model: BluetoothService.knownDevices
 
             delegate: Item {
                 required property BluetoothDevice modelData
@@ -676,7 +670,7 @@ PageBase {
     SectionCard {
         label: "Available devices"
         Layout.fillWidth: true
-        visible: BluetoothService.bluetoothEnabled && BluetoothService.newDevices.length > 0
+        visible: BluetoothService.enabled && BluetoothService.newDevices.length > 0
 
         Repeater {
             id: newBtRepeater
@@ -688,6 +682,8 @@ PageBase {
 
                 implicitWidth: parent?.width ?? 0
                 implicitHeight: 58
+
+                readonly property bool nameIsMac: /^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$/.test(modelData.name)
 
                 RowLayout {
                     anchors {
@@ -715,7 +711,7 @@ PageBase {
                         spacing: 2
 
                         Text {
-                            text: modelData.name || "Unknown device"
+                            text: nameIsMac ? "Unknown device" : (modelData.name || "Unknown device")
                             font.family: Config.fontFamily
                             font.pixelSize: 13
                             color: Colors.md3.on_surface
@@ -724,7 +720,7 @@ PageBase {
                         }
 
                         Text {
-                            text: modelData.pairing ? "Pairing..." : "Not paired"
+                            text: modelData.pairing ? "Pairing..." : nameIsMac ? modelData.name : modelData.address ?? ""
                             font.family: Config.fontFamily
                             font.pixelSize: 11
                             color: Colors.md3.outline
