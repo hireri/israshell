@@ -679,7 +679,7 @@ Rectangle {
 
         Process {
             id: pavuProc
-            command: ['qs', 'ipc', 'call', 'settings', 'open', 'sound']
+            command: ['qs', '-c', 'isra', 'ipc', 'call', 'settings', 'open', 'sound']
             running: false
         }
     }
