@@ -21,6 +21,15 @@ ShellRoot {
         id: settingsLoader
         active: false
         sourceComponent: SettingsWindow {}
+
+        Connections {
+            target: settingsLoader.item
+            enabled: settingsLoader.item !== null
+            function onVisibleChanged() {
+                if (!settingsLoader.item.visible)
+                    settingsLoader.active = false;
+            }
+        }
     }
 
     IpcHandler {
