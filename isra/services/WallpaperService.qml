@@ -191,7 +191,7 @@ Singleton {
     function _fetchCandidates() {
         if (!currentWall)
             return;
-        candidatesProc.command = ["matugen", "image", currentWall, "--list-candidates"];
+        candidatesProc.command = ["matugen", "image", currentWall, "--show-source-colors"];
         candidatesProc.running = false;
         candidatesProc.running = true;
     }
