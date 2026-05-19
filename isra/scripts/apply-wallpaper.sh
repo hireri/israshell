@@ -44,5 +44,11 @@ awww img \
     --transition-duration 1    \
     "$HOME/.config/hypr/current_wall"
 
+if [ "$MODE" = "dark" ]; then
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+else
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+fi
+
 matugen image "$HOME/.config/hypr/current_wall" -m "$MODE" -t "$SCHEME" --source-color-index "$SOURCE_INDEX"
 

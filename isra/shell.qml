@@ -219,7 +219,9 @@ ShellRoot {
                                 Workspaces {
                                     panelWindow: window
                                 }
-                                BarClock {}
+                                BarClock {
+                                    panelWindow: window
+                                }
 
                                 WallpaperPicker {
                                     id: wpWidget

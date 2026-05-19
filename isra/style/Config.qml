@@ -50,6 +50,8 @@ Singleton {
             popupPosition: 0
         })
     property int dateFormat: 0
+    property bool weekMonday: true
+    property bool useFarenheit: false
     property int osdPosition: 1
     property bool darkMode: true
     property string colorScheme: "scheme-tonal-spot"
@@ -135,6 +137,8 @@ Singleton {
                 popupPosition: 0
             },
             dateFormat: 0,
+            weekMonday: true,
+            useFarenheit: false,
             osdPosition: 1,
             darkMode: true,
             colorScheme: "scheme-tonal-spot",

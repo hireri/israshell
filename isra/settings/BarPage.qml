@@ -321,7 +321,7 @@ PageBase {
                     },
                     {
                         key: "songrec",
-                        label: "Song ID"
+                        label: "Recognize Music"
                     }
                 ]
 
