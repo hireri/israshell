@@ -477,11 +477,7 @@ Singleton {
             onStreamFinished: {
                 if (!text.trim())
                     return;
-                try {
-                    root.sourceColorCandidates = JSON.parse(text.trim());
-                } catch (e) {
-                    console.log("[Wallpaper] Failed to parse candidates:", e);
-                }
+                root.sourceColorCandidates = text.trim().split("\n").filter(l => l.trim() !== "");
             }
         }
     }
