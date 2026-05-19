@@ -234,6 +234,38 @@ PageBase {
         }
 
         SectionCard {
+            label: "Fonts"
+            Layout.fillWidth: true
+
+            SettingInput {
+                label: "Interface font"
+                sublabel: Config.fontFamily
+                value: Config.fontFamily
+                placeholder: "Font name..."
+                onCommitted: v => {
+                    if (v.trim().length > 0)
+                        Config.update({
+                            fontFamily: v.trim()
+                        });
+                }
+            }
+
+            SettingInput {
+                isLast: true
+                label: "Monospace font"
+                sublabel: Config.fontMonospace
+                value: Config.fontMonospace
+                placeholder: "Monospace font name..."
+                onCommitted: v => {
+                    if (v.trim().length > 0)
+                        Config.update({
+                            fontMonospace: v.trim()
+                        });
+                }
+            }
+        }
+
+        SectionCard {
             label: "Script paths"
             Layout.fillWidth: true
 

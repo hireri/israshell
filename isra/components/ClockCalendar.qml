@@ -110,8 +110,11 @@ Item {
     }
 
     function weekNumber(d, m, y) {
-        const dt = new Date(y, m, d), s = new Date(y, 0, 1);
-        return Math.ceil(((dt - s) / 86400000 + s.getDay() + 1) / 7);
+        const dt = new Date(y, m, d);
+        dt.setHours(0, 0, 0, 0);
+        dt.setDate(dt.getDate() + 3 - (dt.getDay() + 6) % 7);
+        const jan4 = new Date(dt.getFullYear(), 0, 4);
+        return 1 + Math.round(((dt - jan4) / 86400000 - 3 + (jan4.getDay() + 6) % 7) / 7);
     }
 
     function dayName(d, m, y) {
@@ -149,9 +152,10 @@ Item {
             "12-25": "Christmas Day",
             "12-26": "St. Stephen's Day",
             "02-14": "Valentine's Day",
-            "03-08": "Women's Day",
-            "04-01": "April Fools'",
+            "03-08": "International Women's Day",
+            "03-19": "Father's Day",
             "04-22": "Earth Day",
+            "05-04": "Star Wars Day",
             "10-31": "Halloween",
             "12-31": "New Year's Eve"
         })
@@ -175,13 +179,19 @@ Item {
 
         const e = easterDate(year || new Date().getFullYear());
         const fmt = d => String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
         const mon = new Date(e);
         mon.setDate(mon.getDate() + 1);
+
+        const carnival = new Date(e);
+        carnival.setDate(carnival.getDate() - 47);
 
         if (key === fmt(e))
             return "Easter Sunday";
         if (key === fmt(mon))
             return "Easter Monday";
+        if (key === fmt(carnival))
+            return "Mardi Gras";
         return "";
     }
 

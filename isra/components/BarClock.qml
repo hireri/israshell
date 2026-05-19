@@ -38,7 +38,7 @@ Item {
         implicitHeight: row.implicitHeight + 16
 
         Timer {
-            interval: Config.showSeconds ? 1000 : 60000
+            interval: 1000
             running: true
             repeat: true
             triggeredOnStart: true

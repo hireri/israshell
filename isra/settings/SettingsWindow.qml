@@ -24,8 +24,9 @@ FloatingWindow {
     readonly property int pageClock: 3
     readonly property int pageDisplay: 4
     readonly property int pageSound: 5
-    readonly property int pageImmeria: 6
-    readonly property int pageSystem: 7
+    readonly property int pageLocale: 6
+    readonly property int pageImmeria: 7
+    readonly property int pageSystem: 8
 
     property int currentPage: pageOverview
 
@@ -121,7 +122,7 @@ FloatingWindow {
                         SidebarItem {
                             page: root.pageBar
                             label: "Bar"
-                            sublabel: "Layout, clock"
+                            sublabel: "Layout, media, tray"
                             onClicked: root.currentPage = page
                             CustomizationIcon {}
                         }
@@ -145,6 +146,13 @@ FloatingWindow {
                             sublabel: "Audio, popups"
                             onClicked: root.currentPage = page
                             NotificationsIcon {}
+                        }
+                        SidebarItem {
+                            page: root.pageLocale
+                            label: "Locale"
+                            sublabel: "Time, date, units"
+                            onClicked: root.currentPage = page
+                            LocaleIcon {}
                         }
                     }
 
@@ -206,6 +214,10 @@ FloatingWindow {
                     sourceComponent: SoundPage {}
                 }
                 Loader {
+                    active: root.currentPage === root.pageLocale
+                    sourceComponent: LocalePage {}
+                }
+                Loader {
                     active: root.currentPage === root.pageImmeria
                     sourceComponent: AIPage {}
                 }
@@ -216,6 +228,7 @@ FloatingWindow {
             }
         }
     }
+
     Component.onCompleted: {
         const page = Quickshell.env("QS_PAGE");
         if (!page)
@@ -227,6 +240,7 @@ FloatingWindow {
             "clock": root.pageClock,
             "display": root.pageDisplay,
             "sound": root.pageSound,
+            "locale": root.pageLocale,
             "immeria": root.pageImmeria,
             "system": root.pageSystem
         };
