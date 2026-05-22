@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import qs.style
+import qs.services
 
 Item {
     id: root
@@ -37,17 +38,6 @@ Item {
         implicitWidth: row.implicitWidth + 32
         implicitHeight: row.implicitHeight + 16
 
-        Timer {
-            interval: 1000
-            running: true
-            repeat: true
-            triggeredOnStart: true
-            onTriggered: {
-                clockTime.text = Qt.formatTime(new Date(), clockTime.timeFormat);
-                clockDate.text = Qt.formatDate(new Date(), clockDate.dateFormatStr);
-            }
-        }
-
         Row {
             id: row
             anchors.centerIn: parent
@@ -61,9 +51,7 @@ Item {
                 font.features: {
                     "tnum": 1
                 }
-                property string timeFormat: (Config.showSeconds ? "hh:mm:ss" : "hh:mm") + ["", " ap", " AP"][Config.hourFormat]
-                text: Qt.formatTime(new Date(), timeFormat)
-                onTimeFormatChanged: text = Qt.formatTime(new Date(), timeFormat)
+                text: LocaleService.barTimeText
             }
 
             Text {
@@ -82,9 +70,7 @@ Item {
                 font.features: {
                     "tnum": 1
                 }
-                property string dateFormatStr: ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat]
-                text: Qt.formatDate(new Date(), dateFormatStr)
-                onDateFormatStrChanged: text = Qt.formatDate(new Date(), dateFormatStr)
+                text: LocaleService.barDateText
             }
         }
 
@@ -94,9 +80,7 @@ Item {
 
         TapHandler {
             cursorShape: Qt.PointingHandCursor
-            onTapped: {
-                root.isOpen = !root.isOpen;
-            }
+            onTapped: root.isOpen = !root.isOpen
         }
     }
 

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import qs.style
 import qs.icons
+import qs.services
 
 Item {
     id: root
@@ -20,21 +21,6 @@ Item {
     property int selYear: todayYear
 
     readonly property bool isTodaySel: selDay === todayDay && selMonth === todayMonth && selYear === todayYear
-
-    property string liveTime: ""
-    property string liveSecs: ""
-    property string liveAmPm: ""
-    property string liveDayName: ""
-    property string liveFullDate: ""
-
-    property string weatherTemp: "—"
-    property string weatherHigh: "—"
-    property string weatherLow: "—"
-    property string weatherDesc: "loading..."
-    property string weatherHumid: "—"
-    property string weatherUvi: "—"
-    property string weatherAqi: "32"
-    property string weatherCode: "116"
 
     implicitWidth: card.implicitWidth
     implicitHeight: card.implicitHeight
@@ -55,7 +41,6 @@ Item {
         } else
             viewMonth--;
     }
-
     function nextMonth() {
         if (viewMonth === 11) {
             viewMonth = 0;
@@ -71,6 +56,7 @@ Item {
         let startDow = first.getDay();
         if (Config.weekMonday)
             startDow = (startDow + 6) % 7;
+
         const prevLastDate = new Date(year, month, 0).getDate();
         const prevM = month === 0 ? 11 : month - 1;
         const prevY = month === 0 ? year - 1 : year;
@@ -81,6 +67,7 @@ Item {
                 year: prevY,
                 isCurrentMonth: false
             });
+
         for (let d = 1; d <= lastDate; d++)
             days.push({
                 day: d,
@@ -88,6 +75,7 @@ Item {
                 year: year,
                 isCurrentMonth: true
             });
+
         const nextM = month === 11 ? 0 : month + 1;
         const nextY = month === 11 ? year + 1 : year;
         let nd = 1;
@@ -104,7 +92,6 @@ Item {
     function isLeapYear(y) {
         return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
     }
-
     function dayOfYear(d, m, y) {
         return Math.floor((new Date(y, m, d) - new Date(y, 0, 1)) / 86400000) + 1;
     }
@@ -120,11 +107,9 @@ Item {
     function dayName(d, m, y) {
         return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(y, m, d).getDay()];
     }
-
     function monthName(m) {
         return ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m];
     }
-
     function weekCount(year, month) {
         let startDow = new Date(year, month, 1).getDay();
         if (Config.weekMonday)
@@ -178,11 +163,9 @@ Item {
             return fixedHolidays[key];
 
         const e = easterDate(year || new Date().getFullYear());
-        const fmt = d => String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-
+        const fmt = dt => String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
         const mon = new Date(e);
         mon.setDate(mon.getDate() + 1);
-
         const carnival = new Date(e);
         carnival.setDate(carnival.getDate() - 47);
 
@@ -226,7 +209,7 @@ Item {
     }
 
     function getWeatherIconComponent() {
-        const c = parseInt(root.weatherCode);
+        const c = parseInt(LocaleService.weatherCode);
         if (c === 113)
             return sunnyComponent;
         if (c === 116)
@@ -285,59 +268,6 @@ Item {
         }
     }
 
-    function updateWeather() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "https://wttr.in/?format=j1");
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    var cur = data.current_condition[0];
-                    var today = data.weather[0];
-
-                    root.weatherTemp = (Config.useFarenheit ? cur.temp_F : cur.temp_C) + "°";
-                    root.weatherDesc = cur.weatherDesc[0].value;
-                    root.weatherHigh = (Config.useFarenheit ? today.maxtempF : today.maxtempC) + "°";
-                    root.weatherLow = (Config.useFarenheit ? today.mintempF : today.mintempC) + "°";
-                    root.weatherHumid = cur.humidity + "%";
-                    root.weatherUvi = cur.uvIndex || "0";
-                    root.weatherCode = cur.weatherCode;
-                } catch (e) {
-                    console.log("Weather parse error:", e);
-                }
-            }
-        };
-        xhr.send();
-    }
-
-    Timer {
-        interval: 100
-        running: root.visible
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            const now = new Date();
-            const fmt12 = Config.hourFormat !== 0;
-            const h = now.getHours();
-            const m = now.getMinutes();
-            const hDisp = fmt12 ? (h % 12 || 12) : h;
-            root.liveTime = String(hDisp).padStart(2, '0') + ":" + String(m).padStart(2, '0');
-            root.liveSecs = String(now.getSeconds()).padStart(2, '0');
-
-            root.liveAmPm = Config.hourFormat === 1 ? " am" : Config.hourFormat === 2 ? " AM" : "";
-            root.liveDayName = Qt.formatDate(now, "dddd");
-            root.liveFullDate = Qt.formatDate(now, "dd MMMM yyyy");
-        }
-    }
-
-    Timer {
-        interval: 900000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: root.updateWeather()
-    }
-
     Rectangle {
         id: card
         property bool _ready: false
@@ -349,7 +279,6 @@ Item {
                 return open ? 8 : -(height + 8);
             return open ? 0 : height + 8;
         }
-
         Behavior on y {
             NumberAnimation {
                 duration: 360
@@ -364,7 +293,6 @@ Item {
         radius: 20
         border.width: 1
         border.color: Colors.md3.outline_variant
-
         layer.enabled: true
 
         Row {
@@ -391,7 +319,7 @@ Item {
 
                             Text {
                                 id: timeText
-                                text: root.liveTime
+                                text: LocaleService.liveTime
                                 color: Colors.md3.on_surface
                                 font.family: "Google Sans Display"
                                 font.pixelSize: 56
@@ -399,7 +327,6 @@ Item {
                                 font.features: {
                                     "tnum": 1
                                 }
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 200
@@ -412,16 +339,14 @@ Item {
                                 spacing: 0
 
                                 Text {
-                                    id: ampmText
-                                    opacity: root.liveAmPm !== "" ? 1.0 : 0.0
-                                    text: root.liveAmPm !== "" ? root.liveAmPm.trim() : "am"
+                                    opacity: LocaleService.liveAmPm !== "" ? 1.0 : 0.0
+                                    text: LocaleService.liveAmPm !== "" ? LocaleService.liveAmPm.trim() : "am"
                                     color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
                                     font.family: "Google Sans Display"
                                     font.pixelSize: 22
                                     font.weight: Font.Light
                                     height: timeText.height / 2
                                     verticalAlignment: Text.AlignBottom
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -430,8 +355,7 @@ Item {
                                 }
 
                                 Text {
-                                    id: secsText
-                                    text: ":" + root.liveSecs
+                                    text: ":" + LocaleService.liveSecs
                                     color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
                                     font.family: "Google Sans Display"
                                     font.pixelSize: 22
@@ -441,7 +365,6 @@ Item {
                                     }
                                     height: timeText.height / 2
                                     verticalAlignment: Text.AlignTop
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -452,13 +375,12 @@ Item {
                         }
 
                         Text {
-                            text: root.liveDayName
+                            text: LocaleService.liveDayName
                             color: Colors.md3.primary
                             font.family: Config.fontFamily
                             font.pixelSize: 14
                             font.weight: Font.Medium
                             topPadding: 4
-
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 200
@@ -467,12 +389,11 @@ Item {
                         }
 
                         Text {
-                            text: root.liveFullDate
+                            text: LocaleService.liveFullDate
                             color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
                             font.family: Config.fontFamily
                             font.pixelSize: 13
                             topPadding: 2
-
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 200
@@ -500,7 +421,6 @@ Item {
                                     font.pixelSize: 12
                                     font.weight: Font.Medium
                                     color: Colors.md3.on_surface_variant
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -521,7 +441,6 @@ Item {
                                     font.features: {
                                         "tnum": 1
                                     }
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -532,7 +451,6 @@ Item {
 
                             Text {
                                 anchors.right: parent.right
-                                anchors.verticalCenter: progressLabel.verticalCenter
                                 text: Math.round(root.selYearProgress * 100) + "%"
                                 font.family: Config.fontFamily
                                 font.pixelSize: 12
@@ -541,7 +459,6 @@ Item {
                                 font.features: {
                                     "tnum": 1
                                 }
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 200
@@ -556,7 +473,6 @@ Item {
                             height: 5
                             radius: 3
                             color: Qt.alpha(Colors.md3.primary, 0.14)
-
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 300
@@ -564,12 +480,10 @@ Item {
                             }
 
                             Rectangle {
-                                id: progressFill
                                 width: Math.max(progressTrack.height, progressTrack.width * root.selYearProgress)
                                 height: parent.height
                                 radius: parent.radius
                                 color: Colors.md3.primary
-
                                 Behavior on width {
                                     NumberAnimation {
                                         duration: 600
@@ -598,7 +512,6 @@ Item {
                                 color: Colors.md3.on_surface
                                 font.family: Config.fontFamily
                                 font.pixelSize: 13
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 200
@@ -620,7 +533,6 @@ Item {
                                 font.family: Config.fontFamily
                                 font.pixelSize: 13
                                 anchors.verticalCenter: parent.verticalCenter
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 200
@@ -637,7 +549,6 @@ Item {
                             color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
                             font.family: Config.fontFamily
                             font.pixelSize: 12
-
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 200
@@ -657,7 +568,6 @@ Item {
                                 radius: 8
                                 width: chipRow.implicitWidth + 20
                                 height: 28
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 200
@@ -673,7 +583,6 @@ Item {
                                         iconSize: 16
                                         color: Colors.md3.on_secondary_container
                                         anchors.verticalCenter: parent.verticalCenter
-
                                         Behavior on color {
                                             ColorAnimation {
                                                 duration: 200
@@ -688,7 +597,6 @@ Item {
                                         font.pixelSize: 12
                                         font.weight: Font.Medium
                                         anchors.verticalCenter: parent.verticalCenter
-
                                         Behavior on color {
                                             ColorAnimation {
                                                 duration: 200
@@ -707,7 +615,6 @@ Item {
                     height: 124
                     radius: 10
                     color: Colors.md3.surface_container_high
-
                     Behavior on color {
                         ColorAnimation {
                             duration: 200
@@ -729,9 +636,14 @@ Item {
                             spacing: 14
 
                             Loader {
-                                id: weatherIconLoader
                                 sourceComponent: root.getWeatherIconComponent()
                                 anchors.verticalCenter: parent.verticalCenter
+                                Connections {
+                                    target: LocaleService
+                                    function onWeatherCodeChanged() {
+                                        sourceComponent = root.getWeatherIconComponent();
+                                    }
+                                }
                             }
 
                             Column {
@@ -743,11 +655,10 @@ Item {
 
                                     Text {
                                         id: tempLabel
-                                        text: root.weatherTemp
+                                        text: LocaleService.weatherTemp
                                         font.pixelSize: 26
                                         color: Colors.md3.on_surface
                                         font.family: Config.fontFamily
-
                                         Behavior on color {
                                             ColorAnimation {
                                                 duration: 200
@@ -756,13 +667,12 @@ Item {
                                     }
 
                                     Text {
-                                        text: root.weatherHigh + " / " + root.weatherLow
+                                        text: LocaleService.weatherHigh + " / " + LocaleService.weatherLow
                                         font.pixelSize: 13
                                         font.weight: Font.Medium
                                         color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
                                         font.family: Config.fontFamily
                                         anchors.baseline: tempLabel.baseline
-
                                         Behavior on color {
                                             ColorAnimation {
                                                 duration: 200
@@ -772,12 +682,11 @@ Item {
                                 }
 
                                 Text {
-                                    text: root.weatherDesc
+                                    text: LocaleService.weatherDesc
                                     font.pixelSize: 13
                                     font.weight: Font.Medium
                                     color: Colors.md3.on_surface_variant
                                     font.family: Config.fontFamily
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -807,13 +716,12 @@ Item {
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                                 Text {
-                                    text: root.weatherUvi + " UVI"
+                                    text: LocaleService.weatherUvi + " UVI"
                                     color: Colors.md3.on_surface_variant
                                     font.family: Config.fontFamily
                                     font.pixelSize: 12
                                     font.weight: Font.Medium
                                     anchors.verticalCenter: parent.verticalCenter
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -833,13 +741,12 @@ Item {
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                                 Text {
-                                    text: root.weatherHumid
+                                    text: LocaleService.weatherHumid
                                     color: Colors.md3.on_surface_variant
                                     font.family: Config.fontFamily
                                     font.pixelSize: 12
                                     font.weight: Font.Medium
                                     anchors.verticalCenter: parent.verticalCenter
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -859,13 +766,12 @@ Item {
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                                 Text {
-                                    text: root.weatherAqi + " AQI"
+                                    text: LocaleService.weatherAqi + " AQI"
                                     color: Colors.md3.on_surface_variant
                                     font.family: Config.fontFamily
                                     font.pixelSize: 12
                                     font.weight: Font.Medium
                                     anchors.verticalCenter: parent.verticalCenter
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -883,7 +789,6 @@ Item {
                 height: parent.height
                 radius: 10
                 color: Colors.md3.surface_container_high
-
                 Behavior on color {
                     ColorAnimation {
                         duration: 200
@@ -909,7 +814,6 @@ Item {
                                 font.pixelSize: 20
                                 font.weight: Font.Medium
                                 color: Colors.md3.on_surface
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 200
@@ -922,7 +826,6 @@ Item {
                                 font.family: Config.fontFamily
                                 font.pixelSize: 12
                                 color: Colors.md3.on_surface_variant
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 200
@@ -943,7 +846,6 @@ Item {
                                 bottomRightRadius: 5
                                 topRightRadius: 5
                                 color: Colors.md3.surface_container_highest
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 120
@@ -955,9 +857,7 @@ Item {
                                     iconSize: 22
                                     color: Colors.md3.on_surface_variant
                                 }
-
                                 MouseArea {
-                                    id: prevMA
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
@@ -972,7 +872,6 @@ Item {
                                 bottomLeftRadius: 5
                                 topLeftRadius: 5
                                 color: Colors.md3.surface_container_highest
-
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 120
@@ -984,9 +883,7 @@ Item {
                                     iconSize: 22
                                     color: Colors.md3.on_surface_variant
                                 }
-
                                 MouseArea {
-                                    id: nextMA
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
@@ -1016,7 +913,6 @@ Item {
                                     font.weight: Font.Medium
                                     color: Colors.md3.on_surface_variant
                                     opacity: (Config.weekMonday ? index >= 5 : index === 0 || index === 6) ? 0.30 : 0.55
-
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 200
@@ -1036,8 +932,8 @@ Item {
                         columns: 7
                         spacing: 3
 
-                        property real cellW: (width - (spacing * 6)) / 7
-                        property real cellH: (height - (spacing * 5)) / 6
+                        property real cellW: (width - spacing * 6) / 7
+                        property real cellH: (height - spacing * 5) / 6
 
                         Repeater {
                             model: root.currentDays.length
@@ -1062,8 +958,7 @@ Item {
                                     radius: 19
                                     anchors.centerIn: parent
 
-                                    color: isToday ? Colors.md3.primary_container : isSelected ? Qt.alpha(Colors.md3.primary, 0.12) : (cellMA.containsMouse && dayData.isCurrentMonth ? Qt.alpha(Colors.md3.on_surface, 0.06) : "transparent")
-
+                                    color: isToday ? Colors.md3.primary_container : isSelected ? Qt.alpha(Colors.md3.primary, 0.12) : (cellMA.containsMouse && dayData.isCurrentMonth) ? Qt.alpha(Colors.md3.on_surface, 0.06) : "transparent"
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 100
@@ -1072,7 +967,6 @@ Item {
 
                                     border.width: isSelected ? 1.5 : 0
                                     border.color: isSelected ? Colors.md3.primary : "transparent"
-
                                     Behavior on border.color {
                                         ColorAnimation {
                                             duration: 150
@@ -1088,9 +982,7 @@ Item {
                                             "tnum": 1
                                         }
                                         font.weight: (isToday || isSelected) ? Font.Medium : Font.Normal
-
                                         color: isToday ? Colors.md3.on_primary_container : isSelected ? Colors.md3.primary : !dayData.isCurrentMonth ? Qt.alpha(Colors.md3.on_surface, 0.25) : isWeekend ? Qt.alpha(Colors.md3.primary, 0.80) : Colors.md3.on_surface
-
                                         Behavior on color {
                                             ColorAnimation {
                                                 duration: 150
@@ -1107,7 +999,6 @@ Item {
                                         anchors.bottomMargin: 5
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         color: isSelected ? Colors.md3.primary : Qt.alpha(Colors.md3.primary, 0.55)
-
                                         Behavior on color {
                                             ColorAnimation {
                                                 duration: 150
@@ -1128,14 +1019,12 @@ Item {
                                             root.selYear = dayData.year;
                                             return;
                                         }
-
                                         if (isToday) {
                                             root.selDay = root.todayDay;
                                             root.selMonth = root.todayMonth;
                                             root.selYear = root.todayYear;
                                             return;
                                         }
-
                                         if (root.selDay === dayData.day && root.selMonth === dayData.month && root.selYear === dayData.year) {
                                             root.selDay = root.todayDay;
                                             root.selMonth = root.todayMonth;
