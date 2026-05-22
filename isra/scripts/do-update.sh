@@ -21,7 +21,7 @@ setsid bash -c '
     sleep 0.5
     kill $(pidof quickshell) 2>/dev/null || true
     sleep 0.2
-    qs -c isra
+    qs -n -c isra
 ' >/dev/null 2>&1 &
 
 setsid bash -c '

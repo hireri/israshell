@@ -370,7 +370,7 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     root.isOpen = false;
-                                    Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -c isra"]);
+                                    Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -n -c isra"]);
                                 }
                             }
                         }
