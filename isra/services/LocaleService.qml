@@ -71,12 +71,13 @@ Singleton {
 
         _liveTime = String(hDisp).padStart(2, '0') + ":" + String(m).padStart(2, '0');
         _liveSecs = String(s).padStart(2, '0');
-        _liveAmPm = Config.hourFormat === 1 ? " am" : Config.hourFormat === 2 ? " AM" : "";
+        const isPm = h >= 12;
+        _liveAmPm = Config.hourFormat === 0 ? "" : (isPm ? (Config.hourFormat === 2 ? " PM" : " pm") : (Config.hourFormat === 2 ? " AM" : " am"));
         _liveDayName = Qt.formatDate(now, "dddd");
         _liveFullDate = Qt.formatDate(now, "dd MMMM yyyy");
 
         const secSuffix = Config.showSeconds ? ":" + _liveSecs : "";
-        const amPmSuffix = _liveAmPm.trim() !== "" ? " " + _liveAmPm.trim() : "";
+        const amPmSuffix = _liveAmPm;
         _barTimeText = _liveTime + secSuffix + amPmSuffix;
         _barDateText = Qt.formatDate(now, ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat]);
     }

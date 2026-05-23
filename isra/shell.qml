@@ -78,7 +78,7 @@ ShellRoot {
             contentColor: Colors.md3.on_primary_container
         }
         LogoutButton {
-            command: "systemctl suspend"
+            command: "systemctl suspend | loginctl suspend"
             keybind: Qt.Key_S
             text: "Suspend"
             icon: "󰒲"
@@ -86,7 +86,7 @@ ShellRoot {
             contentColor: Colors.md3.on_primary_container
         }
         LogoutButton {
-            command: "systemctl hibernate"
+            command: "systemctl hibernate | loginctl hibernate"
             keybind: Qt.Key_H
             text: "Hibernate"
             icon: "󰜗"
@@ -94,7 +94,7 @@ ShellRoot {
             contentColor: Colors.md3.on_primary_container
         }
         LogoutButton {
-            command: "systemctl poweroff"
+            command: "systemctl poweroff | loginctl poweroff"
             keybind: Qt.Key_P
             text: "Shutdown"
             icon: "󰐥"
@@ -102,7 +102,7 @@ ShellRoot {
             contentColor: Colors.md3.on_primary
         }
         LogoutButton {
-            command: "systemctl reboot"
+            command: "systemctl reboot | loginctl reboot"
             keybind: Qt.Key_R
             text: "Reboot"
             icon: "󰑐"

@@ -205,7 +205,7 @@ PanelWindow {
                 weight: Config.clock.hourWeight ?? Font.Bold
             }
             color: clockRoot._textColor
-            text: root._formatHours(root._currentTime)
+            text: LocaleService.liveTime.split(":")[0]
         }
 
         Text {
@@ -222,7 +222,7 @@ PanelWindow {
                 weight: Config.clock.minuteWeight ?? Font.Medium
             }
             color: clockRoot._subColor
-            text: root._formatMinutes(root._currentTime)
+            text: LocaleService.liveTime.split(":")[1]
         }
 
         RowLayout {
@@ -240,7 +240,7 @@ PanelWindow {
                     letterSpacing: -1
                 }
                 color: clockRoot._textColor
-                text: root._formatHours(root._currentTime)
+                text: LocaleService.liveTime.split(":")[0]
             }
             Text {
                 Layout.alignment: Qt.AlignBaseline
@@ -262,7 +262,7 @@ PanelWindow {
                     letterSpacing: -1
                 }
                 color: clockRoot._textColor
-                text: root._formatMinutes(root._currentTime)
+                text: LocaleService.liveTime.split(":")[1]
             }
             Text {
                 visible: clockRoot._showSeconds
@@ -273,7 +273,7 @@ PanelWindow {
                     weight: Font.Medium
                 }
                 color: clockRoot._subColor
-                text: ":" + root._formatSeconds(root._currentTime)
+                text: ":" + LocaleService.liveSecs
             }
             Item {
                 visible: clockRoot._is12h
@@ -289,7 +289,7 @@ PanelWindow {
                     letterSpacing: 0.5
                 }
                 color: clockRoot._subColor
-                text: root._currentTime.getHours() >= 12 ? (Config.hourFormat === 2 ? "PM" : "pm") : (Config.hourFormat === 2 ? "AM" : "am")
+                text: LocaleService.liveAmPm.trim()
             }
         }
 
@@ -461,16 +461,6 @@ PanelWindow {
         }
     }
 
-    function _formatHours(d) {
-        const h = d.getHours();
-        return String(Config.hourFormat !== 0 ? (h % 12 || 12) : h).padStart(2, "0");
-    }
-    function _formatMinutes(d) {
-        return String(d.getMinutes()).padStart(2, "0");
-    }
-    function _formatSeconds(d) {
-        return String(d.getSeconds()).padStart(2, "0");
-    }
 
     function _wordClockLines() {
         const now = new Date();
