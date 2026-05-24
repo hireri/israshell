@@ -6,6 +6,7 @@ ColumnLayout {
     id: root
 
     property int currentPage: 0
+    property bool collapsed: false
     property real outerRadius: 18
     property real innerRadius: 6
 
@@ -17,6 +18,7 @@ ColumnLayout {
 
     onCurrentPageChanged: _update()
     onChildrenChanged: _update()
+    onCollapsedChanged: _update()
     Component.onCompleted: _update()
 
     function _sidebarKids() {
@@ -39,6 +41,7 @@ ColumnLayout {
             k.topRadius = (isOnly || isFirst) ? root.outerRadius : root.innerRadius;
             k.bottomRadius = (isOnly || isLast) ? root.outerRadius : root.innerRadius;
             k.active = (k.page === root.currentPage);
+            k.collapsed = root.collapsed;
         }
     }
 }

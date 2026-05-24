@@ -29,6 +29,17 @@ FloatingWindow {
     readonly property int pageSystem: 8
 
     property int currentPage: pageOverview
+    property bool sidebarCollapsed: false
+    readonly property int collapseThreshold: 700
+
+    onWidthChanged: {
+        const wasBelow = prevWidth < collapseThreshold
+        const isBelow = width < collapseThreshold
+        if (wasBelow !== isBelow)
+            sidebarCollapsed = isBelow
+        prevWidth = width
+    }
+    property int prevWidth: width
 
     function open(page) {
         currentPage = page;
@@ -39,9 +50,17 @@ FloatingWindow {
         spacing: 0
 
         Rectangle {
-            Layout.preferredWidth: 248
+            Layout.preferredWidth: root.sidebarCollapsed ? 72 : 248
             Layout.fillHeight: true
             color: Colors.md3.surface_container_low
+            clip: true
+
+            Behavior on Layout.preferredWidth {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.InOutQuad
+                }
+            }
 
             Flickable {
                 anchors {
@@ -62,24 +81,8 @@ FloatingWindow {
 
                     Item {
                         Layout.fillWidth: true
-                        height: 40
+                        height: 48
                         Layout.bottomMargin: 14
-
-                        ClippingRectangle {
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 32
-                            height: 32
-                            radius: 16
-
-                            Image {
-                                anchors.fill: parent
-                                source: "file://" + Quickshell.env("HOME") + "/.face"
-                                fillMode: Image.PreserveAspectCrop
-                                sourceSize: Qt.size(40, 40)
-                                smooth: true
-                            }
-                        }
 
                         Text {
                             anchors.centerIn: parent
@@ -87,7 +90,36 @@ FloatingWindow {
                             font.family: Config.fontFamily
                             font.pixelSize: 18
                             font.weight: Font.Bold
-                            color: Colors.md3.on_surface
+                            color: Colors.md3.on_secondary_container
+                            opacity: root.sidebarCollapsed ? 0 : 1
+                            Behavior on opacity {
+                                NumberAnimation { duration: 120 }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 48
+                            height: 40
+                            radius: 16
+                            color: Colors.md3.secondary_container
+                            Behavior on color { ColorAnimation { duration: 120 } }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰮫"
+                                font.pixelSize: 20
+                                color: Colors.md3.on_secondary_container
+                            }
+
+                            MouseArea {
+                                id: toggleHover
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.sidebarCollapsed = !root.sidebarCollapsed
+                            }
                         }
                     }
 
@@ -95,6 +127,7 @@ FloatingWindow {
                         Layout.fillWidth: true
                         Layout.bottomMargin: 8
                         currentPage: root.currentPage
+                        collapsed: root.sidebarCollapsed
                         onNavigate: p => root.currentPage = p
 
                         SidebarItem {
@@ -117,6 +150,7 @@ FloatingWindow {
                         Layout.fillWidth: true
                         Layout.bottomMargin: 8
                         currentPage: root.currentPage
+                        collapsed: root.sidebarCollapsed
                         onNavigate: p => root.currentPage = p
 
                         SidebarItem {
@@ -159,6 +193,7 @@ FloatingWindow {
                     SidebarGroup {
                         Layout.fillWidth: true
                         currentPage: root.currentPage
+                        collapsed: root.sidebarCollapsed
                         onNavigate: p => root.currentPage = p
 
                         SidebarItem {

@@ -9,6 +9,7 @@ Rectangle {
     property string label: ""
     property string sublabel: ""
     property bool active: false
+    property bool collapsed: false
 
     property real topRadius: 18
     property real bottomRadius: 18
@@ -18,7 +19,7 @@ Rectangle {
     signal clicked
 
     implicitHeight: 54
-    implicitWidth: 224
+    Layout.fillWidth: true
 
     color: root.active ? Colors.md3.secondary_container : (hover.containsMouse ? Colors.md3.surface_container_high : Colors.md3.surface_container)
 
@@ -55,6 +56,10 @@ Rectangle {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
             spacing: 2
+            opacity: root.collapsed ? 0 : 1
+            Behavior on opacity {
+                NumberAnimation { duration: 150 }
+            }
 
             Text {
                 text: root.label
