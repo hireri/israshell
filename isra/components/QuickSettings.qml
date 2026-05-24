@@ -545,17 +545,41 @@ Item {
                                 QsGameModeChip {}
                             }
 
-                            QsSliderRow {
+                            GridLayout {
                                 Layout.fillWidth: true
-                                value: AudioService.volume
-                                onMoved: val => AudioService.setVolume(val)
-                                onMuteClicked: AudioService.toggleMute()
-                                onRightClicked: {
-                                    root.isOpen = false;
-                                    appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "sound"];
-                                    appletProc.running = true;
+                                columns: Config.verticalQSSliders ? 1 : 2
+                                columnSpacing: 8
+                                rowSpacing: 8
+
+                                QsSliderRow {
+                                    Layout.fillWidth: true
+                                    value: AudioService.volume
+                                    onMoved: val => AudioService.setVolume(val)
+                                    onMuteClicked: AudioService.toggleMute()
+                                    onRightClicked: {
+                                        root.isOpen = false;
+                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "sound"];
+                                        appletProc.running = true;
+                                    }
+                                    dimmed: AudioService.muted
                                 }
-                                dimmed: AudioService.muted
+
+                                QsSliderRow {
+                                    id: brightnessSlider
+                                    Layout.fillWidth: true
+                                    iconSet: "brightness"
+                                    value: BrightnessService.value
+                                    from: BrightnessService.from
+                                    to: BrightnessService.to
+                                    onMoved: val => BrightnessService.setBrightness(val)
+                                    onMuteClicked: BrightnessService.setBrightness(1.0)
+                                    onRightClicked: {
+                                        root.isOpen = false;
+                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
+                                        appletProc.running = true;
+                                    }
+                                    dimmed: false
+                                }
                             }
                         }
                     }
@@ -656,7 +680,7 @@ Item {
                                         cursorShape: Qt.PointingHandCursor
                                         hoverEnabled: true
                                         enabled: NotificationService.qsGroupModel.count > 0
-                                        onClicked: NotificationService.dismissAll()
+                                        onClicked: NotificationService.dismissAll
                                     }
                                 }
                             }
@@ -1055,120 +1079,235 @@ Item {
         property real from: 0
         property real to: 1.5
         property bool dimmed: false
+        property string iconSet: "volume"
         signal moved(real val)
         signal muteClicked
         signal rightClicked
         property real _dragRatio: -1
         property real _displayRatio: _dragRatio >= 0 ? _dragRatio : ((to - from > 0) ? (value - from) / (to - from) : 0)
 
+        readonly property string _icon: {
+            if (iconSet === "brightness") {
+                if (dimmed) return "󰃝";
+                if (value > 1.0) return "󰃡";
+                if (value > 0.66) return "󰃠";
+                if (value > 0.33) return "󰃟";
+                return "󰃞";
+            }
+
+            if (dimmed) return "󰝟";
+            if (value > 1.0) return "󱄡";
+            if (value < 0.33) return "󰕿";
+            if (value < 0.66) return "󰖀";
+            return "󰕾";
+        }
+
+        readonly property color _iconColor: {
+            if (dimmed)
+                return Colors.md3.surface_container_highest;
+            if (value > 1.0 && iconSet === "volume")
+                return Colors.md3.on_error;
+            return Colors.md3.on_primary;
+        }
+
         Layout.fillWidth: true
-        Layout.preferredHeight: 52
+        Layout.preferredHeight: 44
+
+        readonly property bool isHovered: mouseArea.containsMouse || _dragRatio >= 0
+        property real hoverProgress: isHovered ? 1.0 : 0.0
+        readonly property bool hoverTransitionActive: hoverAnim.running
+
+        Behavior on hoverProgress {
+            NumberAnimation {
+                id: hoverAnim
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        readonly property real minW: height
+        
+        readonly property real thumbW: hoverProgress * 4
+        readonly property real gap: 2 + (hoverProgress * 2)
+        readonly property real usableWidth: width - minW - thumbW - (gap * 2)
+
+        readonly property bool textFitsInside: barLeft.width > (sliderRow.width - valueText.implicitWidth - 36)
 
         Rectangle {
-            id: trackBg
-            anchors.fill: parent
-            radius: 18
-            color: Colors.md3.surface_container_high
+            id: barLeft
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            height: parent.height - 8
+            radius: 14
+            bottomRightRadius: 8
+            topRightRadius: 8
+            
+            width: minW + sliderRow._displayRatio * usableWidth
+            color: sliderRow.dimmed ? Colors.md3.outline : (sliderRow.value > 1.005 && sliderRow.iconSet === "volume" ? Colors.md3.error : Colors.md3.primary)
 
-            Rectangle {
-                id: trackFill
-                x: 4
-                y: 4
-                height: parent.height - 8
-                radius: 14
-                readonly property real minW: height
-                readonly property real usable: trackBg.width - 8 - minW
-                implicitWidth: minW + sliderRow._displayRatio * usable
-                color: sliderRow.dimmed ? Colors.md3.outline : (sliderRow.value > 1.005 ? Colors.md3.error : Colors.md3.primary)
-
-                Behavior on implicitWidth {
-                    NumberAnimation {
-                        duration: sliderRow._dragRatio >= 0 ? 0 : 150
-                        easing.type: Easing.OutQuart
-                    }
+            Behavior on width {
+                enabled: !sliderRow.hoverTransitionActive && sliderRow._dragRatio < 0
+                NumberAnimation {
+                    duration: 150
+                    easing.type: Easing.OutQuart
                 }
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 75
-                    }
-                }
-
-                Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 12
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: sliderRow.dimmed ? "󰝟" : (sliderRow.value > 1.0 ? "󱄡" : (sliderRow.value < 0.33 ? "󰕿" : (sliderRow.value < 0.66 ? "󰖀" : "󰕾")))
-                    font.pixelSize: 20
-                    font.family: Config.fontFamily
-                    color: sliderRow.dimmed ? Colors.md3.surface_container_highest : (sliderRow.value > 1.0 ? Colors.md3.on_error : Colors.md3.on_primary)
+            }
+            Behavior on color {
+                ColorAnimation {
+                    duration: 75
                 }
             }
 
             Text {
-                anchors.right: parent.right
-                anchors.rightMargin: 16
+                id: iconText
+                anchors.left: parent.left
+                anchors.leftMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
-                text: Math.round(sliderRow.value * 100) + "%"
-                font.pixelSize: 13
-                font.bold: true
+                text: sliderRow._icon
+                font.pixelSize: 18
                 font.family: Config.fontFamily
-                color: {
-                    if (trackFill.width > (parent.width - 50)) {
-                        if (sliderRow.dimmed)
-                            return Colors.md3.surface_container_highest;
-                        return sliderRow.value > 1.0 ? Colors.md3.on_error : Colors.md3.on_primary;
-                    }
-                    return Colors.md3.on_surface_variant;
+                color: sliderRow._iconColor
+
+                Behavior on color {
+                    ColorAnimation { duration: 75 }
+                }
+            }
+        }
+
+        Rectangle {
+            id: thumbRect
+            x: barLeft.width + sliderRow.gap
+            anchors.verticalCenter: parent.verticalCenter
+            width: sliderRow.thumbW
+            height: parent.height
+            radius: 2
+            color: barLeft.color
+            opacity: sliderRow.hoverProgress
+
+            Behavior on color {
+                ColorAnimation { duration: 75 }
+            }
+        }
+
+        Rectangle {
+            id: barRight
+            anchors {
+                left: thumbRect.right
+                leftMargin: sliderRow.gap
+                right: parent.right
+                verticalCenter: parent.verticalCenter
+            }
+            height: parent.height - 8
+            radius: 14
+            bottomLeftRadius: 8
+            topLeftRadius: 8
+            
+            color: Colors.md3.surface_container_high
+        }
+
+        Text {
+            id: valueText
+            anchors.verticalCenter: parent.verticalCenter
+            text: Math.round(sliderRow.value * 100) + "%"
+            font.pixelSize: 13
+            font.bold: true
+            font.family: Config.fontFamily
+            font.features: {
+                "tnum": 1
+            }
+
+            x: textFitsInside
+            ? (barLeft.width - implicitWidth - 12)
+            : (sliderRow.width - implicitWidth - 14)
+
+            color: {
+                if (textFitsInside) {
+                    sliderRow._iconColor
+                } else {
+                    Colors.md3.on_surface_variant
                 }
             }
 
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                preventStealing: true
-                acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
-                property int pressedButton: Qt.NoButton
-                property bool dragStarted: false
-                property real startX: 0
+            Behavior on x {
+                enabled: !sliderRow.hoverTransitionActive
+                NumberAnimation {
+                    duration: 150
+                    easing.type: Easing.OutCubic
+                }
+            }
 
-                onWheel: wheel => sliderRow.moved(wheel.angleDelta.y > 0 ? Math.min(sliderRow.to, sliderRow.value + 0.05) : Math.max(sliderRow.from, sliderRow.value - 0.05))
-                onPressed: mouse => {
-                    pressedButton = mouse.button;
-                    if (mouse.button === Qt.RightButton) {
-                        sliderRow.rightClicked();
-                        return;
+            Behavior on color {
+                ColorAnimation {
+                    duration: 120
+                }
+            }
+        }
+
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            preventStealing: true
+            acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+            property int pressedButton: Qt.NoButton
+            property bool dragStarted: false
+            property real startX: 0
+
+            onWheel: wheel => sliderRow.moved(wheel.angleDelta.y > 0 ? Math.min(sliderRow.to, sliderRow.value + 0.05) : Math.max(sliderRow.from, sliderRow.value - 0.05))
+            onPressed: mouse => {
+                pressedButton = mouse.button;
+                if (mouse.button === Qt.RightButton) {
+                    sliderRow.rightClicked();
+                    return;
+                }
+                if (mouse.button === Qt.MiddleButton) {
+                    sliderRow.muteClicked();
+                    return;
+                }
+                startX = mouse.x;
+                dragStarted = false;
+            }
+            onPositionChanged: mouse => {
+                if (!pressed || pressedButton !== Qt.LeftButton)
+                    return;
+                if (Math.abs(mouse.x - startX) > 4)
+                    dragStarted = true;
+                if (dragStarted) {
+                    let maxClickX = width - sliderRow.gap - (sliderRow.thumbW / 2);
+                    let ratio = Math.max(0, Math.min(1, (mouse.x - sliderRow.minW) / (maxClickX - sliderRow.minW)));
+                    let val = sliderRow.from + ratio * (sliderRow.to - sliderRow.from);
+                    
+                    if (mouse.modifiers & Qt.ShiftModifier) {
+                        val = Math.round(val / 0.05) * 0.05;
+                        val = Math.max(sliderRow.from, Math.min(sliderRow.to, val));
+                        ratio = (sliderRow.to - sliderRow.from > 0) ? (val - sliderRow.from) / (sliderRow.to - sliderRow.from) : 0;
                     }
-                    if (mouse.button === Qt.MiddleButton) {
+
+                    sliderRow._dragRatio = ratio;
+                    sliderRow.moved(val);
+                }
+            }
+            onReleased: mouse => {
+                if (pressedButton !== Qt.LeftButton)
+                    return;
+                if (!dragStarted) {
+                    if (startX <= sliderRow.minW)
                         sliderRow.muteClicked();
-                        return;
-                    }
-                    startX = mouse.x;
-                    dragStarted = false;
-                }
-                onPositionChanged: mouse => {
-                    if (!pressed || pressedButton !== Qt.LeftButton)
-                        return;
-                    if (Math.abs(mouse.x - startX) > 4)
-                        dragStarted = true;
-                    if (dragStarted) {
-                        let ratio = Math.max(0, Math.min(1, (mouse.x - (4 + trackFill.minW / 2)) / (trackBg.width - 8 - trackFill.minW)));
-                        sliderRow._dragRatio = ratio;
-                        sliderRow.moved(sliderRow.from + ratio * (sliderRow.to - sliderRow.from));
-                    }
-                }
-                onReleased: mouse => {
-                    if (pressedButton !== Qt.LeftButton)
-                        return;
-                    if (!dragStarted) {
-                        if (startX <= 48)
-                            sliderRow.muteClicked();
-                        else {
-                            let ratio = Math.max(0, Math.min(1, (mouse.x - (4 + trackFill.minW / 2)) / (trackBg.width - 8 - trackFill.minW)));
-                            sliderRow.moved(sliderRow.from + ratio * (sliderRow.to - sliderRow.from));
+                    else {
+                        let maxClickX = width - sliderRow.gap - (sliderRow.thumbW / 2);
+                        let ratio = Math.max(0, Math.min(1, (mouse.x - sliderRow.minW) / (maxClickX - sliderRow.minW)));
+                        let val = sliderRow.from + ratio * (sliderRow.to - sliderRow.from);
+
+                        if (mouse.modifiers & Qt.ShiftModifier) {
+                            val = Math.round(val / 0.05) * 0.05;
+                            val = Math.max(sliderRow.from, Math.min(sliderRow.to, val));
                         }
+
+                        sliderRow.moved(val);
                     }
-                    sliderRow._dragRatio = -1;
                 }
+                sliderRow._dragRatio = -1;
             }
         }
     }

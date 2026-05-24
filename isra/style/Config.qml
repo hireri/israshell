@@ -52,6 +52,7 @@ Singleton {
     property int dateFormat: 0
     property bool weekMonday: true
     property bool useFarenheit: false
+    property bool verticalQSSliders: false
     property int osdPosition: 1
     property bool darkMode: true
     property string colorScheme: "scheme-tonal-spot"
@@ -139,6 +140,7 @@ Singleton {
             dateFormat: 0,
             weekMonday: true,
             useFarenheit: false,
+            verticalQSSliders: false,
             osdPosition: 1,
             darkMode: true,
             colorScheme: "scheme-tonal-spot",
