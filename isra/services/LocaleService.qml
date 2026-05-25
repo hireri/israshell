@@ -53,6 +53,33 @@ Singleton {
     property bool _aqiLoading: true
     property string _aqiError: ""
 
+    property var _lastWeatherData: null
+
+    Connections {
+        target: Config
+
+        function onUseFarenheitChanged() {
+            if (root._lastWeatherData) {
+                root._applyWeatherData(root._lastWeatherData);
+            }
+        }
+
+        function onHourFormatChanged() { root._updateClock(); }
+        function onShowSecondsChanged() { root._updateClock(); }
+        function onDateFormatChanged() { root._updateClock(); }
+
+        function onLatitudeChanged() {
+            root._coordsKnown = false;
+            root._maybeFetchAqi();
+            root._fetchWeather();
+        }
+        function onLongitudeChanged() {
+            root._coordsKnown = false;
+            root._maybeFetchAqi();
+            root._fetchWeather();
+        }
+    }
+
     property var _clockTimer: Timer {
         interval: 100
         running: true
@@ -91,8 +118,13 @@ Singleton {
     }
 
     function _fetchWeather() {
+        let url = "https://wttr.in/?format=j1";
+        if (_coordsKnown && _lat !== 0 && _lon !== 0) {
+            url = "https://wttr.in/" + _lat + "," + _lon + "?format=j1";
+        }
+
         const xhr = new XMLHttpRequest();
-        xhr.open("GET", "https://wttr.in/?format=j1");
+        xhr.open("GET", url);
         xhr.timeout = 15000;
         xhr.onreadystatechange = function () {
             if (xhr.readyState !== XMLHttpRequest.DONE)
@@ -100,17 +132,8 @@ Singleton {
             if (xhr.status === 200) {
                 try {
                     const data = JSON.parse(xhr.responseText);
-                    const cur = data.current_condition[0];
-                    const today = data.weather[0];
-
-                    root._weatherTemp = (Config.useFarenheit ? cur.temp_F : cur.temp_C) + "°";
-                    root._weatherHigh = (Config.useFarenheit ? today.maxtempF : today.maxtempC) + "°";
-                    root._weatherLow = (Config.useFarenheit ? today.mintempF : today.mintempC) + "°";
-                    root._weatherDesc = cur.weatherDesc[0].value;
-                    root._weatherHumid = cur.humidity + "%";
-                    root._weatherUvi = String(cur.uvIndex || "0");
-                    root._weatherCode = String(cur.weatherCode);
-                    root._weatherError = "";
+                    root._lastWeatherData = data;
+                    root._applyWeatherData(data);
                 } catch (e) {
                     root._weatherError = "parse error: " + e;
                     console.warn("[LocaleService] weather parse error:", e);
@@ -122,6 +145,25 @@ Singleton {
             root._weatherLoading = false;
         };
         xhr.send();
+    }
+
+    function _applyWeatherData(data) {
+        try {
+            const cur = data.current_condition[0];
+            const today = data.weather[0];
+
+            root._weatherTemp = (Config.useFarenheit ? cur.temp_F : cur.temp_C) + "°";
+            root._weatherHigh = (Config.useFarenheit ? today.maxtempF : today.maxtempC) + "°";
+            root._weatherLow = (Config.useFarenheit ? today.mintempF : today.mintempC) + "°";
+            root._weatherDesc = cur.weatherDesc[0].value;
+            root._weatherHumid = cur.humidity + "%";
+            root._weatherUvi = String(cur.uvIndex || "0");
+            root._weatherCode = String(cur.weatherCode);
+            root._weatherError = "";
+        } catch (e) {
+            root._weatherError = "format error: " + e;
+            console.warn("[LocaleService] weather format error:", e);
+        }
     }
 
     property real _lat: 0.0
@@ -151,6 +193,7 @@ Singleton {
                 _lon = lon;
                 _coordsKnown = true;
                 _fetchAqi(lat, lon);
+                _fetchWeather();
             });
         }
     }
