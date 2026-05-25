@@ -687,7 +687,7 @@ Item {
                                         cursorShape: Qt.PointingHandCursor
                                         hoverEnabled: true
                                         enabled: NotificationService.qsGroupModel.count > 0
-                                        onClicked: NotificationService.dismissAll
+                                        onClicked: NotificationService.dismissAll()
                                     }
                                 }
                             }
