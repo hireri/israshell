@@ -7,9 +7,11 @@ import Quickshell.Bluetooth
 import Quickshell.Widgets
 import QtQuick.Controls
 import Quickshell.Wayland
+import Quickshell.Services.UPower
 
 import qs.style
 import qs.services
+import qs.icons
 
 Item {
     id: root
@@ -133,8 +135,13 @@ Item {
                 icon: "󰂠"
             }
 
+            BatteryIcon {
+                id: liveBatteryWidget
+                visible: UPower.displayDevice && UPower.displayDevice.isLaptopBattery 
+            }
+
             Rectangle {
-                implicitWidth: (Bluetooth.defaultAdapter?.enabled || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd) ? 12 : 0
+                implicitWidth: (Bluetooth.defaultAdapter?.enabled || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd || liveBatteryWidget.visible) ? 12 : 0
                 height: 14
                 color: "transparent"
                 clip: true
@@ -896,56 +903,21 @@ Item {
     component QsPowerProfileChip: Rectangle {
         id: ppChip
 
-        readonly property var profiles: ["balanced", "power-saver", "performance"]
         readonly property var profileIcons: ["󰾅", "󰌪", "󰈸"]
         readonly property var profileColors: [Colors.md3.secondary_container, Colors.md3.surface_container_high, Colors.md3.primary]
         readonly property var profileColorsHover: [Qt.lighter(Colors.md3.secondary_container, 1.12), Colors.md3.surface_container_highest, Colors.md3.primary]
         readonly property var profileTextColors: [Colors.md3.on_secondary_container, Colors.md3.on_surface_variant, Colors.md3.on_primary]
-
-        property int profileIndex: 1
+        readonly property int profileIndex: PowerProfileService.profileIndex
 
         Layout.fillWidth: true
         Layout.preferredHeight: 52
         radius: profileIndex === 2 ? 14 : (profileIndex === 0 ? 20 : 26)
-        color: ppMouse.containsMouse ? ppChip.profileColorsHover[ppChip.profileIndex] : ppChip.profileColors[ppChip.profileIndex]
+        color: ppMouse.containsMouse
+            ? ppChip.profileColorsHover[profileIndex]
+            : ppChip.profileColors[profileIndex]
 
-        Behavior on color {
-            ColorAnimation {
-                duration: 150
-            }
-        }
-        Behavior on radius {
-            NumberAnimation {
-                duration: 150
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Process {
-            id: ppGetProc
-            running: true
-            command: ["powerprofilesctl", "get"]
-            stdout: StdioCollector {
-                onStreamFinished: {
-                    const v = text.trim();
-                    const i = ppChip.profiles.indexOf(v);
-                    if (i >= 0)
-                        ppChip.profileIndex = i;
-                }
-            }
-        }
-
-        Process {
-            id: ppSetProc
-        }
-
-        function cycle(direction) {
-            const n = ppChip.profiles.length;
-            ppChip.profileIndex = (ppChip.profileIndex + direction + n) % n;
-            ppSetProc.command = ["powerprofilesctl", "set", ppChip.profiles[ppChip.profileIndex]];
-            ppSetProc.running = false;
-            ppSetProc.running = true;
-        }
+        Behavior on color { ColorAnimation { duration: 150 } }
+        Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
         ColumnLayout {
             anchors.centerIn: parent
@@ -957,11 +929,7 @@ Item {
                 font.pixelSize: 20
                 font.family: Config.fontFamily
                 color: ppChip.profileTextColors[ppChip.profileIndex]
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                    }
-                }
+                Behavior on color { ColorAnimation { duration: 150 } }
             }
         }
 
@@ -971,7 +939,9 @@ Item {
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton | Qt.RightButton
-            onClicked: mouse => mouse.button === Qt.RightButton ? ppChip.cycle(-1) : ppChip.cycle(1)
+            onClicked: mouse => mouse.button === Qt.RightButton
+                ? PowerProfileService.cycle(-1)
+                : PowerProfileService.cycle(1)
         }
     }
 
@@ -1347,6 +1317,7 @@ Item {
             font.family: Config.fontFamily
             font.pixelSize: 16
             color: parent.iconColor
+            anchors.verticalCenterOffset: 1
         }
     }
 }
