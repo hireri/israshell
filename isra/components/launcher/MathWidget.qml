@@ -34,49 +34,161 @@ Item {
     readonly property var _currencyCodes: ["usd", "eur", "gbp", "jpy", "cad", "aud", "chf", "cny", "inr", "rub", "krw", "brl", "mxn", "sgd", "hkd", "nok", "sek", "dkk", "pln", "czk", "ils", "try", "zar", "aed", "thb", "idr", "myr", "php", "vnd", "clp"]
 
     readonly property var _symbolToCode: ({
-            "€": "EUR",
-            "$": "USD",
-            "£": "GBP",
-            "¥": "JPY",
-            "₹": "INR",
-            "₽": "RUB",
-            "₩": "KRW",
-            "₪": "ILS"
-        })
+        "€": "EUR", "$": "USD", "£": "GBP", "¥": "JPY",
+        "₹": "INR", "₽": "RUB", "₩": "KRW", "₪": "ILS"
+    })
 
     readonly property var _codeToSymbol: ({
-            "USD": "$",
-            "EUR": "€",
-            "GBP": "£",
-            "JPY": "¥",
-            "INR": "₹",
-            "RUB": "₽",
-            "KRW": "₩",
-            "ILS": "₪",
-            "CAD": "C$",
-            "AUD": "A$",
-            "CHF": "Fr",
-            "CNY": "¥",
-            "BRL": "R$",
-            "MXN": "$",
-            "SGD": "S$",
-            "HKD": "HK$",
-            "NOK": "kr",
-            "SEK": "kr",
-            "DKK": "kr",
-            "PLN": "zł",
-            "CZK": "Kč",
-            "TRY": "₺",
-            "ZAR": "R",
-            "AED": "د.إ",
-            "THB": "฿"
-        })
+        "USD": "$",  "EUR": "€",    "GBP": "£",  "JPY": "¥",
+        "INR": "₹",  "RUB": "₽",   "KRW": "₩",  "ILS": "₪",
+        "CAD": "C$", "AUD": "A$",  "CHF": "Fr", "CNY": "¥",
+        "BRL": "R$", "MXN": "$",   "SGD": "S$", "HKD": "HK$",
+        "NOK": "kr", "SEK": "kr",  "DKK": "kr", "PLN": "zł",
+        "CZK": "Kč", "TRY": "₺",  "ZAR": "R",  "AED": "د.إ",
+        "THB": "฿"
+    })
 
     readonly property var _noDecimalCodes: ["JPY", "KRW", "VND", "CLP", "IDR"]
 
+    readonly property var _unitAliases: ({
+        "kg": { base: "mass", factor: 1000 },
+        "kilo": { base: "mass", factor: 1000 },
+        "kilos": { base: "mass", factor: 1000 },
+        "kilograms": { base: "mass", factor: 1000 },
+        "kilogram": { base: "mass", factor: 1000 },
+        "g": { base: "mass", factor: 1 },
+        "gram": { base: "mass", factor: 1 },
+        "grams": { base: "mass", factor: 1 },
+        "mg": { base: "mass", factor: 0.001 },
+        "milligram": { base: "mass", factor: 0.001 },
+        "milligrams": { base: "mass", factor: 0.001 },
+        "lb": { base: "mass", factor: 453.592 },
+        "lbs": { base: "mass", factor: 453.592 },
+        "pound": { base: "mass", factor: 453.592 },
+        "pounds": { base: "mass", factor: 453.592 },
+        "oz": { base: "mass", factor: 28.3495 },
+        "ounce": { base: "mass", factor: 28.3495 },
+        "ounces": { base: "mass", factor: 28.3495 },
+        "t": { base: "mass", factor: 1000000 },
+        "tonne": { base: "mass", factor: 1000000 },
+        "tonnes": { base: "mass", factor: 1000000 },
+        "ton": { base: "mass", factor: 1000000 },
+        "tons": { base: "mass", factor: 1000000 },
+        "stone": { base: "mass", factor: 6350.29 },
+        "stones": { base: "mass", factor: 6350.29 },
+        "st": { base: "mass", factor: 6350.29 },
+
+        "km": { base: "length", factor: 1000 },
+        "kilometer": { base: "length", factor: 1000 },
+        "kilometers": { base: "length", factor: 1000 },
+        "kilometre": { base: "length", factor: 1000 },
+        "kilometres": { base: "length", factor: 1000 },
+        "m": { base: "length", factor: 1 },
+        "meter": { base: "length", factor: 1 },
+        "meters": { base: "length", factor: 1 },
+        "metre": { base: "length", factor: 1 },
+        "metres": { base: "length", factor: 1 },
+        "cm": { base: "length", factor: 0.01 },
+        "centimeter": { base: "length", factor: 0.01 },
+        "centimeters": { base: "length", factor: 0.01 },
+        "centimetre": { base: "length", factor: 0.01 },
+        "centimetres": { base: "length", factor: 0.01 },
+        "mm": { base: "length", factor: 0.001 },
+        "millimeter": { base: "length", factor: 0.001 },
+        "millimeters": { base: "length", factor: 0.001 },
+        "millimetre": { base: "length", factor: 0.001 },
+        "millimetres": { base: "length", factor: 0.001 },
+        "mi": { base: "length", factor: 1609.344 },
+        "mile": { base: "length", factor: 1609.344 },
+        "miles": { base: "length", factor: 1609.344 },
+        "ft": { base: "length", factor: 0.3048 },
+        "foot": { base: "length", factor: 0.3048 },
+        "feet": { base: "length", factor: 0.3048 },
+        "in": { base: "length", factor: 0.0254 },
+        "inch": { base: "length", factor: 0.0254 },
+        "inches": { base: "length", factor: 0.0254 },
+        "yd": { base: "length", factor: 0.9144 },
+        "yard": { base: "length", factor: 0.9144 },
+        "yards": { base: "length", factor: 0.9144 },
+        "nm": { base: "length", factor: 1852 },
+        "nauticalmile": { base: "length", factor: 1852 },
+        "nauticalmiles": { base: "length", factor: 1852 },
+
+        "l": { base: "volume", factor: 1000 },
+        "liter": { base: "volume", factor: 1000 },
+        "liters": { base: "volume", factor: 1000 },
+        "litre": { base: "volume", factor: 1000 },
+        "litres": { base: "volume", factor: 1000 },
+        "ml": { base: "volume", factor: 1 },
+        "milliliter": { base: "volume", factor: 1 },
+        "milliliters": { base: "volume", factor: 1 },
+        "millilitre": { base: "volume", factor: 1 },
+        "millilitres": { base: "volume", factor: 1 },
+        "gal": { base: "volume", factor: 3785.41 },
+        "gallon": { base: "volume", factor: 3785.41 },
+        "gallons": { base: "volume", factor: 3785.41 },
+        "floz": { base: "volume", factor: 29.5735 },
+        "fl oz": { base: "volume", factor: 29.5735 },
+        "fluidounce": { base: "volume", factor: 29.5735 },
+        "fluidounces": { base: "volume", factor: 29.5735 },
+        "cup": { base: "volume", factor: 236.588 },
+        "cups": { base: "volume", factor: 236.588 },
+        "tbsp": { base: "volume", factor: 14.7868 },
+        "tablespoon": { base: "volume", factor: 14.7868 },
+        "tablespoons": { base: "volume", factor: 14.7868 },
+        "tsp": { base: "volume", factor: 4.92892 },
+        "teaspoon": { base: "volume", factor: 4.92892 },
+        "teaspoons": { base: "volume", factor: 4.92892 },
+
+        "mph": { base: "speed", factor: 0.44704 },
+        "kph": { base: "speed", factor: 0.277778 },
+        "kmh": { base: "speed", factor: 0.277778 },
+        "km/h": { base: "speed", factor: 0.277778 },
+        "m/s": { base: "speed", factor: 1 },
+        "mps": { base: "speed", factor: 1 },
+        "knot": { base: "speed", factor: 0.514444 },
+        "knots": { base: "speed", factor: 0.514444 },
+        "kt": { base: "speed", factor: 0.514444 },
+        "fps": { base: "speed", factor: 0.3048 },
+
+        "b": { base: "data", factor: 1 },
+        "byte": { base: "data", factor: 1 },
+        "bytes": { base: "data", factor: 1 },
+        "kb": { base: "data", factor: 1024 },
+        "kilobyte": { base: "data", factor: 1024 },
+        "kilobytes": { base: "data", factor: 1024 },
+        "mb": { base: "data", factor: 1048576 },
+        "megabyte": { base: "data", factor: 1048576 },
+        "megabytes": { base: "data", factor: 1048576 },
+        "gb": { base: "data", factor: 1073741824 },
+        "gigabyte": { base: "data", factor: 1073741824 },
+        "gigabytes": { base: "data", factor: 1073741824 },
+        "tb": { base: "data", factor: 1099511627776 },
+        "terabyte": { base: "data", factor: 1099511627776 },
+        "terabytes": { base: "data", factor: 1099511627776 }
+    })
+
+    readonly property var _tempAliases: ({
+        "c": "C", "°c": "C", "celsius": "C", "degc": "C",
+        "f": "F", "°f": "F", "fahrenheit": "F", "degf": "F",
+        "k": "K", "kelvin": "K", "kelvins": "K"
+    })
+
+    readonly property var _unitLabels: ({
+        "mass":   { "kg": "kg", "g": "g", "mg": "mg", "lb": "lb", "lbs": "lb",
+                    "oz": "oz", "t": "t", "tonne": "t", "stone": "st", "st": "st" },
+        "length": { "km": "km", "m": "m", "cm": "cm", "mm": "mm",
+                    "mi": "mi", "ft": "ft", "in": "in", "yd": "yd", "nm": "nmi" },
+        "volume": { "l": "L", "ml": "mL", "gal": "gal", "floz": "fl oz",
+                    "fl oz": "fl oz", "cup": "cup", "tbsp": "tbsp", "tsp": "tsp" },
+        "speed":  { "mph": "mph", "kph": "km/h", "kmh": "km/h", "km/h": "km/h",
+                    "m/s": "m/s", "mps": "m/s", "knot": "kn", "knots": "kn",
+                    "kt": "kn", "fps": "fps" },
+        "data":   { "b": "B", "kb": "KB", "mb": "MB", "gb": "GB", "tb": "TB" }
+    })
+
     function _normalizeCurrencySymbols(q) {
         let s = q;
-
         for (const [sym, code] of Object.entries(_symbolToCode)) {
             if (s.startsWith(sym)) {
                 s = s.slice(1).trim();
@@ -85,214 +197,261 @@ Item {
                 break;
             }
         }
-
         const post = /^([\d.,]+)([€\$£¥₹₽₩₪])(\s+(?:to|in)\s+.+)$/i.exec(s);
         if (post) {
             const code = _symbolToCode[post[2]];
-            if (code)
-                s = post[1] + " " + code + post[3];
+            if (code) s = post[1] + " " + code + post[3];
         }
-
         return s;
     }
 
     function _parseCurrency(q) {
         const norm = _normalizeCurrencySymbols(q.trim());
-
         const m = /^([\d.,]+)\s+([a-z]{3})\s+(?:to|in)\s+([a-z]{3})$/i.exec(norm);
-        if (!m)
-            return null;
-
+        if (!m) return null;
         const amt = parseFloat(m[1].replace(",", "."));
-        if (isNaN(amt) || amt < 0)
-            return null;
-
+        if (isNaN(amt) || amt < 0) return null;
         const from = m[2].toUpperCase();
-        const to = m[3].toUpperCase();
+        const to   = m[3].toUpperCase();
+        if (!_currencyCodes.includes(from.toLowerCase())) return null;
+        if (!_currencyCodes.includes(to.toLowerCase())) return null;
+        return { amt, from, to };
+    }
 
-        if (!_currencyCodes.includes(from.toLowerCase()))
-            return null;
-        if (!_currencyCodes.includes(to.toLowerCase()))
-            return null;
+    function _resolveUnit(raw) {
+        const s = raw.trim().toLowerCase();
+        const nosp = s.replace(/\s+/g, "");
 
-        return {
-            amt,
-            from,
-            to
-        };
+        if (_tempAliases[s]   !== undefined) return { kind: "temp", unit: _tempAliases[s] };
+        if (_tempAliases[nosp] !== undefined) return { kind: "temp", unit: _tempAliases[nosp] };
+
+        if (_unitAliases[s]    !== undefined) return { kind: "unit", unit: s,    info: _unitAliases[s] };
+        if (_unitAliases[nosp] !== undefined) return { kind: "unit", unit: nosp, info: _unitAliases[nosp] };
+
+        return null;
+    }
+
+    function _parseUnitConversion(q) {
+        const m = /^([+-]?[\d.,]+)\s*°?\s*([a-zA-Z][a-zA-Z\/]*(?:\s+[a-zA-Z][a-zA-Z\/]*)?)\s+(?:to|in)\s+°?\s*([a-zA-Z][a-zA-Z\/]*(?:\s+[a-zA-Z][a-zA-Z\/]*)?)$/i.exec(q.trim());
+        if (!m) return null;
+
+        const amt  = parseFloat(m[1].replace(",", "."));
+        if (isNaN(amt)) return null;
+
+        const fromResolved = _resolveUnit(m[2]);
+        const toResolved   = _resolveUnit(m[3]);
+        if (!fromResolved || !toResolved) return null;
+
+        if (fromResolved.kind === "temp" && toResolved.kind === "temp")
+            return { amt, fromRaw: m[2].trim(), toRaw: m[3].trim(), fromResolved, toResolved };
+
+        if (fromResolved.kind === "unit" && toResolved.kind === "unit"
+            && fromResolved.info.base === toResolved.info.base)
+            return { amt, fromRaw: m[2].trim(), toRaw: m[3].trim(), fromResolved, toResolved };
+
+        return null;
+    }
+
+    function _computeUnitConversion(parsed) {
+        const { amt, fromResolved, toResolved } = parsed;
+
+        if (fromResolved.kind === "temp") {
+            const f = fromResolved.unit;
+            const t = toResolved.unit;
+            let result;
+            if      (f === "C" && t === "F") result = amt * 9/5 + 32;
+            else if (f === "F" && t === "C") result = (amt - 32) * 5/9;
+            else if (f === "C" && t === "K") result = amt + 273.15;
+            else if (f === "K" && t === "C") result = amt - 273.15;
+            else if (f === "F" && t === "K") result = (amt - 32) * 5/9 + 273.15;
+            else if (f === "K" && t === "F") result = (amt - 273.15) * 9/5 + 32;
+            else result = amt;
+            return result;
+        }
+
+        return amt * fromResolved.info.factor / toResolved.info.factor;
+    }
+
+    function _labelFor(raw, resolved) {
+        if (resolved.kind === "temp") return "°" + resolved.unit;
+        const base = resolved.info.base;
+        const s = raw.trim().toLowerCase().replace(/\s+/g, "");
+        const table = _unitLabels[base];
+        return (table && table[s]) ? table[s] : raw.trim();
     }
 
     function _looksLikeMath(q) {
-        if (!/^[\d(]|^(?:sqrt|sin|cos|tan|asin|acos|atan|log|ln|abs|floor|ceil|round|pi\b)/i.test(q))
+        if (!/^[\d(+\-]|^(?:sqrt|cbrt|sin|cos|tan|asin|acos|atan|log|ln|abs|floor|ceil|round|trunc|pi\b)/i.test(q))
             return false;
 
-        if (/[+\-*\/^%]/.test(q))
-            return true;
-        if (/\bto\b/i.test(q))
-            return true;
-
-        if (/\d\s*(?:km|mi|miles?\b|kg|lbs?\b|oz|mg|inches?|feet|foot|ft|yards?\b|m\b|cm|mm|ml|liters?\b|gallons?\b|mph|kph|kmh|celsius|fahrenheit|kelvin)\b/i.test(q))
-            return true;
-
-        if (/\b(?:sqrt|sin|cos|tan|asin|acos|atan|log|ln|abs|floor|ceil|round)\s*\(/.test(q))
-            return true;
-
+        if (/[+\-*\/^%]/.test(q)) return true;
+        if (/\b(?:sqrt|cbrt|sin|cos|tan|asin|acos|atan|log|ln|exp|abs|floor|ceil|round|trunc|pow|min|max)\s*\(/.test(q)) return true;
         return false;
     }
 
     function _classify(q) {
-        if (q === "")
-            return {
-                type: "empty",
-                parsed: null
-            };
-        const p = _parseCurrency(q);
-        if (p)
-            return {
-                type: "currency",
-                parsed: p
-            };
-        if (_looksLikeMath(q))
-            return {
-                type: "math",
-                parsed: null
-            };
-        return {
-            type: "unknown",
-            parsed: null
-        };
+        if (q === "") return { type: "empty", parsed: null };
+
+        const curr = _parseCurrency(q);
+        if (curr) return { type: "currency", parsed: curr };
+
+        const unit = _parseUnitConversion(q);
+        if (unit) return { type: "unit", parsed: unit };
+
+        if (_looksLikeMath(q)) return { type: "math", parsed: null };
+
+        return { type: "unknown", parsed: null };
+    }
+
+
+    function _evalMath(expr) {
+        try {
+            let p = expr.replace(/\s+/g, "").toLowerCase();
+
+            if (!/^[\d()+\-*\/^%.,]+$/.test(
+                    p.replace(/\b(?:sqrt|cbrt|sin|cos|tan|asin|acos|atan|atan2|sinh|cosh|tanh|asinh|acosh|atanh|log|ln|exp|pow|abs|floor|ceil|round|trunc|min|max|pi|e|sind|cosd|tand)\b/g, "")))
+                return null;
+
+            p = p.replace(/\bpi\b/g, String(Math.PI)).replace(/\be\b/g, String(Math.E));
+
+            p = p
+                .replace(/\bsqrt\(/g,  "Math.sqrt(")
+                .replace(/\bcbrt\(/g,  "Math.cbrt(")
+                .replace(/\basin\(/g,  "Math.asin(")
+                .replace(/\bacos\(/g,  "Math.acos(")
+                .replace(/\batan2\(/g, "Math.atan2(")
+                .replace(/\batan\(/g,  "Math.atan(")
+                .replace(/\basinh\(/g, "Math.asinh(")
+                .replace(/\bacosh\(/g, "Math.acosh(")
+                .replace(/\batanh\(/g, "Math.atanh(")
+                .replace(/\bsinh\(/g,  "Math.sinh(")
+                .replace(/\bcosh\(/g,  "Math.cosh(")
+                .replace(/\btanh\(/g,  "Math.tanh(")
+                
+                .replace(/\bsind\(/g,  "(function(x){return Math.sin(x*" + (Math.PI/180) + ");})(")
+                .replace(/\bcosd\(/g,  "(function(x){return Math.cos(x*" + (Math.PI/180) + ");})(")
+                .replace(/\btand\(/g,  "(function(x){return Math.tan(x*" + (Math.PI/180) + ");})(")
+                
+                .replace(/\bsin\(/g,   "Math.sin(")
+                .replace(/\bcos\(/g,   "Math.cos(")
+                .replace(/\btan\(/g,   "Math.tan(")
+                .replace(/\blog\(/g,   "Math.log10(")
+                .replace(/\bln\(/g,    "Math.log(")
+                .replace(/\bexp\(/g,   "Math.exp(")
+                .replace(/\bpow\(/g,   "Math.pow(")
+                .replace(/\babs\(/g,   "Math.abs(")
+                .replace(/\bfloor\(/g, "Math.floor(")
+                .replace(/\bceil\(/g,  "Math.ceil(")
+                .replace(/\bround\(/g, "Math.round(")
+                .replace(/\btrunc\(/g, "Math.trunc(")
+                .replace(/\bmin\(/g,   "Math.min(")
+                .replace(/\bmax\(/g,   "Math.max(");
+
+            for (let i = 0; i < 8; i++)
+                p = p.replace(/([\d.]+|\))\^([\d.]+|\()/g, "Math.pow($1,$2)");
+
+            const result = new Function("return " + p)();
+            if (!isFinite(result) || isNaN(result)) return null;
+            return result;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function _formatNumber(n) {
+        if (Number.isInteger(n)) return n.toString();
+        if (Math.abs(n) >= 1e15 || (Math.abs(n) < 1e-6 && n !== 0))
+            return n.toExponential(6);
+        return parseFloat(n.toFixed(10)).toString();
     }
 
     onQueryChanged: {
         debounce.stop();
-        mathProc.running = false;
+
         if (_activeXhr) {
             _activeXhr.abort();
             _activeXhr = null;
         }
 
-        _result = "";
-        _resultUnit = "";
-        _parsedExpr = "";
-        _currFrom = "";
-        _currTo = "";
+        _result      = "";
+        _resultUnit  = "";
+        _parsedExpr  = "";
+        _currFrom    = "";
+        _currTo      = "";
         _currFromAmt = 0;
-        _currRate = 0;
+        _currRate    = 0;
         _currRawResult = 0;
-        _currDate = "";
-        _currError = false;
-        _loading = false;
+        _currDate    = "";
+        _currError   = false;
+        _loading     = false;
 
-        const c = _classify(query.trim());
-        _cls = c.type;
+        const q = query.trim();
+        const c = _classify(q);
+        _cls    = c.type;
         _parsed = c.parsed;
 
-        if (_cls === "empty" || _cls === "unknown")
-            return;
+        if (_cls === "empty" || _cls === "unknown") return;
 
         if (_cls === "currency") {
-            _currFrom = c.parsed.from;
-            _currTo = c.parsed.to;
+            _currFrom    = c.parsed.from;
+            _currTo      = c.parsed.to;
             _currFromAmt = c.parsed.amt;
+            _loading = true;
+            debounce.restart();
+            return;
         }
 
-        _loading = true;
-        debounce.restart();
+        if (_cls === "unit") {
+            const p = c.parsed;
+            const raw = _computeUnitConversion(p);
+            _result      = _formatNumber(raw);
+            _resultUnit  = _labelFor(p.toRaw, p.toResolved);
+            _parsedExpr  = _formatNumber(p.amt) + " " + _labelFor(p.fromRaw, p.fromResolved) + " → " + _labelFor(p.toRaw, p.toResolved);
+            return;
+        }
+
+        if (_cls === "math") {
+            const val = _evalMath(q);
+            if (val === null) {
+                _cls = "unknown";
+                return;
+            }
+            _result     = _formatNumber(val);
+            _resultUnit = "";
+            _parsedExpr = "";
+            return;
+        }
     }
 
     Timer {
         id: debounce
         interval: 380
         onTriggered: {
-            const q = root.query.trim();
-
-            const c = root._classify(q);
-            if (c.type !== root._cls || (c.parsed && JSON.stringify(c.parsed) !== JSON.stringify(root._parsed))) {
-                root._cls = c.type;
-                root._parsed = c.parsed;
-                root._currFrom = c.parsed ? c.parsed.from : "";
-                root._currTo = c.parsed ? c.parsed.to : "";
-                root._currFromAmt = c.parsed ? c.parsed.amt : 0;
-            }
-
-            if (root._cls === "empty" || root._cls === "unknown") {
-                root._loading = false;
-                return;
-            }
-
-            if (root._cls === "currency") {
+            if (root._cls === "currency" && root._parsed)
                 root._fetchCurrency(root._parsed);
-            } else {
-                mathProc.running = false;
-                mathProc.command = ["qalc", q];
-                mathProc.running = true;
-            }
-        }
-    }
-
-    Process {
-        id: mathProc
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root._loading = false;
-                const out = this.text.trim();
-                if (!out)
-                    return;
-
-                const eqIdx = out.lastIndexOf(" = ");
-                const exprPart = eqIdx !== -1 ? out.slice(0, eqIdx).trim() : "";
-                const resPart = eqIdx !== -1 ? out.slice(eqIdx + 3).trim() : out;
-
-                if (resPart.toLowerCase() === root.query.trim().toLowerCase())
-                    return;
-
-                if (/\b(?:inf(?:inity)?|nan|undefined)\b/i.test(resPart))
-                    return;
-
-                const inputFlat = root.query.trim().replace(/\s+/g, " ").toLowerCase();
-                const exprFlat = exprPart.replace(/\s+/g, " ").toLowerCase();
-                root._parsedExpr = (exprPart !== "" && exprFlat !== inputFlat) ? exprPart : "";
-
-                const m = /^([\d.,\-+e]+)\s+(.+)$/.exec(resPart);
-                if (m) {
-                    root._result = m[1];
-                    root._resultUnit = m[2];
-                } else {
-                    root._result = resPart;
-                    root._resultUnit = "";
-                }
-            }
         }
     }
 
     function _fetchCurrency(parsed) {
-        if (!parsed) {
-            _loading = false;
-            return;
-        }
+        if (!parsed) { _loading = false; return; }
 
         const url = "https://api.frankfurter.app/latest?from=" + parsed.from + "&to=" + parsed.to;
         const xhr = new XMLHttpRequest();
         _activeXhr = xhr;
 
         xhr.onreadystatechange = function () {
-            if (xhr.readyState !== XMLHttpRequest.DONE)
-                return;
-            if (root._activeXhr !== xhr)
-                return;
+            if (xhr.readyState !== XMLHttpRequest.DONE) return;
+            if (root._activeXhr !== xhr) return;
             root._activeXhr = null;
             root._loading = false;
 
-            if (xhr.status !== 200) {
-                root._currError = true;
-                return;
-            }
+            if (xhr.status !== 200) { root._currError = true; return; }
             try {
                 const data = JSON.parse(xhr.responseText);
-                root._currRate = data.rates[parsed.to] ?? 0;
-                root._currDate = data.date ?? "";
+                root._currRate     = data.rates[parsed.to] ?? 0;
+                root._currDate     = data.date ?? "";
                 root._currRawResult = parsed.amt * root._currRate;
-                root._result = root._formatCurrencyAmt(root._currRawResult, parsed.to);
+                root._result       = root._formatCurrencyAmt(root._currRawResult, parsed.to);
             } catch (_) {
                 root._currError = true;
             }
@@ -304,13 +463,8 @@ Item {
 
     function _formatCurrencyAmt(amt, code) {
         if (_noDecimalCodes.includes(code))
-            return amt.toLocaleString(undefined, {
-                maximumFractionDigits: 0
-            });
-        return amt.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+            return Math.round(amt).toString();
+        return (Math.round(amt * 100) / 100).toFixed(2);
     }
 
     function _symFor(code) {
@@ -459,14 +613,6 @@ Item {
                 label: "󰆏  copy expression"
                 primary: false
                 onClicked: root.copyResult(root.query.trim())
-            }
-            PillBtn {
-                label: "󰪚  open qalculate"
-                primary: false
-                onClicked: {
-                    openProc.command = ["sh", "-c", "qalculate-gtk 2>/dev/null || kitty qalc 2>/dev/null &"];
-                    openProc.running = true;
-                }
             }
         }
     }

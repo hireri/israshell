@@ -69,9 +69,13 @@ Scope {
         if (/^ip\s+[\d.]/i.test(q))
             return "whois";
 
-        if (/\d/.test(q) || /[+\-*\/^%()]/.test(q))
+        if (/^[+-]?[\d.,]+\s*°?\s*[a-zA-Z][a-zA-Z\/]{0,19}\s+(?:to|in)\s+°?\s*[a-zA-Z][a-zA-Z\/]{0,19}$/i.test(q))
             return "math";
-        if (/\b(?:sqrt|sin|cos|tan|log|pi|to|in|km|mile|kg|lb|oz|inch|foot|feet|meter|cm|mm|liter|gallon|celsius|fahrenheit)\b/i.test(q))
+        if (/\d/.test(q) && /[+\-*\/^%]/.test(q))
+            return "math";
+        if (/\b(?:sqrt|cbrt|sind?|cosd?|tand?|asin|acos|atan2?|log|ln|exp|abs|floor|ceil|round|trunc|pow|min|max)\s*\(/.test(q))
+            return "math";
+        if (/\b(?:pi|e)\b/.test(q) && /[+\-*\/^%]/.test(q))
             return "math";
 
         return "";
