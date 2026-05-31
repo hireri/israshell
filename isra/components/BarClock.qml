@@ -36,7 +36,7 @@ Item {
         color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
         radius: 18
         implicitWidth: row.implicitWidth + 32
-        implicitHeight: row.implicitHeight + 16
+        implicitHeight: row.implicitHeight + 14
 
         Row {
             id: row
