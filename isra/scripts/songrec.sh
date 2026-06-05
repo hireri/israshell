@@ -41,7 +41,7 @@ SONGREC_PID=$!
 ( sleep "$TOTAL_DURATION" && kill "$SONGREC_PID" 2>/dev/null ) &
 
 while IFS= read -r line; do
-    echo "$line" | grep -q '"matches": \[' || continue
+    echo "$line" | jq -e '.matches' > /dev/null 2>&1 || continue
 
     TRACK=$(echo "$line" | jq -r '.track.title // "Unknown Track"')
     ARTIST=$(echo "$line" | jq -r '.track.subtitle // "Unknown Artist"')
