@@ -128,16 +128,6 @@ Item {
         x: currentCx - width / 2 + root._dragDx
         y: currentCy - height / 2 + root._dragDy
 
-        opacity: (Config.desktopClock || root.forceVisible) ? 1.0 : 0.0
-        visible: opacity > 0.0
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 150
-                easing.type: Easing.OutCubic
-            }
-        }
-
         Behavior on currentCx {
             enabled: !root._isInitializing
             NumberAnimation {

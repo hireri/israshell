@@ -65,9 +65,6 @@ PanelWindow {
         anchors.fill: parent
         active: Config.desktopClock
         
-        opacity: LockscreenService.locked ? 0.0 : 1.0
-        visible: opacity > 0
-        
         Behavior on opacity {
             NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
         }
