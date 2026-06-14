@@ -136,17 +136,6 @@ Item {
                 }
             ]
 
-
-            ShapePath {
-                strokeColor: "transparent"
-                strokeWidth: 0
-                fillColor: Colors.md3.on_surface
-
-                PathSvg {
-                    path: "m 440 -380 -237 -30 q -25 -3 -32.5 -27 t 10.5 -41 l 409 -392 q 5 -5 12 -7.5 t 19 -2.5 q 20 0 30.5 17 t 0.5 35 L 520 -580 l 237 30 q 25 3 32.5 27 T 779 -482 L 370 -90 q -5 5 -12 7.5 T 339 -80 q -20 0 -30.5 -17 t -0.5 -35 l 132 -248 Z"
-                }
-            }
-
             ShapePath {
                 strokeColor: root.colorBackground
                 strokeWidth: 300
@@ -159,6 +148,15 @@ Item {
                 }
             }
 
+            ShapePath {
+                strokeColor: "transparent"
+                strokeWidth: 0
+                fillColor: Colors.md3.on_surface
+
+                PathSvg {
+                    path: "m 440 -380 -237 -30 q -25 -3 -32.5 -27 t 10.5 -41 l 409 -392 q 5 -5 12 -7.5 t 19 -2.5 q 20 0 30.5 17 t 0.5 35 L 520 -580 l 237 30 q 25 3 32.5 27 T 779 -482 L 370 -90 q -5 5 -12 7.5 T 339 -80 q -20 0 -30.5 -17 t -0.5 -35 l 132 -248 Z"
+                }
+            }
         }
     }
 }
