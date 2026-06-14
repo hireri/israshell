@@ -2,67 +2,54 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
 import Quickshell
-import Quickshell.Hyprland
-import Quickshell.Wayland
 import qs.style
 import qs.services
 
-PanelWindow {
+Item {
     id: root
     required property var modelData
-    screen: modelData
-    exclusiveZone: 0
-    exclusionMode: ExclusionMode.Ignore
-    focusable: Config.clock.manualPos ?? false
-    color: "transparent"
-    visible: Config.desktopClock
-    WlrLayershell.namespace: "quickshell:clock"
-    WlrLayershell.layer: WlrLayer.Bottom
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
+
+    anchors.fill: parent
 
     property real _cx: 0
     property real _cy: 0
 
+    property bool _isInitializing: true
+    property bool _lockAnimating: false
+
     Behavior on _cx {
-        enabled: !Config.loading && !(Config.clock.manualPos ?? false)
+        enabled: !root._isInitializing && !Config.loading && !(Config.clock.manualPos ?? false)
         NumberAnimation {
-            duration: 600
-            easing.type: Easing.InOutCubic
+            duration: 350
+            easing.type: Easing.OutQuint
         }
     }
     Behavior on _cy {
-        enabled: !Config.loading && !(Config.clock.manualPos ?? false)
+        enabled: !root._isInitializing && !Config.loading && !(Config.clock.manualPos ?? false)
         NumberAnimation {
-            duration: 600
-            easing.type: Easing.InOutCubic
+            duration: 350
+            easing.type: Easing.OutQuint
         }
     }
 
     property var _currentTime: new Date()
 
     function updatePosition() {
-        if (Config.clock.manualPos ?? false)
-            return;
-        const pos = Config.clockPositions?.[modelData.name];
-        if (!pos || (pos.x === _cx && pos.y === _cy))
-            return;
-        _cx = pos.x;
-        _cy = pos.y;
+        if (Config.clock.manualPos ?? false) return
+        const pos = Config.clockPositions?.[modelData?.name]
+        if (!pos || (pos.x === _cx && pos.y === _cy)) return
+        _cx = pos.x
+        _cy = pos.y
     }
 
     function loadSavedPosition() {
-        const pos = Config.clockPositions?.[modelData.name];
+        const pos = Config.clockPositions?.[modelData?.name]
         if (pos) {
-            _cx = pos.x;
-            _cy = pos.y;
+            _cx = pos.x
+            _cy = pos.y
         } else {
-            _cx = modelData.width * 0.82;
-            _cy = modelData.height * 0.10;
+            _cx = (modelData?.width  ?? root.width)  * 0.82
+            _cy = (modelData?.height ?? root.height) * 0.10
         }
     }
 
@@ -74,9 +61,20 @@ PanelWindow {
     }
 
     Component.onCompleted: {
-        loadSavedPosition();
         if (modelData === Quickshell.screens[0])
             WallpaperService.reportClockSize(clockRoot.implicitWidth, clockRoot.implicitHeight);
+    }
+
+    onWidthChanged: {
+        if (!root._isInitializing || width === 0) return
+        loadSavedPosition()
+        clockRoot.currentCx = root._cx
+        clockRoot.currentCy = root._cy
+        Qt.callLater(() => {
+            root._isInitializing = false
+            clockRoot.currentCx = clockRoot.targetCx
+            clockRoot.currentCy = clockRoot.targetCenterY
+        })
     }
 
     Connections {
@@ -111,10 +109,76 @@ PanelWindow {
     property real _dragDx: 0
     property real _dragDy: 0
 
+    property bool forceVisible: false
+
     Item {
         id: clockRoot
-        x: root._cx - width / 2 + root._dragDx
-        y: root._cy - height / 2 + root._dragDy
+
+        readonly property real targetCx: LockscreenService.locked
+            ? (modelData?.width  ?? root.width)  / 2
+            : root._cx
+
+        readonly property real targetCenterY: LockscreenService.locked
+            ? (modelData?.height ?? root.height) / 2
+            : root._cy
+
+        property real currentCx: targetCx
+        property real currentCy: targetCenterY
+
+        x: currentCx - width / 2 + root._dragDx
+        y: currentCy - height / 2 + root._dragDy
+
+        opacity: (Config.desktopClock || root.forceVisible) ? 1.0 : 0.0
+        visible: opacity > 0.0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Behavior on currentCx {
+            enabled: !root._isInitializing
+            NumberAnimation {
+                duration: 400
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
+            }
+        }
+        Behavior on currentCy {
+            enabled: !root._isInitializing
+            NumberAnimation {
+                duration: 400
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
+            }
+        }
+
+        onTargetCxChanged: {
+            if (LockscreenService.locked || root._isInitializing) {
+                currentCx = targetCx;
+            } else {
+                currentCx = targetCx;
+            }
+        }
+        onTargetCenterYChanged: {
+            if (LockscreenService.locked || root._isInitializing) {
+                currentCy = targetCenterY;
+            } else {
+                currentCy = targetCenterY;
+            }
+        }
+
+        Connections {
+            target: root
+            function on_CxChanged() {
+                if (!LockscreenService.locked) clockRoot.currentCx = root._cx
+            }
+            function on_CyChanged() {
+                if (!LockscreenService.locked) clockRoot.currentCy = root._cy
+            }
+        }
 
         scale: dragHandler.active ? 1.06 : 1.0
         transformOrigin: Item.Center
@@ -460,7 +524,6 @@ PanelWindow {
             text: Qt.formatDate(root._currentTime, ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat] ?? "ddd, dd/MM")
         }
     }
-
 
     function _wordClockLines() {
         const now = new Date();

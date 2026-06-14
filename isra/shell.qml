@@ -10,6 +10,11 @@ import qs.settings
 import qs.services
 
 ShellRoot {
+    LazyLoader {
+        loading: LockscreenService.locked
+        Lockscreen {}
+    }
+
     NotificationPopup {}
     VolumeOSD {}
     AppLauncher {}
@@ -157,7 +162,7 @@ ShellRoot {
             LazyLoader {
                 activeAsync: Config.desktopClock
 
-                WallpaperClock {
+                Background {
                     modelData: screenScope.modelData
                 }
             }
