@@ -251,7 +251,7 @@ Singleton {
 
     FileView {
         id: fileView
-        path: Quickshell.configDir + "/config.json"
+        path: Quickshell.shellDir + "/config.json"
         watchChanges: true
         blockLoading: true
         Component.onCompleted: __load()

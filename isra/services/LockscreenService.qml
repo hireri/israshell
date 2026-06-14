@@ -33,7 +33,7 @@ Singleton {
 
     PamContext {
         id: pam
-        configDirectory: Quickshell.configDir + "/pam"
+        configDirectory: Quickshell.shellDir + "/pam"
         config: "password.conf"
         onPamMessage: {
             if (this.responseRequired)
