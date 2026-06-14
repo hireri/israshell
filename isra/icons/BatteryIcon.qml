@@ -15,13 +15,12 @@ Item {
     property real cornerRadius: 4
 
     readonly property real currentPercentage: UPower.displayDevice
-        ? Math.round(UPower.displayDevice.percentage) : 0
+        ? Math.round(UPower.displayDevice.percentage * 100) : 0
 
     readonly property bool currentCharging: UPower.displayDevice
         ? (UPower.displayDevice.state === UPowerDeviceState.Charging) : false
 
     readonly property string currentPowerMode: PowerProfileService.activeProfile
-
     readonly property color colorBackground: Colors.md3.surface_container_high
     
     readonly property color colorUnfilledBg: {
@@ -58,7 +57,6 @@ Item {
     }
 
     readonly property color currentTextColor: {
-        if (isLow) return colorOnError;
         if (currentPowerMode === "saver") return colorOnTertiary;
         if (currentPowerMode === "performance") return colorOnPrimary;
         return colorBalancedOn;
@@ -94,13 +92,7 @@ Item {
             color: root.currentTextColor
             font.pixelSize: 12
             font.weight: Font.Black
-            font.family: "sans-serif"
-            antialiasing: true
-            renderType: Text.CurveRendering
-            font.hintingPreference: Font.PreferFullHinting
-            font.features: {
-                "tnum": 1
-            }
+            font.family: Config.fontFamily
             anchors.centerIn: parent
         }
     }
@@ -144,6 +136,17 @@ Item {
                 }
             ]
 
+
+            ShapePath {
+                strokeColor: "transparent"
+                strokeWidth: 0
+                fillColor: Colors.md3.on_surface
+
+                PathSvg {
+                    path: "m 440 -380 -237 -30 q -25 -3 -32.5 -27 t 10.5 -41 l 409 -392 q 5 -5 12 -7.5 t 19 -2.5 q 20 0 30.5 17 t 0.5 35 L 520 -580 l 237 30 q 25 3 32.5 27 T 779 -482 L 370 -90 q -5 5 -12 7.5 T 339 -80 q -20 0 -30.5 -17 t -0.5 -35 l 132 -248 Z"
+                }
+            }
+
             ShapePath {
                 strokeColor: root.colorBackground
                 strokeWidth: 300
@@ -156,15 +159,6 @@ Item {
                 }
             }
 
-            ShapePath {
-                strokeColor: "transparent"
-                strokeWidth: 0
-                fillColor: Colors.md3.on_surface
-
-                PathSvg {
-                    path: "m 440 -380 -237 -30 q -25 -3 -32.5 -27 t 10.5 -41 l 409 -392 q 5 -5 12 -7.5 t 19 -2.5 q 20 0 30.5 17 t 0.5 35 L 520 -580 l 237 30 q 25 3 32.5 27 T 779 -482 L 370 -90 q -5 5 -12 7.5 T 339 -80 q -20 0 -30.5 -17 t -0.5 -35 l 132 -248 Z"
-                }
-            }
         }
     }
 }
