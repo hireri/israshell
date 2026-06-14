@@ -87,23 +87,28 @@ PageBase {
             color: NetworkService.ethConnected ? Colors.md3.on_tertiary_container : Colors.md3.outline
         }
     }
+
     Component {
         id: wifiIconComp
         WifiIcon {
             iconSize: 22
+            mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
             strength: NetworkService.wifiConnected ? NetworkService.wifiSignal : 0
             secured: (NetworkService.activeNetwork?.security ?? "").length > 0
             color: NetworkService.wifiEnabled ? Colors.md3.on_primary_container : Colors.md3.outline
         }
     }
+
     Component {
         id: btIconComp
         BluetoothIcon {
             iconSize: 22
-            filled: BluetoothService.enabled
             color: BluetoothService.enabled ? Colors.md3.on_secondary_container : Colors.md3.outline
+            enabled: BluetoothService.enabled
+            discovering: BluetoothService.discovering
         }
     }
+
     Component {
         id: headphonesComp
         HeadphonesIcon {
@@ -111,6 +116,7 @@ PageBase {
             color: Colors.md3.on_secondary_container
         }
     }
+
     Component {
         id: phoneComp
         PhoneIcon {
@@ -118,6 +124,7 @@ PageBase {
             color: Colors.md3.on_secondary_container
         }
     }
+
     Component {
         id: keyboardComp
         KeyboardIcon {
@@ -125,6 +132,7 @@ PageBase {
             color: Colors.md3.on_secondary_container
         }
     }
+
     Component {
         id: btRowHeadphones
         HeadphonesIcon {
@@ -132,6 +140,7 @@ PageBase {
             color: Colors.md3.on_surface
         }
     }
+
     Component {
         id: btRowPhone
         PhoneIcon {
@@ -139,12 +148,14 @@ PageBase {
             color: Colors.md3.on_surface
         }
     }
+
     Component {
         id: btRowGeneric
         BluetoothIcon {
             iconSize: 20
-            filled: true
             color: Colors.md3.on_surface
+            enabled: BluetoothService.enabled
+            discovering: BluetoothService.discovering
         }
     }
 
@@ -543,7 +554,7 @@ PageBase {
             model: BluetoothService.knownDevices
 
             delegate: Item {
-                required property BluetoothDevice modelData
+                required property var modelData
                 required property int index
 
                 implicitWidth: parent?.width ?? 0
@@ -677,7 +688,7 @@ PageBase {
             model: BluetoothService.newDevices
 
             delegate: Item {
-                required property BluetoothDevice modelData
+                required property var modelData
                 required property int index
 
                 implicitWidth: parent?.width ?? 0

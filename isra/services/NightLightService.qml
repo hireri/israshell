@@ -44,11 +44,14 @@ Singleton {
                         const isNight = _isNight(nl);
                         root._lastIsNight = isNight;
 
+                        root.active = (temp === nl.nightTemp);
+
                         if (nl.scheduleEnabled) {
-                            root.active = isNight;
                             const expected = isNight ? nl.nightTemp : nl.dayTemp;
-                            if (temp !== expected)
+                            if (temp !== expected) {
                                 _applyTemp(expected);
+                                root.active = isNight;
+                            }
                         }
 
                         if (nl.autoDarkMode) {

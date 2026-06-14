@@ -54,42 +54,6 @@ Item {
         }
     }
 
-    function getDndIcon() {
-        return NotificationService.dnd ? "󰂠" : "󰂞";
-    }
-
-    function getNetworkIcon() {
-        if (NetworkService.wifiEnabled) {
-            if (!NetworkService.wifiConnected)
-                return "󰤫";
-            if (NetworkService.wifiSignal >= 80)
-                return "󰤨";
-            if (NetworkService.wifiSignal >= 75)
-                return "󰤥";
-            if (NetworkService.wifiSignal >= 50)
-                return "󰤢";
-            if (NetworkService.wifiSignal >= 25)
-                return "󰤟";
-            else
-                return "󰤯";
-        }
-        if (NetworkService.ethConnected)
-            return "󰌗";
-        return "󰤮";
-    }
-
-    function getBluetoothIcon() {
-        const adapter = Bluetooth.defaultAdapter;
-        if (!adapter?.enabled)
-            return "󰂲";
-        const devices = Bluetooth.devices.values;
-        if (adapter.discovering || devices.some(d => d.connecting))
-            return "󰂰";
-        if (devices.some(d => d.connected))
-            return "󰂱";
-        return "󰂯";
-    }
-
     Rectangle {
         id: button
         color: root.isOpen ? Colors.md3.secondary_container : (Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
@@ -110,29 +74,63 @@ Item {
             leftPadding: (Bluetooth.defaultAdapter?.enabled || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd) ? 5 : 2
 
             StatusIcon {
-                active: true
-                icon: root.getNetworkIcon()
+                active: NetworkService.wifiConnected || NetworkService.ethConnected
+                iconComponent: WifiIcon {
+                    iconSize: 16
+                    
+                    mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
+                    strength: NetworkService.wifiSignal
+                    
+                    secured: {
+                        if (!NetworkService.activeNetwork) return false;
+                        const sec = NetworkService.activeNetwork.security;
+                        return sec !== "" && sec !== "--";
+                    }
+                }
             }
             StatusIcon {
-                active: Bluetooth.defaultAdapter?.enabled ?? false
-                icon: root.getBluetoothIcon()
+                active: BluetoothService.enabled
+                iconComponent: BluetoothIcon {
+                    iconSize: 16
+                    color: parent.iconColor
+                    
+                    enabled: Bluetooth.defaultAdapter?.enabled ?? false
+                    discovering: (Bluetooth.defaultAdapter?.discovering ?? false) || 
+                                Bluetooth.devices.values.some(d => d.connecting)
+                    connected: BluetoothService.connectedDevices.length > 0
+                }
             }
             StatusIcon {
                 active: AudioService.muted
-                icon: "󰝟"
-                iconColor: Colors.md3.error
+                iconComponent: VolumeIcon {
+                    iconSize: 16
+                    color: Colors.md3.error
+                    muted: true
+                }
             }
             StatusIcon {
                 active: CaffeineService.active
-                icon: "󰅶"
+                iconComponent: CaffeineIcon {
+                    iconSize: 16
+                    filled: true
+                    color: parent.iconColor
+                }
             }
             StatusIcon {
                 active: NightLightService.active
-                icon: "󱩌"
+                iconComponent: NightlightIcon {
+                    iconSize: 16
+                    color: parent.iconColor
+                    filled: true
+                }
             }
             StatusIcon {
                 active: NotificationService.dnd
-                icon: "󰂠"
+                iconComponent: DndIcon {
+                    iconSize: 16
+                    filled: true
+                    color: parent.iconColor
+                }
             }
 
             BatteryIcon {
@@ -357,16 +355,13 @@ Item {
                             color: reloadMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
 
                             Behavior on color {
-                                ColorAnimation {
-                                    duration: 150
-                                }
+                                ColorAnimation { duration: 150 }
                             }
 
-                            Text {
+                            /* Replaced Text with Icon Component */
+                            RestartIcon {
                                 anchors.centerIn: parent
-                                text: "󰑓"
-                                font.pixelSize: 15
-                                font.family: Config.fontFamily
+                                iconSize: 16
                                 color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
                             }
 
@@ -389,16 +384,13 @@ Item {
                             color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
 
                             Behavior on color {
-                                ColorAnimation {
-                                    duration: 150
-                                }
+                                ColorAnimation { duration: 150 }
                             }
 
-                            Text {
+                            /* Replaced Text with Icon Component */
+                            SettingsIcon {
                                 anchors.centerIn: parent
-                                text: "󰒓"
-                                font.pixelSize: 15
-                                font.family: Config.fontFamily
+                                iconSize: 16
                                 color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
                             }
 
@@ -422,16 +414,13 @@ Item {
                             color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.error_container
 
                             Behavior on color {
-                                ColorAnimation {
-                                    duration: 150
-                                }
+                                ColorAnimation { duration: 150 }
                             }
 
-                            Text {
+                            /* Replaced Text with Icon Component */
+                            ShutdownIcon {
                                 anchors.centerIn: parent
-                                text: "󰐥"
-                                font.pixelSize: 17
-                                font.family: Config.fontFamily
+                                iconSize: 16
                                 color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
                             }
 
@@ -465,7 +454,6 @@ Item {
                                 spacing: 8
 
                                 QsWideChip {
-                                    icon: root.getNetworkIcon()
                                     active: NetworkService.wifiEnabled || NetworkService.ethConnected
                                     label: {
                                         if (NetworkService.wifiEnabled) {
@@ -492,33 +480,56 @@ Item {
                                         appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
                                         appletProc.running = true;
                                     }
+
+                                    iconComponent: WifiIcon {
+                                        iconSize: 22
+                                        mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
+                                        strength: NetworkService.wifiSignal
+                                        secured: {
+                                            if (!NetworkService.activeNetwork) return false;
+                                            const sec = NetworkService.activeNetwork.security;
+                                            return sec !== "" && sec !== "--";
+                                        }
+                                    }
                                 }
 
                                 QsWideChip {
-                                    icon: root.getBluetoothIcon()
-                                    active: Bluetooth.defaultAdapter?.enabled ?? false
+                                    active: BluetoothService.enabled
+                                    
+                                    iconComponent: BluetoothIcon {
+                                        iconSize: 22
+                                        connected: BluetoothService.connectedDevices.length > 0
+                                        
+                                        enabled: BluetoothService.enabled
+                                        discovering: BluetoothService.discovering
+                                    }
+                      
                                     label: {
-                                        const adapter = Bluetooth.defaultAdapter;
-                                        if (!adapter?.enabled)
+                                        if (!BluetoothService.enabled)
                                             return "Bluetooth Off";
                                         const dev = BluetoothService.firstConnected;
                                         if (dev)
                                             return dev.name;
-                                        if (adapter.discovering)
+                                        if (BluetoothService.discovering)
                                             return "Scanning...";
                                         return "Bluetooth On";
                                     }
+                                    
                                     sublabel: {
                                         const dev = BluetoothService.firstConnected;
-                                        if (dev && dev.battery > 0)
-                                            return BluetoothService.batteryIcon(Math.round(dev.battery * 100)) + " " + Math.round(dev.battery * 100) + "%";
-                                        const n = BluetoothService.connectedDevices.length;
+                                        if (dev && dev.battery > 0) {
+                                            let pct = Math.round(dev.battery * 100);
+                                            return BluetoothService.batteryIcon(pct) + " " + pct + "%";
+                                        }
+                                        
+                                        const n = BluetoothService.connectedCount;
                                         if (n > 1)
                                             return n + " devices";
                                         return "";
                                     }
-                                    onToggled: if (Bluetooth.defaultAdapter)
-                                        Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+                                    
+                                    onToggled: BluetoothService.toggle()
+                                        
                                     onRightClicked: {
                                         root.isOpen = false;
                                         appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
@@ -532,14 +543,22 @@ Item {
                                 spacing: 8
 
                                 QsToggleChip {
-                                    icon: CaffeineService.active ? "󰅶" : "󰾪"
                                     active: CaffeineService.active
+                                    iconComponent: CaffeineIcon {
+                                        iconSize: 22
+                                        color: parent.iconColor
+                                        filled: CaffeineService.active
+                                    }
                                     onToggled: CaffeineService.toggle()
                                 }
 
                                 QsToggleChip {
-                                    icon: NightLightService.active ? "󱩌" : "󰛨"
                                     active: NightLightService.active
+                                    iconComponent: NightlightIcon {
+                                        iconSize: 22
+                                        color: parent.iconColor
+                                        filled: NightLightService.active
+                                    }
                                     onToggled: NightLightService.toggle()
                                     onRightClicked: {
                                         root.isOpen = false;
@@ -613,7 +632,7 @@ Item {
                                 }
                                 spacing: 4
 
-                                Rectangle {
+                            Rectangle {
                                     Layout.preferredWidth: 56
                                     Layout.fillHeight: true
                                     radius: 10
@@ -626,12 +645,11 @@ Item {
                                         }
                                     }
 
-                                    Text {
+                                    DndIcon {
                                         anchors.centerIn: parent
-                                        text: root.getDndIcon()
-                                        font.pixelSize: 16
-                                        font.family: Config.fontFamily
+                                        iconSize: 16
                                         color: Colors.md3.on_surface
+                                        filled: NotificationService.dnd
                                     }
 
                                     MouseArea {
@@ -673,11 +691,10 @@ Item {
                                         }
                                     }
 
-                                    Text {
+                                    ClearAllIcon {
                                         anchors.centerIn: parent
-                                        text: "󰩹"
-                                        font.pixelSize: 16
-                                        font.family: Config.fontFamily
+                                        iconSize: 16
+                                        filled: NotificationService.qsGroupModel.count > 0
                                         color: Colors.md3.on_surface
                                     }
 
@@ -789,31 +806,30 @@ Item {
         id: settingsProc
     }
 
+
     component QsWideChip: Rectangle {
         id: wideChip
         property string icon: ""
+        property Component iconComponent: null 
         property string label: ""
         property string sublabel: ""
         property bool active: false
         signal toggled
         signal rightClicked
 
+        property color iconColor: wideChip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+
+        Behavior on iconColor {
+            ColorAnimation { duration: 150 }
+        }
+
         Layout.fillWidth: true
         Layout.preferredHeight: 64
         radius: active ? 24 : 32
         color: (bodyMouse.containsMouse || iconMouse.containsMouse) ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
 
-        Behavior on color {
-            ColorAnimation {
-                duration: 150
-            }
-        }
-        Behavior on radius {
-            NumberAnimation {
-                duration: 150
-                easing.type: Easing.OutCubic
-            }
-        }
+        Behavior on color { ColorAnimation { duration: 150 } }
+        Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
         RowLayout {
             anchors.fill: parent
@@ -827,15 +843,20 @@ Item {
                 radius: wideChip.active ? 16 : 24
                 color: wideChip.active ? Colors.md3.primary : Colors.md3.surface_container
 
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                    }
-                }
-                Behavior on radius {
-                    NumberAnimation {
-                        duration: 150
-                        easing.type: Easing.OutCubic
+                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+
+                Loader {
+                    id: wideIconLoader
+                    anchors.centerIn: parent
+                    sourceComponent: wideChip.iconComponent
+                    visible: wideChip.iconComponent !== null
+
+                    Binding {
+                        target: wideIconLoader.item
+                        property: "color"
+                        value: wideChip.iconColor
+                        when: wideIconLoader.status === Loader.Ready && wideIconLoader.item.hasOwnProperty("color")
                     }
                 }
 
@@ -844,7 +865,8 @@ Item {
                     text: wideChip.icon
                     font.pixelSize: 22
                     font.family: Config.fontFamily
-                    color: wideChip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                    color: wideChip.iconColor
+                    visible: wideChip.iconComponent === null 
                 }
 
                 MouseArea {
@@ -903,7 +925,6 @@ Item {
     component QsPowerProfileChip: Rectangle {
         id: ppChip
 
-        readonly property var profileIcons: ["󰾅", "󰌪", "󰈸"]
         readonly property var profileColors: [Colors.md3.secondary_container, Colors.md3.surface_container_high, Colors.md3.primary]
         readonly property var profileColorsHover: [Qt.lighter(Colors.md3.secondary_container, 1.12), Colors.md3.surface_container_highest, Colors.md3.primary]
         readonly property var profileTextColors: [Colors.md3.on_secondary_container, Colors.md3.on_surface_variant, Colors.md3.on_primary]
@@ -919,18 +940,13 @@ Item {
         Behavior on color { ColorAnimation { duration: 150 } }
         Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
-        ColumnLayout {
+        PowerProfileIcon {
             anchors.centerIn: parent
-            spacing: 1
-
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: ppChip.profileIcons[ppChip.profileIndex]
-                font.pixelSize: 20
-                font.family: Config.fontFamily
-                color: ppChip.profileTextColors[ppChip.profileIndex]
-                Behavior on color { ColorAnimation { duration: 150 } }
-            }
+            iconSize: 20
+            profileMode: ppChip.profileIndex
+            color: ppChip.profileTextColors[ppChip.profileIndex]
+            
+            Behavior on color { ColorAnimation { duration: 150 } }
         }
 
         MouseArea {
@@ -971,17 +987,11 @@ Item {
             }
         }
 
-        ColumnLayout {
+        GameModeIcon {
             anchors.centerIn: parent
-            spacing: 1
-
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: GameModeService.active ? "󰊖" : "󱤙"
-                font.pixelSize: 20
-                font.family: Config.fontFamily
-                color: GameModeService.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
-            }
+            iconSize: 22
+            filled: GameModeService.active
+            color: GameModeService.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
         }
 
         MouseArea {
@@ -996,32 +1006,67 @@ Item {
     component QsToggleChip: Rectangle {
         id: chip
         property string icon: ""
+        property Component iconComponent: null
         property bool active: false
         signal toggled
         signal rightClicked
 
-        Layout.fillWidth: true
-        Layout.preferredHeight: 52
-        radius: active ? 18 : 26
-        color: {
-            if (active)
-                return Colors.md3.primary;
-            if (hovered)
-                return Colors.md3.surface_container_highest;
-            return Colors.md3.surface_container_high;
-        }
+        property color iconColor: chip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+        readonly property bool hovered: mouseArea.containsMouse
 
-        property bool hovered: mouseArea.containsMouse
-
-        Behavior on color {
+        Behavior on iconColor {
             ColorAnimation {
                 duration: 150
             }
         }
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 52
+        radius: active ? 18 : 26
+
+        color: Colors.md3.surface_container_high
+
         Behavior on radius {
             NumberAnimation {
                 duration: 150
                 easing.type: Easing.OutCubic
+            }
+        }
+
+        states: [
+            State {
+                name: "ACTIVE"
+                when: chip.active
+                PropertyChanges { target: chip; color: Colors.md3.primary }
+            },
+            State {
+                name: "HOVERED"
+                when: chip.hovered && !chip.active
+                PropertyChanges { target: chip; color: Colors.md3.surface_container_highest }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                from: "*"; to: "*"
+                ColorAnimation {
+                    properties: "color"
+                    duration: 150
+                }
+            }
+        ]
+
+        Loader {
+            id: iconLoader
+            anchors.centerIn: parent
+            sourceComponent: chip.iconComponent
+            visible: chip.iconComponent !== null
+
+            Binding {
+                target: iconLoader.item
+                property: "color"
+                value: chip.iconColor
+                when: iconLoader.status === Loader.Ready && iconLoader.item.hasOwnProperty("color")
             }
         }
 
@@ -1030,7 +1075,8 @@ Item {
             text: chip.icon
             font.pixelSize: 22
             font.family: Config.fontFamily
-            color: chip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+            color: chip.iconColor
+            visible: chip.iconComponent === null
         }
 
         MouseArea {
@@ -1056,22 +1102,6 @@ Item {
         property real _dragRatio: -1
         property real _displayRatio: _dragRatio >= 0 ? _dragRatio : ((to - from > 0) ? (value - from) / (to - from) : 0)
 
-        readonly property string _icon: {
-            if (iconSet === "brightness") {
-                if (dimmed) return "󰃝";
-                if (value > 1.0) return "󰃡";
-                if (value > 0.66) return "󰃠";
-                if (value > 0.33) return "󰃟";
-                return "󰃞";
-            }
-
-            if (dimmed) return "󰝟";
-            if (value > 1.0) return "󱄡";
-            if (value < 0.33) return "󰕿";
-            if (value < 0.66) return "󰖀";
-            return "󰕾";
-        }
-
         readonly property color _iconColor: {
             if (dimmed)
                 return Colors.md3.surface_container_highest;
@@ -1096,11 +1126,9 @@ Item {
         }
 
         readonly property real minW: height
-        
         readonly property real thumbW: hoverProgress * 4
         readonly property real gap: 2 + (hoverProgress * 2)
         readonly property real usableWidth: width - minW - thumbW - (gap * 2)
-
         readonly property bool textFitsInside: barLeft.width > (sliderRow.width - valueText.implicitWidth - 36)
 
         Rectangle {
@@ -1128,18 +1156,31 @@ Item {
                 }
             }
 
-            Text {
-                id: iconText
+            Loader {
+                id: sliderIconLoader
                 anchors.left: parent.left
                 anchors.leftMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
-                text: sliderRow._icon
-                font.pixelSize: 18
-                font.family: Config.fontFamily
-                color: sliderRow._iconColor
+                
+                sourceComponent: sliderRow.iconSet === "brightness" ? brightnessComp : volumeComp
 
-                Behavior on color {
-                    ColorAnimation { duration: 75 }
+                Component {
+                    id: volumeComp
+                    VolumeIcon {
+                        iconSize: 22
+                        color: sliderRow._iconColor
+                        muted: sliderRow.dimmed
+                        volume: Math.round(sliderRow.value * 100)
+                    }
+                }
+
+                Component {
+                    id: brightnessComp
+                    BrightnessIcon {
+                        iconSize: 22
+                        color: sliderRow._iconColor
+                        brightness: Math.round(sliderRow.value * 100)
+                    }
                 }
             }
         }
@@ -1154,9 +1195,7 @@ Item {
             color: barLeft.color
             opacity: sliderRow.hoverProgress
 
-            Behavior on color {
-                ColorAnimation { duration: 75 }
-            }
+            Behavior on color { ColorAnimation { duration: 75 } }
         }
 
         Rectangle {
@@ -1182,35 +1221,19 @@ Item {
             font.pixelSize: 13
             font.bold: true
             font.family: Config.fontFamily
-            font.features: {
-                "tnum": 1
-            }
+            font.features: { "tnum": 1 }
 
             x: textFitsInside
-            ? (barLeft.width - implicitWidth - 12)
-            : (sliderRow.width - implicitWidth - 14)
+                ? (barLeft.width - implicitWidth - 12)
+                : (sliderRow.width - implicitWidth - 14)
 
-            color: {
-                if (textFitsInside) {
-                    sliderRow._iconColor
-                } else {
-                    Colors.md3.on_surface_variant
-                }
-            }
+            color: textFitsInside ? sliderRow._iconColor : Colors.md3.on_surface_variant
 
             Behavior on x {
                 enabled: !sliderRow.hoverTransitionActive
-                NumberAnimation {
-                    duration: 150
-                    easing.type: Easing.OutCubic
-                }
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
             }
-
-            Behavior on color {
-                ColorAnimation {
-                    duration: 120
-                }
-            }
+            Behavior on color { ColorAnimation { duration: 120 } }
         }
 
         MouseArea {
@@ -1285,6 +1308,7 @@ Item {
     component StatusIcon: Item {
         property bool active: true
         property string icon: ""
+        property Component iconComponent: null
         property color iconColor: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
 
         implicitWidth: active ? 26 : 0
@@ -1311,6 +1335,12 @@ Item {
             }
         }
 
+        Loader {
+            anchors.centerIn: parent
+            sourceComponent: parent.iconComponent
+            visible: parent.iconComponent !== null
+        }
+
         Text {
             anchors.centerIn: parent
             text: parent.icon
@@ -1318,6 +1348,7 @@ Item {
             font.pixelSize: 16
             color: parent.iconColor
             anchors.verticalCenterOffset: 1
+            visible: parent.iconComponent === null 
         }
     }
 }

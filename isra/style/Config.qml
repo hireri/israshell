@@ -251,7 +251,7 @@ Singleton {
 
     FileView {
         id: fileView
-        path: Quickshell.env("HOME") + "/.config/quickshell/isra/config.json"
+        path: Quickshell.configDir + "/config.json"
         watchChanges: true
         blockLoading: true
         Component.onCompleted: __load()

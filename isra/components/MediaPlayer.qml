@@ -129,6 +129,7 @@ Rectangle {
                     smooth: true
                     layer.enabled: true
                     layer.smooth: true
+                    fillMode: Image.PreserveAspectCrop
 
                     property real angle: 0
                     property real velocity: pillCover.shouldSpin ? 0.5 : 0

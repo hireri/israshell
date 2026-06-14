@@ -5,8 +5,10 @@ import Quickshell.Io
 import Quickshell.Widgets
 import QtQuick.Effects
 import Quickshell.Services.Mpris
+
 import qs.style
 import qs.services
+import qs.icons
 
 Item {
     id: root
@@ -671,12 +673,12 @@ CAVAEOF`]
                     }
                 }
 
-                Text {
+                PlayPauseIcon {
                     anchors.centerIn: parent
-                    text: middleRow.isPlaying ? "󰏤" : "󰐊"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 18
+                    iconSize: 20
+                    filled: middleRow.isPlaying
                     color: root.colOnPrimary
+
                     Behavior on color {
                         ColorAnimation {
                             duration: 400
@@ -733,11 +735,11 @@ CAVAEOF`]
                         }
                     }
                 }
-                Text {
+
+                NextPrevIcon {
                     anchors.centerIn: parent
-                    text: "󰒮"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 16
+                    iconSize: 16
+                    filled: false
                     color: root.colOnSurface
                     Behavior on color {
                         ColorAnimation {
@@ -745,11 +747,12 @@ CAVAEOF`]
                         }
                     }
                 }
+
                 MouseArea {
                     id: prevMa
                     anchors.fill: parent
                     hoverEnabled: true
-                    cursorShape: (root.player?.canGoNext ?? false) ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    cursorShape: (root.player?.canGoPrevious ?? false) ? Qt.PointingHandCursor : Qt.ArrowCursor
                     onClicked: {
                         if (!(root.player?.canGoPrevious ?? false))
                             return;
@@ -906,11 +909,11 @@ CAVAEOF`]
                         }
                     }
                 }
-                Text {
+
+                NextPrevIcon {
                     anchors.centerIn: parent
-                    text: "󰒭"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 16
+                    iconSize: 16
+                    filled: true
                     color: root.colOnSurface
                     Behavior on color {
                         ColorAnimation {
@@ -918,6 +921,7 @@ CAVAEOF`]
                         }
                     }
                 }
+
                 MouseArea {
                     id: nextMa
                     anchors.fill: parent
