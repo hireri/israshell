@@ -54,7 +54,7 @@ Item {
             function onShowFailureChanged() {
                 if (LockscreenService.showFailure) {
                     shakeAnimation.start()
-                    hiddenPasswordInput.text = ""
+                    hiddenPasswordInput.text = "" 
                 }
             }
         }
@@ -165,15 +165,31 @@ Item {
 
                         delegate: Item {
                             id: dotWrapper
-                            width: 14
+                            width: 12
                             height: dotListView.height
 
                             Rectangle {
+                                id: dotVisual
                                 anchors.centerIn: parent
-                                width: 14
-                                height: 14
-                                radius: 5
+                                width: 12
+                                height: 12 
+                                radius: 4  
                                 color: Colors.md3.on_surface
+
+                                SequentialAnimation {
+                                    running: LockscreenService.unlockInProgress
+                                    loops: Animation.Infinite
+
+                                    ParallelAnimation {
+                                        NumberAnimation { target: dotVisual; property: "opacity"; to: 0.3; duration: 750; easing.type: Easing.InOutQuad }
+                                        NumberAnimation { target: dotVisual; property: "scale"; to: 0.85; duration: 750; easing.type: Easing.InOutQuad }
+                                    }
+                                    
+                                    ParallelAnimation {
+                                        NumberAnimation { target: dotVisual; property: "opacity"; to: 1.0; duration: 750; easing.type: Easing.InOutQuad }
+                                        NumberAnimation { target: dotVisual; property: "scale"; to: 1.0; duration: 750; easing.type: Easing.InOutQuad }
+                                    }
+                                }
                             }
                         }
 
