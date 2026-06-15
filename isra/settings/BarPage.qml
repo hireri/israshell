@@ -141,6 +141,14 @@ PageBase {
                     transparentBar: v
                 })
         }
+
+        SettingSwitch {
+            isLast: true
+            label: "Stacked sliders"
+            sublabel: "Volume and brightness sliders arranged vertically"
+            checked: Config.verticalQSSliders
+            onToggled: v => Config.update({ verticalQSSliders: v })
+        }
     }
 
     SectionCard {

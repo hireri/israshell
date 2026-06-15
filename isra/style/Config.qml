@@ -53,6 +53,8 @@ Singleton {
     property bool weekMonday: true
     property bool useFarenheit: false
     property bool verticalQSSliders: false
+    property bool startLocked: false
+    property bool useHyprlock: false
     property int osdPosition: 1
     property bool darkMode: true
     property string colorScheme: "scheme-tonal-spot"
@@ -141,6 +143,8 @@ Singleton {
             weekMonday: true,
             useFarenheit: false,
             verticalQSSliders: false,
+            startLocked: false,
+            useHyprlock: false,
             osdPosition: 1,
             darkMode: true,
             colorScheme: "scheme-tonal-spot",

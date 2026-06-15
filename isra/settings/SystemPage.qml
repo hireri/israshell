@@ -234,6 +234,26 @@ PageBase {
         }
 
         SectionCard {
+            label: "Lockscreen"
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                label: "Start locked"
+                sublabel: "Show lockscreen when shell starts"
+                checked: Config.startLocked
+                onToggled: v => Config.update({ startLocked: v })
+            }
+
+            SettingSwitch {
+                isLast: true
+                label: "Use Hyprlock"
+                sublabel: "Delegate locking to Hyprlock instead of built in"
+                checked: Config.useHyprlock
+                onToggled: v => Config.update({ useHyprlock: v })
+            }
+        }
+
+        SectionCard {
             label: "Fonts"
             Layout.fillWidth: true
 

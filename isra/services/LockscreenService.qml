@@ -4,6 +4,8 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pam
 
+import qs.style
+
 Singleton {
     id: root
 
@@ -16,11 +18,24 @@ Singleton {
 
     signal unlocked()
 
+    readonly property string _sessionMarker: `/run/user/${Qt.application.arguments[0]}/israshell-session`
+
+    Component.onCompleted: {
+        if (Config.startLocked) {
+            sessionCheckProcess.running = true
+        }
+    }
+
     function lock(): void {
-        root.locked = true
+        if (Config.useHyprlock) {
+            hyprlockProcess.running = true
+        } else {
+            root.locked = true
+        }
     }
 
     function tryUnlock(): void {
+        if (Config.useHyprlock) return
         if (currentText === "") return
         unlockInProgress = true
         pam.start()
@@ -29,6 +44,40 @@ Singleton {
     IpcHandler {
         target: "lockscreen"
         function lock(): void { root.lock() }
+    }
+
+    Process {
+        id: sessionCheckProcess
+        command: ["sh", "-c", `[ ! -f /run/user/$(id -u)/israshell-session ] && echo "fresh"`]
+        running: false
+        onExited: (code, status) => {
+            markerWriteProcess.running = true
+        }
+        stdout: SplitParser {
+            onRead: data => {
+                if (data.trim() === "fresh") {
+                    root.lock()
+                }
+            }
+        }
+    }
+
+    Process {
+        id: markerWriteProcess
+        command: ["sh", "-c", "touch /run/user/$(id -u)/israshell-session"]
+        running: false
+    }
+
+    Process {
+        id: hyprlockProcess
+        command: ["hyprlock"]
+        running: false
+        onRunningChanged: {
+            if (!running) {
+                root.locked = false
+                root.unlocked()
+            }
+        }
     }
 
     PamContext {
