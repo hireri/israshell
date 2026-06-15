@@ -20,7 +20,7 @@ while IFS= read -r line; do
     [[ -z "${line// }" ]] && continue
 
     pkg="$line"
-    if ! yay -Q "$pkg" &>/dev/null; then
+    if ! yay -Q "$pkg" &>/dev/null && ! command -v "$pkg" &>/dev/null; then
         missing+=("$pkg")
     fi
 done < "$DEPS_FILE"

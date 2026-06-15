@@ -21,7 +21,6 @@ bluez
 bluez-utils
 # Clipboard & screenshots
 wl-clipboard
-wl-screenrec
 slurp
 grim
 hyprpicker

@@ -57,7 +57,6 @@ Singleton {
 
         onExited: (code, _status) => {
             console.log("[Updater] check-deps.sh exited with code", code);
-            _depProc._stdout = "";
             if (code === 0) {
                 console.log("[Updater] all dependencies satisfied");
             } else if (code === 1) {
@@ -68,6 +67,7 @@ Singleton {
             } else if (code === 2) {
                 console.warn("[Updater] check-deps.sh error — deps file missing?");
             }
+            _depProc._stdout = "";
         }
     }
 
@@ -162,7 +162,7 @@ Singleton {
                 root._updateAvailable = false;
             } else {
                 console.warn("[Updater] do-update.sh failed:\n" + out);
-                _notify("Update failed", "Something went wrong, check journalctl for details.", "dialog-error", "critical", 0);
+                _notify("Update failed", "Something went wrong, check shell logs for details.", "dialog-error", "critical", 0);
             }
         }
     }
