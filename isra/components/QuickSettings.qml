@@ -74,7 +74,6 @@ Item {
             leftPadding: (Bluetooth.defaultAdapter?.enabled || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd) ? 5 : 2
 
             StatusIcon {
-                active: NetworkService.wifiConnected || NetworkService.ethConnected
                 iconComponent: WifiIcon {
                     iconSize: 16
                     
@@ -94,7 +93,7 @@ Item {
                     iconSize: 16
                     color: parent.iconColor
                     
-                    enabled: Bluetooth.defaultAdapter?.enabled ?? false
+                    enabled: true
                     discovering: (Bluetooth.defaultAdapter?.discovering ?? false) || 
                                 Bluetooth.devices.values.some(d => d.connecting)
                     connected: BluetoothService.connectedDevices.length > 0
@@ -133,9 +132,19 @@ Item {
                 }
             }
 
-            BatteryIcon {
-                id: liveBatteryWidget
-                visible: UPower.displayDevice && UPower.displayDevice.isLaptopBattery 
+            Item {
+                width: liveBatteryWidget.width + 4
+                height: liveBatteryWidget.height
+                visible: UPower.displayDevice && UPower.displayDevice.isLaptopBattery
+
+                readonly property int marginLeft: 4
+                readonly property int marginRight: 6   
+                BatteryIcon {
+                    id: liveBatteryWidget
+                    anchors.left: parent.left
+                    anchors.leftMargin: parent.marginLeft
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
 
             Rectangle {
