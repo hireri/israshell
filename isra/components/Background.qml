@@ -20,27 +20,75 @@ PanelWindow {
 
     readonly property bool shouldBlur: LockscreenService.locked || LockscreenService.lockVisualActive
 
-    Image {
-        id: wallImg
-        anchors.fill: parent
-        source: WallpaperService.currentWall ? ("file://" + WallpaperService.currentWall) : ""
-        fillMode: Image.PreserveAspectCrop
-        visible: false
+    property bool blurLoaderActive: false
+
+    onShouldBlurChanged: {
+        if (shouldBlur) {
+            blurLoaderActive = true;
+        } else {
+            unloadDelay.restart();
+        }
     }
 
-    FastBlur {
-        anchors.fill: parent
-        source: wallImg
-        radius: 64
-        opacity: root.shouldBlur ? 1 : 0
+    Timer {
+        id: unloadDelay
+        interval: 420
+        onTriggered: root.blurLoaderActive = false
+    }
 
-        Behavior on opacity {
-            NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
+    Component.onCompleted: {
+        if (shouldBlur) blurLoaderActive = true;
+    }
+
+    Loader {
+        id: blurLoader
+        anchors.fill: parent
+        active: root.blurLoaderActive
+
+        onLoaded: {
+            item.targetActive = root.shouldBlur;
         }
 
-        Rectangle {
+        sourceComponent: Item {
+            id: blurRoot
             anchors.fill: parent
-            color: "#80000000"
+
+            property bool targetActive: false
+
+            Image {
+                id: wallImg
+                anchors.fill: parent
+                source: WallpaperService.currentWall ? ("file://" + WallpaperService.currentWall) : ""
+                fillMode: Image.PreserveAspectCrop
+                visible: false
+            }
+
+            FastBlur {
+                anchors.fill: parent
+                source: wallImg
+                radius: blurRoot.targetActive ? 64 : 0
+
+                Behavior on radius {
+                    NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color: "#80000000"
+                opacity: blurRoot.targetActive ? 1 : 0
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
+                }
+            }
+
+            Connections {
+                target: root
+                function onShouldBlurChanged() {
+                    blurRoot.targetActive = root.shouldBlur;
+                }
+            }
         }
     }
 
