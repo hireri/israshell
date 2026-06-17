@@ -67,6 +67,12 @@ Item {
 
     onWidthChanged: {
         if (!root._isInitializing || width === 0) return
+        if (root.forceCentered) {
+            clockRoot.currentCx = (modelData?.width  ?? root.width)  / 2
+            clockRoot.currentCy = (modelData?.height ?? root.height) / 2
+            root._isInitializing = false
+            return
+        }
         loadSavedPosition()
         clockRoot.currentCx = root._cx
         clockRoot.currentCy = root._cy
@@ -110,15 +116,18 @@ Item {
     property real _dragDy: 0
 
     property bool forceVisible: false
+    property bool forceCentered: false
 
     Item {
         id: clockRoot
 
-        readonly property real targetCx: LockscreenService.locked
+        readonly property bool isLockedPosition: root.forceCentered || LockscreenService.lockVisualActive || LockscreenService.locked
+
+        readonly property real targetCx: isLockedPosition
             ? (modelData?.width  ?? root.width)  / 2
             : root._cx
 
-        readonly property real targetCenterY: LockscreenService.locked
+        readonly property real targetCenterY: isLockedPosition
             ? (modelData?.height ?? root.height) / 2
             : root._cy
 
@@ -129,7 +138,7 @@ Item {
         y: currentCy - height / 2 + root._dragDy
 
         Behavior on currentCx {
-            enabled: !root._isInitializing
+            enabled: !root._isInitializing && !root.forceCentered
             NumberAnimation {
                 duration: 400
                 easing.type: Easing.BezierSpline
@@ -137,7 +146,7 @@ Item {
             }
         }
         Behavior on currentCy {
-            enabled: !root._isInitializing
+            enabled: !root._isInitializing && !root.forceCentered
             NumberAnimation {
                 duration: 400
                 easing.type: Easing.BezierSpline
@@ -145,28 +154,16 @@ Item {
             }
         }
 
-        onTargetCxChanged: {
-            if (LockscreenService.locked || root._isInitializing) {
-                currentCx = targetCx;
-            } else {
-                currentCx = targetCx;
-            }
-        }
-        onTargetCenterYChanged: {
-            if (LockscreenService.locked || root._isInitializing) {
-                currentCy = targetCenterY;
-            } else {
-                currentCy = targetCenterY;
-            }
-        }
+        onTargetCxChanged: currentCx = targetCx
+        onTargetCenterYChanged: currentCy = targetCenterY
 
         Connections {
             target: root
             function on_CxChanged() {
-                if (!LockscreenService.locked) clockRoot.currentCx = root._cx
+                if (!clockRoot.isLockedPosition) clockRoot.currentCx = root._cx
             }
             function on_CyChanged() {
-                if (!LockscreenService.locked) clockRoot.currentCy = root._cy
+                if (!clockRoot.isLockedPosition) clockRoot.currentCy = root._cy
             }
         }
 

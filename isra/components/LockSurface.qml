@@ -9,9 +9,7 @@ import qs.style
 Item {
     id: root
 
-    ListModel {
-        id: passwordModel
-    }
+    ListModel { id: passwordModel }
 
     TextInput {
         id: hiddenPasswordInput
@@ -23,27 +21,22 @@ Item {
         enabled: !LockscreenService.unlockInProgress
 
         onActiveFocusChanged: {
-            if (!activeFocus) {
-                hiddenPasswordInput.forceActiveFocus()
-            }
+            if (!activeFocus)
+                forceActiveFocus()
         }
 
         onTextChanged: {
             LockscreenService.currentText = text
-            
-            while (passwordModel.count < text.length) {
-                passwordModel.append({});
-            }
-            while (passwordModel.count > text.length) {
-                passwordModel.remove(passwordModel.count - 1);
-            }
+            while (passwordModel.count < text.length)  passwordModel.append({})
+            while (passwordModel.count > text.length)  passwordModel.remove(passwordModel.count - 1)
         }
 
         Keys.onReturnPressed: LockscreenService.tryUnlock()
-        Keys.onEnterPressed: LockscreenService.tryUnlock()
+        Keys.onEnterPressed:  LockscreenService.tryUnlock()
 
         Connections {
             target: LockscreenService
+
             function onCurrentTextChanged() {
                 if (hiddenPasswordInput.text !== LockscreenService.currentText)
                     hiddenPasswordInput.text = LockscreenService.currentText
@@ -54,7 +47,7 @@ Item {
             function onShowFailureChanged() {
                 if (LockscreenService.showFailure) {
                     shakeAnimation.start()
-                    hiddenPasswordInput.text = "" 
+                    hiddenPasswordInput.text = ""
                 }
             }
         }
@@ -72,39 +65,39 @@ Item {
         Rectangle {
             id: outerPill
             height: 64
-            width: mainLayout.implicitWidth + 24 
+            width: mainLayout.implicitWidth + 24
             radius: height / 2
-            color: Qt.alpha(Colors.md3.surface_container, 0.75)
+            color: Colors.md3.surface_container
 
             SequentialAnimation {
                 id: shakeAnimation
                 loops: 2
                 PropertyAnimation { target: outerPill; property: "x"; to: -12; duration: 40; easing.type: Easing.InOutQuad }
-                PropertyAnimation { target: outerPill; property: "x"; to: 12; duration: 80; easing.type: Easing.InOutQuad }
-                PropertyAnimation { target: outerPill; property: "x"; to: 0; duration: 40; easing.type: Easing.InOutQuad }
+                PropertyAnimation { target: outerPill; property: "x"; to:  12; duration: 80; easing.type: Easing.InOutQuad }
+                PropertyAnimation { target: outerPill; property: "x"; to:   0; duration: 40; easing.type: Easing.InOutQuad }
             }
 
             RowLayout {
                 id: mainLayout
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-                anchors.leftMargin: 12
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    leftMargin: 12
+                }
                 spacing: 16
 
                 RowLayout {
-                    id: avatarSection
                     spacing: 10
 
                     ClippingRectangle {
-                        id: avatarClip
                         width: 44
                         height: 44
                         radius: 22
                         color: Colors.md3.surface_container_high
 
                         Image {
-                            source: "file://" + Quickshell.env("HOME") + "/.face"
                             anchors.fill: parent
+                            source: "file://" + Quickshell.env("HOME") + "/.face"
                             sourceSize: Qt.size(44, 44)
                             fillMode: Image.PreserveAspectCrop
                             antialiasing: true
@@ -123,9 +116,9 @@ Item {
                 Rectangle {
                     id: inputPill
                     height: 44
-                    width: 200 
+                    width: 200
                     radius: height / 2
-                    color: Qt.alpha(Colors.md3.surface_container_lowest, 0.8)
+                    color: Colors.md3.surface_container_lowest
 
                     Text {
                         anchors {
@@ -142,9 +135,11 @@ Item {
 
                     ListView {
                         id: dotListView
-                        anchors.fill: parent
-                        anchors.leftMargin: 16
-                        anchors.rightMargin: 12
+                        anchors {
+                            fill: parent
+                            leftMargin: 16
+                            rightMargin: 12
+                        }
                         clip: true
                         model: passwordModel
                         orientation: ListView.Horizontal
@@ -156,15 +151,10 @@ Item {
                         }
 
                         onContentWidthChanged: {
-                            if (contentWidth > width) {
-                                contentX = contentWidth - width
-                            } else {
-                                contentX = 0
-                            }
+                            contentX = contentWidth > width ? contentWidth - width : 0
                         }
 
                         delegate: Item {
-                            id: dotWrapper
                             width: 12
                             height: dotListView.height
 
@@ -172,8 +162,8 @@ Item {
                                 id: dotVisual
                                 anchors.centerIn: parent
                                 width: 12
-                                height: 12 
-                                radius: 4  
+                                height: 12
+                                radius: 4
                                 color: Colors.md3.on_surface
 
                                 SequentialAnimation {
@@ -182,12 +172,11 @@ Item {
 
                                     ParallelAnimation {
                                         NumberAnimation { target: dotVisual; property: "opacity"; to: 0.3; duration: 750; easing.type: Easing.InOutQuad }
-                                        NumberAnimation { target: dotVisual; property: "scale"; to: 0.85; duration: 750; easing.type: Easing.InOutQuad }
+                                        NumberAnimation { target: dotVisual; property: "scale";   to: 0.85; duration: 750; easing.type: Easing.InOutQuad }
                                     }
-                                    
                                     ParallelAnimation {
                                         NumberAnimation { target: dotVisual; property: "opacity"; to: 1.0; duration: 750; easing.type: Easing.InOutQuad }
-                                        NumberAnimation { target: dotVisual; property: "scale"; to: 1.0; duration: 750; easing.type: Easing.InOutQuad }
+                                        NumberAnimation { target: dotVisual; property: "scale";   to: 1.0; duration: 750; easing.type: Easing.InOutQuad }
                                     }
                                 }
                             }
@@ -196,14 +185,12 @@ Item {
                         add: Transition {
                             NumberAnimation { property: "scale"; from: 0; to: 1; duration: 160; easing.type: Easing.OutBack }
                         }
-
                         remove: Transition {
                             ParallelAnimation {
                                 NumberAnimation { property: "scale"; to: 0; duration: 120; easing.type: Easing.InQuad }
                                 NumberAnimation { property: "width"; to: 0; duration: 120; easing.type: Easing.InQuad }
                             }
                         }
-
                         displaced: Transition {
                             NumberAnimation { properties: "x,y"; duration: 160; easing.type: Easing.OutCubic }
                         }

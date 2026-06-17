@@ -166,12 +166,8 @@ ShellRoot {
             id: screenScope
             required property var modelData
 
-            LazyLoader {
-                activeAsync: Config.desktopClock
-
-                Background {
-                    modelData: screenScope.modelData
-                }
+            Background {
+                modelData: screenScope.modelData
             }
 
             PanelWindow {
@@ -180,6 +176,8 @@ ShellRoot {
                 screen: modelData
 
                 property bool isMenuOpen: qsWidget.isOpen || wpWidget.isOpen || false
+
+                property bool shouldHide: LockscreenService.lockAnimating || LockscreenService.locked
 
                 WlrLayershell.namespace: "quickshell:bar"
                 WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
@@ -190,17 +188,27 @@ ShellRoot {
                 anchors.right: true
 
                 implicitHeight: (Config.floatingBar ? 56 : 44)
-
                 color: "transparent"
-
-                exclusiveZone: Config.floatingBar ? 56 : 44
+                exclusiveZone: (Config.floatingBar ? 56 : 44)
+                visible: true
 
                 Item {
-                    anchors.fill: parent
+                    id: visualContent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: parent.height
+                    
                     anchors.leftMargin: Config.floatingBar ? 12 : 0
                     anchors.rightMargin: Config.floatingBar ? 12 : 0
-                    anchors.topMargin: Config.floatingBar && Config.barPosition === 0 ? 10 : 0
-                    anchors.bottomMargin: Config.floatingBar && Config.barPosition === 1 ? 10 : 0
+
+                    opacity: window.shouldHide ? 0 : 1
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.InOutCubic
+                        }
+                    }
 
                     Rectangle {
                         id: barContainer
@@ -225,20 +233,10 @@ ShellRoot {
                                 anchors.centerIn: parent
                                 spacing: 12
 
-                                MediaPlayer {
-                                    panelScreen: screenScope.modelData
-                                }
-                                Workspaces {
-                                    panelWindow: window
-                                }
-                                BarClock {
-                                    panelWindow: window
-                                }
-
-                                WallpaperPicker {
-                                    id: wpWidget
-                                    panelWindow: window
-                                }
+                                MediaPlayer { panelScreen: screenScope.modelData }
+                                Workspaces { panelWindow: window }
+                                BarClock { panelWindow: window }
+                                WallpaperPicker { id: wpWidget; panelWindow: window }
                             }
 
                             Row {
@@ -247,14 +245,8 @@ ShellRoot {
                                 spacing: 12
 
                                 ScreencapControls {}
-
-                                TrayWidget {
-                                    panelWindow: window
-                                }
-                                QuickSettings {
-                                    id: qsWidget
-                                    panelWindow: window
-                                }
+                                TrayWidget { panelWindow: window }
+                                QuickSettings { id: qsWidget; panelWindow: window }
                             }
                         }
                     }
@@ -288,20 +280,31 @@ ShellRoot {
 
                 property string barColor: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
 
-                HuggingCornerBlock {
-                    type: 0
+                Item {
                     anchors.left: parent.left
-                    anchors.top: parent.top
-                    cornerColor: huggingWindow.barColor
-                    radiusSize: huggingWindow.cornerRadius
-                }
-
-                HuggingCornerBlock {
-                    type: 1
                     anchors.right: parent.right
-                    anchors.top: parent.top
-                    cornerColor: huggingWindow.barColor
-                    radiusSize: huggingWindow.cornerRadius
+                    height: parent.height
+
+                    opacity: window.shouldHide ? 0 : 1
+                    Behavior on opacity {
+                        NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
+                    }
+
+                    HuggingCornerBlock {
+                        type: 0
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        cornerColor: huggingWindow.barColor
+                        radiusSize: huggingWindow.cornerRadius
+                    }
+
+                    HuggingCornerBlock {
+                        type: 1
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        cornerColor: huggingWindow.barColor
+                        radiusSize: huggingWindow.cornerRadius
+                    }
                 }
             }
         }
