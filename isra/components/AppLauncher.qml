@@ -537,6 +537,7 @@ Scope {
                 mode: root.mode
                 widgetType: root.widgetType
                 onQueryChanged: q => {
+                    launcherList.resetToTop(); 
                     root._query = q;
                 }
                 onEscapePressed: root.close()
