@@ -299,7 +299,7 @@ Rectangle {
 
         anchor.edges: root._barAtBottom ? Edges.Top : Edges.Bottom
         anchor.gravity: root._barAtBottom ? Edges.Top : Edges.Bottom
-        anchor.rect: Qt.rect(0, root._barAtBottom ? -8 : 8, root.width, root.height)
+        anchor.rect: Qt.rect(0, root._barAtBottom ? 2 : -2, root.width, root.height)
 
         implicitWidth: 380
         implicitHeight: cardStack.height + 44 + 10 + 32
@@ -317,7 +317,7 @@ Rectangle {
             id: animContainer
             anchors.fill: parent
             opacity: root.isOpen ? 1 : 0
-            scale: root.isOpen ? 1 : 0.93
+            scale: root.isOpen ? 1 : 0.92
 
             transformOrigin: root._barAtBottom ? Item.Bottom : Item.Top
 
