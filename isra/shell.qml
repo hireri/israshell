@@ -194,12 +194,11 @@ ShellRoot {
 
                 Item {
                     id: visualContent
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: parent.height
-                    
+                    anchors.fill: parent
                     anchors.leftMargin: Config.floatingBar ? 12 : 0
                     anchors.rightMargin: Config.floatingBar ? 12 : 0
+                    anchors.topMargin: Config.floatingBar && Config.barPosition === 0 ? 10 : 0
+                    anchors.bottomMargin: Config.floatingBar && Config.barPosition === 1 ? 10 : 0
 
                     opacity: window.shouldHide ? 0 : 1
 
