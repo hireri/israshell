@@ -135,7 +135,7 @@ Variants {
             id: scrim
             anchors.fill: parent
             opacity: 0
-            color: Qt.alpha(Colors.md3.scrim, 0.75)
+            color: Qt.alpha(Colors.md3.surface_container, 0.65)
 
             MouseArea {
                 anchors.fill: parent

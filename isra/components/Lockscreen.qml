@@ -29,7 +29,7 @@ Item {
 
                 Rectangle {
                     anchors.fill: parent
-                    color: "#80000000"
+                    color: Qt.alpha(Colors.md3.surface_container, 0.65)
                 }
             }
 

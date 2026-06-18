@@ -91,7 +91,6 @@ Item {
                 active: BluetoothService.enabled
                 iconComponent: BluetoothIcon {
                     iconSize: 16
-                    color: parent.iconColor
                     
                     enabled: true
                     discovering: (Bluetooth.defaultAdapter?.discovering ?? false) || 
@@ -101,6 +100,7 @@ Item {
             }
             StatusIcon {
                 active: AudioService.muted
+                overrideColor: true
                 iconComponent: VolumeIcon {
                     iconSize: 16
                     color: Colors.md3.error
@@ -112,14 +112,12 @@ Item {
                 iconComponent: CaffeineIcon {
                     iconSize: 16
                     filled: true
-                    color: parent.iconColor
                 }
             }
             StatusIcon {
                 active: NightLightService.active
                 iconComponent: NightlightIcon {
                     iconSize: 16
-                    color: parent.iconColor
                     filled: true
                 }
             }
@@ -128,7 +126,6 @@ Item {
                 iconComponent: DndIcon {
                     iconSize: 16
                     filled: true
-                    color: parent.iconColor
                 }
             }
 
@@ -1318,6 +1315,7 @@ Item {
         property bool active: true
         property string icon: ""
         property Component iconComponent: null
+        property bool overrideColor: false
         property color iconColor: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
 
         implicitWidth: active ? 26 : 0
@@ -1345,19 +1343,17 @@ Item {
         }
 
         Loader {
+            id: statusIconLoader
             anchors.centerIn: parent
             sourceComponent: parent.iconComponent
             visible: parent.iconComponent !== null
-        }
 
-        Text {
-            anchors.centerIn: parent
-            text: parent.icon
-            font.family: Config.fontFamily
-            font.pixelSize: 16
-            color: parent.iconColor
-            anchors.verticalCenterOffset: 1
-            visible: parent.iconComponent === null 
+            Binding {
+                target: statusIconLoader.item
+                property: "color"
+                value: statusIconLoader.parent.iconColor
+                when: !statusIconLoader.parent.overrideColor && statusIconLoader.status === Loader.Ready && statusIconLoader.item && statusIconLoader.item.hasOwnProperty("color")
+            }
         }
     }
 }
