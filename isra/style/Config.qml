@@ -64,34 +64,42 @@ Singleton {
     property var screencap: ({
             blacklist: ["cts", "ocr"],
             screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
-            recordPath: "~/.config/hypr/scripts/record.sh"
+            recordPath: "~/.config/hypr/scripts/record.sh",
+            ctsPath: "~/.config/quickshell/isra/scripts/cts.sh",
+            ocrPath: "~/.config/quickshell/isra/scripts/ocr.sh",
+            songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
         })
     property var clock: ({
-            fontFamily: "",
             layout: "vertical",
-            showSeconds: false,
             hourSize: 100,
             minuteSize: 100,
-            hourWeight: 500,
-            minuteWeight: 500,
             dateSize: 25,
             timeSpacing: -30,
             dateSpacing: -5,
             showDate: true,
+            showSeconds: false,
             align: "left",
+            fontFamily: "Google Sans Flex",
+            hourWeight: 500,
+            minuteWeight: 300,
+            fontWidth: 100,
+            fontRoundness: 0,
+            subWidth: 100,
+            subRoundness: 0,
             colorRole: "primary",
             subColorRole: "secondary",
             shadowBlur: 16,
-            manualPos: false,
             shadowX: 0,
             shadowY: 0,
-            shadowOpacity: 0.2
+            shadowOpacity: 0.2,
+            manualPos: false,
+            showDigitalInside: true,
+            analogSize: 200
         })
     property var clockPositions: ({})
     property bool checkUpdates: true
     property bool checkDeps: true
     property string githubRepo: "hireri/israshell"
-
     property bool allowNsfw: false
 
     function __defaults() {
@@ -160,25 +168,31 @@ Singleton {
                 songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
             },
             clock: {
-                fontFamily: "",
                 layout: "vertical",
-                showSeconds: false,
                 hourSize: 100,
                 minuteSize: 100,
-                hourWeight: 500,
-                minuteWeight: 500,
                 dateSize: 25,
                 timeSpacing: -30,
                 dateSpacing: -5,
                 showDate: true,
+                showSeconds: false,
                 align: "left",
+                fontFamily: "Google Sans Flex",
+                hourWeight: 500,
+                minuteWeight: 300,
+                fontWidth: 100,
+                fontRoundness: 0,
+                subWidth: 100,
+                subRoundness: 0,
                 colorRole: "primary",
                 subColorRole: "secondary",
                 shadowBlur: 16,
-                manualPos: false,
                 shadowX: 0,
                 shadowY: 0,
-                shadowOpacity: 0.2
+                shadowOpacity: 0.2,
+                manualPos: false,
+                showDigitalInside: true,
+                analogSize: 200
             },
             clockPositions: {},
             checkUpdates: true,
