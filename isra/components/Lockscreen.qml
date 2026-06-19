@@ -125,6 +125,7 @@ Item {
                 property int type: 0
                 width: cr; height: cr
                 clip: true
+                visible: Config.screenCorners
                 Rectangle {
                     width: block.cr * 4; height: block.cr * 4
                     radius: block.cr * 2
