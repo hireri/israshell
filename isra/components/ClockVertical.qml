@@ -14,15 +14,17 @@ Item {
     property int    analogSize
 
     property string clockFont:      "Google Sans Flex"
-    property int    fontWeight:     Config.clock.hourWeight ?? 500
-    property real   fontWidth:      Config.clock.fontWidth      ?? 100
-    property real   fontRoundness:  Config.clock.fontRoundness  ?? 0
-    property real   subWeight:      Config.clock.minuteWeight ?? 300
-    property real   subWidth:       Config.clock.subWidth       ?? root.fontWidth
-    property real   subRoundness:   Config.clock.subRoundness   ?? root.fontRoundness
+    property int    fontWeight:     Config.clock.hourWeight    ?? 500
+    property real   fontWidth:      Config.clock.fontWidth     ?? 100
+    property real   fontRoundness:  Config.clock.fontRoundness ?? 0
+    property real   subWeight:      Config.clock.minuteWeight  ?? 300
+    property real   subWidth:       Config.clock.subWidth      ?? root.fontWidth
+    property real   subRoundness:   Config.clock.subRoundness  ?? root.fontRoundness
 
-    readonly property var mainAxes: ({ "wght": root.fontWeight, "wdth": root.fontWidth,  "ROND": root.fontRoundness })
-    readonly property var subAxes:  ({ "wght": root.subWeight,  "wdth": root.subWidth,   "ROND": root.subRoundness  })
+    readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
+
+    readonly property var mainAxes: ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
+    readonly property var subAxes:  ({ "wght": root.subWeight,  "wdth": root.subWidth,  "ROND": root.subRoundness  })
 
     implicitWidth:  Math.max(hoursLbl.implicitWidth, minsLbl.implicitWidth,
                              Config.clock.showDate ? dateLbl.implicitWidth : 0)
@@ -38,9 +40,9 @@ Item {
 
         font.family:       root.clockFont
         font.pixelSize:    Config.clock.hourSize
-        font.weight:       root.fontWeight
+        font.weight:       root.isGoogleSansFlex ? Font.Normal : root.fontWeight
         font.features:     { "tnum": 1 }
-        font.variableAxes: root.mainAxes
+        font.variableAxes: root.isGoogleSansFlex ? root.mainAxes : ({})
     }
 
     Text {
@@ -56,9 +58,9 @@ Item {
 
         font.family:       root.clockFont
         font.pixelSize:    Config.clock.minuteSize
-        font.weight:       root.subWeight
+        font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
         font.features:     { "tnum": 1 }
-        font.variableAxes: root.subAxes
+        font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
     }
 
     Text {
@@ -78,7 +80,7 @@ Item {
 
         font.family:       root.clockFont
         font.pixelSize:    Config.clock.dateSize
-        font.weight:       Font.Light
-        font.variableAxes: root.subAxes
+        font.weight:       root.isGoogleSansFlex ? Font.Normal : Font.Light
+        font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
     }
 }

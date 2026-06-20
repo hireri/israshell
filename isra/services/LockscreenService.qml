@@ -5,6 +5,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pam
 import qs.style
+
 Singleton {
     id: root
     property bool locked: false
@@ -16,7 +17,7 @@ Singleton {
     property bool lockVisualActive: false
 
     property var _savedWorkspaces: ({})
-    property string _savedActiveWindow: "" 
+    property string _savedActiveWindow: ""
     property string _savedActiveMonitor: ""
 
     signal unlocked()
@@ -59,30 +60,37 @@ Singleton {
         unlocked()
     }
 
-    function _restoreWorkspaces(): void {
-        const saved = root._savedWorkspaces
-        root._savedWorkspaces = {}
+    function _doRestoreDispatch(saved, activeMonitor, activeWindow): void {
         let batch = ""
-        
         for (const monitorName in saved) {
             const ws = saved[monitorName]
             batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${monitorName}"})'; `
             batch += `hyprctl dispatch 'hl.dsp.focus({workspace=${ws}})'; `
         }
-        
-        if (root._savedActiveMonitor !== "") {
-            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${root._savedActiveMonitor}"})'; `
+        if (activeMonitor !== "") {
+            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${activeMonitor}"})'; `
         }
-
-        if (root._savedActiveWindow !== "") {
-            batch += `hyprctl dispatch focuswindow address:${root._savedActiveWindow}; `
-            root._savedActiveWindow = ""
+        if (activeWindow !== "") {
+            batch += `hyprctl dispatch focuswindow address:${activeWindow}; `
         }
-        
-        root._savedActiveMonitor = ""
-
+        batch += `rm -f /run/user/$(id -u)/israshell/workspaces; `
         if (batch.length > 0)
             Quickshell.execDetached(["bash", "-c", batch])
+    }
+
+    function _restoreWorkspaces(): void {
+        const saved = root._savedWorkspaces
+        const activeMonitor = root._savedActiveMonitor
+        const activeWindow = root._savedActiveWindow
+        root._savedWorkspaces = {}
+        root._savedActiveMonitor = ""
+        root._savedActiveWindow = ""
+
+        if (Object.keys(saved).length > 0) {
+            _doRestoreDispatch(saved, activeMonitor, activeWindow)
+        } else {
+            restoreFromDiskProcess.running = true
+        }
     }
 
     Timer {
@@ -99,12 +107,13 @@ Singleton {
             root.locked = true
         }
     }
+
     Timer {
         id: unlockAnimationTimer
         interval: 500
         onTriggered: root.unlockAnimating = false
     }
-    
+
     Process {
         id: saveWorkspaceProcess
         command: ["sh", "-c", "hyprctl monitors -j && echo '---SPLIT---' && hyprctl activewindow -j"]
@@ -154,7 +163,14 @@ Singleton {
                         batch += `hyprctl dispatch 'hl.dsp.focus({workspace=${dummy}})'; `
                     }
                     root._savedWorkspaces = saved
-                    
+
+                    const saveData = JSON.stringify({
+                        workspaces: saved,
+                        activeMonitor: root._savedActiveMonitor,
+                        activeWindow: root._savedActiveWindow
+                    })
+                    batch += `mkdir -p /run/user/$(id -u)/israshell && echo '${saveData}' > /run/user/$(id -u)/israshell/workspaces; `
+
                     if (originalFocusedMonitor !== "") {
                         batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${originalFocusedMonitor}"})'; `
                     }
@@ -171,19 +187,41 @@ Singleton {
             }
         }
     }
+
+    Process {
+        id: restoreFromDiskProcess
+        command: ["sh", "-c", "cat /run/user/$(id -u)/israshell/workspaces 2>/dev/null || echo ''"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const content = text.trim()
+                if (!content) {
+                    console.log("No workspace save file found, cannot restore")
+                    return
+                }
+                try {
+                    const data = JSON.parse(content)
+                    root._doRestoreDispatch(
+                        data.workspaces || {},
+                        data.activeMonitor || "",
+                        data.activeWindow || ""
+                    )
+                } catch (e) {
+                    console.log("Failed to parse workspace save file:", e)
+                }
+            }
+        }
+    }
+
     IpcHandler {
         target: "lockscreen"
         function lock(): void {
             root.lock()
         }
     }
+
     Process {
         id: sessionCheckProcess
-        command: [
-            "sh",
-            "-c",
-            `[ ! -f /run/user/$(id -u)/israshell-session ] && echo "fresh"`
-        ]
+        command: ["sh", "-c", `[ ! -f /run/user/$(id -u)/israshell/session ] && echo "fresh"`]
         stdout: SplitParser {
             onRead: data => {
                 if (data.trim() === "fresh")
@@ -192,14 +230,12 @@ Singleton {
         }
         onExited: markerWriteProcess.running = true
     }
+
     Process {
         id: markerWriteProcess
-        command: [
-            "sh",
-            "-c",
-            "touch /run/user/$(id -u)/israshell-session"
-        ]
+        command: ["sh", "-c", "mkdir -p /run/user/$(id -u)/israshell && touch /run/user/$(id -u)/israshell/session"]
     }
+
     Process {
         id: hyprlockProcess
         command: ["hyprlock"]
@@ -210,6 +246,7 @@ Singleton {
             }
         }
     }
+
     PamContext {
         id: pam
         configDirectory: Quickshell.shellDir + "/pam"

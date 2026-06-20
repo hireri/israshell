@@ -1,8 +1,9 @@
 //@ pragma ShellId israshell
 //@ pragma AppId israshell
 //@ pragma Env QS_NO_RELOAD_POPUP = 1
-//@ pragma DefaultEnv QT_LOGGING_RULES = quickshell.dbus.properties=false
+//@ pragma Env QT_QUICK_CONTROLS_STYLE=Basic
 //@ pragma Env QS_DISABLE_FILE_WATCHER = 1
+//@ pragma DefaultEnv QT_LOGGING_RULES = quickshell.dbus.properties=false
 
 import Quickshell
 import Quickshell.Io

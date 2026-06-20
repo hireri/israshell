@@ -14,12 +14,14 @@ Item {
     property bool is12h
     property int analogSize
 
-    property int    fontWeight:    Config.clock.hourWeight   ?? 500
-    property real   fontWidth:     Config.clock.fontWidth    ?? 100
+    property int    fontWeight:    Config.clock.hourWeight    ?? 500
+    property real   fontWidth:     Config.clock.fontWidth     ?? 100
     property real   fontRoundness: Config.clock.fontRoundness ?? 0
-    property real   subWeight:     Config.clock.minuteWeight ?? 300
-    property real   subWidth:      Config.clock.subWidth     ?? root.fontWidth
-    property real   subRoundness:  Config.clock.subRoundness ?? root.fontRoundness
+    property real   subWeight:     Config.clock.minuteWeight  ?? 300
+    property real   subWidth:      Config.clock.subWidth      ?? root.fontWidth
+    property real   subRoundness:  Config.clock.subRoundness  ?? root.fontRoundness
+
+    readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
 
     readonly property var mainAxes: ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
     readonly property var subAxes:  ({ "wght": root.subWeight,  "wdth": root.subWidth,  "ROND": root.subRoundness  })
@@ -80,12 +82,26 @@ Item {
                     model: modelData.words
 
                     Text {
+                        id: wordText
+
+                        property bool _ready: false
+                        Component.onCompleted: {
+                            color = !modelData.active  ? Qt.alpha(root.subColor, 0.25)
+                                  : modelData.isNumber ? root.textColor
+                                  :                      root.subColor
+                            _ready = true
+                        }
+
                         text: modelData.text
                         font {
-                            family: root.clockFont
-                            pixelSize: (Config.clock.hourSize ?? 48) * 0.55
-                            weight: modelData.isNumber ? root.fontWeight : root.subWeight
-                            variableAxes: modelData.isNumber ? root.mainAxes : root.subAxes
+                            family:       root.clockFont
+                            pixelSize:    (Config.clock.hourSize ?? 48) * 0.55
+                            weight:       root.isGoogleSansFlex
+                                              ? Font.Normal
+                                              : (modelData.isNumber ? root.fontWeight : root.subWeight)
+                            variableAxes: root.isGoogleSansFlex
+                                              ? (modelData.isNumber ? root.mainAxes : root.subAxes)
+                                              : ({})
                         }
                         color: {
                             if (!modelData.active)
@@ -97,6 +113,7 @@ Item {
                             NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
                         }
                         Behavior on color {
+                            enabled: wordText._ready
                             ColorAnimation { duration: 400; easing.type: Easing.InOutCubic }
                         }
                     }
@@ -114,10 +131,10 @@ Item {
             topMargin: Config.clock.dateSpacing
         }
         font {
-            family: root.clockFont
-            pixelSize: Config.clock.dateSize
-            weight: Font.Light
-            variableAxes: root.subAxes
+            family:       root.clockFont
+            pixelSize:    Config.clock.dateSize
+            weight:       root.isGoogleSansFlex ? Font.Normal : Font.Light
+            variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
         }
         color: root.subColor
         opacity: 0.8
