@@ -31,6 +31,7 @@ Singleton {
     }
 
     function lock(): void {
+        if (root.locked || root.lockAnimating) return
         if (Config.useHyprlock) {
             hyprlockProcess.running = true
             return
