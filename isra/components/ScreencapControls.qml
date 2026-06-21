@@ -21,7 +21,7 @@ Rectangle {
         return Config.screencapEnabled && !Config.screencap.blacklist.includes(name);
     }
 
-    color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.85) : Colors.md3.surface_container_high
+    color: Config.transparentPills ? "transparent" : Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
     radius: 20
     implicitHeight: 32
     implicitWidth: rowLayout.width

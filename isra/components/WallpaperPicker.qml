@@ -62,8 +62,15 @@ Item {
         implicitWidth: 42
         implicitHeight: 32
         radius: 16
-        color: root.isOpen ? Colors.md3.secondary_container : (Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
-        opacity: WallpaperService.applying ? 0.4 : 1.0
+        color: {
+            if (root.isOpen) {
+                Colors.md3.secondary_container
+            } else if (Config.transparentPills) {
+                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0.01) : Colors.md3.surface_container
+            } else { 
+                Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+            }
+        }        opacity: WallpaperService.applying ? 0.4 : 1.0
 
         Behavior on color {
             ColorAnimation {

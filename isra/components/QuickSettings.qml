@@ -56,7 +56,15 @@ Item {
 
     Rectangle {
         id: button
-        color: root.isOpen ? Colors.md3.secondary_container : (Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
+        color: {
+            if (root.isOpen) {
+                Colors.md3.secondary_container
+            } else if (Config.transparentPills) {
+                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0.01) : Colors.md3.surface_container
+            } else { 
+                Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+            }
+        }
         radius: 18
         implicitWidth: btnRow.implicitWidth + 10
         height: 32
@@ -552,7 +560,6 @@ Item {
                                     active: CaffeineService.active
                                     iconComponent: CaffeineIcon {
                                         iconSize: 22
-                                        color: parent.iconColor
                                         filled: CaffeineService.active
                                     }
                                     onToggled: CaffeineService.toggle()
@@ -562,7 +569,6 @@ Item {
                                     active: NightLightService.active
                                     iconComponent: NightlightIcon {
                                         iconSize: 22
-                                        color: parent.iconColor
                                         filled: NightLightService.active
                                     }
                                     onToggled: NightLightService.toggle()

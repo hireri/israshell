@@ -33,7 +33,15 @@ Item {
     Rectangle {
         id: clockRoot
         anchors.fill: parent
-        color: root.isOpen ? Colors.md3.secondary_container : (Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
+        color: {
+            if (root.isOpen) {
+                Colors.md3.secondary_container
+            } else if (Config.transparentPills) {
+                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0.01) : Colors.md3.surface_container
+            } else { 
+                Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+            }
+        }
         radius: 18
         implicitWidth: row.implicitWidth + 32
         implicitHeight: row.implicitHeight + 14

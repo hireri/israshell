@@ -9,7 +9,7 @@ Rectangle {
     id: root
     required property var panelWindow
 
-    color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+    color: Config.transparentPills ? "transparent" : Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
     radius: 18
     implicitWidth: workspacesContent.implicitWidth + 10
     height: 32

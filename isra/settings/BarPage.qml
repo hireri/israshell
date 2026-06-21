@@ -144,6 +144,16 @@ PageBase {
 
         SettingSwitch {
             isLast: true
+            label: "Transparent pills"
+            sublabel: "Remove pills background"
+            checked: Config.transparentPills
+            onToggled: v => Config.update({
+                    transparentPills: v
+                })
+        }
+
+        SettingSwitch {
+            isLast: true
             label: "Stacked sliders"
             sublabel: "Volume and brightness sliders arranged vertically"
             checked: Config.verticalQSSliders
