@@ -12,7 +12,22 @@ Rectangle {
 
     required property var panelScreen
 
-    color: Config.transparentPills ? "transparent" : Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+    color: {
+        if (root.isOpen) {
+            Colors.md3.secondary_container
+        } else if (Config.transparentPills) {
+            Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0.01) : Colors.md3.surface_container
+        } else { 
+            Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+        }
+    }
+
+    Behavior on color {
+        ColorAnimation {
+            duration: 150
+        }
+    }
+
     radius: 18
     implicitWidth: 240
     height: 32
@@ -217,12 +232,12 @@ Rectangle {
                 anchors.left: parent.left
                 implicitWidth: 20
                 height: parent.height
-                visible: marqueeContainer.shouldScroll
+                visible: marqueeContainer.shouldScroll && !(Config.transparentBar && Config.transparentPills)
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop {
                         position: 0.0
-                        color: Colors.md3.surface_container_high
+                        color: Config.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
                     }
                     GradientStop {
                         position: 1.0
@@ -234,7 +249,7 @@ Rectangle {
                 anchors.right: parent.right
                 implicitWidth: 20
                 height: parent.height
-                visible: marqueeContainer.shouldScroll
+                visible: marqueeContainer.shouldScroll && !(Config.transparentBar && Config.transparentPills)
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop {
@@ -243,7 +258,7 @@ Rectangle {
                     }
                     GradientStop {
                         position: 1.0
-                        color: Colors.md3.surface_container_high
+                        color: Config.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
                     }
                 }
             }

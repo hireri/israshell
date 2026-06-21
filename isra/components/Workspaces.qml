@@ -28,6 +28,7 @@ Rectangle {
     HoverHandler {
         id: rootHover
     }
+
     property bool isHovered: rootHover.hovered || mainMouseArea.containsMouse
 
     function getAppId(w) {
