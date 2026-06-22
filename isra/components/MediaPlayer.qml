@@ -237,7 +237,12 @@ Rectangle {
                     orientation: Gradient.Horizontal
                     GradientStop {
                         position: 0.0
-                        color: Config.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
+                        color: root.isOpen ? Colors.md3.secondary_container : Config.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
+                            }
+                        }
                     }
                     GradientStop {
                         position: 1.0
@@ -258,7 +263,12 @@ Rectangle {
                     }
                     GradientStop {
                         position: 1.0
-                        color: Config.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
+                        color: root.isOpen ? Colors.md3.secondary_container : Config.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
+                            }
+                        }
                     }
                 }
             }
