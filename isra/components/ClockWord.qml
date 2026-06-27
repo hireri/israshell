@@ -84,37 +84,23 @@ Item {
                     Text {
                         id: wordText
 
-                        property bool _ready: false
-                        Component.onCompleted: {
-                            color = !modelData.active  ? Qt.alpha(root.subColor, 0.25)
-                                  : modelData.isNumber ? root.textColor
-                                  :                      root.subColor
-                            _ready = true
-                        }
-
                         text: modelData.text
                         font {
                             family:       root.clockFont
                             pixelSize:    (Config.clock.hourSize ?? 48) * 0.55
                             weight:       root.isGoogleSansFlex
-                                              ? Font.Normal
-                                              : (modelData.isNumber ? root.fontWeight : root.subWeight)
+                                            ? Font.Normal
+                                            : (modelData.isNumber ? root.fontWeight : root.subWeight)
                             variableAxes: root.isGoogleSansFlex
-                                              ? (modelData.isNumber ? root.mainAxes : root.subAxes)
-                                              : ({})
+                                            ? (modelData.isNumber ? root.mainAxes : root.subAxes)
+                                            : ({})
                         }
-                        color: {
-                            if (!modelData.active)
-                                return Qt.alpha(root.subColor, 0.25);
-                            return modelData.isNumber ? root.textColor : root.subColor;
-                        }
+                        color: !modelData.active  ? Qt.alpha(root.subColor, 0.25)
+                            : modelData.isNumber ? root.textColor
+                            :                      root.subColor
                         opacity: modelData.active ? 1.0 : 0.35
                         Behavior on opacity {
                             NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
-                        }
-                        Behavior on color {
-                            enabled: wordText._ready
-                            ColorAnimation { duration: 400; easing.type: Easing.InOutCubic }
                         }
                     }
                 }
