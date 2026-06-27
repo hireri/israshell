@@ -326,7 +326,6 @@ PageBase {
             onToggled: v => updateClock({ showSeconds: v })
         }
         SettingSwitch {
-            isLast: true
             label: "Show date"
             sublabel: "Date label below the clock face"
             checked: Config.clock.showDate
@@ -622,6 +621,24 @@ PageBase {
             stepSize: 4
             value: Config.clock.analogSize ?? 200
             onMoved: v => updateClock({ analogSize: v })
+        }
+        SettingSlider {
+            label: "Face wobble"
+            sublabel: "Number of lobes on the clock face edge"
+            from: 2
+            to: 20
+            stepSize: 1
+            value: Config.clock.ringSides ?? 8
+            onMoved: v => updateClock({ ringSides: v })
+        }
+        SettingSlider {
+            label: "Wobble depth"
+            sublabel: "How far the edge undulates in and out"
+            from: 0
+            to: 30
+            stepSize: 1
+            value: Config.clock.ringAmplitude ?? 6
+            onMoved: v => updateClock({ ringAmplitude: v })
         }
         SettingSlider {
             label: "Date spacing"

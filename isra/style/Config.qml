@@ -77,7 +77,9 @@ Singleton {
             shadowOpacity: 0.2,
             manualPos: false,
             showDigitalInside: true,
-            analogSize: 200
+            analogSize: 200,
+            ringSides: 12,
+            ringAmplitude: 4
         })
     property var clockPositions: ({})
     property bool checkUpdates: true
@@ -159,7 +161,9 @@ Singleton {
                 shadowOpacity: 0.2,
                 manualPos: false,
                 showDigitalInside: true,
-                analogSize: 200
+                analogSize: 200,
+                ringSides: 12,
+                ringAmplitude: 4
             },
             clockPositions: {},
             checkUpdates: true,

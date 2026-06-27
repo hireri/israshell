@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Effects
+import QtQuick.Shapes
+import Qt5Compat.GraphicalEffects
 import qs.style
 
 Item {
@@ -21,28 +23,64 @@ Item {
     readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
     readonly property var  mainAxes:         ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
 
+    readonly property real ringSides:     Config.clock.ringSides     ?? 8
+    readonly property real ringAmplitude: Config.clock.ringAmplitude ?? 6
+    readonly property int  ringPoints:    256
+
     implicitWidth:  analogSize
     implicitHeight: analogSize + (Config.clock.showDate ? Config.clock.dateSpacing + dateLbl.implicitHeight : 0)
+
+    DropShadow {
+        anchors.fill: wobblyFace
+        source: wobblyFace
+        horizontalOffset: Config.clock.shadowX       ?? 0
+        verticalOffset:   Config.clock.shadowY       ?? 2
+        radius:           Config.clock.shadowBlur    ?? 16
+        samples:          (Config.clock.shadowBlur   ?? 16) * 2 + 1
+        color:            Qt.alpha("black", Config.clock.shadowOpacity ?? 0.2)
+        cached:           false
+    }
+
+    Shape {
+        id: wobblyFace
+        anchors.centerIn: face
+        width:  root.analogSize
+        height: root.analogSize
+        visible: false
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+            strokeWidth: 0
+            fillColor: Colors.md3.surface_container_high
+                       ?? Colors.md3.surface_container
+                       ?? Qt.rgba(0.95, 0.95, 0.95, 1)
+
+            PathPolyline {
+                path: {
+                    var points = []
+                    var cx     = wobblyFace.width  / 2
+                    var cy     = wobblyFace.height / 2
+                    var steps  = root.ringPoints
+                    var radius = root.analogSize / 2 - root.ringAmplitude
+                    for (var i = 0; i <= steps; i++) {
+                        var angle        = (i / steps) * 2 * Math.PI
+                        var rotatedAngle = angle * root.ringSides + Math.PI / 2
+                        var wave         = Math.sin(rotatedAngle) * root.ringAmplitude
+                        var x            = Math.cos(angle) * (radius + wave) + cx
+                        var y            = Math.sin(angle) * (radius + wave) + cy
+                        points.push(Qt.point(x, y))
+                    }
+                    return points
+                }
+            }
+        }
+    }
 
     Item {
         id: face
         anchors.horizontalCenter: parent.horizontalCenter
-        width: root.analogSize
+        width:  root.analogSize
         height: root.analogSize
-
-        Rectangle {
-            anchors.fill: parent
-            radius: width / 2
-            color: Colors.md3.surface_container_high ?? Colors.md3.surface_container ?? Qt.rgba(0.95, 0.95, 0.95, 1)
-
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                shadowEnabled: true
-                shadowBlur: ((Config.clock.shadowBlur ?? 16) / 32)
-                shadowColor: Qt.alpha("black", Config.clock.shadowOpacity ?? 0.2)
-                shadowScale: 1.04
-            }
-        }
 
         Repeater {
             model: 12
@@ -65,11 +103,18 @@ Item {
 
         Column {
             id: innerDigitalClock
-            visible: Config.clock.showDigitalInside ?? false
             anchors.centerIn: parent
             spacing: -root.analogSize * 0.1
             z: 1
-            opacity: 0.5
+
+            readonly property bool shown: Config.clock.showDigitalInside ?? false
+            opacity: shown ? 0.5 : 0.0
+            scale:   shown ? 1.0  : 0.75
+
+            layer.enabled: true
+
+            Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+            Behavior on scale   { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
 
             Text {
                 id: innerHours
@@ -182,9 +227,9 @@ Item {
             topMargin: Config.clock.dateSpacing
         }
         font {
-            family:   root.clockFont
+            family:    root.clockFont
             pixelSize: Config.clock.dateSize
-            weight:   Font.Normal
+            weight:    Font.Normal
         }
         color: root.subColor
         opacity: 0.8
