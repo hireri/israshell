@@ -5,24 +5,6 @@ import Quickshell.Io
 
 Singleton {
     id: configRoot
-
-    property var ai: ({
-            name: "LLM",
-            systemPrompt: "You are a **helpful** desktop integrated assistant. User is on {distro}, using {compositor} compositor. It is {date}, {time}.",
-            temperature: 0.7,
-            tools: ["memory", "ddg-search"],
-            providers: [
-                {
-                    id: "lmstudio",
-                    type: "openai",
-                    label: "LM Studio",
-                    endpoint: "http://localhost:1234/v1",
-                    model: "llama-3-14b-instruct-v1",
-                    apiKey: ""
-                }
-            ],
-            activeProvider: "lmstudio"
-        })
     property bool spinningCover: true
     property bool showSeconds: false
     property int hourFormat: 0
@@ -105,23 +87,6 @@ Singleton {
 
     function __defaults() {
         return {
-            ai: {
-                name: "LLM",
-                systemPrompt: "You are a **helpful** desktop integrated assistant. User is on {distro}, using {compositor} compositor. It is {date}, {time}.",
-                temperature: 0.7,
-                tools: ["memory", "ddg-search"],
-                providers: [
-                    {
-                        id: "lmstudio",
-                        type: "openai",
-                        label: "LM Studio",
-                        endpoint: "http://localhost:1234/v1",
-                        model: "llama-3-14b-instruct-v1",
-                        apiKey: ""
-                    }
-                ],
-                activeProvider: "lmstudio"
-            },
             spinningCover: true,
             showSeconds: false,
             hourFormat: 0,

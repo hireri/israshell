@@ -25,8 +25,7 @@ FloatingWindow {
     readonly property int pageDisplay: 4
     readonly property int pageSound: 5
     readonly property int pageLocale: 6
-    readonly property int pageImmeria: 7
-    readonly property int pageSystem: 8
+    readonly property int pageSystem: 7
 
     property int currentPage: pageOverview
     property bool sidebarCollapsed: false
@@ -181,13 +180,6 @@ FloatingWindow {
                             onClicked: root.currentPage = page
                             NotificationsIcon {}
                         }
-                        SidebarItem {
-                            page: root.pageLocale
-                            label: "Locale"
-                            sublabel: "Time, date, units"
-                            onClicked: root.currentPage = page
-                            LocaleIcon {}
-                        }
                     }
 
                     SidebarGroup {
@@ -197,12 +189,13 @@ FloatingWindow {
                         onNavigate: p => root.currentPage = p
 
                         SidebarItem {
-                            page: root.pageImmeria
-                            label: Config.ai.name
-                            sublabel: "AI, backend, tools"
+                            page: root.pageLocale
+                            label: "Locale"
+                            sublabel: "Time, date, units"
                             onClicked: root.currentPage = page
-                            ScriptsIcon {}
+                            LocaleIcon {}
                         }
+
                         SidebarItem {
                             page: root.pageSystem
                             label: "System"
@@ -253,10 +246,6 @@ FloatingWindow {
                     sourceComponent: LocalePage {}
                 }
                 Loader {
-                    active: root.currentPage === root.pageImmeria
-                    sourceComponent: AIPage {}
-                }
-                Loader {
                     active: root.currentPage === root.pageSystem
                     sourceComponent: SystemPage {}
                 }
@@ -276,7 +265,6 @@ FloatingWindow {
             "display": root.pageDisplay,
             "sound": root.pageSound,
             "locale": root.pageLocale,
-            "immeria": root.pageImmeria,
             "system": root.pageSystem
         };
         const p = map[page];
