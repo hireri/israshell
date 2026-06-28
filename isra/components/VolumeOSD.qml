@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Services.Pipewire
 import Quickshell.Widgets
 
+import qs.icons
 import qs.style
 
 Scope {
@@ -36,18 +37,6 @@ Scope {
 
     property bool isMuted: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio.muted : false
     property real rawVolume: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio.volume : 0
-
-    property string volumeIcon: {
-        if (root.isOverLimit)
-            return "󱄡";
-        if (root.isMuted || root.rawVolume === 0)
-            return "󰖁";
-        if (root.rawVolume < 0.33)
-            return "󰕿";
-        if (root.rawVolume < 0.66)
-            return "󰖀";
-        return "󰕾";
-    }
 
     property real volumePercent: root.rawVolume * 100
     property bool isOverLimit: volumePercent > 100
@@ -200,12 +189,12 @@ Scope {
                         Layout.preferredHeight: 32
                         Layout.alignment: Qt.AlignHCenter
 
-                        Text {
+                        VolumeIcon {
                             anchors.centerIn: parent
-                            text: root.volumeIcon
-                            font.family: Config.fontFamily
-                            font.pixelSize: root.fontSize
+                            muted: root.isMuted
+                            volume: Math.round(root.volumePercent)
                             color: Colors.md3.on_surface_variant
+                            iconSize: root.fontSize
                         }
                     }
                 }
@@ -224,12 +213,12 @@ Scope {
                         Layout.preferredHeight: 32
                         Layout.alignment: Qt.AlignVCenter
 
-                        Text {
+                        VolumeIcon {
                             anchors.centerIn: parent
-                            text: root.volumeIcon
-                            font.family: Config.fontFamily
-                            font.pixelSize: root.fontSize
+                            muted: root.isMuted
+                            volume: Math.round(root.volumePercent)
                             color: Colors.md3.on_surface_variant
+                            iconSize: root.fontSize
                         }
                     }
 
