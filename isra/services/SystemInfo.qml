@@ -77,8 +77,20 @@ Singleton {
                 if (parts[1] && parts[1] !== "Unknown GPU" && parts[1] !== "")
                     root.gpu = parts[1];
                 if (parts[2] && parts[2] !== "Unknown") {
-                    root.memory = parts[2].toUpperCase().replace("I", "i") + "B RAM";
-                }
+                    let match = parts[2].match(/^([\d.]+)([A-Za-z]+)$/);
+                        if (match) {
+                            let value = parseFloat(match[1]);
+                            let unit = match[2].toUpperCase();
+                            if (unit.startsWith("G")) {
+                                value = value * 1.073741824;
+                            } else if (unit.startsWith("M")) {
+                                value = value * 1.048576;
+                            }
+                            root.memory = Math.round(value) + "GB RAM";
+                        } else {
+                            root.memory = parts[2].toUpperCase().replace("I", "i") + "B RAM";
+                        }
+                    }
                 if (parts[3] && parts[3] !== "Unknown" && parts[3] !== "")
                     root.motherboard = parts[3];
             }
