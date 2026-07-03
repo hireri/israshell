@@ -222,6 +222,20 @@ ShellRoot {
                             anchors.rightMargin: 8
                             anchors.leftMargin: 6
 
+                            BarMenu {
+                                id: barContextMenu
+                                panelWindow: window
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.RightButton
+                                onClicked: mouse => {
+                                    var globalPos = mapToGlobal(mouse.x, mouse.y);
+                                    barContextMenu.open(globalPos);
+                                }
+                            }
+
                             ActiveWindow {
                                 anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter

@@ -32,7 +32,7 @@ PanelWindow {
     }
 
     readonly property real mainH: mainCol.implicitHeight + pad * 2 + 2
-    readonly property real subH: subCol.implicitHeight + pad * 2
+    readonly property real subH: subCol.implicitHeight + pad * 2 + 2
     readonly property real cardH: submenuOpen ? subH : mainH
 
     property real cardX: 0

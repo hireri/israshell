@@ -372,7 +372,6 @@ Item {
                                 ColorAnimation { duration: 150 }
                             }
 
-                            /* Replaced Text with Icon Component */
                             RestartIcon {
                                 anchors.centerIn: parent
                                 iconSize: 16
@@ -401,7 +400,6 @@ Item {
                                 ColorAnimation { duration: 150 }
                             }
 
-                            /* Replaced Text with Icon Component */
                             SettingsIcon {
                                 anchors.centerIn: parent
                                 iconSize: 16
@@ -431,7 +429,6 @@ Item {
                                 ColorAnimation { duration: 150 }
                             }
 
-                            /* Replaced Text with Icon Component */
                             ShutdownIcon {
                                 anchors.centerIn: parent
                                 iconSize: 16
