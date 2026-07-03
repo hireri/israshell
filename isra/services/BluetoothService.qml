@@ -21,6 +21,12 @@ Singleton {
     readonly property list<var> allDevices: [...connectedDevices, ...pairedDevices, ...newDevices]
     readonly property list<var> knownDevices: [...connectedDevices, ...pairedDevices]
 
+    readonly property bool anyDeviceBusy: Bluetooth.devices.values.some(d => isDeviceBusy(d))
+
+    function isDeviceBusy(device) {
+        return device.state === BluetoothDeviceState.Connecting || device.state === BluetoothDeviceState.Disconnecting;
+    }
+
     function toggle() {
         const adapter = Bluetooth.defaultAdapter;
         if (adapter)

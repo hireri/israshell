@@ -21,7 +21,6 @@ PageBase {
     Component.onCompleted: NetworkService.refresh()
 
     readonly property bool wifiBusy: NetworkService.wifiConnecting || NetworkService.scanning
-    property bool btDeviceBusy: false
 
     function signalIcon(s) {
         if (s >= 80)
@@ -63,20 +62,6 @@ PageBase {
 
     Process {
         id: editProc
-    }
-
-    Connections {
-        target: BluetoothService
-        function onConnectedDevicesChanged() {
-            page.btDeviceBusy = false;
-        }
-    }
-
-    Timer {
-        id: btBusyTimeout
-        interval: 8000
-        running: page.btDeviceBusy
-        onTriggered: page.btDeviceBusy = false
     }
 
     Component {
@@ -458,7 +443,7 @@ PageBase {
     Spinner {
         Layout.fillWidth: true
         visible: running
-        running: page.btDeviceBusy || BluetoothService.discovering
+        running: BluetoothService.anyDeviceBusy || BluetoothService.discovering
         color: Colors.md3.secondary
     }
 
@@ -608,15 +593,18 @@ PageBase {
                         Layout.alignment: Qt.AlignVCenter
 
                         Rectangle {
+                            readonly property bool busy: BluetoothService.isDeviceBusy(modelData)
+
                             height: 28
                             width: btConnTxt.implicitWidth + 16
                             radius: 14
                             color: modelData.connected ? Colors.md3.surface_container_high : Colors.md3.secondary_container
+                            opacity: busy ? 0.6 : 1.0
 
                             Text {
                                 id: btConnTxt
                                 anchors.centerIn: parent
-                                text: modelData.connected ? "Disconnect" : "Connect"
+                                text: modelData.state === BluetoothDeviceState.Connecting ? "Connecting..." : modelData.state === BluetoothDeviceState.Disconnecting ? "Disconnecting..." : modelData.connected ? "Disconnect" : "Connect"
                                 font.family: Config.fontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -626,8 +614,8 @@ PageBase {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
+                                enabled: !parent.busy
                                 onClicked: {
-                                    page.btDeviceBusy = true;
                                     if (modelData.connected)
                                         BluetoothService.disconnectDevice(modelData);
                                     else
@@ -652,10 +640,7 @@ PageBase {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    page.btDeviceBusy = true;
-                                    BluetoothService.forgetDevice(modelData);
-                                }
+                                onClicked: BluetoothService.forgetDevice(modelData)
                             }
                         }
                     }
@@ -759,10 +744,7 @@ PageBase {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             enabled: !modelData.pairing
-                            onClicked: {
-                                page.btDeviceBusy = true;
-                                BluetoothService.pairDevice(modelData);
-                            }
+                            onClicked: BluetoothService.pairDevice(modelData)
                         }
                     }
                 }
