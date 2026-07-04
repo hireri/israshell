@@ -30,22 +30,12 @@ Item {
     implicitWidth:  analogSize
     implicitHeight: analogSize + (Config.clock.showDate ? Config.clock.dateSpacing + dateLbl.implicitHeight : 0)
 
-    DropShadow {
-        anchors.fill: wobblyFace
-        source: wobblyFace
-        horizontalOffset: Config.clock.shadowX       ?? 0
-        verticalOffset:   Config.clock.shadowY       ?? 2
-        radius:           Config.clock.shadowBlur    ?? 16
-        samples:          (Config.clock.shadowBlur   ?? 16) * 2 + 1
-        color:            Qt.alpha("black", Config.clock.shadowOpacity ?? 0.2)
-    }
-
     Shape {
         id: wobblyFace
         anchors.centerIn: face
         width:  root.analogSize
         height: root.analogSize
-        visible: false
+        visible: true
 
         ShapePath {
             strokeWidth: 0
