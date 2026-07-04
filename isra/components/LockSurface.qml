@@ -75,21 +75,21 @@ Item {
         {
             label: "Log Out",
             icon: logoutIconComp,
-            command: ["hyprctl", "dispatch", "exit"],
+            command: ["sh", "-c", "loginctl terminate-user \"$USER\""],
             bg: Colors.md3.secondary_container,
             on: Colors.md3.on_secondary_container
         },
         {
             label: "Shut Down",
             icon: powerIconComp,
-            command: ["loginctl", "poweroff"],
+            command: ["sh", "-c", "systemctl poweroff || loginctl poweroff"],
             bg: Colors.md3.primary_container,
             on: Colors.md3.on_primary_container
         },
         {
             label: "Restart",
             icon: restartIconComp,
-            command: ["loginctl", "reboot"],
+            command: ["sh", "-c", "systemctl reboot || loginctl reboot"],
             bg: Colors.md3.primary_container,
             on: Colors.md3.on_primary_container
         }
