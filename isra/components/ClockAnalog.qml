@@ -38,7 +38,6 @@ Item {
         radius:           Config.clock.shadowBlur    ?? 16
         samples:          (Config.clock.shadowBlur   ?? 16) * 2 + 1
         color:            Qt.alpha("black", Config.clock.shadowOpacity ?? 0.2)
-        cached:           false
     }
 
     Shape {
@@ -47,7 +46,6 @@ Item {
         width:  root.analogSize
         height: root.analogSize
         visible: false
-        preferredRendererType: Shape.CurveRenderer
 
         ShapePath {
             strokeWidth: 0
