@@ -218,11 +218,14 @@ Rectangle {
                     anchors.leftMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
                     text: ScreencapService.recordingTime
-                    font.family: Config.fontMonospace
+                    font.family: Config.fontFamily
                     font.pixelSize: 13
                     font.weight: Font.Medium
                     color: Colors.md3.error
                     opacity: ScreencapService.isRecording ? 1 : 0
+                    font.features: {
+                        "tnum": 1
+                    }
                     Behavior on opacity {
                         NumberAnimation {
                             duration: 200
