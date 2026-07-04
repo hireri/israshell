@@ -28,9 +28,22 @@ Rectangle {
         }
     }
 
-    radius: 18
-    implicitWidth: 240
+    radius: Config.playerMode === 1 ? height / 2 : 18
+    implicitWidth: {
+        if (Config.playerMode === 1)
+            return 32;
+        if (Config.playerMode === 2)
+            return 216;
+        return 240;
+    }
     height: 32
+
+    Behavior on implicitWidth {
+        NumberAnimation {
+            duration: 250
+            easing.type: Easing.OutCubic
+        }
+    }
 
     readonly property bool isOpen: MediaPlayerState.openScreen === panelScreen
     readonly property bool _barAtBottom: Config.barPosition === 1
@@ -106,12 +119,13 @@ Rectangle {
 
     Row {
         anchors.centerIn: parent
-        spacing: 8
+        spacing: (Config.playerMode === 1 || Config.playerMode === 2) ? 0 : 8
 
         Item {
             id: pillCover
-            implicitWidth: 24
-            height: 24
+            visible: Config.playerMode !== 2
+            implicitWidth: Config.playerMode === 1 ? root.height - 4 : 24
+            height: Config.playerMode === 1 ? root.height - 4 : 24
             anchors.verticalCenter: parent.verticalCenter
 
             readonly property bool isPlaying: MediaPlayerState.displayPlayer?.playbackState === MprisPlaybackState.Playing
@@ -172,7 +186,8 @@ Rectangle {
 
         Item {
             id: marqueeContainer
-            implicitWidth: 200
+            visible: Config.playerMode !== 1
+            implicitWidth: Config.playerMode !== 1 ? (Config.playerMode === 2 ? 176 : 200) : 0
             height: 20
             clip: true
             anchors.verticalCenter: parent.verticalCenter

@@ -6,6 +6,7 @@ import Quickshell.Io
 Singleton {
     id: configRoot
     property bool spinningCover: true
+    property int playerMode: 0
     property bool showSeconds: false
     property int hourFormat: 0
     property int carouselSpeed: 30
@@ -90,6 +91,7 @@ Singleton {
     function __defaults() {
         return {
             spinningCover: true,
+            playerMode: 0,
             showSeconds: false,
             hourFormat: 0,
             carouselSpeed: 30,
