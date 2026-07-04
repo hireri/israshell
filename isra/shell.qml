@@ -241,23 +241,83 @@ ShellRoot {
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
-                            Row {
-                                anchors.centerIn: parent
-                                spacing: 12
+                            Item {
+                                anchors.fill: parent
 
-                                MediaPlayer { panelScreen: screenScope.modelData }
-                                Workspaces { panelWindow: window }
-                                BarClock { panelWindow: window }
-                                WallpaperPicker { id: wpWidget; panelWindow: window }
+                                Workspaces {
+                                    id: workspacesItem
+                                    panelWindow: window
+                                    anchors.centerIn: parent
+                                }
+
+                                Row {
+                                    anchors.right: workspacesItem.left
+                                    anchors.rightMargin: 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 12
+
+                                    MediaPlayer { panelScreen: screenScope.modelData }
+                                }
+
+                                Row {
+                                    anchors.left: workspacesItem.right
+                                    anchors.leftMargin: 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 12
+
+                                    BarClock { panelWindow: window }
+                                    WallpaperPicker { id: wpWidget; panelWindow: window }
+                                }
                             }
 
                             Row {
                                 anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 12
+                                spacing: 0
 
                                 ScreencapControls {}
+
+                                Item {
+                                    implicitHeight: 32
+                                    implicitWidth: Config.transparentPills ? 18 : 12
+                                    visible: Config.screencapEnabled
+                                    Behavior on implicitWidth {
+                                        NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                                    }
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: 4
+                                        height: 4
+                                        radius: 2
+                                        color: Config.transparentBar ? Qt.alpha(Colors.md3.outline, 0.85) : Colors.md3.outline
+                                        opacity: Config.transparentPills ? 1 : 0
+                                        Behavior on opacity {
+                                            NumberAnimation { duration: 250 }
+                                        }
+                                    }
+                                }
+
                                 TrayWidget { panelWindow: window }
+
+                                Item {
+                                    implicitHeight: 32
+                                    implicitWidth: Config.transparentPills ? 18 : 12
+                                    Behavior on implicitWidth {
+                                        NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                                    }
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: 4
+                                        height: 4
+                                        radius: 2
+                                        color: Config.transparentBar ? Qt.alpha(Colors.md3.outline, 0.85) : Colors.md3.outline
+                                        opacity: Config.transparentPills ? 1 : 0
+                                        Behavior on opacity {
+                                            NumberAnimation { duration: 250 }
+                                        }
+                                    }
+                                }
+
                                 QuickSettings { id: qsWidget; panelWindow: window }
                             }
                         }

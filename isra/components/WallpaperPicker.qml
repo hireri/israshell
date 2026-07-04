@@ -70,7 +70,8 @@ Item {
             } else { 
                 Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
             }
-        }        opacity: WallpaperService.applying ? 0.4 : 1.0
+        }        
+        opacity: WallpaperService.applying ? 0.4 : 1.0
 
         Behavior on color {
             ColorAnimation {

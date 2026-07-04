@@ -21,7 +21,22 @@ Rectangle {
         return Config.screencapEnabled && !Config.screencap.blacklist.includes(name);
     }
 
-    color: Config.transparentPills ? "transparent" : Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+    color: {
+        if (root.isOpen) {
+            Colors.md3.secondary_container
+        } else if (Config.transparentPills) {
+            Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0.01) : Colors.md3.surface_container
+        } else { 
+            Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+        }
+    }   
+
+    Behavior on color {
+        ColorAnimation {
+            duration: 150
+        }
+    }
+
     radius: 20
     implicitHeight: 32
     implicitWidth: rowLayout.width

@@ -12,14 +12,51 @@ PageBase {
     title: "Bar"
     subtitle: "Layout, media and tray"
 
+    Component {
+        id: huggingIconComp
+        HuggingBarIcon {
+            iconSize: 16
+        }
+    }
+    Component {
+        id: straightIconComp
+        StraightBarIcon {
+            iconSize: 16
+        }
+    }
+    Component {
+        id: floatingIconComp
+        FloatingBarIcon {
+            iconSize: 16
+        }
+    }
+    Component {
+        id: albumIconComp
+        AlbumIcon {
+            iconSize: 16
+        }
+    }
+    Component {
+        id: queueMusicIconComp
+        QueueMusicIcon {
+            iconSize: 16
+        }
+    }
+    Component {
+        id: menuIconComp
+        MenuIcon {
+            iconSize: 16
+        }
+    }
+
     SectionCard {
         label: "Layout"
         Layout.fillWidth: true
 
-        SettingRow {
+        SettingChips {
             label: "Bar mode"
             sublabel: {
-                switch (triSwitch.currentMode) {
+                switch (currentValue) {
                 case 0:
                     return "Hugging screen edge";
                 case 1:
@@ -30,88 +67,28 @@ PageBase {
                     return "";
                 }
             }
-
-            Item {
-                id: triSwitch
-                implicitWidth: 132
-                implicitHeight: 34
-
-                readonly property int count: 3
-                readonly property real optionWidth: 40
-                readonly property real padding: 3
-                readonly property real spacing: 3
-                readonly property int currentMode: Config.huggingBar ? 0 : Config.floatingBar ? 2 : 1
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: height / 2
-                    color: Colors.md3.surface_container_high
+            options: [
+                {
+                    label: "",
+                    value: 0,
+                    icon: huggingIconComp
+                },
+                {
+                    label: "",
+                    value: 1,
+                    icon: straightIconComp
+                },
+                {
+                    label: "",
+                    value: 2,
+                    icon: floatingIconComp
                 }
-
-                Rectangle {
-                    id: triBall
-                    y: triSwitch.padding
-                    x: triSwitch.padding + triSwitch.currentMode * (triSwitch.optionWidth + triSwitch.spacing)
-                    width: triSwitch.optionWidth
-                    height: parent.height - triSwitch.padding * 2
-                    radius: height / 2
-                    color: Colors.md3.primary
-
-                    Behavior on x {
-                        NumberAnimation {
-                            duration: 220
-                            easing.type: Easing.OutCubic
-                            easing.overshoot: 1.2
-                        }
-                    }
-                }
-
-                Row {
-                    anchors.fill: parent
-                    anchors.margins: triSwitch.padding
-                    spacing: triSwitch.spacing
-
-                    Repeater {
-                        model: 3
-
-                        delegate: Item {
-                            required property int index
-                            readonly property bool active: triSwitch.currentMode === index
-
-                            width: triSwitch.optionWidth
-                            height: parent.height
-
-                            HuggingBarIcon {
-                                anchors.centerIn: parent
-                                iconSize: 16
-                                color: parent.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
-                                visible: parent.index === 0
-                            }
-                            StraightBarIcon {
-                                anchors.centerIn: parent
-                                iconSize: 16
-                                color: parent.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
-                                visible: parent.index === 1
-                            }
-                            FloatingBarIcon {
-                                anchors.centerIn: parent
-                                iconSize: 16
-                                color: parent.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
-                                visible: parent.index === 2
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: Config.update({
-                                    huggingBar: index === 0,
-                                    floatingBar: index === 2
-                                })
-                            }
-                        }
-                    }
-                }
-            }
+            ]
+            currentValue: Config.huggingBar ? 0 : Config.floatingBar ? 2 : 1
+            onSelected: v => Config.update({
+                    huggingBar: v === 0,
+                    floatingBar: v === 2
+                })
         }
 
         SettingChips {
@@ -164,6 +141,43 @@ PageBase {
     SectionCard {
         label: "Media player"
         Layout.fillWidth: true
+
+        SettingChips {
+            label: "Player mode"
+            sublabel: {
+                switch (currentValue) {
+                case 0:
+                    return "Cover and title";
+                case 1:
+                    return "Cover only";
+                case 2:
+                    return "Title only";
+                default:
+                    return "";
+                }
+            }
+            options: [
+                {
+                    label: "Both",
+                    value: 0,
+                    icon: queueMusicIconComp
+                },
+                {
+                    label: "Cover",
+                    value: 1,
+                    icon: albumIconComp
+                },
+                {
+                    label: "Title",
+                    value: 2,
+                    icon: menuIconComp
+                }
+            ]
+            currentValue: Config.playerMode
+            onSelected: v => Config.update({
+                    playerMode: v
+                })
+        }
 
         SettingSwitch {
             label: "Spinning cover"
@@ -250,11 +264,10 @@ PageBase {
                 Repeater {
                     model: Config.trayBlacklist
 
-                    ToolChip {
+                    InputChip {
                         required property string modelData
                         label: modelData
-                        active: true
-                        onToggled: _ => {
+                        onRemoved: {
                             const updated = Config.trayBlacklist.filter(x => x !== modelData);
                             Config.update({
                                 trayBlacklist: updated
@@ -263,27 +276,13 @@ PageBase {
                     }
                 }
 
-                Rectangle {
-                    implicitHeight: 32
-                    implicitWidth: addLabel.implicitWidth + 24
-                    radius: height / 2
-                    color: "transparent"
-                    border.width: 1
-                    border.color: Colors.md3.outline_variant
-
-                    Text {
-                        id: addLabel
-                        anchors.centerIn: parent
-                        text: "+ Add"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 12
-                        color: Colors.md3.on_surface_variant
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: addDialog.open()
+                ChipAdd {
+                    placeholder: "App name..."
+                    onConfirmed: v => {
+                        if (!Config.trayBlacklist.includes(v))
+                            Config.update({
+                                trayBlacklist: [...Config.trayBlacklist, v]
+                            });
                     }
                 }
             }
@@ -346,7 +345,7 @@ PageBase {
                 Repeater {
                     model: parent.actions
 
-                    ToolChip {
+                    FilterChip {
                         required property var modelData
                         label: modelData.label
                         active: !Config.screencap.blacklist.includes(modelData.key)
@@ -366,114 +365,4 @@ PageBase {
         }
     }
 
-    Rectangle {
-        id: addDialog
-        visible: false
-        Layout.fillWidth: true
-        implicitHeight: addRow.implicitHeight + 24
-        radius: 14
-        color: Colors.md3.surface_container_high
-        border.width: 1
-        border.color: Colors.md3.outline_variant
-
-        function open() {
-            visible = true;
-            addField.forceActiveFocus();
-        }
-        function close() {
-            visible = false;
-            addField.text = "";
-        }
-
-        RowLayout {
-            id: addRow
-            anchors {
-                fill: parent
-                margins: 12
-            }
-            spacing: 8
-
-            TextField {
-                id: addField
-                Layout.fillWidth: true
-                placeholderText: "App name..."
-                font.family: Config.fontFamily
-                font.pixelSize: 12
-                color: Colors.md3.on_surface
-                placeholderTextColor: Colors.md3.outline
-                leftPadding: 12
-                rightPadding: 12
-                implicitHeight: 36
-
-                background: Rectangle {
-                    radius: 8
-                    color: Colors.md3.surface_container
-                    border.width: addField.activeFocus ? 1.5 : 1
-                    border.color: addField.activeFocus ? Colors.md3.primary : Colors.md3.surface_variant
-                    Behavior on border.color {
-                        ColorAnimation {
-                            duration: 120
-                        }
-                    }
-                }
-
-                Keys.onReturnPressed: confirmBtn.clicked()
-                Keys.onEscapePressed: addDialog.close()
-            }
-
-            Rectangle {
-                id: confirmBtn
-                implicitHeight: 36
-                implicitWidth: confirmLbl.implicitWidth + 20
-                radius: 8
-                color: Colors.md3.primary
-                signal clicked
-
-                onClicked: {
-                    const val = addField.text.trim();
-                    if (val.length > 0 && !Config.trayBlacklist.includes(val))
-                        Config.update({
-                            trayBlacklist: [...Config.trayBlacklist, val]
-                        });
-                    addDialog.close();
-                }
-
-                Text {
-                    id: confirmLbl
-                    anchors.centerIn: parent
-                    text: "Add"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
-                    color: Colors.md3.on_primary
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: confirmBtn.clicked()
-                }
-            }
-
-            Rectangle {
-                implicitHeight: 36
-                implicitWidth: 36
-                radius: 8
-                color: Colors.md3.surface_container
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: 13
-                    color: Colors.md3.outline
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: addDialog.close()
-                }
-            }
-        }
-    }
 }
