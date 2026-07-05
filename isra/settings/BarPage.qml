@@ -48,6 +48,18 @@ PageBase {
             iconSize: 16
         }
     }
+    Component {
+        id: arrowUpwardComp
+        ArrowUpwardIcon {
+            iconSize: 16
+        }
+    }
+    Component {
+        id: arrowDownwardComp
+        ArrowDownwardIcon {
+            iconSize: 16
+        }
+    }
 
     SectionCard {
         label: "Layout"
@@ -96,11 +108,13 @@ PageBase {
             options: [
                 {
                     label: "Top",
-                    value: 0
+                    value: 0,
+                    icon: arrowUpwardComp
                 },
                 {
                     label: "Bottom",
-                    value: 1
+                    value: 1,
+                    icon: arrowDownwardComp
                 }
             ]
             currentValue: Config.barPosition
