@@ -1,4 +1,12 @@
-# **israshell**
+<div align="center">
+<pre>
+▗▄▄▄▖ ▗▄▄▖▗▄▄▖  ▗▄▖  ▗▄▄▖▗▖ ▗▖▗▄▄▄▖▗▖   ▗▖   
+  █  ▐▌   ▐▌ ▐▌▐▌ ▐▌▐▌   ▐▌ ▐▌▐▌   ▐▌   ▐▌   
+  █   ▝▀▚▖▐▛▀▚▖▐▛▀▜▌ ▝▀▚▖▐▛▀▜▌▐▛▀▀▘▐▌   ▐▌   
+▗▄█▄▖▗▄▄▞▘▐▌ ▐▌▐▌ ▐▌▗▄▄▞▘▐▌ ▐▌▐▙▄▄▖▐▙▄▄▖▐▙▄▄▖
+</pre>
+</div>
+
 > [!NOTE]
 > This is my Quickshell configuration **alone**, you'll have to configure your system around it / edit it to your liking.
 > 
@@ -49,32 +57,40 @@ config.json can be updated for finer control (some options may require a restart
 All available binds, this is my config:
 
 ```ini
-bind = $mainMod, O, global, quickshell:openQuickSettings
-bind = $mainMod, M, global, quickshell:openPowerMenu
-bind = $mainMod, W, global, quickshell:openWallpaperPicker
+hl.bind(mainMod .. " + S", hl.dsp.global("quickshell:openQuickSettings"))
+hl.bind(mainMod .. " + M", hl.dsp.global("quickshell:openPowerMenu"))
+hl.bind(mainMod .. " + W", hl.dsp.global("quickshell:openWallpaperPicker"))
 
-bindr = $mainMod, super_l, exec, qs -c isra ipc call launcher toggle
-bind = $mainMod, V, exec, qs -c isra ipc call launcher openWith ";"
-bind = $mainMod, Period, exec, qs -c isra ipc call launcher openWith ":"
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("qs ipc -c isra call lockscreen lock"))
 
-bind = $mainMod SHIFT, N, exec, qs -c isra ipc call media next
-bind = $mainMod SHIFT, P, exec, qs -c isra ipc call media togglePlaying
-bind = $mainMod SHIFT, B, exec, qs -c isra ipc call media previous
+hl.bind(mainMod .. " + SUPER_L", hl.dsp.exec_cmd("qs -c isra ipc call launcher toggle"), {
+    release = true
+})
+hl.bind(mainMod .. " + V", hl.dsp.exec_cmd('qs -c isra ipc call launcher openWith ";"'))
+hl.bind(mainMod .. " + Period", hl.dsp.exec_cmd('qs -c isra ipc call launcher openWith ":"'))
 
-bind = $mainMod, I, exec, qs -c isra ipc call settings open overview
+
+hl.bind(mainMod .. " + SHIFT + N", hl.dsp.exec_cmd("qs -c isra ipc call media next"))
+hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("qs -c isra ipc call media togglePlaying"))
+hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("qs -c isra ipc call media previous"))
+
+
+hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("qs -c isra ipc call settings open overview"))
 
 # open settings into a page
-# bind = $mainMod, N, exec, qs -c isra ipc call settings open network
-# overview | network | bar | clock | display | sound | immeria | system
-# immeria being ai btw.
+# $ qs -c isra ipc call settings open network
+# overview | network | bar | clock | display | sound | locale | system
 
-bind = $mainMod SHIFT, S, exec, qs -c isra ipc call screenshot activate
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs -c isra ipc call screenshot activate"))
 
-# screenshot has 4 modes
-# smart | region | window | screen
-# region ig if you dont want to calculate rects
 
-bind = $mainMod, G, exec, qs -c isra ipc call gamemode toggle
+# screenshot has the following modes
+# activate | region | window | screen | ocr | cts | record
+# activate ig if you dont want to write region at this point, they're the same
+
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs -c isra ipc call screenshot activate"))
+
+hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"))
 ```
 
 ## Dependencies

@@ -53,7 +53,7 @@ ShellRoot {
                 "clock": 3,
                 "display": 4,
                 "sound": 5,
-                "immeria": 6,
+                "locale": 6,
                 "system": 7
             };
             settingsLoader.active = true;
