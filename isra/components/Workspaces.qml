@@ -39,6 +39,26 @@ Rectangle {
 
     property int activeIndex: Math.max(0, Math.min(activeWorkspaceId - 1, 9))
 
+    property var visibleIds: {
+        if (!Config.compactWorkspaces) {
+            return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        }
+        const ids = [];
+        for (let id = 1; id <= 10; id++) {
+            const wsObj = Hyprland.workspaces.values.find(w => w.id === id);
+            const hasWindows = Hyprland.toplevels.values.find(t => t.workspace && t.workspace.id === id) !== undefined;
+            const isActiveHere = root.activeWorkspaceId === id;
+            const isActiveOther = wsObj !== undefined && wsObj.active && wsObj.monitor !== root.currentMonitor;
+            const takenByMonitor = wsObj !== undefined && !!wsObj.monitor;
+
+            if (hasWindows || takenByMonitor || isActiveHere || isActiveOther)
+                ids.push(id);
+        }
+        return ids;
+    }
+
+    property int activeVisualIndex: Math.max(0, visibleIds.indexOf(activeWorkspaceId))
+
     HoverHandler {
         id: rootHover
     }
@@ -98,7 +118,7 @@ Rectangle {
     Item {
         id: workspacesContent
         anchors.centerIn: parent
-        implicitWidth: row.implicitWidth
+        implicitWidth: Math.max(0, row.implicitWidth - 8)
         height: 24
 
         Rectangle {
@@ -108,7 +128,7 @@ Rectangle {
             radius: 12
             color: Colors.md3.primary
 
-            x: root.activeIndex * 32
+            x: root.activeVisualIndex * 32
             y: 0
 
             Behavior on x {
@@ -121,111 +141,52 @@ Rectangle {
 
         Row {
             id: row
-            spacing: 8
+            spacing: 0
 
             Repeater {
                 model: 10
 
                 Item {
                     id: wsItem
-                    width: 24
-                    height: 24
-
                     property int wsId: index + 1
 
                     property var wsObj: Hyprland.workspaces.values.find(w => w.id === wsId)
                     property bool isActiveHere: root.activeWorkspaceId === wsId
                     property bool isActiveOther: wsObj !== undefined && wsObj.active && wsObj.monitor !== root.currentMonitor
+                    property bool takenByMonitor: wsObj !== undefined && !!wsObj.monitor
 
                     property var firstToplevel: Hyprland.toplevels.values.find(t => t.workspace && t.workspace.id === wsId)
                     property bool hasWindows: firstToplevel !== undefined
 
+                    property bool isVisible: !Config.compactWorkspaces || hasWindows || takenByMonitor || isActiveHere || isActiveOther
+
                     property string clientAppId: root.getAppId(firstToplevel)
                     property string iconPath: root.getIconSource(clientAppId)
 
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 12
-                        color: Colors.md3.on_surface
-                        opacity: (itemMouseArea.containsMouse && !wsItem.isActiveHere) ? 0.08 : 0
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 150
-                                easing.type: Easing.OutCubic
-                            }
+                    width: isVisible ? 32 : 0
+                    height: 24
+                    clip: true
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutCubic
                         }
                     }
 
                     Item {
-                        anchors.fill: parent
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: 100
-                                easing.type: Easing.OutCubic
-                            }
-                        }
+                        id: pillContent
+                        width: 24
+                        height: 24
+                        anchors.left: parent.left
 
                         Rectangle {
-                            anchors.centerIn: parent
-                            width: 4
-                            height: 4
-                            radius: 3
-                            color: Colors.md3.outline_variant
-
-                            property bool showDot: !root.isHovered && !wsItem.isActiveHere && !wsItem.isActiveOther && !wsItem.hasWindows
-
-                            opacity: showDot ? 1 : 0
-                            scale: showDot ? 1 : 0.5
-
+                            anchors.fill: parent
+                            radius: 12
+                            color: Colors.md3.on_surface
+                            opacity: (itemMouseArea.containsMouse && !wsItem.isActiveHere) ? 0.08 : 0
                             Behavior on opacity {
                                 NumberAnimation {
-                                    duration: 200
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-                            Behavior on scale {
-                                NumberAnimation {
-                                    duration: 200
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: wsItem.wsId
-
-                            color: {
-                                if (wsItem.isActiveHere)
-                                    return Colors.md3.on_primary;
-                                if (wsItem.isActiveOther)
-                                    return Colors.md3.on_surface;
-                                return Qt.alpha(Colors.md3.on_surface, 0.4);
-                            }
-                            font.pixelSize: 13
-                            font.bold: true
-                            font.family: Config.fontFamily
-                            z: 2
-
-                            property bool showNumber: !wsItem.hasWindows && (root.isHovered || wsItem.isActiveHere || wsItem.isActiveOther)
-
-                            opacity: showNumber ? 1 : 0
-                            scale: showNumber ? 1 : 0.5
-
-                            Behavior on opacity {
-                                NumberAnimation {
-                                    duration: 200
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-                            Behavior on scale {
-                                NumberAnimation {
-                                    duration: 200
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-                            Behavior on color {
-                                ColorAnimation {
                                     duration: 150
                                     easing.type: Easing.OutCubic
                                 }
@@ -234,60 +195,137 @@ Rectangle {
 
                         Item {
                             anchors.fill: parent
-                            z: 3
-
-                            property bool showIcon: wsItem.hasWindows
-                            opacity: showIcon ? 1 : 0
-                            scale: showIcon ? 1 : 0.5
-
-                            Behavior on opacity {
-                                NumberAnimation {
-                                    duration: 200
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
                             Behavior on scale {
                                 NumberAnimation {
-                                    duration: 200
+                                    duration: 100
                                     easing.type: Easing.OutCubic
                                 }
                             }
 
-                            ClippingRectangle {
-                                id: iconClip
+                            Rectangle {
                                 anchors.centerIn: parent
-                                width: 18
-                                height: 18
-                                radius: 8
-                                color: "transparent"
+                                width: 4
+                                height: 4
+                                radius: 3
+                                color: Colors.md3.outline_variant
 
-                                Image {
-                                    id: appIcon
-                                    anchors.fill: parent
-                                    source: wsItem.iconPath
-                                    fillMode: Image.PreserveAspectCrop
-                                    smooth: true
-                                    antialiasing: true
+                                property bool showDot: !root.isHovered && !wsItem.isActiveHere && !wsItem.isActiveOther && !wsItem.hasWindows
+
+                                opacity: showDot ? 1 : 0
+                                scale: showDot ? 1 : 0.5
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutCubic
+                                    }
                                 }
                             }
 
                             Text {
                                 anchors.centerIn: parent
-                                text: wsItem.clientAppId !== "" ? wsItem.clientAppId.charAt(0).toUpperCase() : ""
-                                color: wsItem.isActiveHere ? Colors.md3.on_primary : Colors.md3.on_surface
-                                font.pixelSize: 12
+                                text: wsItem.wsId
+
+                                color: {
+                                    if (wsItem.isActiveHere)
+                                        return Colors.md3.on_primary;
+                                    if (wsItem.isActiveOther)
+                                        return Colors.md3.on_surface;
+                                    return Qt.alpha(Colors.md3.on_surface, 0.4);
+                                }
+                                font.pixelSize: 13
                                 font.bold: true
-                                visible: appIcon.status === Image.Error || appIcon.status === Image.Null
+                                font.family: Config.fontFamily
+                                z: 2
+
+                                property bool showNumber: !wsItem.hasWindows && (root.isHovered || wsItem.isActiveHere || wsItem.isActiveOther)
+
+                                opacity: showNumber ? 1 : 0
+                                scale: showNumber ? 1 : 0.5
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 150
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                            }
+
+                            Item {
+                                anchors.fill: parent
+                                z: 3
+
+                                property bool showIcon: wsItem.hasWindows
+                                opacity: showIcon ? 1 : 0
+                                scale: showIcon ? 1 : 0.5
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+
+                                ClippingRectangle {
+                                    id: iconClip
+                                    anchors.centerIn: parent
+                                    width: 18
+                                    height: 18
+                                    radius: 8
+                                    color: "transparent"
+
+                                    Image {
+                                        id: appIcon
+                                        anchors.fill: parent
+                                        source: wsItem.iconPath
+                                        fillMode: Image.PreserveAspectCrop
+                                        smooth: true
+                                        antialiasing: true
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: wsItem.clientAppId !== "" ? wsItem.clientAppId.charAt(0).toUpperCase() : ""
+                                    color: wsItem.isActiveHere ? Colors.md3.on_primary : Colors.md3.on_surface
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    visible: appIcon.status === Image.Error || appIcon.status === Image.Null
+                                }
                             }
                         }
-                    }
 
-                    MouseArea {
-                        id: itemMouseArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + wsItem.wsId + " })")
+                        MouseArea {
+                            id: itemMouseArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + wsItem.wsId + " })")
+                        }
                     }
                 }
             }

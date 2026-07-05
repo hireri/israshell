@@ -145,6 +145,16 @@ PageBase {
 
         SettingSwitch {
             isLast: true
+            label: "Compact workspaces"
+            sublabel: "Shrink workspaces to hide empty ones"
+            checked: Config.compactWorkspaces
+            onToggled: v => Config.update({
+                    compactWorkspaces: v
+                })
+        }
+
+        SettingSwitch {
+            isLast: true
             label: "Stacked sliders"
             sublabel: "Volume and brightness sliders arranged vertically"
             checked: Config.verticalQSSliders

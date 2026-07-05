@@ -7,6 +7,7 @@ Singleton {
     id: configRoot
     property bool spinningCover: true
     property int playerMode: 0
+    property bool compactWorkspaces: false
     property bool showSeconds: false
     property int hourFormat: 0
     property int carouselSpeed: 30
@@ -92,6 +93,7 @@ Singleton {
         return {
             spinningCover: true,
             playerMode: 0,
+            compactWorkspaces: false,
             showSeconds: false,
             hourFormat: 0,
             carouselSpeed: 30,
