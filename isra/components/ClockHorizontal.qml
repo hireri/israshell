@@ -94,10 +94,13 @@ Item {
                      ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat] ?? "ddd, dd/MM"
                  )
 
+        width:               timeRow.width
+        horizontalAlignment: root.halign
+
         anchors {
-            horizontalCenter: parent.horizontalCenter
-            top:              timeRow.bottom
-            topMargin:        Config.clock.dateSpacing
+            left:      timeRow.left
+            top:       timeRow.bottom
+            topMargin: Config.clock.dateSpacing
         }
 
         font.family:       root.clockFont

@@ -26,8 +26,9 @@ Item {
     readonly property var mainAxes: ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
     readonly property var subAxes:  ({ "wght": root.subWeight,  "wdth": root.subWidth,  "ROND": root.subRoundness  })
 
-    implicitWidth:  Math.max(hoursLbl.implicitWidth, minsLbl.implicitWidth,
-                             Config.clock.showDate ? dateLbl.implicitWidth : 0)
+    readonly property real _timeWidth: Math.max(hoursLbl.implicitWidth, minsLbl.implicitWidth)
+
+    implicitWidth:  Math.max(_timeWidth, Config.clock.showDate ? dateLbl.implicitWidth : 0)
     implicitHeight: hoursLbl.implicitHeight + Config.clock.timeSpacing + minsLbl.implicitHeight
                   + (Config.clock.showDate ? Config.clock.dateSpacing + dateLbl.implicitHeight : 0)
 
@@ -67,16 +68,20 @@ Item {
         id: dateLbl
 
         visible: Config.clock.showDate
+        color:   root.subColor
+        text:    Qt.formatDate(
+                     root.currentTime,
+                     ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat] ?? "ddd, dd/MM"
+                 )
+
+        width:               root.width
+        horizontalAlignment: root.halign
+
         anchors {
-            horizontalCenter: parent.horizontalCenter
-            top:              minsLbl.bottom
-            topMargin:        Config.clock.dateSpacing
+            left:      parent.left
+            top:       minsLbl.bottom
+            topMargin: Config.clock.dateSpacing
         }
-        color: root.subColor
-        text:  Qt.formatDate(
-                   root.currentTime,
-                   ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat] ?? "ddd, dd/MM"
-               )
 
         font.family:       root.clockFont
         font.pixelSize:    Config.clock.dateSize

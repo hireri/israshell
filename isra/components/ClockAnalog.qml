@@ -28,7 +28,7 @@ Item {
     readonly property int  ringPoints:    256
 
     implicitWidth:  analogSize
-    implicitHeight: analogSize + (Config.clock.showDate ? Config.clock.dateSpacing + dateLbl.implicitHeight : 0)
+    implicitHeight: analogSize
 
     Shape {
         id: wobblyFace
@@ -206,21 +206,37 @@ Item {
         }
     }
 
-    Text {
-        id: dateLbl
+    Rectangle {
+        id: dateBadge
         visible: Config.clock.showDate
         anchors {
-            horizontalCenter: parent.horizontalCenter
-            top: face.bottom
-            topMargin: Config.clock.dateSpacing
+            horizontalCenter: face.right
+            horizontalCenterOffset: -8
+            verticalCenter: face.verticalCenter
         }
-        font {
-            family:    root.clockFont
-            pixelSize: Config.clock.dateSize
-            weight:    Font.Normal
+        z: 2
+
+        readonly property real vPad: 4
+        readonly property real hPad: 10
+
+        width:  dateLbl.implicitWidth  + hPad * 2
+        height: dateLbl.implicitHeight + vPad * 2
+        radius: height / 2
+
+        color: Colors.md3.primary_container
+               ?? Qt.rgba(0.85, 0.85, 0.95, 1)
+
+        Text {
+            id: dateLbl
+            anchors.centerIn: parent
+            font {
+                family:    root.clockFont
+                pixelSize: Config.clock.dateSize
+                weight:    Font.Normal
+            }
+            color: Colors.md3.on_primary_container
+                   ?? root.subColor
+            text: Qt.formatDate(root.currentTime, "d")
         }
-        color: root.subColor
-        opacity: 0.8
-        text: Qt.formatDate(root.currentTime, ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat] ?? "ddd, dd/MM")
     }
 }

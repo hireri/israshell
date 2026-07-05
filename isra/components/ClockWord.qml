@@ -111,9 +111,13 @@ Item {
     Text {
         id: dateLbl
         visible: Config.clock.showDate
+
+        width:               root.width
+        horizontalAlignment: root.halign
+
         anchors {
-            horizontalCenter: parent.horizontalCenter
-            top: wordClock.bottom
+            left:      parent.left
+            top:       wordClock.bottom
             topMargin: Config.clock.dateSpacing
         }
         font {
