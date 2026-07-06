@@ -15,6 +15,7 @@ Singleton {
     property bool lockAnimating: false
     property bool unlockAnimating: false
     property bool lockVisualActive: false
+    property bool isFirstLock: false 
 
     property var _savedWorkspaces: ({})
     property string _savedActiveWindow: ""
@@ -30,14 +31,19 @@ Singleton {
             sessionCheckProcess.running = true
     }
 
-    function lock(): void {
+    function lock(isFresh = false): void {
         if (root.locked || root.lockAnimating) return
+        root.isFirstLock = isFresh;
+
         if (Config.useHyprlock) {
             hyprlockProcess.running = true
             return
         }
-        lockAnimating = true
-        lockAnimationStart()
+
+        if (!isFresh) {
+            lockAnimating = true
+            lockAnimationStart()
+        }
         saveWorkspaceProcess.running = true
     }
 
@@ -159,9 +165,14 @@ Singleton {
                             continue
                         const ws = mon.activeWorkspace.id
                         saved[mon.name] = ws
-                        const dummy = 2147483647 - ws
-                        batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${mon.name}"})'; `
-                        batch += `hyprctl dispatch 'hl.dsp.focus({workspace=${dummy}})'; `
+                        
+                        if (!root.isFirstLock) {
+                            const dummy = 2147483647 - ws;
+                            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${mon.name}"})'; `
+                            batch += `hyprctl dispatch 'hl.dsp.focus({workspace=${dummy}})'; `
+                        } else {
+                            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${mon.name}"})'; `
+                        }
                     }
                     root._savedWorkspaces = saved
 
@@ -226,7 +237,7 @@ Singleton {
         stdout: SplitParser {
             onRead: data => {
                 if (data.trim() === "fresh")
-                    root.lock()
+                    root.lock(true)
             }
         }
         onExited: markerWriteProcess.running = true
