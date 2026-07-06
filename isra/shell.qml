@@ -280,7 +280,7 @@ ShellRoot {
                                 Item {
                                     implicitHeight: 32
                                     implicitWidth: Config.transparentPills ? 18 : 12
-                                    visible: Config.screencapEnabled
+                                    visible: Config.screencapEnabled && Config.screencap.blacklist.length < 5
                                     Behavior on implicitWidth {
                                         NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                                     }
