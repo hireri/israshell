@@ -20,7 +20,7 @@ SettingRow {
         spacing: 10
         anchors.verticalCenter: parent?.verticalCenter
 
-        Slider {
+        TrackSlider {
             id: slider
             from: root.from
             to: root.to
@@ -32,33 +32,6 @@ SettingRow {
             onMoved: {
                 root.value = slider.value
                 root.moved(slider.value)
-            }
-
-            background: Rectangle {
-                x: slider.leftPadding
-                y: slider.topPadding + slider.availableHeight / 2 - height / 2
-                width: slider.availableWidth
-                height: 4
-                radius: 2
-                color: Colors.md3.surface_variant
-
-                Rectangle {
-                    width: slider.visualPosition * parent.width
-                    height: parent.height
-                    radius: 2
-                    color: Colors.md3.primary
-                }
-            }
-
-            handle: Rectangle {
-                x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
-                y: slider.topPadding + slider.availableHeight / 2 - height / 2
-                width: 20
-                height: 20
-                radius: 10
-                color: Colors.md3.primary
-                border.width: 3
-                border.color: Colors.md3.surface
             }
         }
 

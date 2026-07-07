@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
+import Quickshell.Widgets
 import qs.style
 
 Item {
@@ -55,47 +56,129 @@ Item {
         }
     }
 
-    Rectangle {
+    Item {
         id: track
         anchors.verticalCenter: stripArea.verticalCenter
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 6
-        radius: 3
+        height: 8
 
-        gradient: Gradient {
-            orientation: Gradient.Horizontal
-            GradientStop {
-                position: 0.0
-                color: "#ff8c42"
-            }
-            GradientStop {
-                position: 0.4
-                color: "#ffe4b5"
-            }
-            GradientStop {
-                position: 1.0
-                color: "#c8e8ff"
+        property bool hover: sl.hovered || sl.pressed
+        property real thumbW: hover ? 3 : 0
+        property real thumbGap: hover ? 4 : 2
+        readonly property real leftWidth: sl.visualPosition * (width - thumbW - thumbGap * 2)
+
+        Behavior on thumbW {
+            NumberAnimation {
+                duration: 180
+                easing.type: Easing.OutCubic
             }
         }
-    }
-
-    Rectangle {
-        id: thumb
-        width: 14
-        height: 14
-        radius: 7
-        anchors.verticalCenter: stripArea.verticalCenter
-        color: Colors.md3.primary
-        border.width: 2
-        border.color: Colors.md3.surface
-        x: sl.leftPadding + sl.visualPosition * (sl.availableWidth - width)
-
-        Behavior on x {
-            enabled: !sl.pressed
+        Behavior on thumbGap {
             NumberAnimation {
-                duration: 80
+                duration: 180
                 easing.type: Easing.OutCubic
+            }
+        }
+
+        ClippingRectangle {
+            id: leftClip
+            x: 0
+            width: track.leftWidth
+            height: parent.height
+            radius: 4
+            color: "transparent"
+
+            Rectangle {
+                width: track.width
+                height: parent.height
+                radius: 4
+
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop {
+                        position: 0.0
+                        color: "#ff8c42"
+                    }
+                    GradientStop {
+                        position: 0.4
+                        color: "#ffe4b5"
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: "#c8e8ff"
+                    }
+                }
+            }
+        }
+
+        ClippingRectangle {
+            id: thumbRect
+            anchors.verticalCenter: parent.verticalCenter
+            x: track.leftWidth + track.thumbGap
+            width: track.thumbW
+            height: track.hover ? 18 : 14
+            radius: 1
+            color: "transparent"
+
+            Behavior on height {
+                NumberAnimation {
+                    duration: 150
+                }
+            }
+
+            Rectangle {
+                x: -(track.leftWidth + track.thumbGap)
+                width: track.width
+                height: parent.height
+
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop {
+                        position: 0.0
+                        color: "#ff8c42"
+                    }
+                    GradientStop {
+                        position: 0.4
+                        color: "#ffe4b5"
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: "#c8e8ff"
+                    }
+                }
+            }
+        }
+
+        ClippingRectangle {
+            id: rightClip
+            x: thumbRect.x + thumbRect.width + track.thumbGap
+            width: Math.max(0, track.width - x)
+            height: parent.height
+            radius: 4
+            color: "transparent"
+
+            Rectangle {
+                x: -rightClip.x
+                width: track.width
+                height: parent.height
+                radius: 4
+
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop {
+                        position: 0.0
+                        color: "#ff8c42"
+                    }
+                    GradientStop {
+                        position: 0.4
+                        color: "#ffe4b5"
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: "#c8e8ff"
+                    }
+                }
             }
         }
     }
@@ -110,11 +193,17 @@ Item {
         Slider {
             id: sl
             anchors.fill: parent
+            hoverEnabled: true
             from: root.from
             to: root.to
             stepSize: root.stepSize
             value: root.value
             onMoved: root.moved(sl.value)
+
+            HoverHandler {
+                cursorShape: Qt.PointingHandCursor
+            }
+
             background: Item {}
             handle: Item {
                 x: sl.leftPadding + sl.visualPosition * (sl.availableWidth - width)

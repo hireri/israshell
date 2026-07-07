@@ -36,12 +36,23 @@ Scope {
     }
 
     property bool isMuted: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio.muted : false
+    
     property real rawVolume: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio.volume : 0
-
     property real volumePercent: root.rawVolume * 100
     property bool isOverLimit: volumePercent > 100
-    property real trackFill: Math.min(volumePercent / 100, 1.0)
-    property real overFill: Math.max((volumePercent - 100) / 50, 0)
+
+    property real animatedVolume: root.rawVolume
+    Behavior on animatedVolume {
+        enabled: root.shouldShowOsd
+        NumberAnimation {
+            duration: 150
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    property real animatedVolumePercent: root.animatedVolume * 100
+    property real fillFraction: Math.min(animatedVolumePercent / 100, 1)
+    property real errorFraction: Math.max(Math.min((animatedVolumePercent - 100) / 50, 1), 0)
 
     Timer {
         id: hideTimer
@@ -137,51 +148,17 @@ Scope {
                         }
                     }
 
-                    Item {
+                    OsdTrackBar {
                         Layout.alignment: Qt.AlignHCenter
                         Layout.fillHeight: true
                         Layout.preferredWidth: 8
 
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 4
-                            color: Colors.md3.surface_variant
-                        }
-
-                        Rectangle {
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                bottom: parent.bottom
-                            }
-                            height: parent.height * root.trackFill
-                            radius: 4
-                            color: root.isMuted ? Colors.md3.outline : Colors.md3.primary
-                            Behavior on height {
-                                NumberAnimation {
-                                    duration: 100
-                                    easing.type: Easing.OutQuad
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            visible: root.isOverLimit
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                bottom: parent.bottom
-                            }
-                            height: parent.height * root.overFill
-                            radius: 4
-                            color: Colors.md3.error
-                            Behavior on height {
-                                NumberAnimation {
-                                    duration: 100
-                                    easing.type: Easing.OutQuad
-                                }
-                            }
-                        }
+                        vertical: true
+                        fillFraction: root.fillFraction
+                        errorFraction: root.errorFraction
+                        fillColor: root.isMuted ? Colors.md3.outline : Colors.md3.primary
+                        trackColor: Colors.md3.surface_variant
+                        errorColor: Colors.md3.error
                     }
 
                     Item {
@@ -222,51 +199,17 @@ Scope {
                         }
                     }
 
-                    Item {
+                    OsdTrackBar {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 8
                         Layout.alignment: Qt.AlignVCenter
 
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 4
-                            color: Colors.md3.surface_variant
-                        }
-
-                        Rectangle {
-                            anchors {
-                                top: parent.top
-                                bottom: parent.bottom
-                                left: parent.left
-                            }
-                            width: parent.width * root.trackFill
-                            radius: 4
-                            color: root.isMuted ? Colors.md3.outline : Colors.md3.primary
-                            Behavior on width {
-                                NumberAnimation {
-                                    duration: 100
-                                    easing.type: Easing.OutQuad
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            visible: root.isOverLimit
-                            anchors {
-                                top: parent.top
-                                bottom: parent.bottom
-                                left: parent.left
-                            }
-                            width: parent.width * root.overFill
-                            radius: 4
-                            color: Colors.md3.error
-                            Behavior on width {
-                                NumberAnimation {
-                                    duration: 100
-                                    easing.type: Easing.OutQuad
-                                }
-                            }
-                        }
+                        vertical: false
+                        fillFraction: root.fillFraction
+                        errorFraction: root.errorFraction
+                        fillColor: root.isMuted ? Colors.md3.outline : Colors.md3.primary
+                        trackColor: Colors.md3.surface_variant
+                        errorColor: Colors.md3.error
                     }
 
                     Item {
@@ -285,6 +228,62 @@ Scope {
                     }
                 }
             }
+        }
+    }
+
+    component OsdTrackBar: Item {
+        id: bar
+
+        property bool vertical: false
+        property real fillFraction: 0
+        property real errorFraction: 0
+
+        property color fillColor: Colors.md3.primary
+        property color trackColor: Colors.md3.surface_variant
+        property color errorColor: Colors.md3.error
+
+        property real gap: 4
+
+        readonly property real thickness: vertical ? width : height
+        readonly property real total: vertical ? height : width
+
+        readonly property real errorLen: errorFraction * total
+        readonly property real errorGap: errorLen > 0.5 ? gap : 0
+        readonly property real fillLen: Math.max(fillFraction * total - errorLen, 0)
+        readonly property real fillGap: fillLen > 0.5 ? gap : 0
+        readonly property real trackLen: Math.max(total - errorLen - errorGap - fillLen - fillGap, 0)
+
+        Rectangle {
+            visible: bar.errorLen > 0.5
+            color: bar.errorColor
+            radius: bar.thickness / 2
+
+            x: 0
+            y: bar.vertical ? bar.total - bar.errorLen : 0
+            width: bar.vertical ? bar.thickness : bar.errorLen
+            height: bar.vertical ? bar.errorLen : bar.thickness
+        }
+
+        Rectangle {
+            visible: bar.fillLen > 0.5
+            color: bar.fillColor
+            radius: bar.thickness / 2
+
+            x: bar.vertical ? 0 : bar.errorLen + bar.errorGap
+            y: bar.vertical ? bar.total - bar.errorLen - bar.errorGap - bar.fillLen : 0
+            width: bar.vertical ? bar.thickness : bar.fillLen
+            height: bar.vertical ? bar.fillLen : bar.thickness
+        }
+
+        Rectangle {
+            visible: bar.trackLen > 0.5
+            color: bar.trackColor
+            radius: bar.thickness / 2
+
+            x: bar.vertical ? 0 : bar.errorLen + bar.errorGap + bar.fillLen + bar.fillGap
+            y: 0
+            width: bar.vertical ? bar.thickness : bar.trackLen
+            height: bar.vertical ? bar.trackLen : bar.thickness
         }
     }
 }

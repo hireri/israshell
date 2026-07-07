@@ -146,7 +146,7 @@ PageBase {
                     }
                 }
 
-                Slider {
+                TrackSlider {
                     id: outSlider
                     Layout.fillWidth: true
                     from: 0
@@ -154,31 +154,6 @@ PageBase {
                     stepSize: 0.01
                     value: AudioService.volume
                     onMoved: AudioService.setVolume(value)
-
-                    background: Rectangle {
-                        x: outSlider.leftPadding
-                        y: outSlider.topPadding + outSlider.availableHeight / 2 - height / 2
-                        width: outSlider.availableWidth
-                        height: 3
-                        radius: 2
-                        color: Colors.md3.surface_variant
-                        Rectangle {
-                            width: outSlider.visualPosition * parent.width
-                            height: parent.height
-                            radius: 2
-                            color: Colors.md3.primary
-                        }
-                    }
-                    handle: Rectangle {
-                        x: outSlider.leftPadding + outSlider.visualPosition * outSlider.availableWidth - width / 2
-                        y: outSlider.topPadding + outSlider.availableHeight / 2 - height / 2
-                        width: 16
-                        height: 16
-                        radius: 8
-                        color: Colors.md3.primary
-                        border.width: 2
-                        border.color: Colors.md3.surface
-                    }
                 }
 
                 Text {
@@ -327,7 +302,7 @@ PageBase {
                     }
                 }
 
-                Slider {
+                TrackSlider {
                     id: inSlider
                     Layout.fillWidth: true
                     from: 0
@@ -335,31 +310,6 @@ PageBase {
                     stepSize: 0.01
                     value: AudioService.sourceVolume
                     onMoved: AudioService.setSourceVolume(value)
-
-                    background: Rectangle {
-                        x: inSlider.leftPadding
-                        y: inSlider.topPadding + inSlider.availableHeight / 2 - height / 2
-                        width: inSlider.availableWidth
-                        height: 3
-                        radius: 2
-                        color: Colors.md3.surface_variant
-                        Rectangle {
-                            width: inSlider.visualPosition * parent.width
-                            height: parent.height
-                            radius: 2
-                            color: Colors.md3.primary
-                        }
-                    }
-                    handle: Rectangle {
-                        x: inSlider.leftPadding + inSlider.visualPosition * inSlider.availableWidth - width / 2
-                        y: inSlider.topPadding + inSlider.availableHeight / 2 - height / 2
-                        width: 16
-                        height: 16
-                        radius: 8
-                        color: Colors.md3.primary
-                        border.width: 2
-                        border.color: Colors.md3.surface
-                    }
                 }
 
                 Text {
@@ -515,43 +465,19 @@ PageBase {
                         }
                     }
 
-                    Slider {
+                    TrackSlider {
                         id: streamSlider
                         Layout.fillWidth: true
                         Layout.minimumWidth: 80
                         from: 0
                         to: 1.5
                         stepSize: 0.01
+                        fillColor: Colors.md3.secondary
 
                         value: modelData.audio?.volume ?? 0
                         onMoved: {
                             if (modelData.audio)
                                 modelData.audio.volume = value;
-                        }
-
-                        background: Rectangle {
-                            x: streamSlider.leftPadding
-                            y: streamSlider.topPadding + streamSlider.availableHeight / 2 - height / 2
-                            width: streamSlider.availableWidth
-                            height: 3
-                            radius: 2
-                            color: Colors.md3.surface_variant
-                            Rectangle {
-                                width: streamSlider.visualPosition * parent.width
-                                height: parent.height
-                                radius: 2
-                                color: Colors.md3.secondary
-                            }
-                        }
-                        handle: Rectangle {
-                            x: streamSlider.leftPadding + streamSlider.visualPosition * streamSlider.availableWidth - width / 2
-                            y: streamSlider.topPadding + streamSlider.availableHeight / 2 - height / 2
-                            width: 16
-                            height: 16
-                            radius: 8
-                            color: Colors.md3.secondary
-                            border.width: 2
-                            border.color: Colors.md3.surface
                         }
                     }
 
