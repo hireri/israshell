@@ -21,7 +21,7 @@ Rectangle {
     RowLayout {
         anchors {
             fill: parent
-            leftMargin: 20
+            leftMargin: 12
             rightMargin: 20
             topMargin: 12
             bottomMargin: 12
@@ -31,7 +31,7 @@ Rectangle {
         Rectangle {
             width: 48
             height: 48
-            radius: 24
+            radius: 10
             color: root.iconBg
             Layout.alignment: Qt.AlignVCenter
 
