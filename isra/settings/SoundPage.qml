@@ -327,45 +327,64 @@ PageBase {
             implicitWidth: parent?.width ?? 0
             implicitHeight: 10
 
-            Rectangle {
+            Item {
+                id: micTrack
                 anchors {
                     left: parent.left
                     right: parent.right
                     verticalCenter: parent.verticalCenter
-                    leftMargin: 16
-                    rightMargin: 16
+                    leftMargin: 12
+                    rightMargin: 12
                 }
                 height: 6
-                radius: 3
-                color: Colors.md3.surface_variant
+
+                property real gap: 4
+                property real level: AudioService.micLevel
+                property real effectiveGap: (level <= 0 || level >= 1) ? 0 : gap
+                property real fillW: Math.max(0, width * level - effectiveGap)
+                property color fillColor: {
+                    if (AudioService.sourceMuted)
+                        return Colors.md3.outline;
+                    if (AudioService.micLevel > 0.85)
+                        return Colors.md3.error;
+                    if (AudioService.micLevel > 0.6)
+                        return Colors.md3.tertiary;
+                    return Colors.md3.primary;
+                }
+
+                Behavior on fillW {
+                    NumberAnimation {
+                        duration: 10
+                    }
+                }
+                Behavior on fillColor {
+                    ColorAnimation {
+                        duration: 5
+                    }
+                }
+
+                Rectangle {
+                    id: micBarLeft
+                    anchors {
+                        left: parent.left
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: micTrack.fillW
+                    height: micTrack.height
+                    radius: height / 2
+                    color: micTrack.fillColor
+                }
 
                 Rectangle {
                     anchors {
-                        left: parent.left
-                        top: parent.top
-                        bottom: parent.bottom
+                        left: micBarLeft.right
+                        leftMargin: micTrack.effectiveGap
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
                     }
-                    width: parent.width * AudioService.micLevel
-                    radius: 3
-                    color: {
-                        if (AudioService.sourceMuted)
-                            return Colors.md3.outline;
-                        if (AudioService.micLevel > 0.85)
-                            return Colors.md3.error;
-                        if (AudioService.micLevel > 0.6)
-                            return Colors.md3.tertiary;
-                        return Colors.md3.primary;
-                    }
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: 10
-                        }
-                    }
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 5
-                        }
-                    }
+                    height: micTrack.height
+                    radius: height / 2
+                    color: Colors.md3.surface_variant
                 }
             }
         }
