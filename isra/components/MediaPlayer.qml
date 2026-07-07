@@ -7,7 +7,7 @@ import Quickshell.Services.Mpris
 import qs.style
 import qs.services
 
-Rectangle {
+ClippingRectangle {
     id: root
 
     required property var panelScreen
