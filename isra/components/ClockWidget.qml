@@ -14,16 +14,17 @@ Item {
     property real _cy: 0
 
     property bool _isInitializing: true
+    property bool animate: true
 
     Behavior on _cx {
-        enabled: !root._isInitializing && !Config.loading && !(Config.clock.manualPos ?? false)
+        enabled: root.animate && !root._isInitializing && !Config.loading && !(Config.clock.manualPos ?? false)
         NumberAnimation {
             duration: 350
             easing.type: Easing.OutQuint
         }
     }
     Behavior on _cy {
-        enabled: !root._isInitializing && !Config.loading && !(Config.clock.manualPos ?? false)
+        enabled: root.animate && !root._isInitializing && !Config.loading && !(Config.clock.manualPos ?? false)
         NumberAnimation {
             duration: 350
             easing.type: Easing.OutQuint
@@ -138,7 +139,7 @@ Item {
         property bool _snapAfterDrag: false
 
         Behavior on currentCx {
-            enabled: !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
+            enabled: root.animate && !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
             NumberAnimation {
                 duration: 400
                 easing.type: Easing.BezierSpline
@@ -146,7 +147,7 @@ Item {
             }
         }
         Behavior on currentCy {
-            enabled: !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
+            enabled: root.animate && !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
             NumberAnimation {
                 duration: 400
                 easing.type: Easing.BezierSpline
@@ -195,6 +196,7 @@ Item {
         scale: dragHandler.active ? 1.06 : 1.0
         transformOrigin: Item.Center
         Behavior on scale {
+            enabled: root.animate
             NumberAnimation {
                 duration: 220
                 easing.type: Easing.OutCubic
@@ -284,7 +286,13 @@ Item {
                 }
             }
             
-            onTargetComponentChanged: transitionSeq.restart()
+            onTargetComponentChanged: {
+                if (root.animate && !root._isInitializing) {
+                    transitionSeq.restart()
+                } else {
+                    styleLoader.activeComponent = styleLoader.targetComponent
+                }
+            }
             sourceComponent: activeComponent
             
             SequentialAnimation {

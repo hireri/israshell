@@ -76,6 +76,7 @@ Item {
                     modelData: lockSurface.screen
                     forceVisible: true
                     forceCentered: true
+                    animate: false
                 }
             }
 
