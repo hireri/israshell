@@ -29,7 +29,7 @@ FloatingWindow {
 
     property int currentPage: pageOverview
     property bool sidebarCollapsed: false
-    readonly property int collapseThreshold: 700
+    readonly property int collapseThreshold: 900
 
     onWidthChanged: {
         const wasBelow = prevWidth < collapseThreshold

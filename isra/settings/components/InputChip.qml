@@ -9,7 +9,7 @@ Rectangle {
     signal removed
 
     implicitHeight: 32
-    implicitWidth: exiting ? 0 : (content.implicitWidth + (mouseArea.pressed ? 18 : 24))
+    implicitWidth: exiting ? 0 : Math.max(24, content.implicitWidth + 24 - (mouseArea.pressed && mouseArea.containsMouse ? 20 : 0))
     opacity: exiting ? 0 : 1
     clip: true
 
@@ -19,7 +19,7 @@ Rectangle {
     color: Colors.md3.surface_container_high
 
     Behavior on implicitWidth {
-        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
     }
     Behavior on opacity {
         NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
@@ -51,7 +51,7 @@ Rectangle {
 
     Timer {
         id: exitTimer
-        interval: 180
+        interval: 120
         onTriggered: root.removed()
     }
 }

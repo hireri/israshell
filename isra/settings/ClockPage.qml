@@ -7,12 +7,22 @@ import Quickshell
 import Quickshell.Widgets
 import qs.style
 import qs.services
+import qs.components
 import qs.settings.components
 import qs.icons
 
 PageBase {
+    id: pageRoot
     title: "Desktop Clock"
     subtitle: "Layout, style and sizing"
+
+    property var previewTime: new Date()
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+        onTriggered: pageRoot.previewTime = new Date()
+    }
 
     function updateClock(changes) {
         Config.update({
@@ -21,76 +31,94 @@ PageBase {
     }
 
     Component {
-        id: verticalClockComp
-        VerticalClockIcon {
-            iconSize: 28
-            filled: Config.clock.layout === "vertical"
-            color: Config.clock.layout === "vertical" ? Colors.md3.on_primary_container : Colors.md3.outline_variant
-        }
-    }
-    Component {
-        id: horizontalClockComp
-        HorizontalClockIcon {
-            iconSize: 28
-            filled: Config.clock.layout === "horizontal"
-            color: Config.clock.layout === "horizontal" ? Colors.md3.on_primary_container : Colors.md3.outline_variant
-        }
-    }
-    Component {
-        id: wordClockComp
-        WordClockIcon {
-            iconSize: 28
-            filled: Config.clock.layout === "word"
-            color: Config.clock.layout === "word" ? Colors.md3.on_primary_container : Colors.md3.outline_variant
-        }
-    }
-    Component {
-        id: analogClockComp
-        AnalogClockIcon {
-            iconSize: 28
-            filled: Config.clock.layout === "analog"
-            color: Config.clock.layout === "analog" ? Colors.md3.on_primary_container : Colors.md3.outline_variant
-        }
-    }
-
-    Component {
         id: alignAutoComp
         AlignAutoIcon {
-            iconSize: 18
+            iconSize: 16
             filled: Config.clock.align === "auto"
-            color: Config.clock.align === "auto" ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
         }
     }
-
     Component {
         id: alignLeftComp
         AlignLeftIcon {
-            iconSize: 18
+            iconSize: 16
             filled: Config.clock.align === "left"
-            color: Config.clock.align === "left" ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
         }
     }
     Component {
         id: alignCenterComp
         AlignCenterIcon {
-            iconSize: 18
+            iconSize: 16
             filled: Config.clock.align === "center"
-            color: Config.clock.align === "center" ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
         }
     }
     Component {
         id: alignRightComp
         AlignRightIcon {
-            iconSize: 18
+            iconSize: 16
             filled: Config.clock.align === "right"
-            color: Config.clock.align === "right" ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
+        }
+    }
+
+    Component {
+        id: verticalPreviewComp
+        ClockVertical {
+            scale: 0.5
+            transformOrigin: Item.Center
+            currentTime: pageRoot.previewTime
+            clockFont: Config.clock.fontFamily || Config.fontFamily
+            textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
+            subColor: Colors.md3[Config.clock.subColorRole] ?? Colors.md3.on_surface_variant
+            halign: Text.AlignHCenter
+            showSeconds: Config.clock.showSeconds ?? false
+            is12h: Config.hourFormat !== 0
+        }
+    }
+    Component {
+        id: horizontalPreviewComp
+        ClockHorizontal {
+            scale: 0.5
+            transformOrigin: Item.Center
+            currentTime: pageRoot.previewTime
+            clockFont: Config.clock.fontFamily || Config.fontFamily
+            textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
+            subColor: Colors.md3[Config.clock.subColorRole] ?? Colors.md3.on_surface_variant
+            halign: Text.AlignHCenter
+            showSeconds: Config.clock.showSeconds ?? false
+            is12h: Config.hourFormat !== 0
+        }
+    }
+    Component {
+        id: wordPreviewComp
+        ClockWord {
+            scale: 0.4
+            transformOrigin: Item.Center
+            currentTime: pageRoot.previewTime
+            clockFont: Config.clock.fontFamily || Config.fontFamily
+            textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
+            subColor: Colors.md3[Config.clock.subColorRole] ?? Colors.md3.on_surface_variant
+            halign: Text.AlignHCenter
+            showSeconds: Config.clock.showSeconds ?? false
+            is12h: Config.hourFormat !== 0
+        }
+    }
+    Component {
+        id: analogPreviewComp
+        ClockAnalog {
+            currentTime: pageRoot.previewTime
+            clockFont: Config.clock.fontFamily || Config.fontFamily
+            textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
+            subColor: Colors.md3[Config.clock.subColorRole] ?? Colors.md3.on_surface_variant
+            halign: Text.AlignHCenter
+            showSeconds: Config.clock.showSeconds ?? false
+            is12h: Config.hourFormat !== 0
+            analogSize: 130
         }
     }
 
     Rectangle {
         Layout.fillWidth: true
-        implicitHeight: layoutInner.implicitHeight + 28
-        radius: 16
+        implicitHeight: layoutInner.implicitHeight + 32
+        radius: 20
         color: Colors.md3.surface_container
 
         ColumnLayout {
@@ -101,10 +129,10 @@ PageBase {
                 verticalCenter: parent.verticalCenter
                 margins: 16
             }
-            spacing: 10
+            spacing: 16
 
             Text {
-                text: "Layout"
+                text: "Layout Style"
                 font.family: Config.fontFamily
                 font.pixelSize: 11
                 font.weight: Font.Medium
@@ -113,54 +141,439 @@ PageBase {
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: 4
 
-                Repeater {
-                    model: [
-                        { key: "vertical",   label: "Vertical"   },
-                        { key: "horizontal", label: "Horizontal" },
-                        { key: "word",       label: "Word"       },
-                        { key: "analog",     label: "Analog"     }
-                    ]
+                Rectangle {
+                    id: btnVertical
+                    Layout.fillWidth: true
+                    height: 34
+                    radius: 17
+                    topRightRadius: active ? 17 : 8
+                    bottomRightRadius: active ? 17 : 8
 
-                    delegate: Rectangle {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        height: 72
-                        radius: 14
-                        color: Config.clock.layout === modelData.key ? Colors.md3.primary_container : Colors.md3.surface_container_high
+                    Behavior on topRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                    Behavior on bottomRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+
+                    readonly property bool active: Config.clock.layout === "vertical"
+                    readonly property color contentColor: active
+                        ? Colors.md3.on_primary
+                        : (verticalMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
+
+                    color: active
+                        ? Colors.md3.primary
+                        : (verticalMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.radius
+                        topRightRadius: parent.topRightRadius
+                        bottomRightRadius: parent.bottomRightRadius
+                        color: verticalMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                        visible: btnVertical.active
                         Behavior on color { ColorAnimation { duration: 120 } }
+                    }
 
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            spacing: 8
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 6
 
-                            Loader {
-                                Layout.alignment: Qt.AlignHCenter
-                                sourceComponent: {
-                                    switch (modelData.key) {
-                                    case "vertical":   return verticalClockComp
-                                    case "horizontal": return horizontalClockComp
-                                    case "word":       return wordClockComp
-                                    case "analog":     return analogClockComp
-                                    }
-                                }
-                            }
-
-                            Text {
-                                text: modelData.label
-                                font.family: Config.fontFamily
-                                font.pixelSize: 11
-                                font.weight: Font.Medium
-                                color: Config.clock.layout === modelData.key ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant
-                                Layout.alignment: Qt.AlignHCenter
-                            }
+                        VerticalClockIcon {
+                            iconSize: 14
+                            filled: btnVertical.active
+                            color: btnVertical.contentColor
+                            Behavior on color { ColorAnimation { duration: 120 } }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: updateClock({ layout: modelData.key })
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Vertical"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            color: btnVertical.contentColor
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    MouseArea {
+                        id: verticalMouse
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onClicked: updateClock({ layout: "vertical" })
+                    }
+                }
+
+                Rectangle {
+                    id: btnHorizontal
+                    Layout.fillWidth: true
+                    height: 34
+                    radius: active ? 17 : 8
+
+                    Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+
+                    readonly property bool active: Config.clock.layout === "horizontal"
+                    readonly property color contentColor: active
+                        ? Colors.md3.on_primary
+                        : (horizontalMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
+
+                    color: active
+                        ? Colors.md3.primary
+                        : (horizontalMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.radius
+                        color: horizontalMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                        visible: btnHorizontal.active
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 6
+
+                        HorizontalClockIcon {
+                            iconSize: 14
+                            filled: btnHorizontal.active
+                            color: btnHorizontal.contentColor
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Horizontal"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            color: btnHorizontal.contentColor
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    MouseArea {
+                        id: horizontalMouse
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onClicked: updateClock({ layout: "horizontal" })
+                    }
+                }
+
+                Rectangle {
+                    id: btnWord
+                    Layout.fillWidth: true
+                    height: 34
+                    radius: active ? 17 : 8
+
+                    Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+
+                    readonly property bool active: Config.clock.layout === "word"
+                    readonly property color contentColor: active
+                        ? Colors.md3.on_primary
+                        : (wordMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
+
+                    color: active
+                        ? Colors.md3.primary
+                        : (wordMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.radius
+                        color: wordMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                        visible: btnWord.active
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 6
+
+                        WordClockIcon {
+                            iconSize: 14
+                            filled: btnWord.active
+                            color: btnWord.contentColor
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Word"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            color: btnWord.contentColor
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    MouseArea {
+                        id: wordMouse
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onClicked: updateClock({ layout: "word" })
+                    }
+                }
+
+                Rectangle {
+                    id: btnAnalog
+                    Layout.fillWidth: true
+                    height: 34
+                    radius: 17
+                    topLeftRadius: active ? 17 : 8
+                    bottomLeftRadius: active ? 17 : 8
+
+                    Behavior on topLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                    Behavior on bottomLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+
+                    readonly property bool active: Config.clock.layout === "analog"
+                    readonly property color contentColor: active
+                        ? Colors.md3.on_primary
+                        : (analogMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
+
+                    color: active
+                        ? Colors.md3.primary
+                        : (analogMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.radius
+                        topLeftRadius: parent.topLeftRadius
+                        bottomLeftRadius: parent.bottomLeftRadius
+                        color: analogMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                        visible: btnAnalog.active
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 6
+
+                        AnalogClockIcon {
+                            iconSize: 14
+                            filled: btnAnalog.active
+                            color: btnAnalog.contentColor
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Analog"
+                            font.family: Config.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            color: btnAnalog.contentColor
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    MouseArea {
+                        id: analogMouse
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onClicked: updateClock({ layout: "analog" })
+                    }
+                }
+            }
+
+            ClippingRectangle {
+                id: singlePreview
+                Layout.fillWidth: true
+                Layout.preferredHeight: 180
+                color: Colors.md3.surface_container_high
+                radius: 12
+
+                Image {
+                    id: wallView
+                    source: WallpaperService.currentWall !== "" ? "file://" + WallpaperService.currentWall : ""
+                    asynchronous: true
+                    smooth: true
+                    mipmap: true
+                    cache: true
+                    fillMode: Image.PreserveAspectCrop
+                    anchors.fill: parent
+                    visible: source !== ""
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: Qt.alpha(Colors.md3.surface, 0.4)
+                    visible: wallView.visible
+                }
+
+                Loader {
+                    id: previewLoader
+                    anchors.centerIn: parent
+                    asynchronous: false
+                    
+                    property var activeComponent: null
+                    property var targetComponent: {
+                        switch (Config.clock.layout) {
+                        case "vertical":   return verticalPreviewComp
+                        case "horizontal": return horizontalPreviewComp
+                        case "word":       return wordPreviewComp
+                        case "analog":     return analogPreviewComp
+                        default:           return verticalPreviewComp
+                        }
+                    }
+                    
+                    onTargetComponentChanged: transitionSeq.restart()
+                    sourceComponent: activeComponent
+                    
+                    SequentialAnimation {
+                        id: transitionSeq
+                        ParallelAnimation {
+                            NumberAnimation { target: previewLoader; property: "opacity"; to: 0; duration: 150; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: previewLoader; property: "scale"; to: 0.9; duration: 150; easing.type: Easing.OutCubic }
+                        }
+                        ScriptAction {
+                            script: previewLoader.activeComponent = previewLoader.targetComponent
+                        }
+                        ParallelAnimation {
+                            NumberAnimation { target: previewLoader; property: "opacity"; to: 1; duration: 200; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: previewLoader; property: "scale"; to: 1; duration: 200; easing.type: Easing.OutCubic }
+                        }
+                    }
+                    
+                    Component.onCompleted: {
+                        previewLoader.activeComponent = previewLoader.targetComponent
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: Colors.md3.outline_variant
+                opacity: 0.15
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 16
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 0
+                    spacing: 6
+
+                    Text {
+                        text: "Main color"
+                        font.family: Config.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        color: Colors.md3.outline
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 4
+
+                        Repeater {
+                            model: ["primary", "secondary", "tertiary", "on_surface"]
+                            delegate: Rectangle {
+                                required property string modelData
+                                required property int index
+
+                                readonly property int  lastIndex:  3
+                                readonly property bool isFirst:    index === 0
+                                readonly property bool isLast:     index === lastIndex
+                                readonly property bool isSelected: Config.clock.colorRole === modelData
+
+                                Layout.fillWidth: true
+                                height: 28
+                                color: Colors.md3[modelData] ?? Colors.md3.primary
+
+                                topLeftRadius:     isFirst    ? 14 : (isSelected ? 14 : 6)
+                                topRightRadius:    isLast     ? 14 : (isSelected ? 14 : 6)
+                                bottomLeftRadius:  isFirst    ? 14 : (isSelected ? 14 : 6)
+                                bottomRightRadius: isLast     ? 14 : (isSelected ? 14 : 6)
+
+                                Behavior on topLeftRadius     { NumberAnimation { duration: 150 } }
+                                Behavior on topRightRadius    { NumberAnimation { duration: 150 } }
+                                Behavior on bottomLeftRadius  { NumberAnimation { duration: 150 } }
+                                Behavior on bottomRightRadius { NumberAnimation { duration: 150 } }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: updateClock({ colorRole: modelData })
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 0
+                    spacing: 6
+
+                    Text {
+                        text: Config.clock.layout === "analog" ? "Seconds hand color" : "Accent color"
+                        font.family: Config.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        color: Colors.md3.outline
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 4
+
+                        Repeater {
+                            model: ["primary", "secondary", "tertiary", "on_surface"]
+                            delegate: Rectangle {
+                                required property string modelData
+                                required property int index
+
+                                readonly property int  lastIndex:  3
+                                readonly property bool isFirst:    index === 0
+                                readonly property bool isLast:     index === lastIndex
+                                readonly property bool isSelected: Config.clock.subColorRole === modelData
+
+                                Layout.fillWidth: true
+                                height: 28
+                                color: Colors.md3[modelData] ?? Colors.md3.secondary
+
+                                topLeftRadius:     isFirst    ? 14 : (isSelected ? 14 : 6)
+                                topRightRadius:    isLast     ? 14 : (isSelected ? 14 : 6)
+                                bottomLeftRadius:  isFirst    ? 14 : (isSelected ? 14 : 6)
+                                bottomRightRadius: isLast     ? 14 : (isSelected ? 14 : 6)
+
+                                Behavior on topLeftRadius     { NumberAnimation { duration: 150 } }
+                                Behavior on topRightRadius    { NumberAnimation { duration: 150 } }
+                                Behavior on bottomLeftRadius  { NumberAnimation { duration: 150 } }
+                                Behavior on bottomRightRadius { NumberAnimation { duration: 150 } }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: updateClock({ subColorRole: modelData })
+                                }
+                            }
                         }
                     }
                 }
@@ -168,139 +581,32 @@ PageBase {
         }
     }
 
-    RowLayout {
+    SectionCard {
         Layout.fillWidth: true
-        spacing: 10
-        visible: Config.clock.layout !== "analog"
 
-        Rectangle {
-            Layout.fillWidth: true
-            height: 80
-            radius: 16
-            color: Colors.md3.surface_container
-
-            ColumnLayout {
-                anchors { fill: parent; margins: 14 }
-                spacing: 8
-
-                Text {
-                    text: "Alignment"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 11
-                    font.weight: Font.Medium
-                    color: Colors.md3.outline
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 6
-
-                    Repeater {
-                        model: [
-                            { key: "auto",   label: "Auto"   },
-                            { key: "left",   label: "Left"   },
-                            { key: "center", label: "Center" },
-                            { key: "right",  label: "Right"  }
-                        ]
-
-                        delegate: Rectangle {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            height: 28
-                            radius: 10
-                            color: Config.clock.align === modelData.key ? Colors.md3.secondary_container : Colors.md3.surface_container_high
-                            Behavior on color { ColorAnimation { duration: 120 } }
-
-                            Loader {
-                                anchors.centerIn: parent
-                                sourceComponent: {
-                                    switch (modelData.key) {
-                                    case "auto":   return alignAutoComp
-                                    case "left":   return alignLeftComp
-                                    case "center": return alignCenterComp
-                                    case "right":  return alignRightComp
-                                    }
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: updateClock({ align: modelData.key })
-                            }
-                        }
-                    }
-                }
-            }
+        SettingSwitch {
+            label: "Show date"
+            sublabel: "Include date information below the time"
+            checked: Config.clock.showDate ?? false
+            onToggled: v => updateClock({ showDate: v })
         }
 
-        Rectangle {
-            Layout.preferredWidth: 90
-            height: 80
-            radius: 16
-            visible: Config.clock.layout !== "word"
-            color: Config.clock.showSeconds ? Colors.md3.tertiary_container : Colors.md3.surface_container
-            Behavior on color { ColorAnimation { duration: 150 } }
-
-            ColumnLayout {
-                anchors { fill: parent; margins: 12 }
-                spacing: 4
-
-                Text {
-                    text: "Seconds"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 11
-                    font.weight: Font.Medium
-                    color: Config.clock.showSeconds ? Colors.md3.on_tertiary_container : Colors.md3.outline
-                }
-                Text {
-                    text: Config.clock.showSeconds ? "22:03:42" : "22:03"
-                    font.family: Config.fontMonospace
-                    font.pixelSize: 12
-                    color: Config.clock.showSeconds ? Colors.md3.on_tertiary_container : Colors.md3.on_surface_variant
-                    opacity: 0.8
-                }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: updateClock({ showSeconds: !Config.clock.showSeconds })
-            }
+        SettingSwitch {
+            label: Config.clock.layout === "analog" ? "Show seconds hand" : "Show seconds"
+            sublabel: Config.clock.layout === "analog" ? "Adds a sweeping seconds hand to the face" : "Displays ticking seconds"
+            checked: Config.clock.showSeconds ?? false
+            onToggled: v => updateClock({ showSeconds: v })
         }
 
-        Rectangle {
-            Layout.preferredWidth: 90
-            height: 80
-            radius: 16
-            color: Config.clock.showDate ? Colors.md3.tertiary_container : Colors.md3.surface_container
-            Behavior on color { ColorAnimation { duration: 150 } }
-
-            ColumnLayout {
-                anchors { fill: parent; margins: 12 }
-                spacing: 4
-
-                Text {
-                    text: "Date"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 11
-                    font.weight: Font.Medium
-                    color: Config.clock.showDate ? Colors.md3.on_tertiary_container : Colors.md3.outline
-                }
-                Text {
-                    text: Qt.formatDate(new Date(), "ddd d")
-                    font.family: Config.fontMonospace
-                    font.pixelSize: 12
-                    color: Config.clock.showDate ? Colors.md3.on_tertiary_container : Colors.md3.on_surface_variant
-                    opacity: 0.8
-                }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: updateClock({ showDate: !Config.clock.showDate })
-            }
+        SettingSwitch {
+            label: "Show digital clock"
+            sublabel: "Render digital time inside the analog clock face"
+            isLast: true
+            enabled: Config.clock.layout === "analog"
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.clock.showDigitalInside ?? false
+            onToggled: v => updateClock({ showDigitalInside: v })
+            Behavior on opacity { NumberAnimation { duration: 150 } }
         }
     }
 
@@ -317,162 +623,19 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
-        visible: Config.clock.layout === "analog"
 
-        SettingSwitch {
-            label: "Show seconds hand"
-            sublabel: "Adds a sweeping seconds hand"
-            checked: Config.clock.showSeconds
-            onToggled: v => updateClock({ showSeconds: v })
+        SettingChips {
+            label: "Content alignment"
+            sublabel: "Flow layout of the time and date elements"
+            options: [
+                { value: "auto",   label: "Auto",   icon: alignAutoComp },
+                { value: "left",   label: "Left",   icon: alignLeftComp },
+                { value: "center", label: "Center", icon: alignCenterComp },
+                { value: "right",  label: "Right",  icon: alignRightComp }
+            ]
+            currentValue: Config.clock.align ?? "auto"
+            onSelected: (val) => updateClock({ align: val })
         }
-        SettingSwitch {
-            label: "Show date"
-            sublabel: "Date label below the clock face"
-            checked: Config.clock.showDate
-            onToggled: v => updateClock({ showDate: v })
-        }
-        SettingSwitch {
-            isLast: true
-            label: "Show digital clock"
-            sublabel: "Digital clock inside the clock face"
-            checked: Config.clock.showDigitalInside
-            onToggled: v => updateClock({ showDigitalInside: v })
-        }
-    }
-
-    Rectangle {
-        Layout.fillWidth: true
-        implicitHeight: colorsInner.implicitHeight + 24
-        radius: 16
-        color: Colors.md3.surface_container
-
-        RowLayout {
-            id: colorsInner
-            anchors {
-                left: parent.left
-                right: parent.right
-                verticalCenter: parent.verticalCenter
-                margins: 16
-            }
-            spacing: 0
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.preferredWidth: 0
-                spacing: 6
-
-                Text {
-                    text: "Time color"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 11
-                    font.weight: Font.Medium
-                    color: Colors.md3.outline
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 4
-
-                    Repeater {
-                        model: ["primary", "secondary", "tertiary", "on_surface"]
-                        delegate: Rectangle {
-                            required property string modelData
-                            required property int index
-
-                            readonly property int  lastIndex:  3
-                            readonly property bool isFirst:    index === 0
-                            readonly property bool isLast:     index === lastIndex
-                            readonly property bool isSelected: Config.clock.colorRole === modelData
-
-                            Layout.fillWidth: true
-                            height: 32
-                            color: Colors.md3[modelData] ?? Colors.md3.primary
-
-                            topLeftRadius:     isFirst    ? 20 : (isSelected ? 20 : 6)
-                            topRightRadius:    isLast     ? 20 : (isSelected ? 20 : 6)
-                            bottomLeftRadius:  isFirst    ? 20 : (isSelected ? 20 : 6)
-                            bottomRightRadius: isLast     ? 20 : (isSelected ? 20 : 6)
-
-                            Behavior on topLeftRadius     { NumberAnimation { duration: 150 } }
-                            Behavior on topRightRadius    { NumberAnimation { duration: 150 } }
-                            Behavior on bottomLeftRadius  { NumberAnimation { duration: 150 } }
-                            Behavior on bottomRightRadius { NumberAnimation { duration: 150 } }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: updateClock({ colorRole: modelData })
-                            }
-                        }
-                    }
-                }
-            }
-
-            Rectangle {
-                width: 1
-                Layout.fillHeight: true
-                color: Colors.md3.outline_variant
-                opacity: 0.4
-                Layout.leftMargin: 16
-                Layout.rightMargin: 16
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.preferredWidth: 0
-                spacing: 6
-
-                Text {
-                    text: Config.clock.layout === "analog" ? "Seconds color" : "Date / minute color"
-                    font.family: Config.fontFamily
-                    font.pixelSize: 11
-                    font.weight: Font.Medium
-                    color: Colors.md3.outline
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 4
-
-                    Repeater {
-                        model: ["primary", "secondary", "tertiary", "on_surface"]
-                        delegate: Rectangle {
-                            required property string modelData
-                            required property int index
-
-                            readonly property int  lastIndex:  3
-                            readonly property bool isFirst:    index === 0
-                            readonly property bool isLast:     index === lastIndex
-                            readonly property bool isSelected: Config.clock.subColorRole === modelData
-
-                            Layout.fillWidth: true
-                            height: 32
-                            color: Colors.md3[modelData] ?? Colors.md3.secondary
-
-                            topLeftRadius:     isFirst    ? 20 : (isSelected ? 20 : 6)
-                            topRightRadius:    isLast     ? 20 : (isSelected ? 20 : 6)
-                            bottomLeftRadius:  isFirst    ? 20 : (isSelected ? 20 : 6)
-                            bottomRightRadius: isLast     ? 20 : (isSelected ? 20 : 6)
-
-                            Behavior on topLeftRadius     { NumberAnimation { duration: 150 } }
-                            Behavior on topRightRadius    { NumberAnimation { duration: 150 } }
-                            Behavior on bottomLeftRadius  { NumberAnimation { duration: 150 } }
-                            Behavior on bottomRightRadius { NumberAnimation { duration: 150 } }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: updateClock({ subColorRole: modelData })
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    SectionCard {
-        Layout.fillWidth: true
 
         SettingInput {
             label: "Font family"

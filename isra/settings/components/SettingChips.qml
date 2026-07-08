@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Widgets
 import qs.style
 
 SettingRow {
@@ -14,6 +15,8 @@ SettingRow {
 
     readonly property real smallRadius: 6
     readonly property real fullRadius: 15
+
+    property int heldIndex: -1
 
     Row {
         spacing: 10
@@ -32,7 +35,7 @@ SettingRow {
             Repeater {
                 model: root.options
 
-                Rectangle {
+                ClippingRectangle {
                     id: chip
                     required property var modelData
                     required property int index
@@ -42,8 +45,22 @@ SettingRow {
                     readonly property bool isLastChip: index === root.options.length - 1
                     readonly property bool hasIcon: modelData.icon !== undefined && modelData.icon !== null
 
+                    readonly property real baseWidth: chipContent.implicitWidth + (hasIcon ? 30 : 24)
+                    readonly property real growDelta: 20
+                    readonly property real shrinkDelta: root.options.length > 1 ? (growDelta / (root.options.length - 1)) : 0
+
+                    readonly property real targetWidth: {
+                        if (root.heldIndex === -1) {
+                            return baseWidth;
+                        } else if (root.heldIndex === index) {
+                            return baseWidth + growDelta;
+                        } else {
+                            return Math.max(20, baseWidth - shrinkDelta);
+                        }
+                    }
+
                     height: 30
-                    width: chipContent.implicitWidth + (hasIcon ? 30 : 24)
+                    width: targetWidth
 
                     color: active ? Colors.md3.primary : Colors.md3.surface_container_high
 
@@ -55,6 +72,12 @@ SettingRow {
                     Behavior on color {
                         ColorAnimation {
                             duration: 120
+                        }
+                    }
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: 120
+                            easing.type: Easing.OutCubic
                         }
                     }
                     Behavior on topLeftRadius {
@@ -109,6 +132,18 @@ SettingRow {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+
+                        readonly property bool isHeld: pressed && containsMouse
+
+                        onIsHeldChanged: {
+                            if (isHeld) {
+                                root.heldIndex = index;
+                            } else if (root.heldIndex === index) {
+                                root.heldIndex = -1;
+                            }
+                        }
+
                         onClicked: {
                             root.currentValue = chip.modelData.value;
                             root.selected(chip.modelData.value);

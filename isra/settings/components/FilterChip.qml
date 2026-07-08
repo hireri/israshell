@@ -9,7 +9,7 @@ Rectangle {
     signal toggled(bool active)
 
     implicitHeight: 32
-    implicitWidth: label_text.implicitWidth + (mouseArea.pressed ? 28 : 22)
+    implicitWidth: label_text.implicitWidth + 22 + (mouseArea.pressed && mouseArea.containsMouse ? 20 : 0)
     radius: height / 2
     color: root.active ? Colors.md3.primary_container : Colors.md3.surface_container_high
 
@@ -42,6 +42,6 @@ Rectangle {
     }
 
     Behavior on implicitWidth {
-        NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
     }
 }

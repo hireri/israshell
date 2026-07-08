@@ -272,7 +272,9 @@ Item {
 
         Loader {
             id: styleLoader
-            sourceComponent: {
+            
+            property var activeComponent: null
+            property var targetComponent: {
                 switch (clockRoot._layoutMode) {
                 case 0: return horizontalComp
                 case 1: return verticalComp
@@ -281,6 +283,29 @@ Item {
                 default: return horizontalComp
                 }
             }
+            
+            onTargetComponentChanged: transitionSeq.restart()
+            sourceComponent: activeComponent
+            
+            SequentialAnimation {
+                id: transitionSeq
+                ParallelAnimation {
+                    NumberAnimation { target: styleLoader; property: "opacity"; to: 0; duration: 150; easing.type: Easing.OutCubic }
+                    NumberAnimation { target: styleLoader; property: "scale"; to: 0.9; duration: 150; easing.type: Easing.OutCubic }
+                }
+                ScriptAction {
+                    script: styleLoader.activeComponent = styleLoader.targetComponent
+                }
+                ParallelAnimation {
+                    NumberAnimation { target: styleLoader; property: "opacity"; to: 1; duration: 200; easing.type: Easing.OutCubic }
+                    NumberAnimation { target: styleLoader; property: "scale"; to: 1; duration: 200; easing.type: Easing.OutCubic }
+                }
+            }
+            
+            Component.onCompleted: {
+                styleLoader.activeComponent = styleLoader.targetComponent
+            }
+
             onLoaded: {
                 item.currentTime  = Qt.binding(() => root._currentTime)
                 item.clockFont    = Qt.binding(() => clockRoot._font)

@@ -56,22 +56,37 @@ PageBase {
                     }
 
                     Item {
+                        id: colorPickerContainer
                         readonly property int pillCount: WallpaperService.sourceColorCandidates.length
+                        property int heldIndex: -1
 
                         anchors.bottom: parent.bottom
                         anchors.left: parent.left
                         anchors.margins: 10
-                        width: pillCount * 56 + Math.max(0, pillCount - 1) * 4 + 8
+                        
+                        width: {
+                            if (pillCount === 0) return 0;
+                            let innerWidth = 60 + (pillCount - 1) * 24;
+                            let spacingWidth = Math.max(0, pillCount - 1) * 4;
+                            return innerWidth + spacingWidth + 8;
+                        }
                         height: 32
-                        visible: WallpaperService.sourceColorCandidates.length > 0
+                        visible: pillCount > 0
+
+                        Behavior on width {
+                            NumberAnimation {
+                                duration: 120
+                                easing.type: Easing.OutCubic
+                            }
+                        }
 
                         Rectangle {
                             id: containerBg
                             anchors.fill: parent
 
                             readonly property int lastIndex: WallpaperService.sourceColorCandidates.length - 1
-                            readonly property bool firstSelected: WallpaperService.currentSourceIndex === 0
-                            readonly property bool lastSelected: WallpaperService.currentSourceIndex === lastIndex
+                            readonly property bool firstSelected: WallpaperService.currentSourceIndex === 0 || colorPickerContainer.heldIndex === 0
+                            readonly property bool lastSelected: WallpaperService.currentSourceIndex === lastIndex || colorPickerContainer.heldIndex === lastIndex
 
                             topLeftRadius: firstSelected ? 20 : 18
                             topRightRadius: lastSelected ? 20 : 18
@@ -80,62 +95,111 @@ PageBase {
 
                             color: Colors.md3.surface_container_high
 
-                            Behavior on topLeftRadius {
-                                NumberAnimation {
-                                    duration: 150
-                                }
-                            }
-                            Behavior on topRightRadius {
-                                NumberAnimation {
-                                    duration: 150
-                                }
-                            }
-                            Behavior on bottomLeftRadius {
-                                NumberAnimation {
-                                    duration: 150
-                                }
-                            }
-                            Behavior on bottomRightRadius {
-                                NumberAnimation {
-                                    duration: 150
-                                }
-                            }
+                            Behavior on topLeftRadius { NumberAnimation { duration: 120 } }
+                            Behavior on topRightRadius { NumberAnimation { duration: 120 } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: 120 } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: 120 } }
                         }
 
-                        RowLayout {
+                        Row {
                             anchors.fill: parent
                             anchors.leftMargin: 4
                             anchors.rightMargin: 4
+                            anchors.verticalCenter: parent.verticalCenter
                             spacing: 4
-                            readonly property int count: WallpaperService.sourceColorCandidates.length
 
-                            ColorPill {
-                                pillIndex: 0
-                                isFirst: true
-                                isLast: parent.count === 1
-                                visible: parent.count >= 1
-                                pillColor: WallpaperService.sourceColorCandidates[0] ?? "transparent"
-                            }
-                            ColorPill {
-                                pillIndex: 1
-                                isFirst: false
-                                isLast: parent.count === 2
-                                visible: parent.count >= 2
-                                pillColor: WallpaperService.sourceColorCandidates[1] ?? "transparent"
-                            }
-                            ColorPill {
-                                pillIndex: 2
-                                isFirst: false
-                                isLast: parent.count === 3
-                                visible: parent.count >= 3
-                                pillColor: WallpaperService.sourceColorCandidates[2] ?? "transparent"
-                            }
-                            ColorPill {
-                                pillIndex: 3
-                                isFirst: false
-                                isLast: true
-                                visible: parent.count >= 4
-                                pillColor: WallpaperService.sourceColorCandidates[3] ?? "transparent"
+                            Repeater {
+                                model: WallpaperService.sourceColorCandidates
+
+                                ClippingRectangle {
+                                    id: chip
+                                    required property var modelData
+                                    required property int index
+
+                                    readonly property bool active: WallpaperService.currentSourceIndex === index
+                                    readonly property bool isFirst: index === 0
+                                    readonly property bool isLastChip: index === WallpaperService.sourceColorCandidates.length - 1
+
+                                    readonly property string pillColor: modelData ?? "transparent"
+
+                                    readonly property real baseWidth: active ? 60 : 24
+                                    readonly property real growDelta: 20
+                                    readonly property real shrinkDelta: WallpaperService.sourceColorCandidates.length > 1 ? (growDelta / (WallpaperService.sourceColorCandidates.length - 1)) : 0
+
+                                    readonly property real targetWidth: {
+                                        if (colorPickerContainer.heldIndex === -1) {
+                                            return baseWidth;
+                                        } else if (colorPickerContainer.heldIndex === index) {
+                                            return baseWidth + growDelta;
+                                        } else {
+                                            return Math.max(16, baseWidth - shrinkDelta);
+                                        }
+                                    }
+
+                                    height: 24
+                                    width: targetWidth
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    color: pillColor === "transparent" ? Colors.md3.surface_container_highest : pillColor
+
+                                    topLeftRadius: (active || isFirst) ? 20 : 6
+                                    bottomLeftRadius: (active || isFirst) ? 20 : 6
+                                    topRightRadius: (active || isLastChip) ? 20 : 6
+                                    bottomRightRadius: (active || isLastChip) ? 20 : 6
+
+                                    Behavior on width {
+                                        NumberAnimation {
+                                            duration: 120
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
+                                    Behavior on topLeftRadius { NumberAnimation { duration: 120 } }
+                                    Behavior on bottomLeftRadius { NumberAnimation { duration: 120 } }
+                                    Behavior on topRightRadius { NumberAnimation { duration: 120 } }
+                                    Behavior on bottomRightRadius { NumberAnimation { duration: 120 } }
+
+                                    function isColorDark(colorString) {
+                                        let c = Qt.color(colorString);
+                                        let luminance = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+                                        return luminance < 0.5;
+                                    }
+
+                                    Text {
+                                        id: chipLabel
+                                        anchors.centerIn: parent
+                                        text: active ? "󰄬" : (pillColor === "transparent" ? (index + 1).toString() : "")
+                                        font.family: Config.fontFamily
+                                        font.pixelSize: active ? 12 : 11
+                                        font.weight: active ? Font.Medium : Font.Normal
+                                        color: {
+                                            if (active) {
+                                                if (pillColor === "transparent") return Colors.md3.primary;
+                                                return isColorDark(pillColor) ? "#ffffff" : "#000000";
+                                            }
+                                            return Colors.md3.on_surface_variant;
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        hoverEnabled: true
+
+                                        readonly property bool isHeld: pressed && containsMouse
+
+                                        onIsHeldChanged: {
+                                            if (isHeld) {
+                                                colorPickerContainer.heldIndex = index;
+                                            } else if (colorPickerContainer.heldIndex === index) {
+                                                colorPickerContainer.heldIndex = -1;
+                                            }
+                                        }
+
+                                        onClicked: {
+                                            WallpaperService.selectSourceColor(index);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -571,66 +635,6 @@ PageBase {
                 hoverEnabled: true
                 onClicked: Qt.openUrlExternally("file://" + Quickshell.env("HOME") + "/.config/quickshell/isra/config.json")
             }
-        }
-    }
-
-    component ColorPill: Rectangle {
-        required property string pillColor
-        required property int pillIndex
-        required property bool isFirst
-        required property bool isLast
-        readonly property bool isSelected: WallpaperService.currentSourceIndex === pillIndex
-
-        width: 56
-        height: 24
-        color: pillColor === "transparent" ? Colors.md3.surface_container_highest : pillColor
-
-        topLeftRadius: isSelected ? 20 : (isFirst ? 14 : 6)
-        topRightRadius: isSelected ? 20 : (isLast ? 14 : 6)
-        bottomLeftRadius: isSelected ? 20 : (isFirst ? 14 : 6)
-        bottomRightRadius: isSelected ? 20 : (isLast ? 14 : 6)
-
-        Text {
-            anchors.centerIn: parent
-            text: pillIndex + 1
-            font.family: Config.fontFamily
-            font.pixelSize: 11
-            font.weight: Font.Medium
-            color: Colors.md3.on_surface_variant
-            visible: pillColor === "transparent"
-        }
-
-        Behavior on color {
-            ColorAnimation {
-                duration: 150
-            }
-        }
-        Behavior on topLeftRadius {
-            NumberAnimation {
-                duration: 150
-            }
-        }
-        Behavior on topRightRadius {
-            NumberAnimation {
-                duration: 150
-            }
-        }
-        Behavior on bottomLeftRadius {
-            NumberAnimation {
-                duration: 150
-            }
-        }
-        Behavior on bottomRightRadius {
-            NumberAnimation {
-                duration: 150
-            }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            enabled: !WallpaperService.applying
-            onClicked: WallpaperService.selectSourceColor(pillIndex)
         }
     }
 }

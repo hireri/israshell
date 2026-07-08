@@ -31,6 +31,16 @@ Item {
             list.currentIndex++;
     }
 
+    Connections {
+        target: root.model || null
+        ignoreUnknownSignals: true
+        function onValuesChanged() {
+            Qt.callLater(() => {
+                root.resetToTop();
+            });
+        }
+    }
+
     // Unicode 17.0 Emoji_Modifier_Base characters
     // Source: https://www.unicode.org/Public/17.0.0/ucd/emoji/emoji-data.txt
     // Also this: https://github.com/sindresorhus/skin-tone

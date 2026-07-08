@@ -19,12 +19,16 @@ Item {
     property int    fontWeight:    Config.clock.hourWeight    ?? 600
     property real   fontWidth:     Config.clock.fontWidth     ?? 100
     property real   fontRoundness: Config.clock.fontRoundness ?? 0
+    property real   subWeight:     Config.clock.minuteWeight  ?? 300
+    property real   subWidth:      Config.clock.subWidth      ?? root.fontWidth
+    property real   subRoundness:  Config.clock.subRoundness  ?? root.fontRoundness
 
     readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
     readonly property var  mainAxes:         ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
+    readonly property var  subAxes:          ({ "wght": root.subWeight,  "wdth": root.subWidth,  "ROND": root.subRoundness  })
 
     readonly property real ringSides:     Config.clock.ringSides     ?? 8
-    readonly property real ringAmplitude: Config.clock.ringAmplitude ?? 6
+    readonly property real ringAmplitude: (Config.clock.ringAmplitude ?? 6) * (root.analogSize / 200)
     readonly property int  ringPoints:    256
 
     implicitWidth:  analogSize
@@ -76,14 +80,14 @@ Item {
                 anchors.fill: parent
                 rotation: index * 30
                 Rectangle {
-                    width: 6
-                    height: index % 3 === 0 ? 10 : 6
+                    width: 6 * (root.analogSize / 200)
+                    height: (index % 3 === 0 ? 10 : 6) * (root.analogSize / 200)
                     radius: width / 2
                     color: index % 3 === 0
                            ? Qt.alpha(root.subColor, 0.6)
                            : Qt.alpha(root.subColor, 0.3)
                     anchors.top: parent.top
-                    anchors.topMargin: 16
+                    anchors.topMargin: 16 * (root.analogSize / 200)
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
@@ -102,7 +106,7 @@ Item {
             layer.enabled: true
 
             Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
-            Behavior on scale   { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+            Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
 
             Text {
                 id: innerHours
@@ -144,7 +148,7 @@ Item {
 
             Rectangle {
                 width: root.analogSize * 0.05
-                height: root.analogSize * 0.38 + width
+                height: root.analogSize * 0.32 + width
                 radius: width / 2
                 color: root.subColor
                 anchors.bottom: parent.verticalCenter
@@ -165,7 +169,7 @@ Item {
 
             Rectangle {
                 width: root.analogSize * 0.08
-                height: root.analogSize * 0.25 + width
+                height: root.analogSize * 0.20 + width
                 radius: width / 2
                 color: root.textColor
                 anchors.bottom: parent.verticalCenter
@@ -216,8 +220,8 @@ Item {
         }
         z: 2
 
-        readonly property real vPad: 4
-        readonly property real hPad: 10
+        readonly property real vPad: 4 * (root.analogSize / 200)
+        readonly property real hPad: 10 * (root.analogSize / 200)
 
         width:  dateLbl.implicitWidth  + hPad * 2
         height: dateLbl.implicitHeight + vPad * 2
@@ -229,11 +233,10 @@ Item {
         Text {
             id: dateLbl
             anchors.centerIn: parent
-            font {
-                family:    root.clockFont
-                pixelSize: Config.clock.dateSize
-                weight:    Font.Normal
-            }
+            font.family:       root.clockFont
+            font.pixelSize:    (Config.clock.dateSize ?? 14) * (root.analogSize / 200)
+            font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
+            font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
             color: Colors.md3.on_primary_container
                    ?? root.subColor
             text: Qt.formatDate(root.currentTime, "d")

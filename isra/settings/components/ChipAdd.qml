@@ -12,21 +12,22 @@ Item {
     property bool editing: false
 
     implicitHeight: 32
-    implicitWidth: editing
-        ? (fieldRow.implicitWidth + 24)
-        : (idleLabel.implicitWidth + 24)
-
-    Behavior on implicitWidth {
-        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
-    }
+    implicitWidth: fieldRow.implicitWidth + 24
 
     Rectangle {
-        anchors.fill: parent
+        id: backgroundRect
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        height: parent.height
+        width: root.editing ? parent.width : (idleLabel.implicitWidth + 24)
         radius: height / 2
         color: root.editing ? Colors.md3.surface_container_high : Colors.md3.surface_container
         border.width: root.editing ? 1.5 : 1
         border.color: root.editing ? Colors.md3.primary : Colors.md3.outline_variant
 
+        Behavior on width {
+            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+        }
         Behavior on border.color {
             ColorAnimation { duration: 150 }
         }
@@ -37,7 +38,7 @@ Item {
 
     Text {
         id: idleLabel
-        anchors.centerIn: parent
+        anchors.centerIn: backgroundRect
         text: "+ Add"
         font.family: Config.fontFamily
         font.pixelSize: 12
@@ -51,7 +52,7 @@ Item {
     }
 
     MouseArea {
-        anchors.fill: parent
+        anchors.fill: backgroundRect
         cursorShape: Qt.PointingHandCursor
         visible: !root.editing
         enabled: !root.editing
@@ -63,7 +64,7 @@ Item {
 
     Row {
         id: fieldRow
-        anchors.centerIn: parent
+        anchors.centerIn: backgroundRect
         spacing: 6
         visible: opacity > 0
         opacity: root.editing ? 1 : 0

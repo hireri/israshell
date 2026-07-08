@@ -11,7 +11,7 @@ Rectangle {
     signal clicked
 
     implicitHeight: 64
-    implicitWidth: row.implicitWidth + 24
+    implicitWidth: mouseArea.pressed && mouseArea.containsMouse ? row.implicitWidth + 24 : root.active ? row.implicitWidth + 24 : row.implicitWidth
     radius: 12
 
     color: {
@@ -26,6 +26,9 @@ Rectangle {
         ColorAnimation {
             duration: 120
         }
+    }
+    Behavior on implicitWidth {
+        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
     }
 
     Rectangle {

@@ -160,6 +160,123 @@ Scope {
         return _langMap[first];
     }
 
+    function _substringEditDistance(query, target) {
+        const m = query.length;
+        const n = target.length;
+        if (m === 0) return 0;
+        if (n === 0) return m;
+
+        let prevRow = new Array(n + 1).fill(0);
+        let currRow = new Array(n + 1);
+
+        for (let i = 1; i <= m; i++) {
+            currRow[0] = i;
+            for (let j = 1; j <= n; j++) {
+                const cost = query.charAt(i - 1) === target.charAt(j - 1) ? 0 : 1;
+                currRow[j] = Math.min(
+                    prevRow[j - 1] + cost,
+                    prevRow[j] + 1,
+                    currRow[j - 1] + 1
+                );
+            }
+            prevRow = currRow.slice();
+        }
+
+        let minVal = currRow[0];
+        for (let j = 1; j <= n; j++) {
+            if (currRow[j] < minVal) {
+                minVal = currRow[j];
+            }
+        }
+        return minVal;
+    }
+
+    function _maxAllowedEdits(queryLength) {
+        if (queryLength <= 2) return 0;
+        if (queryLength <= 4) return 1;
+        if (queryLength <= 7) return 2;
+        return Math.floor(queryLength / 3);
+    }
+
+    function _scoreApp(app, q) {
+        const name = (app.name || "").toLowerCase();
+        const genericName = (app.genericName || "").toLowerCase();
+        const comment = (app.comment || "").toLowerCase();
+
+        if (name === q) {
+            return { matched: true, score: 1000 };
+        }
+        if (name.startsWith(q)) {
+            return { matched: true, score: 900 - name.length };
+        }
+        if (name.includes(q)) {
+            return { matched: true, score: 800 - name.indexOf(q) - name.length };
+        }
+
+        const nameDist = _substringEditDistance(q, name);
+        const maxEdits = _maxAllowedEdits(q.length);
+        if (nameDist <= maxEdits) {
+            return { matched: true, score: 700 - nameDist * 50 - name.length };
+        }
+
+        if (genericName !== "") {
+            if (genericName.startsWith(q)) {
+                return { matched: true, score: 600 - genericName.length };
+            }
+            if (genericName.includes(q)) {
+                return { matched: true, score: 550 - genericName.length };
+            }
+            const genDist = _substringEditDistance(q, genericName);
+            if (genDist <= maxEdits) {
+                return { matched: true, score: 500 - genDist * 50 - genericName.length };
+            }
+        }
+
+        const keywords = app.keywords || [];
+        for (let i = 0; i < keywords.length; i++) {
+            const kw = keywords[i].toLowerCase();
+            if (kw === q) {
+                return { matched: true, score: 450 };
+            }
+            if (kw.startsWith(q)) {
+                return { matched: true, score: 400 - kw.length };
+            }
+            if (kw.includes(q)) {
+                return { matched: true, score: 380 - kw.length };
+            }
+            const kwDist = _substringEditDistance(q, kw);
+            if (kwDist <= maxEdits) {
+                return { matched: true, score: 350 - kwDist * 50 };
+            }
+        }
+
+        if (comment !== "") {
+            if (comment.includes(q)) {
+                return { matched: true, score: 300 - comment.length * 0.1 };
+            }
+            const commentDist = _substringEditDistance(q, comment);
+            if (commentDist <= maxEdits) {
+                return { matched: true, score: 250 - commentDist * 50 };
+            }
+        }
+
+        const categories = app.categories || [];
+        for (let i = 0; i < categories.length; i++) {
+            const cat = categories[i].toLowerCase();
+            if (cat === q) {
+                return { matched: true, score: 200 };
+            }
+            if (cat.startsWith(q)) {
+                return { matched: true, score: 180 - cat.length };
+            }
+            if (cat.includes(q)) {
+                return { matched: true, score: 160 - cat.length };
+            }
+        }
+
+        return { matched: false, score: 0 };
+    }
+
     property var _emojiData: []
     property bool _emojiLoaded: false
 
@@ -247,13 +364,13 @@ Scope {
 
             if (mode === "apps" || mode === "translate") {
                 const all = DesktopEntries.applications.values.slice();
-                const mapped = arr => arr.map(d => ({
-                                type: "app",
-                                uid: "app_" + d.id,
-                                entry: d
-                            }));
 
                 if (q === "") {
+                    const mapped = arr => arr.map(d => ({
+                                    type: "app",
+                                    uid: "app_" + d.id,
+                                    entry: d
+                                }));
                     if (root._sortAlpha) {
                         return mapped(all.sort((a, b) => a.name.localeCompare(b.name)));
                     } else {
@@ -266,11 +383,26 @@ Scope {
                     }
                 }
 
-                return mapped(all.filter(d => d.name?.toLowerCase().includes(q) || d.genericName?.toLowerCase().includes(q) || d.keywords?.some(k => k.toLowerCase().includes(q)) || d.categories?.some(c => c.toLowerCase().includes(q))).sort((a, b) => {
-                    const an = a.name.toLowerCase(), bn = b.name.toLowerCase();
-                    const aS = an.startsWith(q), bS = bn.startsWith(q);
-                    return aS === bS ? an.localeCompare(bn) : aS ? -1 : 1;
-                }));
+                const scored = [];
+                for (let i = 0; i < all.length; i++) {
+                    const d = all[i];
+                    const res = root._scoreApp(d, q);
+                    if (res.matched) {
+                        scored.push({
+                            type: "app",
+                            uid: "app_" + d.id,
+                            entry: d,
+                            _score: res.score
+                        });
+                    }
+                }
+
+                return scored.sort((a, b) => {
+                    if (Math.abs(a._score - b._score) < 0.0001) {
+                        return a.entry.name.localeCompare(b.entry.name);
+                    }
+                    return b._score - a._score;
+                });
             }
 
             if (mode === "clipboard") {
