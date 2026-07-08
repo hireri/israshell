@@ -589,7 +589,7 @@ PageBase {
                     }
 
                     Row {
-                        spacing: 6
+                        spacing: 2
                         Layout.alignment: Qt.AlignVCenter
 
                         Rectangle {
@@ -598,6 +598,8 @@ PageBase {
                             height: 28
                             width: btConnTxt.implicitWidth + 16
                             radius: 14
+                            bottomRightRadius: 6
+                            topRightRadius: 6
                             color: modelData.connected ? Colors.md3.surface_container_high : Colors.md3.secondary_container
                             opacity: busy ? 0.6 : 1.0
 
@@ -628,6 +630,8 @@ PageBase {
                             width: 28
                             height: 28
                             radius: 14
+                            bottomLeftRadius: 6
+                            topLeftRadius: 6
                             color: Colors.md3.surface_container_high
 
                             Text {

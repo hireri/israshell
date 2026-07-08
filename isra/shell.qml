@@ -3,6 +3,7 @@
 //@ pragma Env QS_NO_RELOAD_POPUP = 1
 //@ pragma Env QT_QUICK_CONTROLS_STYLE=Basic
 //@ pragma DefaultEnv QT_LOGGING_RULES = quickshell.dbus.properties=false
+//@ pragma Env QT_QUICK_FLICKABLE_WHEEL_DECELERATION=7500
 
 import Quickshell
 import Quickshell.Io

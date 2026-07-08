@@ -212,42 +212,83 @@ FloatingWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             color: Colors.md3.surface
+            clip: true
 
-            StackLayout {
+            Component { id: overviewComp; OverviewPage {} }
+            Component { id: networkComp; NetworkPage {} }
+            Component { id: barComp; BarPage {} }
+            Component { id: clockComp; ClockPage {} }
+            Component { id: displayComp; DisplayPage {} }
+            Component { id: soundComp; SoundPage {} }
+            Component { id: localeComp; LocalePage {} }
+            Component { id: systemComp; SystemPage {} }
+
+            function componentForPage(page) {
+                switch (page) {
+                case root.pageOverview: return overviewComp;
+                case root.pageNetwork: return networkComp;
+                case root.pageBar: return barComp;
+                case root.pageClock: return clockComp;
+                case root.pageDisplay: return displayComp;
+                case root.pageSound: return soundComp;
+                case root.pageLocale: return localeComp;
+                case root.pageSystem: return systemComp;
+                default: return overviewComp;
+                }
+            }
+
+            StackView {
+                id: pageStack
                 anchors.fill: parent
-                currentIndex: root.currentPage
+                clip: true
+                initialItem: parent.componentForPage(root.currentPage)
 
-                Loader {
-                    active: root.currentPage === root.pageOverview
-                    sourceComponent: OverviewPage {}
+                property int previousPage: -1
+                property int enterOffset: 48
+
+                Component.onCompleted: previousPage = root.currentPage
+
+                replaceEnter: Transition {
+                    SequentialAnimation {
+                        PropertyAction { property: "opacity"; value: 0 }
+                        PropertyAction { property: "y"; value: pageStack.enterOffset }
+                        PauseAnimation { duration: 150 }
+                        ParallelAnimation {
+                            NumberAnimation {
+                                property: "opacity"
+                                to: 1
+                                duration: 260
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
+                            }
+                            NumberAnimation {
+                                property: "y"
+                                to: 0
+                                duration: 260
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
+                            }
+                        }
+                    }
                 }
-                Loader {
-                    active: root.currentPage === root.pageNetwork
-                    sourceComponent: NetworkPage {}
+
+                replaceExit: Transition {
+                    NumberAnimation {
+                        property: "opacity"
+                        from: 1
+                        to: 0
+                        duration: 150
+                        easing.type: Easing.InCubic
+                    }
                 }
-                Loader {
-                    active: root.currentPage === root.pageBar
-                    sourceComponent: BarPage {}
-                }
-                Loader {
-                    active: root.currentPage === root.pageClock
-                    sourceComponent: ClockPage {}
-                }
-                Loader {
-                    active: root.currentPage === root.pageDisplay
-                    sourceComponent: DisplayPage {}
-                }
-                Loader {
-                    active: root.currentPage === root.pageSound
-                    sourceComponent: SoundPage {}
-                }
-                Loader {
-                    active: root.currentPage === root.pageLocale
-                    sourceComponent: LocalePage {}
-                }
-                Loader {
-                    active: root.currentPage === root.pageSystem
-                    sourceComponent: SystemPage {}
+
+                Connections {
+                    target: root
+                    function onCurrentPageChanged() {
+                        pageStack.enterOffset = root.currentPage > pageStack.previousPage ? 48 : -48;
+                        pageStack.previousPage = root.currentPage;
+                        pageStack.replace(pageStack.parent.componentForPage(root.currentPage));
+                    }
                 }
             }
         }
