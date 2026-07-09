@@ -298,11 +298,12 @@ ShellRoot {
                                     }
                                 }
 
-                                TrayWidget { panelWindow: window }
+                                TrayWidget { id: trayWidget; panelWindow: window }
 
                                 Item {
                                     implicitHeight: 32
                                     implicitWidth: Config.transparentPills ? 18 : 12
+                                    visible: trayWidget.visible
                                     Behavior on implicitWidth {
                                         NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                                     }
