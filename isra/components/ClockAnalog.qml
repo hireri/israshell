@@ -183,7 +183,6 @@ Item {
         }
 
         Item {
-            visible: root.showSeconds
             anchors.centerIn: parent
             width: parent.width
             height: parent.height
@@ -199,6 +198,12 @@ Item {
                 y: root.analogSize * 0.15
                 anchors.horizontalCenter: parent.horizontalCenter
                 antialiasing: true
+                opacity: Config.clock.showSeconds ? 1.0 : 0.0
+                scale: Config.clock.showSeconds ? 1.0 : 0.75
+
+                Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+                Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
+
             }
         }
 
@@ -215,13 +220,19 @@ Item {
 
     Rectangle {
         id: dateBadge
-        visible: Config.clock.showDate
         anchors {
             horizontalCenter: face.right
-            horizontalCenterOffset: -8
+            horizontalCenterOffset: Config.clock.showDate ? -8 : -12
             verticalCenter: face.verticalCenter
+            Behavior on horizontalCenterOffset   { NumberAnimation { duration: 800; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
         }
         z: 2
+        opacity: Config.clock.showDate ? 1 : 0
+        scale: Config.clock.showDate ? 1.0 : 0.75
+
+        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+        Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
+
 
         readonly property real vPad: 4 * (root.analogSize / 200)
         readonly property real hPad: 10 * (root.analogSize / 200)
