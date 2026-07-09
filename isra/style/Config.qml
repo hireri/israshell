@@ -81,7 +81,9 @@ Singleton {
             showDigitalInside: true,
             analogSize: 200,
             ringSides: 12,
-            ringAmplitude: 4
+            ringAmplitude: 4,
+            outlineWidth: 2
+
         })
     property var clockPositions: ({})
     property bool checkUpdates: true
@@ -167,7 +169,8 @@ Singleton {
                 showDigitalInside: true,
                 analogSize: 200,
                 ringSides: 12,
-                ringAmplitude: 4
+                ringAmplitude: 4,
+                outlineWidth: 2
             },
             clockPositions: {},
             checkUpdates: true,

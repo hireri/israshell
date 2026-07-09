@@ -37,12 +37,15 @@ Item {
     Shape {
         id: wobblyFace
         anchors.centerIn: face
-        width:  root.analogSize
-        height: root.analogSize
+        width:  root.analogSize + Config.clock.outlineWidth
+        height: root.analogSize + Config.clock.outlineWidth
         visible: true
+        layer.enabled: true
+        layer.samples: 4
 
         ShapePath {
-            strokeWidth: 0
+            strokeWidth: Config.clock.outlineWidth
+            strokeColor: textColor
             fillColor: Colors.md3.surface_container_high
                        ?? Colors.md3.surface_container
                        ?? Qt.rgba(0.95, 0.95, 0.95, 1)

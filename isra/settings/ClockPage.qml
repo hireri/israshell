@@ -601,11 +601,23 @@ PageBase {
         SettingSwitch {
             label: "Show digital clock"
             sublabel: "Render digital time inside the analog clock face"
-            isLast: true
             enabled: Config.clock.layout === "analog"
             opacity: enabled ? 1.0 : 0.4
             checked: Config.clock.showDigitalInside ?? false
             onToggled: v => updateClock({ showDigitalInside: v })
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+        }
+        SettingSlider{
+            label: "Outline width"
+            sublabel: "Colored outline around the clock face"
+            isLast: true
+            enabled: Config.clock.layout === "analog"
+            from: 0
+            to: 10
+            stepSize: 1
+            value: Config.clock.outlineWidth
+            onMoved: v => updateClock({ outlineWidth: v })
+            opacity: enabled ? 1.0 : 0.4
             Behavior on opacity { NumberAnimation { duration: 150 } }
         }
     }
