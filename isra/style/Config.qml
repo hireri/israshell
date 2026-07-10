@@ -11,7 +11,7 @@ Singleton {
     property bool showSeconds: false
     property int hourFormat: 0
     property int carouselSpeed: 30
-    property bool transparentBar: false
+    property int transparentBar: 0
     property bool transparentPills: false
     property string fontFamily: "Inter"
     property string fontMonospace: "Roboto Mono"
@@ -99,7 +99,7 @@ Singleton {
             showSeconds: false,
             hourFormat: 0,
             carouselSpeed: 30,
-            transparentBar: false,
+            transparentBar: 0,
             transparentPills: false,
             fontFamily: "Inter",
             fontMonospace: "Roboto Mono",

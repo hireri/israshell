@@ -123,12 +123,26 @@ PageBase {
                 })
         }
 
-        SettingSwitch {
+        SettingChips {
             isLast: true
-            label: "Transparent bar"
-            sublabel: "Remove bar background"
-            checked: Config.transparentBar
-            onToggled: v => Config.update({
+            label: "Transparency"
+            sublabel: "Background opacity level"
+            options: [
+                {
+                    label: "Off",
+                    value: 0
+                },
+                {
+                    label: "Tinted",
+                    value: 1
+                },
+                {
+                    label: "Full",
+                    value: 2
+                }
+            ]
+            currentValue: Config.transparentBar
+            onSelected: v => Config.update({
                     transparentBar: v
                 })
         }

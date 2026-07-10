@@ -212,11 +212,53 @@ ShellRoot {
                     Rectangle {
                         id: barContainer
                         anchors.fill: parent
-
                         radius: Config.floatingBar ? 22 : 0
-                        color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
+
                         border.width: Config.floatingBar ? 1 : 0
                         border.color: Config.transparentBar ? Qt.alpha(Colors.md3.outline_variant, 0.5) : Colors.md3.outline_variant
+                        Behavior on border.color {
+                            ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
+                        }
+                        color: "transparent"
+
+                        Rectangle {
+                            id: barFadeGradient
+                            anchors.fill: parent
+                            radius: parent.radius
+
+                            property color topColor: {
+                                const solid = Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
+                                const fadeAtTop = Config.barPosition === 0;
+                                if (Config.transparentBar === 2)
+                                    return fadeAtTop ? Qt.alpha(Colors.md3.background, 0.5) : Qt.alpha(Colors.md3.background, 0);
+                                return solid;
+                            }
+                            property color bottomColor: {
+                                const solid = Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
+                                const fadeAtTop = Config.barPosition === 0;
+                                if (Config.transparentBar === 2)
+                                    return fadeAtTop ? Qt.alpha(Colors.md3.background, 0) : Qt.alpha(Colors.md3.background, 0.5);
+                                return solid;
+                            }
+
+                            gradient: Gradient {
+                                orientation: Gradient.Vertical
+                                GradientStop {
+                                    position: 0.0
+                                    color: barFadeGradient.topColor
+                                    Behavior on color {
+                                        ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
+                                    }
+                                }
+                                GradientStop {
+                                    position: 1.0
+                                    color: barFadeGradient.bottomColor
+                                    Behavior on color {
+                                        ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
+                                    }
+                                }
+                            }
+                        }
 
                         Item {
                             anchors.fill: parent
@@ -331,7 +373,7 @@ ShellRoot {
                 id: huggingWindow
                 screen: modelData
 
-                visible: !Config.floatingBar && Config.huggingBar
+                visible: !Config.floatingBar && Config.huggingBar && Config.transparentBar !== 2
 
                 anchors.top: Config.barPosition === 0
                 anchors.bottom: Config.barPosition === 1
