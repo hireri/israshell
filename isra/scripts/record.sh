@@ -56,7 +56,7 @@ stop_recording() {
     LATEST=$(cat "$FILEPATH_FILE" 2>/dev/null)
     rm -f "$FILEPATH_FILE"
 
-    if [ -z "$LATEST" ] ||[ ! -f "$LATEST" ]; then
+    if [ -z "$LATEST" ] || [ ! -f "$LATEST" ]; then
         notify-send "Recording saved" "Saved to $OUTPUT_DIR" \
             -i "video-x-generic" -a "Screen Recorder" -t 8000
         exit 0
@@ -105,19 +105,22 @@ else
         GSR_GEOMETRY="$GEOMETRY"
     fi
 
+    GSR_OPTS=(
+        -w region -region "$GSR_GEOMETRY"
+        -k h264
+        -q high
+        -s 1920x1080
+        -f 60
+        -ac aac
+        -o "$FILEPATH"
+    )
+
     if [ -n "$AUDIO_DEVICE" ]; then
-        setsid gpu-screen-recorder \
-            -w region -region "$GSR_GEOMETRY" \
-            -a "device:$AUDIO_DEVICE" \
-            -f 60 \
-            -o "$FILEPATH" </dev/null >/dev/null 2>&1 &
+        setsid gpu-screen-recorder "${GSR_OPTS[@]}" -a "device:$AUDIO_DEVICE" </dev/null >/dev/null 2>&1 &
     else
         notify-send "Warning" "No active audio monitor found, recording without audio" \
             -i "dialog-warning" -a "Screen Recorder" -t 6000
-        setsid gpu-screen-recorder \
-            -w region -region "$GSR_GEOMETRY" \
-            -f 60 \
-            -o "$FILEPATH" </dev/null >/dev/null 2>&1 &
+        setsid gpu-screen-recorder "${GSR_OPTS[@]}" </dev/null >/dev/null 2>&1 &
     fi
 
     echo $! > "$PIDFILE"
