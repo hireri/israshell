@@ -5,8 +5,8 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
 import qs.style
-import qs.settings.components
-import qs.settings
+import qs.windows.components
+import qs.windows
 import qs.icons
 
 FloatingWindow {

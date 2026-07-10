@@ -4,7 +4,7 @@ import Quickshell.Io
 import qs.style
 import qs.services
 import qs.icons
-import qs.settings.components
+import qs.windows.components
 
 PageBase {
     title: "Display"

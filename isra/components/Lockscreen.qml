@@ -4,7 +4,6 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 import qs.style
-import qs.settings
 
 Item {
     WlSessionLock {

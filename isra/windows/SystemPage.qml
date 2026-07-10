@@ -5,7 +5,7 @@ import Quickshell.Io
 import Quickshell.Widgets
 import qs.style
 import qs.services
-import qs.settings.components
+import qs.windows.components
 
 PageBase {
     title: "System"

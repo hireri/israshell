@@ -7,7 +7,7 @@ import Quickshell
 import Quickshell.Widgets
 import qs.style
 import qs.services
-import qs.settings.components
+import qs.windows.components
 import qs.icons
 
 PageBase {

@@ -9,7 +9,7 @@ import Quickshell.Services.Pipewire
 import qs.style
 import qs.icons
 import qs.services
-import qs.settings.components
+import qs.windows.components
 
 PageBase {
     title: "Sound & Notifications"

@@ -13,7 +13,7 @@ import QtQuick
 
 import qs.components
 import qs.style
-import qs.settings
+import qs.windows
 import qs.services
 
 ShellRoot {

@@ -249,7 +249,7 @@ Item {
             id: sidebar
             anchor.window: root.panelWindow
             anchor.rect.x: (root.panelWindow.screen?.width ?? 1920) - implicitWidth
-            anchor.rect.y: Config.barPosition === 1 ? -((root.panelWindow.screen?.height ?? 1080) * 0.75 + 12) : root.panelWindow.height + 12
+            anchor.rect.y: Config.barPosition === 1 ? -((root.panelWindow.screen?.height ?? 1080) * 0.75 + (Config.transparentBar === 2 ? 0 : 12)) : root.panelWindow.height + (Config.transparentBar === 2 ? 0 : 12)
 
             implicitWidth: 432
             anchor.adjustment: PopupAdjustment.None
