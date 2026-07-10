@@ -170,8 +170,8 @@ Item {
                     anchors.centerIn: parent
                     width: 1
                     height: 14
-                    color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.outline_variant
-                    opacity: root.isOpen ? 0.3 : 0.7
+                    color: root.isOpen | Config.transparentBar === 2 ? Colors.md3.on_secondary_container : Colors.md3.outline_variant
+                    opacity: root.isOpen | Config.transparentBar ? 0.3 : 0.7
 
                     Behavior on color {
                         ColorAnimation {
