@@ -229,15 +229,21 @@ ShellRoot {
                             property color topColor: {
                                 const solid = Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
                                 const fadeAtTop = Config.barPosition === 0;
-                                if (Config.transparentBar === 2)
+                                if (Config.transparentBar === 2) {
+                                    if (!Config.floatingBar)
+                                        return Qt.alpha(Colors.md3.background, 0);
                                     return fadeAtTop ? Qt.alpha(Colors.md3.background, 0.5) : Qt.alpha(Colors.md3.background, 0);
+                                }
                                 return solid;
                             }
                             property color bottomColor: {
                                 const solid = Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
                                 const fadeAtTop = Config.barPosition === 0;
-                                if (Config.transparentBar === 2)
+                                if (Config.transparentBar === 2) {
+                                    if (!Config.floatingBar)
+                                        return Qt.alpha(Colors.md3.background, 0);
                                     return fadeAtTop ? Qt.alpha(Colors.md3.background, 0) : Qt.alpha(Colors.md3.background, 0.5);
+                                }
                                 return solid;
                             }
 

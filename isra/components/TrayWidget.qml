@@ -55,7 +55,7 @@ Item {
             if (root.isOpen) {
                 Colors.md3.secondary_container
             } else if (Config.transparentPills) {
-                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0.01) : Colors.md3.surface_container
+                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
             } else { 
                 Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
             }

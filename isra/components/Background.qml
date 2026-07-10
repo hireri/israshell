@@ -97,4 +97,47 @@ PanelWindow {
         active: Config.desktopClock
         sourceComponent: ClockWidget { modelData: root.modelData }
     }
+
+    Item {
+        anchors.fill: parent
+
+        readonly property int gradientHeight: 120
+        readonly property bool gradientOn: Config.transparentBar === 2 && !root.shouldBlur
+
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: parent.gradientHeight
+
+            opacity: (parent.gradientOn && Config.barPosition === 0) ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation { duration: 200 }
+            }
+
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: Qt.alpha(Colors.md3.background, 0.6) }
+                GradientStop { position: 1.0; color: Qt.alpha(Colors.md3.background, 0) }
+            }
+        }
+
+        Rectangle {
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: parent.gradientHeight
+
+            opacity: (parent.gradientOn && Config.barPosition === 1) ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation { duration: 200 }
+            }
+
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: Qt.alpha(Colors.md3.background, 0) }
+                GradientStop { position: 1.0; color: Qt.alpha(Colors.md3.background, 0.5) }
+            }
+        }
+    }
 }
