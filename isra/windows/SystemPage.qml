@@ -234,7 +234,7 @@ PageBase {
         }
 
         SectionCard {
-            label: "Lockscreen"
+            label: "System Integration"
             Layout.fillWidth: true
 
             SettingSwitch {
@@ -245,11 +245,18 @@ PageBase {
             }
 
             SettingSwitch {
-                isLast: true
                 label: "Use Hyprlock"
                 sublabel: "Delegate locking to Hyprlock instead of built in"
                 checked: Config.useHyprlock
                 onToggled: v => Config.update({ useHyprlock: v })
+            }
+
+            SettingSwitch {
+                isLast: true
+                label: "Use awww"
+                sublabel: "Delegate wallpaper to awww instead of built in, WON'T SUPPORT VIDEOS"
+                checked: Config.useAwww
+                onToggled: v => Config.update({ useAwww: v })
             }
         }
 

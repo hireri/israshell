@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import Quickshell.Widgets
+import Quickshell.Io
 
 import qs.style
 import qs.services
@@ -119,6 +120,19 @@ Item {
                 item: root.isOpen ? panel : null
             }
 
+            Component {
+                id: videoIconComp
+                VideoIcon {
+                    iconSize: 16
+                }
+            }
+            Component {
+                id: imageIconComp
+                ImageIcon {
+                    iconSize: 16
+                }
+            }
+
             anchor.window: root.panelWindow
             anchor.rect: Qt.rect(Math.round((root.panelWindow.width - panel.width) / 2), 0, panel.width, root.panelWindow.height)
             anchor.edges: (Config.barPosition === 1 ? Edges.Top : Edges.Bottom) | Edges.Left
@@ -180,6 +194,46 @@ Item {
 
                 property string searchQuery: ""
                 property ListModel gridModel: ListModel {}
+
+                readonly property string thumbScript: "
+                    set -e
+                    video=\"$1\"
+                    cache_dir=\"$HOME/.cache/isra/wallpaper-frames\"
+                    mkdir -p \"$cache_dir\"
+                    key=$(printf '%s' \"$video\" | sha256sum | cut -d' ' -f1)
+                    frame=\"$cache_dir/$key.png\"
+                    if [ -s \"$frame\" ]; then printf '%s' \"$frame\"; exit 0; fi
+                    ffmpeg -y -i \"$video\" -vf \"thumbnail,scale=320:-1\" -frames:v 1 \"$frame\" -loglevel error >/dev/null 2>&1 && printf '%s' \"$frame\"
+                "
+
+                QtObject {
+                    id: thumbQueue
+                    property int active: 0
+                    readonly property int maxActive: 2
+                    property var _pending: []
+
+                    function request(startFn) {
+                        if (active < maxActive) {
+                            active++;
+                            startFn();
+                        } else {
+                            _pending.push(startFn);
+                        }
+                    }
+
+                    function release() {
+                        active--;
+                        if (_pending.length > 0) {
+                            const next = _pending.shift();
+                            active++;
+                            next();
+                        }
+                    }
+                }
+
+                function isVideoPath(path) {
+                    return /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(path ?? "");
+                }
 
                 Behavior on y {
                     NumberAnimation {
@@ -345,7 +399,7 @@ Item {
                             Text {
                                 anchors.centerIn: parent
                                 visible: panel.gridModel.count === 0
-                                text: WallpaperService.loading ? "Loading..." : (panel.searchQuery !== "" ? "No results" : "No images found")
+                                text: WallpaperService.loading ? "Loading..." : (panel.searchQuery !== "" ? "No results" : "No wallpapers found")
                                 font.pixelSize: 14
                                 font.family: Config.fontFamily
                                 renderType: Text.NativeRendering
@@ -842,6 +896,35 @@ Item {
         readonly property string entryPath: entry?.path ?? ""
         readonly property string entryName: entry?.name ?? ""
         readonly property bool isCurrent: !isDir && entryPath === WallpaperService.currentWall
+        readonly property bool isVideo: !isDir && panel.isVideoPath(entryPath)
+
+        property string thumbPath: ""
+        property bool thumbRequested: false
+
+        function ensureThumbnail() {
+            if (!card.isVideo || card.thumbRequested)
+                return;
+            card.thumbRequested = true;
+            thumbQueue.request(() => {
+                thumbProc.running = true;
+            });
+        }
+
+        Component.onCompleted: card.ensureThumbnail()
+
+        Process {
+            id: thumbProc
+            command: ["bash", "-c", panel.thumbScript, "_", card.entryPath]
+            stdout: StdioCollector {
+                id: thumbCollector
+                onStreamFinished: {
+                    const p = thumbCollector.text.trim();
+                    if (p)
+                        card.thumbPath = p;
+                    thumbQueue.release();
+                }
+            }
+        }
 
         width: grid.cellWidth
         height: grid.cellHeight
@@ -927,7 +1010,13 @@ Item {
                 Image {
                     id: wallImg
                     anchors.fill: parent
-                    source: card.isDir ? "" : "file://" + card.entryPath
+                    source: {
+                        if (card.isDir)
+                            return "";
+                        if (card.isVideo)
+                            return card.thumbPath ? ("file://" + card.thumbPath) : "";
+                        return "file://" + card.entryPath;
+                    }
                     fillMode: Image.PreserveAspectCrop
                     sourceSize.width: Math.round(imageClip.width)
                     sourceSize.height: Math.round(imageClip.height)
@@ -947,14 +1036,35 @@ Item {
                     anchors.fill: parent
                     color: Colors.md3.surface_container_highest
 
-                    Text {
+                    Loader {
                         anchors.centerIn: parent
-                        text: "󰋩"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 22
-                        renderType: Text.NativeRendering
-                        color: Colors.md3.on_surface_variant
+                        sourceComponent: card.isVideo ? videoIconComp : imageIconComp
                         opacity: 0.25
+                        onLoaded: {
+                            if (item) item.iconSize = 22;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    visible: card.isVideo
+                    anchors {
+                        top: parent.top
+                        left: parent.left
+                        margins: 6
+                    }
+                    width: 22
+                    height: 22
+                    radius: 11
+                    color: Qt.alpha(Colors.md3.surface_container_lowest, 0.85)
+                    z: 2
+
+                    Loader {
+                        anchors.centerIn: parent
+                        sourceComponent: videoIconComp
+                        onLoaded: {
+                            if (item) item.iconSize = 12;
+                        }
                     }
                 }
 

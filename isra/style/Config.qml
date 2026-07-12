@@ -54,6 +54,7 @@ Singleton {
             ocrPath: "~/.config/quickshell/isra/scripts/ocr.sh",
             songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
         })
+    property bool useAwww: false
     property var clock: ({
             layout: "vertical",
             hourSize: 100,
@@ -83,7 +84,6 @@ Singleton {
             ringSides: 12,
             ringAmplitude: 4,
             outlineWidth: 2
-
         })
     property var clockPositions: ({})
     property bool checkUpdates: true
@@ -172,6 +172,7 @@ Singleton {
                 ringAmplitude: 4,
                 outlineWidth: 2
             },
+            useAwww: false,
             clockPositions: {},
             checkUpdates: true,
             checkDeps: true,

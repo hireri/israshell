@@ -405,9 +405,9 @@ PageBase {
                 color: Colors.md3.surface_container_high
                 radius: 12
 
-                Image {
+                AnimatedImage {
                     id: wallView
-                    source: WallpaperService.currentWall !== "" ? "file://" + WallpaperService.currentWall : ""
+                    source: WallpaperService.currentWall !== "" ? "file://" + WallpaperService.currentWallPreview : ""
                     asynchronous: true
                     smooth: true
                     mipmap: true

@@ -36,9 +36,11 @@ PageBase {
                     radius: 18
                     color: Colors.md3.surface_container_high
 
-                    Image {
+                    AnimatedImage {
                         anchors.fill: parent
-                        source: WallpaperService.currentWall !== "" ? "file://" + WallpaperService.currentWall : ""
+                        source: (WallpaperService.currentWallPreview) !== "" 
+                            ? "file://" + WallpaperService.currentWallPreview
+                            : ""
                         fillMode: Image.PreserveAspectCrop
                         smooth: true
                         asynchronous: true

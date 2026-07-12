@@ -32,7 +32,8 @@ def busyness_map(gray_f: np.ndarray, sigma: float = 2.0) -> np.ndarray:
     return (s - s.min()) / (s.max() - s.min() + 1e-8)
 
 
-def penalty_mask(h: int, w: int, edge_margin: float = 0.13, center_radius: float = 0.18) -> np.ndarray:
+def penalty_mask(h: int, w: int, edge_margin: float = 0.13, center_radius: float = 0.15,
+                 center_weight: float = 0.6) -> np.ndarray:
     ys = np.linspace(0, 1, h, dtype=np.float32)[:, None]
     xs = np.linspace(0, 1, w, dtype=np.float32)[None, :]
     edge = np.minimum(np.minimum(xs, 1-xs), np.minimum(ys, 1-ys))
@@ -40,7 +41,7 @@ def penalty_mask(h: int, w: int, edge_margin: float = 0.13, center_radius: float
     p = np.where(edge < edge_margin, (edge_margin - edge) /
                  edge_margin * 3, 0.0).astype(np.float32)
     p += np.exp(-0.5 * (dist_c / (center_radius * 0.5))
-                ** 2).astype(np.float32) * 1.5
+                ** 2).astype(np.float32) * center_weight
     return p
 
 

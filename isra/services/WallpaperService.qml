@@ -14,6 +14,7 @@ Singleton {
     property bool loading: false
     property bool isDark: Config.darkMode
     property string currentWall: ""
+    property string currentWallPreview: ""
     property string currentDir: Quickshell.env("HOME") + "/Pictures"
 
     property string currentScheme: Config.colorScheme || "scheme-tonal-spot"
@@ -27,6 +28,12 @@ Singleton {
     property int clockRenderWidth: 350
     property int clockRenderHeight: 350
     property bool _pendingRandomize: false
+    property bool _pendingAwwwApply: false
+
+    property string _lastClockPath: ""
+    property int _lastClockWidth: -1
+    property int _lastClockHeight: -1
+    property bool _lastClockIsDark: false
 
     onIsDarkChanged: {
         Config.update({
@@ -41,8 +48,27 @@ Singleton {
     Connections {
         target: Config
         function onClockChanged() {
-            if (!(Config.clock.manualPos ?? false))
+            if (!(Config.clock.manualPos ?? false)) {
+                root._lastClockPath = "";
                 root._runClockPosition();
+            }
+        }
+        function onUseAwwwChanged() {
+            root._handleAwwwDaemonState();
+        }
+    }
+
+    Component.onCompleted: {
+        root._handleAwwwDaemonState();
+    }
+
+    function _handleAwwwDaemonState() {
+        if (Config.useAwww) {
+            awwwStartProc.running = false;
+            awwwStartProc.running = true;
+        } else {
+            awwwStopProc.running = false;
+            awwwStopProc.running = true;
         }
     }
 
@@ -69,6 +95,7 @@ Singleton {
             return;
         applying = true;
         currentWall = path;
+        currentWallPreview = "";
         isOpen = false;
         applyProc.wallPath = path;
         applyProc.mode = isDark ? "dark" : "light";
@@ -77,6 +104,7 @@ Singleton {
         applyProc.wallChanged = true;
         applyProc.running = false;
         applyProc.running = true;
+        _runClockPosition();
     }
 
     function selectScheme(scheme) {
@@ -189,9 +217,10 @@ Singleton {
     }
 
     function _fetchCandidates() {
-        if (!currentWall)
+        const target = currentWallPreview || currentWall;
+        if (!target)
             return;
-        candidatesProc.command = ["matugen", "image", currentWall, "--show-source-colors"];
+        candidatesProc.command = ["matugen", "image", target, "--show-source-colors"];
         candidatesProc.running = false;
         candidatesProc.running = true;
     }
@@ -231,11 +260,42 @@ Singleton {
     }
 
     function _runClockPosition() {
-        if (!currentWall || !Config.desktopClock || (Config.clock.manualPos ?? false))
+        const previewPath = currentWallPreview || currentWall;
+        if (!previewPath || !Config.desktopClock || (Config.clock.manualPos ?? false))
             return;
-        clockProc.command = [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/leastbusy.py", root.currentWall, "--clock-w", String(clockRenderWidth), "--clock-h", String(clockRenderHeight), "--mode", isDark ? "dark" : "light"];
-        clockProc.running = false;
-        clockProc.running = true;
+
+        const modeStr = isDark ? "dark" : "light";
+
+        if (previewPath === _lastClockPath &&
+            clockRenderWidth === _lastClockWidth &&
+            clockRenderHeight === _lastClockHeight &&
+            isDark === _lastClockIsDark) {
+            return;
+        }
+
+        const runAction = () => {
+            _lastClockPath = previewPath;
+            _lastClockWidth = clockRenderWidth;
+            _lastClockHeight = clockRenderHeight;
+            _lastClockIsDark = isDark;
+
+            clockProc.command = [
+                Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/leastbusy.py",
+                previewPath,
+                "--clock-w", String(clockRenderWidth),
+                "--clock-h", String(clockRenderHeight),
+                "--mode", modeStr
+            ];
+            clockProc.running = false;
+            clockProc.running = true;
+        };
+
+        if (clockDebounceTimer.running) {
+            clockDebounceTimer.pendingCallback = runAction;
+        } else {
+            runAction();
+            clockDebounceTimer.start();
+        }
     }
 
     Process {
@@ -245,16 +305,45 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const p = text.trim();
-                if (p && p !== root.currentWall) {
+                const changed = (p && p !== root.currentWall);
+                if (changed) {
                     root.currentWall = p;
                     if (!root.isOpen) {
                         const dir = p.substring(0, p.lastIndexOf("/"));
                         if (dir && dir !== root.currentDir)
                             root.currentDir = dir;
                     }
+                    if (!root.currentWallPreview) {
+                        root._fetchCandidates();
+                    }
                 }
+
+                if (root._pendingAwwwApply && p) {
+                    root._pendingAwwwApply = false;
+                    root.applyTheme();
+                }
+
                 previewDebounce.restart();
-                _fetchCandidates();
+                if (!root.currentWallPreview) {
+                    root._runClockPosition();
+                }
+            }
+        }
+    }
+
+    Process {
+        id: wallPreviewSyncProc
+        command: ["readlink", "-f", Quickshell.env("HOME") + "/.config/hypr/current_wall_prev"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const p = text.trim();
+                const changed = (p && p !== root.currentWallPreview);
+                if (changed) {
+                    root.currentWallPreview = p;
+                    root._fetchCandidates();
+                }
+                root._runClockPosition();
             }
         }
     }
@@ -264,12 +353,28 @@ Singleton {
         interval: 800
         repeat: false
         onTriggered: {
-            if (!root.currentWall || root.applying)
+            const target = root.currentWallPreview || root.currentWall;
+            if (!target || root.applying)
                 return;
             root.previewsLoading = true;
             previewProc.running = false;
-            previewProc.command = [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/gen-scheme-previews.sh", root.currentWall, root.isDark ? "dark" : "light"];
+            previewProc.command = [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/gen-scheme-previews.sh", target, root.isDark ? "dark" : "light"];
             previewProc.running = true;
+        }
+    }
+
+    Timer {
+        id: clockDebounceTimer
+        interval: 300
+        repeat: false
+        property var pendingCallback: null
+        onTriggered: {
+            if (pendingCallback) {
+                const cb = pendingCallback;
+                pendingCallback = null;
+                cb();
+                start();
+            }
         }
     }
 
@@ -295,16 +400,37 @@ Singleton {
         path: Quickshell.env("HOME") + "/.config/hypr/current_wall"
         watchChanges: true
         onFileChanged: {
+            watchChanges = false;
+            Qt.callLater(() => { watchChanges = true; });
+
             wallSyncProc.running = false;
             wallSyncProc.running = true;
         }
-        Component.onCompleted: wallSyncProc.running = true
+        Component.onCompleted: {
+            wallSyncProc.running = true;
+        }
+    }
+
+    FileView {
+        id: wallPreviewSymlink
+        path: Quickshell.env("HOME") + "/.config/hypr/current_wall_prev"
+        watchChanges: true
+        onFileChanged: {
+            watchChanges = false;
+            Qt.callLater(() => { watchChanges = true; });
+
+            wallPreviewSyncProc.running = false;
+            wallPreviewSyncProc.running = true;
+        }
+        Component.onCompleted: {
+            wallPreviewSyncProc.running = true;
+        }
     }
 
     function _runList() {
         loading = true;
         listProc.running = false;
-        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; } | sort -rn | cut -f2-"];
+        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' " + "-o -iname '*.mp4' -o -iname '*.mkv' -o -iname '*.webm' -o -iname '*.mov' -o -iname '*.avi' -o -iname '*.m4v' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; } | sort -rn | cut -f2-"];
         listProc.running = true;
     }
 
@@ -364,15 +490,29 @@ Singleton {
         property int sourceColorIndex: 0
         property bool wallChanged: false
 
-        command: [Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/apply-wallpaper.sh", applyProc.wallPath, applyProc.mode, applyProc.scheme, String(applyProc.sourceColorIndex)]
+        command: {
+            const cmd = [
+                Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/apply-wallpaper.sh",
+                applyProc.wallPath,
+                applyProc.mode,
+                applyProc.scheme,
+                String(applyProc.sourceColorIndex)
+            ];
+            if (Config.useAwww) {
+                cmd.push("--awww");
+            }
+            return cmd;
+        }
         running: false
         onExited: (code, _) => {
             root.applying = false;
             if (code === 0) {
-                if (wallChanged)
-                    root._fetchCandidates();
+                wallSyncProc.running = false;
+                wallSyncProc.running = true;
+                wallPreviewSyncProc.running = false;
+                wallPreviewSyncProc.running = true;
+
                 wallChanged = false;
-                _runClockPosition();
                 previewDebounce.restart();
             }
         }
@@ -480,5 +620,26 @@ Singleton {
                 root.sourceColorCandidates = text.trim().split("\n").filter(l => l.trim() !== "");
             }
         }
+    }
+
+    Process {
+        id: awwwStartProc
+        command: ["bash", "-c", "pgrep -x awww-daemon &>/dev/null || { awww-daemon &>/dev/null & disown; sleep 0.5; }"]
+        running: false
+        onExited: (code, _) => {
+            if (code === 0 && Config.useAwww) {
+                if (root.currentWall) {
+                    root.applyTheme();
+                } else {
+                    root._pendingAwwwApply = true;
+                }
+            }
+        }
+    }
+
+    Process {
+        id: awwwStopProc
+        command: ["bash", "-c", "pgrep -x awww-daemon &>/dev/null && awww kill &>/dev/null || true"]
+        running: false
     }
 }
