@@ -189,7 +189,7 @@ ShellRoot {
 
                 implicitHeight: (Config.floatingBar ? 56 : 44)
                 color: "transparent"
-                exclusiveZone: (Config.floatingBar ? 56 : Config.transparentBar === 2 ? 34 : 44)
+                exclusiveZone: (Config.floatingBar ? 56 : Config.transparentBar === 2 & !GameModeService.active ? 34 : 44)
                 visible: true
 
                 Item {
