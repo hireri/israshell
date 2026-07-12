@@ -160,11 +160,14 @@ Scope {
         return _langMap[first];
     }
 
-    function _substringEditDistance(query, target) {
+    function _substringEditDistance(query, target, maxEdits) {
         const m = query.length;
         const n = target.length;
         if (m === 0) return 0;
         if (n === 0) return m;
+
+        if (maxEdits !== undefined && (m - n) > maxEdits)
+            return maxEdits + 1;
 
         let prevRow = new Array(n + 1).fill(0);
         let currRow = new Array(n + 1);
@@ -179,13 +182,17 @@ Scope {
                     currRow[j - 1] + 1
                 );
             }
-            prevRow = currRow.slice();
+            const tmp = prevRow;
+            prevRow = currRow;
+            currRow = tmp;
         }
 
-        let minVal = currRow[0];
+        let minVal = prevRow[0];
         for (let j = 1; j <= n; j++) {
-            if (currRow[j] < minVal) {
-                minVal = currRow[j];
+            if (prevRow[j] < minVal) {
+                minVal = prevRow[j];
+                if (minVal === 0)
+                    break;
             }
         }
         return minVal;
@@ -213,8 +220,9 @@ Scope {
             return { matched: true, score: 800 - name.indexOf(q) - name.length };
         }
 
-        const nameDist = _substringEditDistance(q, name);
         const maxEdits = _maxAllowedEdits(q.length);
+
+        const nameDist = _substringEditDistance(q, name, maxEdits);
         if (nameDist <= maxEdits) {
             return { matched: true, score: 700 - nameDist * 50 - name.length };
         }
@@ -226,7 +234,7 @@ Scope {
             if (genericName.includes(q)) {
                 return { matched: true, score: 550 - genericName.length };
             }
-            const genDist = _substringEditDistance(q, genericName);
+            const genDist = _substringEditDistance(q, genericName, maxEdits);
             if (genDist <= maxEdits) {
                 return { matched: true, score: 500 - genDist * 50 - genericName.length };
             }
@@ -244,7 +252,7 @@ Scope {
             if (kw.includes(q)) {
                 return { matched: true, score: 380 - kw.length };
             }
-            const kwDist = _substringEditDistance(q, kw);
+            const kwDist = _substringEditDistance(q, kw, maxEdits);
             if (kwDist <= maxEdits) {
                 return { matched: true, score: 350 - kwDist * 50 };
             }
@@ -253,10 +261,6 @@ Scope {
         if (comment !== "") {
             if (comment.includes(q)) {
                 return { matched: true, score: 300 - comment.length * 0.1 };
-            }
-            const commentDist = _substringEditDistance(q, comment);
-            if (commentDist <= maxEdits) {
-                return { matched: true, score: 250 - commentDist * 50 };
             }
         }
 
