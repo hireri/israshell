@@ -125,22 +125,29 @@ PanelWindow {
             ? /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(path)
             : false
 
-        readonly property Item liveVisual: isVideo ? videoOutput : img
+        readonly property bool videoTornDown: isVideo && GameModeService.active
+
+        readonly property Item liveVisual: isVideo ? (videoLoader.item ? videoLoader.item.videoOutput : null) : img
         readonly property Item wallpaperVisual: frozenFrame.visible ? frozenFrame : liveVisual
 
-        readonly property bool shouldPlay: isVideo && isFront && !pause
+        readonly property bool shouldPlay: isVideo && isFront && !pause && !videoTornDown
 
         function readyToShow(cb) {
-            if (slot.isVideo || img.status === Image.Ready || img.status === Image.Error || img.source === "") {
+            if (slot.isVideo || slot.videoTornDown) {
                 cb();
                 return;
             }
-            function handler() {
+
+            if (img.status === Image.Ready || img.status === Image.Error || img.source === "") {
+                cb();
+                return;
+            }
+            const handler = () => {
                 if (img.status === Image.Ready || img.status === Image.Error) {
                     img.statusChanged.disconnect(handler);
                     cb();
                 }
-            }
+            };
             img.statusChanged.connect(handler);
         }
 
@@ -155,49 +162,86 @@ PanelWindow {
             NumberAnimation { duration: 550; easing.type: Easing.OutCubic }
         }
 
-        Component.onCompleted: if (shouldPlay) player.play()
-
-        onShouldPlayChanged: {
-            if (shouldPlay) {
+        onPathChanged: frozenFrame.visible = false
+        onVideoTornDownChanged: {
+            if (videoTornDown) {
                 frozenFrame.visible = false;
-                player.play();
-            } else if (isVideo) {
-                frozenFrame.scheduleUpdate();
-                frozenFrame.visible = true;
-                player.pause();
             }
         }
-
-        onPathChanged: frozenFrame.visible = false
 
         AnimatedImage {
             id: img
             anchors.fill: parent
             visible: !slot.isVideo
             asynchronous: true
-            cache: false
+            cache: true
             source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
             fillMode: Image.PreserveAspectCrop
         }
 
-        MediaPlayer {
-            id: player
-            source: GameModeService.active ? "" : slot.isVideo ? ("file://" + slot.path) : ""
-            videoOutput: videoOutput
-            loops: MediaPlayer.Infinite
-        }
-
-        VideoOutput {
-            id: videoOutput
+        Loader {
+            id: videoLoader
             anchors.fill: parent
-            visible: slot.isVideo && !frozenFrame.visible
-            fillMode: VideoOutput.PreserveAspectCrop
+            asynchronous: false
+            active: slot.isVideo && !slot.videoTornDown
+
+            sourceComponent: Component {
+                Item {
+                    id: videoRoot
+                    anchors.fill: parent
+                    readonly property alias videoOutput: vo
+                    property bool ready: false
+
+                    MediaPlayer {
+                        id: player
+                        source: slot.path ? ("file://" + slot.path) : ""
+                        videoOutput: vo
+                        loops: MediaPlayer.Infinite
+                        onSourceChanged: videoRoot.ready = false
+                        onMediaStatusChanged: {
+                            if (mediaStatus === MediaPlayer.Loaded || mediaStatus === MediaPlayer.Buffered) {
+                                videoRoot.ready = true;
+                            }
+                        }
+                    }
+
+                    VideoOutput {
+                        id: vo
+                        anchors.fill: parent
+                        visible: !frozenFrame.visible
+                        fillMode: VideoOutput.PreserveAspectCrop
+                    }
+
+                    Component.onCompleted: {
+                        if (slot.shouldPlay) {
+                            frozenFrame.visible = false;
+                            player.play();
+                        } else {
+                            player.pause();
+                        }
+                    }
+
+                    Connections {
+                        target: slot
+                        function onShouldPlayChanged() {
+                            if (slot.shouldPlay) {
+                                frozenFrame.visible = false;
+                                player.play();
+                            } else {
+                                frozenFrame.scheduleUpdate();
+                                frozenFrame.visible = true;
+                                player.pause();
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         ShaderEffectSource {
             id: frozenFrame
             anchors.fill: parent
-            sourceItem: videoOutput
+            sourceItem: videoLoader.item ? videoLoader.item.videoOutput : null
             live: false
             hideSource: false
             visible: false

@@ -16,15 +16,36 @@ Item {
             Image {
                 id: lockWallImg
                 anchors.fill: parent
+                asynchronous: true
+                cache: true
                 source: WallpaperService.currentWall ? ("file://" + WallpaperService.currentWallPreview) : ""
                 fillMode: Image.PreserveAspectCrop
                 visible: false
+
+                function _isSettled() {
+                    return status === Image.Ready || status === Image.Error || source === "";
+                }
+
+                onStatusChanged: if (_isSettled()) lockBlur.opacity = 1
+                Component.onCompleted: if (_isSettled()) lockBlur.opacity = 1
+            }
+
+            Timer {
+                interval: 2000
+                running: true
+                onTriggered: lockBlur.opacity = 1
             }
 
             FastBlur {
+                id: lockBlur
                 anchors.fill: lockWallImg
                 source: lockWallImg
                 radius: 64
+                opacity: 0
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+                }
 
                 Rectangle {
                     anchors.fill: parent
