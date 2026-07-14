@@ -12,6 +12,9 @@ Singleton {
     property string fontFamily: "Inter"
     property string fontMonospace: "Roboto Mono"
     property bool screenCorners: true
+    property bool blurEffects: false
+    property int blurRadius: 50
+    property real blurOpacity: 0.65
     property var bar: ({
             mode: 0,                    // 0 = hugging, 1 = rect,   2 = floating
             position: 0,                // 0 = top,     1 = bottom
@@ -111,6 +114,10 @@ Singleton {
             carouselSpeed: 30,
             fontFamily: "Inter",
             fontMonospace: "Roboto Mono",
+            screenCorners: true,
+            blurEffects: false,
+            blurRadius: 50,
+            blurOpacity: 0.65,
             bar: {
                 mode: 0,
                 position: 0,
@@ -215,11 +222,32 @@ Singleton {
         }
     }
 
+    function __isPlainObject(v) {
+        return v !== null && typeof v === "object" && !Array.isArray(v);
+    }
+
+    function __deepMergeObj(defVal, dataVal) {
+        if (!__isPlainObject(defVal))
+            return dataVal !== undefined ? dataVal : defVal;
+        if (!__isPlainObject(dataVal))
+            return defVal;
+
+        const result = {};
+        for (const k in defVal) {
+            result[k] = __deepMergeObj(defVal[k], dataVal[k]);
+        }
+        for (const k in dataVal) {
+            if (!(k in result))
+                result[k] = dataVal[k];
+        }
+        return result;
+    }
+
     function __merge(data) {
         const defs = __defaults();
         const result = {};
         for (const key in defs) {
-            result[key] = data[key] !== undefined ? data[key] : defs[key];
+            result[key] = __deepMergeObj(defs[key], data[key]);
         }
         return result;
     }

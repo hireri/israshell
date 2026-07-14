@@ -20,12 +20,10 @@ Item {
     property real   fontWidth:     Config.clock.fontWidth     ?? 100
     property real   fontRoundness: Config.clock.fontRoundness ?? 0
     property real   subWeight:     Config.clock.minuteWeight  ?? 300
-    property real   subWidth:      Config.clock.subWidth      ?? root.fontWidth
-    property real   subRoundness:  Config.clock.subRoundness  ?? root.fontRoundness
 
     readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
     readonly property var  mainAxes:         ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
-    readonly property var  subAxes:          ({ "wght": root.subWeight,  "wdth": root.subWidth,  "ROND": root.subRoundness  })
+    readonly property var  subAxes:          ({ "wght": root.subWeight,  "wdth": root.fontWidth,  "ROND": root.fontRoundness  })
 
     readonly property real ringSides:     Config.clock.ringSides     ?? 8
     readonly property real ringAmplitude: (Config.clock.ringAmplitude ?? 6) * (root.analogSize / 200)

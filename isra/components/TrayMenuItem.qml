@@ -33,7 +33,7 @@ Item {
             verticalCenter: parent.verticalCenter
         }
         height: 1
-        color: Colors.md3.outline_variant
+        color: Config.bar.transparency ? Qt.alpha(Colors.md3.on_surface, 0.15) : Colors.md3.outline_variant
     }
 
     Item {

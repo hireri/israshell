@@ -575,11 +575,11 @@ PageBase {
     }
 
     SectionCard {
-        label: "Appearance"
+        label: "Quick Toggles"
         Layout.fillWidth: true
 
         SettingChips {
-            label: "Clock format"
+            label: "Hour format"
             options: [
                 {
                     label: "24h",
@@ -597,15 +597,6 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Screen corners"
-            sublabel: "Rounded corner overlay"
-            checked: Config.screenCorners
-            onToggled: v => Config.update({
-                    screenCorners: v
-                })
-        }
-
-        SettingSwitch {
             label: "Desktop clock"
             sublabel: "Clock widget on wallpaper"
             checked: Config.desktopClock
@@ -613,6 +604,61 @@ PageBase {
                     desktopClock: v
                 })
         }
+
+        SettingSwitch {
+            label: "Screen corners"
+            sublabel: "Rounded corner overlay"
+            checked: Config.screenCorners
+            onToggled: v => Config.update({
+                    screenCorners: v
+                })
+            isLast: true
+        }
+    }
+
+    SectionCard {
+        label: "Blur & Transparency"
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            id: blurSwitch
+            label: "Background blur"
+            sublabel: "Apply blur effect to panels and menus"
+            checked: Config.blurEffects
+            onToggled: v => Config.update({
+                    blurEffects: v
+                })
+            isLast: !blurSwitch.checked
+        }
+        SettingSlider {
+            label: "Blur radius"
+            sublabel: "Controls the softness of the blur"
+            from: 5
+            to: 80
+            value: Config.blurRadius
+            onMoved: v => Config.update({
+                    blurRadius: Math.round(v)
+                })
+        }
+
+        SettingSlider {
+            label: "Bar & Blur dimming"
+            sublabel: "Overlay opacity of the blurred panels"
+            from: 0.1
+            to: 1.0
+            stepSize: 0.05
+            decimals: 2
+            value: Config.blurOpacity
+            onMoved: v => Config.update({
+                    blurOpacity: v
+                })
+            isLast: true
+        }
+    }
+
+    SectionCard {
+        label: "Advanced"
+        Layout.fillWidth: true
 
         SettingRow {
             id: editRow

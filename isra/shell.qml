@@ -10,6 +10,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import QtQuick
+import Qt5Compat.GraphicalEffects
 
 import qs.components
 import qs.style
@@ -17,6 +18,7 @@ import qs.windows
 import qs.services
 
 ShellRoot {
+    id: rootShell
     LazyLoader {
         loading: LockscreenService.locked
         Lockscreen {}
@@ -134,10 +136,6 @@ ShellRoot {
         sourceComponent: ScreenCorners {}
     }
 
-    // Renders a list of named bar widgets in order, resolved against a
-    // name -> Component registry. `separators` draws a dot between adjacent
-    // items (used for the right zone); it hides itself around a widget that
-    // hides itself (e.g. the tray with no icons).
     component BarZone: Row {
         id: zone
         property var itemNames: []
@@ -145,9 +143,6 @@ ShellRoot {
         property bool separators: false
         spacing: separators ? 0 : 12
 
-        // NOTE: relies on widgets that have a menu (WallpaperPicker,
-        // QuickSettings) exposing an `isOpen` property. Widgets without one
-        // just read as undefined/false here.
         readonly property bool anyMenuOpen: {
             for (let i = 0; i < rep.count; i++) {
                 const slot = rep.itemAt(i);
@@ -209,21 +204,90 @@ ShellRoot {
         property int radiusSize: 16
         property bool flipped: Config.bar.position === 1
 
+        property var panelScreen
+        property int windowHeight: 44
+
         width: radiusSize
         height: radiusSize
         clip: true
 
+        readonly property bool useBlur: Config.blurEffects && !GameModeService.active && Config.bar.transparency === 1
+
+        Item {
+            id: cornerMaskSource
+            anchors.fill: parent
+            visible: false
+            Rectangle {
+                width: block.radiusSize * 4
+                height: block.radiusSize * 4
+                radius: block.radiusSize * 2
+                color: "transparent"
+
+                border.width: block.radiusSize
+                border.color: "black"
+
+                x: (block.type === 1) ? -block.radiusSize * 2 : -block.radiusSize
+                y: block.flipped ? -block.radiusSize * 2 : -block.radiusSize
+            }
+        }
+
+        Loader {
+            id: cornerBlurLoader
+            anchors.fill: parent
+            active: block.useBlur
+            sourceComponent: Item {
+                id: cornerContentContainer
+                anchors.fill: parent
+
+                layer.enabled: !GameModeService.active
+                layer.effect: OpacityMask {
+                    maskSource: cornerMaskSource
+                }
+
+                Image {
+                    id: cornerBlurSrc
+                    width: block.panelScreen ? block.panelScreen.width : 0
+                    height: block.panelScreen ? block.panelScreen.height : 0
+                    
+                    x: (block.type === 0) ? 0 : -( (block.panelScreen ? block.panelScreen.width : 0) - block.radiusSize )
+                    y: block.flipped 
+                        ? -( (block.panelScreen ? block.panelScreen.height : 0) - block.windowHeight - block.radiusSize )
+                        : -block.windowHeight
+                    
+                    source: (WallpaperService.currentWallPreview || WallpaperService.currentWall) 
+                        ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall)) 
+                        : ""
+                    fillMode: Image.PreserveAspectCrop
+                    visible: false
+                    asynchronous: true
+                }
+
+                FastBlur {
+                    id: cornerBlurEffect
+                    x: cornerBlurSrc.x
+                    y: cornerBlurSrc.y
+                    width: cornerBlurSrc.width
+                    height: cornerBlurSrc.height
+                    source: cornerBlurSrc
+                    radius: 50
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: block.cornerColor
+                }
+            }
+        }
+
         Rectangle {
-            width: block.radiusSize * 4
-            height: block.radiusSize * 4
-            radius: block.radiusSize * 2
-            color: "transparent"
-
-            border.width: block.radiusSize
-            border.color: GameModeService.active ? "transparent" : block.cornerColor
-
-            x: (block.type === 1) ? -block.radiusSize * 2 : -block.radiusSize
-            y: block.flipped ? -block.radiusSize * 2 : -block.radiusSize
+            anchors.fill: parent
+            visible: !block.useBlur
+            color: GameModeService.active ? "transparent" : block.cornerColor
+            
+            layer.enabled: true
+            layer.effect: OpacityMask {
+                maskSource: cornerMaskSource
+            }
         }
     }
 
@@ -235,12 +299,10 @@ ShellRoot {
             required property var modelData
 
             Background {
+                id: wallpaperBackgroundItem
                 modelData: screenScope.modelData
             }
 
-            // name -> Component registry for bar widgets. Add new widgets
-            // here; `Config.bar.left/center.items/right` reference them by
-            // these string keys.
             readonly property var barWidgetComponents: ({
                     activeWindow: activeWindowComponent,
                     workspaces: workspacesComponent,
@@ -312,13 +374,82 @@ ShellRoot {
                         }
                         color: "transparent"
 
+                        Loader {
+                            id: barBlurLoader
+                            anchors.fill: parent
+                            active: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && Config.bar.mode === 2))
+                            
+                            sourceComponent: Item {
+                                id: barBlurContainer
+                                anchors.fill: parent
+                                clip: true
+
+                                Item {
+                                    id: barMaskSource
+                                    anchors.fill: parent
+                                    visible: false
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: barContainer.radius
+                                        color: "black"
+                                    }
+                                }
+
+                                layer.enabled: barContainer.radius > 0
+                                layer.effect: OpacityMask {
+                                    maskSource: barMaskSource
+                                }
+
+                                Item {
+                                    id: blurSource
+                                    anchors.fill: parent
+                                    clip: true
+                                    visible: false
+
+                                    Image {
+                                        id: barBlurSrc
+                                        width: screenScope.modelData ? screenScope.modelData.width : 0
+                                        height: screenScope.modelData ? screenScope.modelData.height : 0
+                                        
+                                        readonly property int leftMargin: (Config.bar.mode === 2) ? 12 : 0
+                                        readonly property int topMargin: (Config.bar.mode === 2) && Config.bar.position === 0 ? 10 : 0
+                                        readonly property int bottomMargin: (Config.bar.mode === 2) && Config.bar.position === 1 ? 10 : 0
+
+                                        x: -leftMargin
+                                        y: (Config.bar.position === 0) 
+                                            ? -topMargin 
+                                            : -( (screenScope.modelData ? screenScope.modelData.height : 0) - barContainer.height - bottomMargin)
+                                        
+                                        sourceSize.width: screenScope.modelData ? screenScope.modelData.width / 4 : 0
+                                        sourceSize.height: screenScope.modelData ? screenScope.modelData.height / 4 : 0
+
+                                        source: (WallpaperService.currentWallPreview || WallpaperService.currentWall) 
+                                            ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall)) 
+                                            : ""
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: true
+                                    }
+                                }
+
+                                FastBlur {
+                                    id: barBlurEffect
+                                    anchors.fill: parent
+                                    source: blurSource
+                                    radius: Config.blurRadius
+                                }
+                            }
+                        }
+
                         Rectangle {
                             id: barFadeGradient
                             anchors.fill: parent
                             radius: parent.radius
 
+                            readonly property bool blurActive: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && Config.bar.mode === 2))
+                            readonly property real dimAlpha: Config.blurOpacity
+
                             property color topColor: {
-                                const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
+                                const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, dimAlpha) : Colors.md3.surface_container;
                                 const fadeAtTop = Config.bar.position === 0;
                                 if (Config.bar.transparency === 2) {
                                     if (!(Config.bar.mode === 2))
@@ -328,7 +459,7 @@ ShellRoot {
                                 return solid;
                             }
                             property color bottomColor: {
-                                const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
+                                const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, dimAlpha) : Colors.md3.surface_container;
                                 const fadeAtTop = Config.bar.position === 0;
                                 if (Config.bar.transparency === 2) {
                                     if (!(Config.bar.mode === 2))
@@ -390,7 +521,6 @@ ShellRoot {
                                 readonly property int centerAnchorIndex: Config.bar.center.items.indexOf(Config.bar.center.anchor)
                                 readonly property bool centerUseAnchor: Config.bar.center.mode === "anchor" && centerAnchorIndex !== -1
 
-                                // mode: "auto" (or "anchor" with a missing/renamed anchor widget)
                                 BarZone {
                                     id: centerAutoZone
                                     anchors.centerIn: parent
@@ -399,8 +529,6 @@ ShellRoot {
                                     itemNames: !parent.centerUseAnchor ? Config.bar.center.items : []
                                 }
 
-                                // mode: "anchor" - one widget pinned dead-center, the rest
-                                // gather to its left/right in config order.
                                 Loader {
                                     id: centerAnchorLoader
                                     anchors.centerIn: parent
@@ -485,6 +613,8 @@ ShellRoot {
                         anchors.top: parent.top
                         cornerColor: huggingWindow.barColor
                         radiusSize: huggingWindow.cornerRadius
+                        panelScreen: screenScope.modelData
+                        windowHeight: window.implicitHeight
                     }
 
                     HuggingCornerBlock {
@@ -493,6 +623,8 @@ ShellRoot {
                         anchors.top: parent.top
                         cornerColor: huggingWindow.barColor
                         radiusSize: huggingWindow.cornerRadius
+                        panelScreen: screenScope.modelData
+                        windowHeight: window.implicitHeight
                     }
                 }
             }

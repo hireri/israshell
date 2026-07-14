@@ -4,6 +4,8 @@ import Quickshell.Widgets
 import Quickshell.Wayland
 import qs.style
 import qs.icons
+import Qt5Compat.GraphicalEffects
+import qs.services
 
 PanelWindow {
     id: root
@@ -142,9 +144,56 @@ PanelWindow {
         color: Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.92) : Colors.md3.surface_container
         radius: root.cardR
         border.width: 1
-        border.color: Colors.md3.outline_variant
+        border.color: Config.bar.transparency ? Qt.alpha(Colors.md3.on_surface, 0.3) : Colors.md3.outline_variant
         clip: true
         layer.enabled: true
+
+        Loader {
+            id: cardBlurLoader
+            anchors.fill: parent
+            active: root.visible && Config.blurEffects && !GameModeService.active && Config.bar.transparency > 0
+            
+            sourceComponent: Item {
+                id: cardBlurContainer
+                anchors.fill: parent
+                Item {
+                    id: blurSource
+                    anchors.fill: parent
+                    clip: true
+                    visible: false
+
+                    Image {
+                        id: cardBlurSrc
+                        x: -card.x
+                        y: -card.y
+                        width: root.screen ? root.screen.width : 0
+                        height: root.screen ? root.screen.height : 0
+                        
+                        sourceSize.width: root.screen ? root.screen.width / 4 : 0
+                        sourceSize.height: root.screen ? root.screen.height / 4 : 0
+
+                        source: (WallpaperService.currentWallPreview || WallpaperService.currentWall) 
+                            ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall)) 
+                            : ""
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                    }
+                }
+
+                FastBlur {
+                    id: cardBlurEffect
+                    anchors.fill: parent
+                    source: blurSource
+                    radius: Config.blurRadius
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+                }
+            }
+        }
+
 
         Column {
             id: col
