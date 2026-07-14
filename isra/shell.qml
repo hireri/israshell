@@ -269,7 +269,7 @@ ShellRoot {
                     width: cornerBlurSrc.width
                     height: cornerBlurSrc.height
                     source: cornerBlurSrc
-                    radius: 50
+                    radius: Config.blurRadius
                 }
 
                 Rectangle {
@@ -595,7 +595,7 @@ ShellRoot {
 
                 mask: Region {}
 
-                property string barColor: Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
+                property string barColor: Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, Config.blurOpacity) : Colors.md3.surface_container
 
                 Item {
                     anchors.left: parent.left
