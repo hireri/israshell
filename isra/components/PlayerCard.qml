@@ -605,6 +605,9 @@ CAVAEOF`]
                 color: root.colOnSurfaceVariant
                 font.pixelSize: 11
                 font.family: Config.fontFamily
+                font.features: {
+                    "tnum": 1
+                }
                 Behavior on color {
                     ColorAnimation {
                         duration: 400
