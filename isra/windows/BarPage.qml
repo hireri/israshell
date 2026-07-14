@@ -96,11 +96,12 @@ PageBase {
                     icon: floatingIconComp
                 }
             ]
-            currentValue: Config.huggingBar ? 0 : Config.floatingBar ? 2 : 1
+            currentValue: Config.bar.mode 
             onSelected: v => Config.update({
-                    huggingBar: v === 0,
-                    floatingBar: v === 2
+                bar: Object.assign({}, Config.bar, {
+                    mode: v
                 })
+            })
         }
 
         SettingChips {
@@ -117,10 +118,12 @@ PageBase {
                     icon: arrowDownwardComp
                 }
             ]
-            currentValue: Config.barPosition
+            currentValue: Config.bar.position
             onSelected: v => Config.update({
-                    barPosition: v
+                bar: Object.assign({}, Config.bar, {
+                    position: v
                 })
+            })
         }
 
         SettingChips {
@@ -141,30 +144,36 @@ PageBase {
                     value: 2
                 }
             ]
-            currentValue: Config.transparentBar
+            currentValue: Config.bar.transparency
             onSelected: v => Config.update({
-                    transparentBar: v
+                bar: Object.assign({}, Config.bar, {
+                    transparency: v
                 })
+            })
         }
 
         SettingSwitch {
             isLast: true
             label: "Transparent pills"
             sublabel: "Remove pills background"
-            checked: Config.transparentPills
+            checked: Config.bar.transparentPills
             onToggled: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
                     transparentPills: v
                 })
+            })
         }
 
         SettingSwitch {
             isLast: true
             label: "Compact workspaces"
             sublabel: "Shrink workspaces to hide empty ones"
-            checked: Config.compactWorkspaces
+            checked: Config.bar.compactWorkspaces
             onToggled: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
                     compactWorkspaces: v
                 })
+            })
         }
 
         SettingSwitch {
@@ -211,19 +220,23 @@ PageBase {
                     icon: menuIconComp
                 }
             ]
-            currentValue: Config.playerMode
+            currentValue: Config.bar.playerMode
             onSelected: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
                     playerMode: v
                 })
+            })
         }
 
         SettingSwitch {
             label: "Spinning cover"
             sublabel: "Rotate album art while playing"
-            checked: Config.spinningCover
+            checked: Config.bar.spinningCover
             onToggled: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
                     spinningCover: v
                 })
+            })
         }
 
         SettingSlider {
@@ -234,10 +247,12 @@ PageBase {
             to: 100
             stepSize: 5
             unit: ""
-            value: Config.carouselSpeed
+            value: Config.bar.carouselSpeed
             onMoved: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
                     carouselSpeed: v
                 })
+            })
         }
     }
 
@@ -272,8 +287,8 @@ PageBase {
             ]
             currentValue: Config.osdPosition
             onSelected: v => Config.update({
-                    osdPosition: v
-                })
+                osdPosition: v
+            })
         }
     }
 
@@ -284,10 +299,12 @@ PageBase {
         SettingSwitch {
             label: "Icon tint"
             sublabel: "Colorize tray icons with primary color"
-            checked: Config.tintTrayIcons
+            checked: Config.bar.tintTrayIcons
             onToggled: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
                     tintTrayIcons: v
                 })
+            })
         }
 
         SettingRow {
@@ -300,15 +317,17 @@ PageBase {
                 spacing: 6
 
                 Repeater {
-                    model: Config.trayBlacklist
+                    model: Config.bar.trayBlacklist
 
                     InputChip {
                         required property string modelData
                         label: modelData
                         onRemoved: {
-                            const updated = Config.trayBlacklist.filter(x => x !== modelData);
+                            const updated = Config.bar.trayBlacklist.filter(x => x !== modelData);
                             Config.update({
-                                trayBlacklist: updated
+                                bar: Object.assign({}, Config.bar, {
+                                    trayBlacklist: updated
+                                })
                             });
                         }
                     }
@@ -317,10 +336,13 @@ PageBase {
                 ChipAdd {
                     placeholder: "App name..."
                     onConfirmed: v => {
-                        if (!Config.trayBlacklist.includes(v))
+                        if (!Config.bar.trayBlacklist.includes(v)) {
                             Config.update({
-                                trayBlacklist: [...Config.trayBlacklist, v]
+                                bar: Object.assign({}, Config.bar, {
+                                    trayBlacklist: [...Config.bar.trayBlacklist, v]
+                                })
                             });
+                        }
                     }
                 }
             }
@@ -336,8 +358,8 @@ PageBase {
             sublabel: "Expose capture actions in the bar"
             checked: Config.screencapEnabled
             onToggled: v => Config.update({
-                    screencapEnabled: v
-                })
+                screencapEnabled: v
+            })
         }
 
         SettingRow {
@@ -402,5 +424,4 @@ PageBase {
             }
         }
     }
-
 }

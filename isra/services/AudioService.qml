@@ -92,6 +92,7 @@ Singleton {
     function _launchMicMeter() {
         if (!source?.name)
             return;
+
         const config = "[general]\n" +
             "bars = 1\n" +
             "framerate = 60\n" +
@@ -106,10 +107,10 @@ Singleton {
             "raw_target = /dev/stdout\n" +
             "data_format = ascii\n" +
             "ascii_max_range = 100\n" +
-            "bar_delimiter = 59\n";
-        const b64 = Qt.btoa(config);
-        micMeterProcess.command = ["bash", "-c",
-            "echo " + b64 + " | base64 -d | cava -p /dev/stdin"];
+            "bar_delimiter = 59";
+
+        micMeterProcess.command = ["bash", "-c", "printf '%s' \"$1\" | cava -p /dev/stdin", "--", config];
+        
         micMeterProcess.running = false;
         micMeterProcess.running = true;
     }

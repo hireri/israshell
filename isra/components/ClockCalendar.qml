@@ -275,7 +275,7 @@ Item {
 
         y: {
             const open = _ready && root.isOpen;
-            if (Config.barPosition === 0)
+            if (Config.bar.position === 0)
                 return open ? 8 : -(height + 8);
             return open ? 0 : height + 8;
         }

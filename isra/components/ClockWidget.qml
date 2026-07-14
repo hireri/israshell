@@ -141,7 +141,7 @@ Item {
         Behavior on currentCx {
             enabled: root.animate && !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
             NumberAnimation {
-                duration: 400
+                duration: 350
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
             }
@@ -149,7 +149,7 @@ Item {
         Behavior on currentCy {
             enabled: root.animate && !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
             NumberAnimation {
-                duration: 400
+                duration: 350
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
             }

@@ -26,8 +26,9 @@ PageBase {
             readonly property real _previewHeight: width * 0.58 * 9 / 16
 
             Item {
-                Layout.preferredWidth: parent.width * 0.58
-                Layout.preferredHeight: Layout.preferredWidth * 9 / 16
+                Layout.fillWidth: true
+                Layout.preferredWidth: 58
+                Layout.preferredHeight: width * 9 / 16
                 Layout.alignment: Qt.AlignTop
 
                 ClippingRectangle {
@@ -210,7 +211,8 @@ PageBase {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: topLayout._previewHeight
+                Layout.preferredWidth: 42
+                Layout.preferredHeight: previewClip.height
                 Layout.alignment: Qt.AlignTop
                 spacing: 6
 

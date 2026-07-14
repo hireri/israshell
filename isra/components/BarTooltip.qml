@@ -15,7 +15,7 @@ Window {
     property int yOffset: 8
 
     x: targetPos.x - (width / 2)
-    y: Config.barPosition === 1 ? targetPos.y - height - yOffset : targetPos.y + yOffset
+    y: Config.bar.position === 1 ? targetPos.y - height - yOffset : targetPos.y + yOffset
 
     onVisibleChanged: {
         if (visible) {

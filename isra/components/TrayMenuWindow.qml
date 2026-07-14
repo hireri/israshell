@@ -37,7 +37,7 @@ PanelWindow {
 
     property real cardX: 0
 
-    readonly property bool barAtBottom: Config.barPosition === 1
+    readonly property bool barAtBottom: Config.bar.position === 1
     screen: panelWindow.screen
     anchors.top: true
     anchors.bottom: true
@@ -175,7 +175,7 @@ PanelWindow {
             }
         }
 
-        color: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.92) : Colors.md3.surface_container
+        color: Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.92) : Colors.md3.surface_container
         radius: root.cardR
         border.width: 1
         border.color: Colors.md3.outline_variant

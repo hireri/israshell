@@ -12,10 +12,10 @@ Rectangle {
     color: {
         if (root.isOpen) {
             Colors.md3.secondary_container
-        } else if (Config.transparentPills) {
-            Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+        } else if (Config.bar.transparentPills) {
+            Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
         } else { 
-            Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+            Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
         }
     }
     radius: 18
@@ -40,7 +40,7 @@ Rectangle {
     property int activeIndex: Math.max(0, Math.min(activeWorkspaceId - 1, 9))
 
     property var visibleIds: {
-        if (!Config.compactWorkspaces) {
+        if (!Config.bar.compactWorkspaces) {
             return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         }
         const ids = [];
@@ -158,7 +158,7 @@ Rectangle {
                     property var firstToplevel: Hyprland.toplevels.values.find(t => t.workspace && t.workspace.id === wsId)
                     property bool hasWindows: firstToplevel !== undefined
 
-                    property bool isVisible: !Config.compactWorkspaces || hasWindows || takenByMonitor || isActiveHere || isActiveOther
+                    property bool isVisible: !Config.bar.compactWorkspaces || hasWindows || takenByMonitor || isActiveHere || isActiveOther
 
                     property string clientAppId: root.getAppId(firstToplevel)
                     property string iconPath: root.getIconSource(clientAppId)

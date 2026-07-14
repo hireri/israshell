@@ -23,7 +23,7 @@ Item {
             return false;
         if (pos === 2)
             return true;
-        return (Config.barPosition ?? 0) === 1;
+        return (Config.bar.position ?? 0) === 1;
     }
 
     function show(path) {

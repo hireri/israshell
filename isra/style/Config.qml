@@ -5,22 +5,34 @@ import Quickshell.Io
 
 Singleton {
     id: configRoot
-    property bool spinningCover: true
-    property int playerMode: 0
-    property bool compactWorkspaces: false
     property bool showSeconds: false
     property int hourFormat: 0
+    property bool stackedSliders: false
     property int carouselSpeed: 30
-    property int transparentBar: 0
-    property bool transparentPills: false
     property string fontFamily: "Inter"
     property string fontMonospace: "Roboto Mono"
-    property var trayBlacklist: ["spotify", "blueman", "Network"]
-    property bool tintTrayIcons: false
-    property bool floatingBar: false
-    property bool huggingBar: true
     property bool screenCorners: true
-    property int barPosition: 0
+    property var bar: ({
+            mode: 0,                    // 0 = hugging, 1 = rect,   2 = floating
+            position: 0,                // 0 = top,     1 = bottom
+            transparency: 0,            // 0 = solid,   1 = opaque, 2 = transparent
+            transparentPills: false,
+            compactWorkspaces: false,
+
+            spinningCover: true,
+            playerMode: 0,
+
+            tintTrayIcons: false,
+            trayBlacklist: ["spotify", "blueman", "Network"],
+
+            left: ["activeWindow"],
+            center: {
+                mode: "anchor",         // "auto" | "anchor"
+                anchor: "workspaces",
+                items: ["media", "workspaces", "clock", "wallpaper"]
+            },
+            right: ["screencap", "tray", "quicksettings"]
+        })
     property var nightLight: ({
             scheduleEnabled: true,
             autoDarkMode: false,
@@ -93,22 +105,33 @@ Singleton {
 
     function __defaults() {
         return {
-            spinningCover: true,
-            playerMode: 0,
-            compactWorkspaces: false,
             showSeconds: false,
+            stackedSliders: false,
             hourFormat: 0,
             carouselSpeed: 30,
-            transparentBar: 0,
-            transparentPills: false,
             fontFamily: "Inter",
             fontMonospace: "Roboto Mono",
-            trayBlacklist: ["spotify", "blueman", "Network"],
-            tintTrayIcons: false,
-            floatingBar: false,
-            huggingBar: true,
-            screenCorners: true,
-            barPosition: 0,
+            bar: {
+                mode: 0,
+                position: 0,
+                transparency: 0,
+                transparentPills: false,
+                compactWorkspaces: false,
+
+                spinningCover: true,
+                playerMode: 0,
+
+                tintTrayIcons: false,
+                trayBlacklist: ["spotify", "blueman", "Network"],
+
+                left: ["activeWindow"],
+                center: {
+                    mode: "anchor",
+                    anchor: "workspaces",
+                    items: ["media", "workspaces", "clock", "wallpaper"]
+                },
+                right: ["screencap", "tray", "quicksettings"]
+            },
             nightLight: {
                 scheduleEnabled: true,
                 autoDarkMode: false,

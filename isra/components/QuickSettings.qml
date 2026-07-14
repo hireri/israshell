@@ -59,10 +59,10 @@ Item {
         color: {
             if (root.isOpen) {
                 Colors.md3.secondary_container
-            } else if (Config.transparentPills) {
-                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+            } else if (Config.bar.transparentPills) {
+                Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
             } else { 
-                Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+                Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
             }
         }
         radius: 18
@@ -170,8 +170,8 @@ Item {
                     anchors.centerIn: parent
                     width: 1
                     height: 14
-                    color: root.isOpen | Config.transparentBar === 2 ? Colors.md3.on_secondary_container : Colors.md3.outline_variant
-                    opacity: root.isOpen | Config.transparentBar ? 0.3 : 0.7
+                    color: root.isOpen | Config.bar.transparency === 2 ? Colors.md3.on_secondary_container : Colors.md3.outline_variant
+                    opacity: root.isOpen | Config.bar.transparency ? 0.3 : 0.7
 
                     Behavior on color {
                         ColorAnimation {
@@ -249,7 +249,7 @@ Item {
             id: sidebar
             anchor.window: root.panelWindow
             anchor.rect.x: (root.panelWindow.screen?.width ?? 1920) - implicitWidth
-            anchor.rect.y: Config.barPosition === 1 ? -((root.panelWindow.screen?.height ?? 1080) * 0.75 + (Config.transparentBar === 2 ? 0 : 12)) : root.panelWindow.height + (Config.transparentBar === 2 ? 0 : 12)
+            anchor.rect.y: Config.bar.position === 1 ? -((root.panelWindow.screen?.height ?? 1080) * 0.75 + (Config.bar.transparency === 2 ? 0 : 12)) : root.panelWindow.height + (Config.bar.transparency === 2 ? 0 : 12)
 
             implicitWidth: 432
             anchor.adjustment: PopupAdjustment.None

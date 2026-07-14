@@ -320,7 +320,7 @@ PanelWindow {
         anchors.fill: parent
 
         readonly property int gradientHeight: 120
-        readonly property bool gradientOn: Config.transparentBar === 2 && !root.shouldBlur
+        readonly property bool gradientOn: Config.bar.transparency === 2 && !root.shouldBlur
         z: 4
 
         Rectangle {
@@ -329,7 +329,7 @@ PanelWindow {
             anchors.right: parent.right
             height: parent.gradientHeight
 
-            opacity: (parent.gradientOn && Config.barPosition === 0) ? 1 : 0
+            opacity: (parent.gradientOn && Config.bar.position === 0) ? 1 : 0
             Behavior on opacity {
                 NumberAnimation { duration: 200 }
             }
@@ -347,7 +347,7 @@ PanelWindow {
             anchors.right: parent.right
             height: parent.gradientHeight
 
-            opacity: (parent.gradientOn && Config.barPosition === 1) ? 1 : 0
+            opacity: (parent.gradientOn && Config.bar.position === 1) ? 1 : 0
             Behavior on opacity {
                 NumberAnimation { duration: 200 }
             }

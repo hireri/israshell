@@ -24,10 +24,10 @@ Rectangle {
     color: {
         if (root.isOpen) {
             Colors.md3.secondary_container
-        } else if (Config.transparentPills) {
-            Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+        } else if (Config.bar.transparentPills) {
+            Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
         } else { 
-            Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+            Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
         }
     }   
 
@@ -163,7 +163,7 @@ Rectangle {
                     songrecScript.startDetached();
                 }
                 onEntered: {
-                    var yPos = Config.barPosition === 1 ? 0 : height;
+                    var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                     tooltipWindow.tipTitle = ScreencapService.isRecognizing ? "Stop Recognizing" : "Recognize Music";
                     tooltipWindow.visible = true;
@@ -244,7 +244,7 @@ Rectangle {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: recordScript.startDetached()
                 onEntered: {
-                    var yPos = Config.barPosition === 1 ? 0 : height;
+                    var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                     tooltipWindow.tipTitle = ScreencapService.isRecording ? "Stop Recording" : "Start Recording";
                     tooltipWindow.visible = true;
@@ -273,7 +273,7 @@ Rectangle {
             cursorShape: Qt.PointingHandCursor
             onClicked: parent.clicked()
             onEntered: {
-                var yPos = Config.barPosition === 1 ? 0 : height;
+                var yPos = Config.bar.position === 1 ? 0 : height;
                 tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                 tooltipWindow.tipTitle = parent.tooltip;
                 tooltipWindow.visible = true;

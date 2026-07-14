@@ -66,10 +66,10 @@ Item {
         color: {
             if (root.isOpen) {
                 Colors.md3.secondary_container
-            } else if (Config.transparentPills) {
-                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+            } else if (Config.bar.transparentPills) {
+                Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
             } else { 
-                Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+                Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
             }
         }        
         opacity: WallpaperService.applying ? 0.4 : 1.0
@@ -135,8 +135,8 @@ Item {
 
             anchor.window: root.panelWindow
             anchor.rect: Qt.rect(Math.round((root.panelWindow.width - panel.width) / 2), 0, panel.width, root.panelWindow.height)
-            anchor.edges: (Config.barPosition === 1 ? Edges.Top : Edges.Bottom) | Edges.Left
-            anchor.gravity: (Config.barPosition === 1 ? Edges.Top : Edges.Bottom) | Edges.Right
+            anchor.edges: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Left
+            anchor.gravity: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Right
 
             implicitWidth: panel.width
             implicitHeight: panel.height + 8
@@ -284,7 +284,7 @@ Item {
 
                 y: {
                     const open = _ready && root.isOpen;
-                    if (Config.barPosition === 1)
+                    if (Config.bar.position === 1)
                         return open ? 0 : height + 8;
                     return open ? 8 : -height;
                 }

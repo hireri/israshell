@@ -48,9 +48,9 @@ Item {
             right: parent.right
             leftMargin: 18
             rightMargin: 18
+            verticalCenter: parent.verticalCenter
         }
         spacing: 14
-        y: (root.implicitHeight - implicitHeight) / 2
 
         Rectangle {
             width: 34
@@ -95,11 +95,10 @@ Item {
             }
         }
 
-        Item {
+        Row {
             id: trailingSlot
             Layout.alignment: Qt.AlignVCenter
-            implicitWidth: childrenRect.width
-            implicitHeight: childrenRect.height
+            spacing: 8
         }
     }
 }

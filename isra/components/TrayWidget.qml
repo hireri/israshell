@@ -54,10 +54,10 @@ Item {
         color: {
             if (root.isOpen) {
                 Colors.md3.secondary_container
-            } else if (Config.transparentPills) {
-                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+            } else if (Config.bar.transparentPills) {
+                Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
             } else { 
-                Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+                Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
             }
         }   
 
@@ -85,7 +85,7 @@ Item {
                     id: cell
                     required property var modelData
 
-                    readonly property bool blacklisted: Config.trayBlacklist.includes(modelData?.id ?? "") || Config.trayBlacklist.includes(modelData?.title ?? "")
+                    readonly property bool blacklisted: Config.bar.trayBlacklist.includes(modelData?.id ?? "") || Config.bar.trayBlacklist.includes(modelData?.title ?? "")
                     visible: !blacklisted
                     width: visible ? 20 : 0
                     implicitWidth: visible ? 20 : 0
@@ -98,11 +98,11 @@ Item {
                         anchors.fill: parent
                         sourceSize: Qt.size(20, 20)
                         fillMode: Image.PreserveAspectFit
-                        visible: !Config.tintTrayIcons
+                        visible: !Config.bar.tintTrayIcons
                     }
 
                     Loader {
-                        active: Config.tintTrayIcons
+                        active: Config.bar.tintTrayIcons
                         anchors.fill: img
                         sourceComponent: MultiEffect {
                             source: img
@@ -122,7 +122,7 @@ Item {
                             var name = root.itemName(cell.modelData);
                             if (!name)
                                 return;
-                            var yPos = Config.barPosition === 1 ? 0 : cell.height;
+                            var yPos = Config.bar.position === 1 ? 0 : cell.height;
                             tooltip.targetPos = cell.mapToGlobal(cell.width / 2, yPos);
                             tooltip.tipTitle = name;
                             tooltip.visible = true;
@@ -134,7 +134,7 @@ Item {
                                 cell.modelData?.activate();
                             } else if (mouse.button === Qt.RightButton) {
                                 tooltip.visible = false;
-                                var yEdge = Config.barPosition === 1 ? 0 : cell.height;
+                                var yEdge = Config.bar.position === 1 ? 0 : cell.height;
                                 var globalPos = cell.mapToGlobal(cell.width / 2, yEdge);
                                 menu.open(cell.modelData, globalPos);
                             }

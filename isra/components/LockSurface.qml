@@ -381,7 +381,7 @@ Item {
         readonly property bool canPrev: hasPlayer && !!player.canGoPrevious
         readonly property bool canNext: hasPlayer && !!player.canGoNext
         readonly property bool canToggle: hasPlayer && !!player.canTogglePlaying
-        readonly property bool shouldSpin: hasPlayer && Config.spinningCover && isPlaying
+        readonly property bool shouldSpin: hasPlayer && Config.bar.spinningCover && isPlaying
 
         Behavior on implicitWidth {
             NumberAnimation { duration: 200; easing.type: Easing.OutCubic }

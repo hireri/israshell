@@ -15,10 +15,10 @@ ClippingRectangle {
     color: {
         if (root.isOpen) {
             Colors.md3.secondary_container
-        } else if (Config.transparentPills) {
-            Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+        } else if (Config.bar.transparentPills) {
+            Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
         } else { 
-            Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+            Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
         }
     }
 
@@ -28,11 +28,11 @@ ClippingRectangle {
         }
     }
 
-    radius: Config.playerMode === 1 ? height / 2 : 18
+    radius: Config.bar.playerMode === 1 ? height / 2 : 18
     implicitWidth: {
-        if (Config.playerMode === 1)
+        if (Config.bar.playerMode === 1)
             return 32;
-        if (Config.playerMode === 2)
+        if (Config.bar.playerMode === 2)
             return 216;
         return 240;
     }
@@ -46,7 +46,7 @@ ClippingRectangle {
     }
 
     readonly property bool isOpen: MediaPlayerState.openScreen === panelScreen
-    readonly property bool _barAtBottom: Config.barPosition === 1
+    readonly property bool _barAtBottom: Config.bar.position === 1
     property bool popupWindowVisible: false
 
     onIsOpenChanged: {
@@ -119,17 +119,17 @@ ClippingRectangle {
 
     Row {
         anchors.centerIn: parent
-        spacing: (Config.playerMode === 1 || Config.playerMode === 2) ? 0 : 8
+        spacing: (Config.bar.playerMode === 1 || Config.bar.playerMode === 2) ? 0 : 8
 
         Item {
             id: pillCover
-            visible: Config.playerMode !== 2
-            implicitWidth: Config.playerMode === 1 ? root.height - 4 : 24
-            height: Config.playerMode === 1 ? root.height - 4 : 24
+            visible: Config.bar.playerMode !== 2
+            implicitWidth: Config.bar.playerMode === 1 ? root.height - 4 : 24
+            height: Config.bar.playerMode === 1 ? root.height - 4 : 24
             anchors.verticalCenter: parent.verticalCenter
 
             readonly property bool isPlaying: MediaPlayerState.displayPlayer?.playbackState === MprisPlaybackState.Playing
-            readonly property bool shouldSpin: Config.spinningCover && isPlaying
+            readonly property bool shouldSpin: Config.bar.spinningCover && isPlaying
 
             ClippingRectangle {
                 anchors.fill: parent
@@ -186,8 +186,8 @@ ClippingRectangle {
 
         Item {
             id: marqueeContainer
-            visible: Config.playerMode !== 1
-            implicitWidth: Config.playerMode !== 1 ? (Config.playerMode === 2 ? 176 : 200) : 0
+            visible: Config.bar.playerMode !== 1
+            implicitWidth: Config.bar.playerMode !== 1 ? (Config.bar.playerMode === 2 ? 176 : 200) : 0
             height: 20
             clip: true
             anchors.verticalCenter: parent.verticalCenter
@@ -247,12 +247,12 @@ ClippingRectangle {
                 anchors.left: parent.left
                 implicitWidth: 20
                 height: parent.height
-                visible: marqueeContainer.shouldScroll && !(Config.transparentBar && Config.transparentPills)
+                visible: marqueeContainer.shouldScroll && !(Config.bar.transparency && Config.bar.transparentPills)
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop {
                         position: 0.0
-                        color: root.isOpen ? Colors.md3.secondary_container : Config.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
+                        color: root.isOpen ? Colors.md3.secondary_container : Config.bar.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
                         Behavior on color {
                             ColorAnimation {
                                 duration: 150
@@ -269,7 +269,7 @@ ClippingRectangle {
                 anchors.right: parent.right
                 implicitWidth: 20
                 height: parent.height
-                visible: marqueeContainer.shouldScroll && !(Config.transparentBar && Config.transparentPills)
+                visible: marqueeContainer.shouldScroll && !(Config.bar.transparency && Config.bar.transparentPills)
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop {
@@ -278,7 +278,7 @@ ClippingRectangle {
                     }
                     GradientStop {
                         position: 1.0
-                        color: root.isOpen ? Colors.md3.secondary_container : Config.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
+                        color: root.isOpen ? Colors.md3.secondary_container : Config.bar.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
                         Behavior on color {
                             ColorAnimation {
                                 duration: 150

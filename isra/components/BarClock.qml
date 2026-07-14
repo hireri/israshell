@@ -36,10 +36,10 @@ Item {
         color: {
             if (root.isOpen) {
                 Colors.md3.secondary_container
-            } else if (Config.transparentPills) {
-                Config.transparentBar ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+            } else if (Config.bar.transparentPills) {
+                Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
             } else { 
-                Config.transparentBar ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+                Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
             }
         }
         radius: 18
@@ -116,8 +116,8 @@ Item {
 
             anchor.window: root.panelWindow
             anchor.rect: Qt.rect(Math.round((root.panelWindow.width - calContent.implicitWidth) / 2), 0, calContent.implicitWidth, root.panelWindow.height)
-            anchor.edges: (Config.barPosition === 1 ? Edges.Top : Edges.Bottom) | Edges.Left
-            anchor.gravity: (Config.barPosition === 1 ? Edges.Top : Edges.Bottom) | Edges.Right
+            anchor.edges: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Left
+            anchor.gravity: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Right
 
             implicitWidth: calContent.implicitWidth
             implicitHeight: calContent.implicitHeight + 8

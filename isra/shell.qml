@@ -134,12 +134,80 @@ ShellRoot {
         sourceComponent: ScreenCorners {}
     }
 
+    // Renders a list of named bar widgets in order, resolved against a
+    // name -> Component registry. `separators` draws a dot between adjacent
+    // items (used for the right zone); it hides itself around a widget that
+    // hides itself (e.g. the tray with no icons).
+    component BarZone: Row {
+        id: zone
+        property var itemNames: []
+        property var registry
+        property bool separators: false
+        spacing: separators ? 0 : 12
+
+        // NOTE: relies on widgets that have a menu (WallpaperPicker,
+        // QuickSettings) exposing an `isOpen` property. Widgets without one
+        // just read as undefined/false here.
+        readonly property bool anyMenuOpen: {
+            for (let i = 0; i < rep.count; i++) {
+                const slot = rep.itemAt(i);
+                if (slot && slot.isOpen)
+                    return true;
+            }
+            return false;
+        }
+
+        Repeater {
+            id: rep
+            model: zone.itemNames
+
+            delegate: Item {
+                id: delegateRoot
+                required property string modelData
+                required property int index
+                implicitWidth: row.implicitWidth
+                implicitHeight: row.implicitHeight
+                readonly property bool isOpen: slotLoader.item && slotLoader.item.isOpen === true
+
+                Row {
+                    id: row
+                    spacing: spacing
+
+                    Loader {
+                        id: slotLoader
+                        sourceComponent: zone.registry[delegateRoot.modelData] || null
+                    }
+
+                    Item {
+                        implicitHeight: 32
+                        implicitWidth: Config.bar.transparentPills ? 18 : 12
+                        visible: zone.separators && delegateRoot.index < zone.itemNames.length - 1 && slotLoader.item && slotLoader.item.visible !== false
+                        Behavior on implicitWidth {
+                            NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                        }
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 4
+                            height: 4
+                            radius: 2
+                            color: Config.bar.transparency ? Qt.alpha(Colors.md3.outline, 0.85) : Colors.md3.outline
+                            opacity: Config.bar.transparentPills ? 1 : 0
+                            Behavior on opacity {
+                                NumberAnimation { duration: 250 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     component HuggingCornerBlock: Item {
         id: block
         property int type: 0
         property string cornerColor
         property int radiusSize: 16
-        property bool flipped: Config.barPosition === 1
+        property bool flipped: Config.bar.position === 1
 
         width: radiusSize
         height: radiusSize
@@ -170,35 +238,58 @@ ShellRoot {
                 modelData: screenScope.modelData
             }
 
+            // name -> Component registry for bar widgets. Add new widgets
+            // here; `Config.bar.left/center.items/right` reference them by
+            // these string keys.
+            readonly property var barWidgetComponents: ({
+                    activeWindow: activeWindowComponent,
+                    workspaces: workspacesComponent,
+                    media: mediaComponent,
+                    clock: clockComponent,
+                    wallpaper: wallpaperComponent,
+                    screencap: screencapComponent,
+                    tray: trayComponent,
+                    quicksettings: quicksettingsComponent
+                })
+
+            Component { id: activeWindowComponent; ActiveWindow {} }
+            Component { id: workspacesComponent; Workspaces { panelWindow: window } }
+            Component { id: mediaComponent; MediaPlayer { panelScreen: screenScope.modelData } }
+            Component { id: clockComponent; BarClock { panelWindow: window } }
+            Component { id: wallpaperComponent; WallpaperPicker { panelWindow: window } }
+            Component { id: screencapComponent; ScreencapControls {} }
+            Component { id: trayComponent; TrayWidget { panelWindow: window } }
+            Component { id: quicksettingsComponent; QuickSettings { panelWindow: window } }
+
             PanelWindow {
                 id: window
                 property var modelData: screenScope.modelData
                 screen: modelData
 
-                property bool isMenuOpen: qsWidget.isOpen || wpWidget.isOpen || false
+                property bool isMenuOpen: (leftZone.anyMenuOpen || rightZone.anyMenuOpen || centerAutoZone.anyMenuOpen || centerBeforeZone.anyMenuOpen || centerAfterZone.anyMenuOpen || (centerAnchorLoader.item && centerAnchorLoader.item.isOpen === true)) || false
 
                 property bool shouldHide: LockscreenService.lockAnimating || LockscreenService.locked
 
                 WlrLayershell.namespace: "quickshell:bar"
                 WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
 
-                anchors.top: Config.barPosition === 0
-                anchors.bottom: Config.barPosition === 1
+                anchors.top: Config.bar.position === 0
+                anchors.bottom: Config.bar.position === 1
                 anchors.left: true
                 anchors.right: true
 
-                implicitHeight: (Config.floatingBar ? 56 : 44)
+                implicitHeight: ((Config.bar.mode === 2) ? 56 : 44)
                 color: "transparent"
-                exclusiveZone: (Config.floatingBar ? 56 : Config.transparentBar === 2 & !GameModeService.active ? 34 : 44)
+                exclusiveZone: ((Config.bar.mode === 2) ? 56 : Config.bar.transparency === 2 & !GameModeService.active ? 34 : 44)
                 visible: true
 
                 Item {
                     id: visualContent
                     anchors.fill: parent
-                    anchors.leftMargin: Config.floatingBar ? 12 : 0
-                    anchors.rightMargin: Config.floatingBar ? 12 : 0
-                    anchors.topMargin: Config.floatingBar && Config.barPosition === 0 ? 10 : 0
-                    anchors.bottomMargin: Config.floatingBar && Config.barPosition === 1 ? 10 : 0
+                    anchors.leftMargin: (Config.bar.mode === 2) ? 12 : 0
+                    anchors.rightMargin: (Config.bar.mode === 2) ? 12 : 0
+                    anchors.topMargin: (Config.bar.mode === 2) && Config.bar.position === 0 ? 10 : 0
+                    anchors.bottomMargin: (Config.bar.mode === 2) && Config.bar.position === 1 ? 10 : 0
 
                     opacity: window.shouldHide ? 0 : 1
 
@@ -212,10 +303,10 @@ ShellRoot {
                     Rectangle {
                         id: barContainer
                         anchors.fill: parent
-                        radius: Config.floatingBar ? 22 : 0
+                        radius: (Config.bar.mode === 2) ? 22 : 0
 
-                        border.width: Config.floatingBar ? 1 : 0
-                        border.color: Config.transparentBar ? Qt.alpha(Colors.md3.outline_variant, 0.5) : Colors.md3.outline_variant
+                        border.width: (Config.bar.mode === 2) ? 1 : 0
+                        border.color: Config.bar.transparency ? Qt.alpha(Colors.md3.outline_variant, 0.5) : Colors.md3.outline_variant
                         Behavior on border.color {
                             ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
                         }
@@ -227,20 +318,20 @@ ShellRoot {
                             radius: parent.radius
 
                             property color topColor: {
-                                const solid = Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
-                                const fadeAtTop = Config.barPosition === 0;
-                                if (Config.transparentBar === 2) {
-                                    if (!Config.floatingBar)
+                                const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
+                                const fadeAtTop = Config.bar.position === 0;
+                                if (Config.bar.transparency === 2) {
+                                    if (!(Config.bar.mode === 2))
                                         return Qt.alpha(Colors.md3.background, 0);
                                     return fadeAtTop ? Qt.alpha(Colors.md3.background, 0.5) : Qt.alpha(Colors.md3.background, 0);
                                 }
                                 return solid;
                             }
                             property color bottomColor: {
-                                const solid = Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
-                                const fadeAtTop = Config.barPosition === 0;
-                                if (Config.transparentBar === 2) {
-                                    if (!Config.floatingBar)
+                                const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container;
+                                const fadeAtTop = Config.bar.position === 0;
+                                if (Config.bar.transparency === 2) {
+                                    if (!(Config.bar.mode === 2))
                                         return Qt.alpha(Colors.md3.background, 0);
                                     return fadeAtTop ? Qt.alpha(Colors.md3.background, 0) : Qt.alpha(Colors.md3.background, 0.5);
                                 }
@@ -285,90 +376,66 @@ ShellRoot {
                                 }
                             }
 
-                            ActiveWindow {
+                            BarZone {
+                                id: leftZone
                                 anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
+                                registry: barWidgetComponents
+                                itemNames: Config.bar.left
                             }
 
                             Item {
                                 anchors.fill: parent
 
-                                Workspaces {
-                                    id: workspacesItem
-                                    panelWindow: window
+                                readonly property int centerAnchorIndex: Config.bar.center.items.indexOf(Config.bar.center.anchor)
+                                readonly property bool centerUseAnchor: Config.bar.center.mode === "anchor" && centerAnchorIndex !== -1
+
+                                // mode: "auto" (or "anchor" with a missing/renamed anchor widget)
+                                BarZone {
+                                    id: centerAutoZone
                                     anchors.centerIn: parent
+                                    visible: !parent.centerUseAnchor
+                                    registry: barWidgetComponents
+                                    itemNames: !parent.centerUseAnchor ? Config.bar.center.items : []
                                 }
 
-                                Row {
-                                    anchors.right: workspacesItem.left
+                                // mode: "anchor" - one widget pinned dead-center, the rest
+                                // gather to its left/right in config order.
+                                Loader {
+                                    id: centerAnchorLoader
+                                    anchors.centerIn: parent
+                                    active: parent.centerUseAnchor
+                                    sourceComponent: parent.centerUseAnchor ? barWidgetComponents[Config.bar.center.anchor] : null
+                                }
+
+                                BarZone {
+                                    id: centerBeforeZone
+                                    anchors.right: centerAnchorLoader.left
                                     anchors.rightMargin: 12
                                     anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 12
-
-                                    MediaPlayer { panelScreen: screenScope.modelData }
+                                    visible: parent.centerUseAnchor
+                                    registry: barWidgetComponents
+                                    itemNames: parent.centerUseAnchor ? Config.bar.center.items.slice(0, parent.centerAnchorIndex) : []
                                 }
 
-                                Row {
-                                    anchors.left: workspacesItem.right
+                                BarZone {
+                                    id: centerAfterZone
+                                    anchors.left: centerAnchorLoader.right
                                     anchors.leftMargin: 12
                                     anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 12
-
-                                    BarClock { panelWindow: window }
-                                    WallpaperPicker { id: wpWidget; panelWindow: window }
+                                    visible: parent.centerUseAnchor
+                                    registry: barWidgetComponents
+                                    itemNames: parent.centerUseAnchor ? Config.bar.center.items.slice(parent.centerAnchorIndex + 1) : []
                                 }
                             }
 
-                            Row {
+                            BarZone {
+                                id: rightZone
                                 anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 0
-
-                                ScreencapControls {}
-
-                                Item {
-                                    implicitHeight: 32
-                                    implicitWidth: Config.transparentPills ? 18 : 12
-                                    visible: Config.screencapEnabled && Config.screencap.blacklist.length < 5
-                                    Behavior on implicitWidth {
-                                        NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
-                                    }
-                                    Rectangle {
-                                        anchors.centerIn: parent
-                                        width: 4
-                                        height: 4
-                                        radius: 2
-                                        color: Config.transparentBar ? Qt.alpha(Colors.md3.outline, 0.85) : Colors.md3.outline
-                                        opacity: Config.transparentPills ? 1 : 0
-                                        Behavior on opacity {
-                                            NumberAnimation { duration: 250 }
-                                        }
-                                    }
-                                }
-
-                                TrayWidget { id: trayWidget; panelWindow: window }
-
-                                Item {
-                                    implicitHeight: 32
-                                    implicitWidth: Config.transparentPills ? 18 : 12
-                                    visible: trayWidget.visible
-                                    Behavior on implicitWidth {
-                                        NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
-                                    }
-                                    Rectangle {
-                                        anchors.centerIn: parent
-                                        width: 4
-                                        height: 4
-                                        radius: 2
-                                        color: Config.transparentBar ? Qt.alpha(Colors.md3.outline, 0.85) : Colors.md3.outline
-                                        opacity: Config.transparentPills ? 1 : 0
-                                        Behavior on opacity {
-                                            NumberAnimation { duration: 250 }
-                                        }
-                                    }
-                                }
-
-                                QuickSettings { id: qsWidget; panelWindow: window }
+                                registry: barWidgetComponents
+                                itemNames: Config.bar.right
+                                separators: true
                             }
                         }
                     }
@@ -379,15 +446,15 @@ ShellRoot {
                 id: huggingWindow
                 screen: modelData
 
-                visible: !Config.floatingBar && Config.huggingBar && Config.transparentBar !== 2
+                visible: Config.bar.mode === 0 && Config.bar.transparency !== 2
 
-                anchors.top: Config.barPosition === 0
-                anchors.bottom: Config.barPosition === 1
+                anchors.top: Config.bar.position === 0
+                anchors.bottom: Config.bar.position === 1
                 anchors.left: true
                 anchors.right: true
 
-                margins.top: Config.barPosition === 0 ? window.implicitHeight : 0
-                margins.bottom: Config.barPosition === 1 ? window.implicitHeight : 0
+                margins.top: Config.bar.position === 0 ? window.implicitHeight : 0
+                margins.bottom: Config.bar.position === 1 ? window.implicitHeight : 0
 
                 property int cornerRadius: 26
                 implicitHeight: cornerRadius
@@ -400,7 +467,7 @@ ShellRoot {
 
                 mask: Region {}
 
-                property string barColor: Config.transparentBar ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
+                property string barColor: Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.85) : Colors.md3.surface_container
 
                 Item {
                     anchors.left: parent.left
