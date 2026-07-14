@@ -35,7 +35,7 @@ SettingRow {
             Repeater {
                 model: root.options
 
-                ClippingRectangle {
+                Rectangle {
                     id: chip
                     required property var modelData
                     required property int index
