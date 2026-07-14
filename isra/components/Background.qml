@@ -174,9 +174,10 @@ PanelWindow {
             anchors.fill: parent
             visible: !slot.isVideo
             asynchronous: true
-            cache: true
             source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
             fillMode: Image.PreserveAspectCrop
+            sourceSize.width: root.screen ? Math.round(root.screen.width * root.screen.devicePixelRatio) : 1920
+            sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1080
         }
 
         Loader {
@@ -283,6 +284,8 @@ PanelWindow {
                     : ""
                 fillMode: Image.PreserveAspectCrop
                 visible: false
+                sourceSize.width: root.screen ? Math.max(1, Math.round(root.screen.width * root.screen.devicePixelRatio / 4)) : 480
+                sourceSize.height: root.screen ? Math.max(1, Math.round(root.screen.height * root.screen.devicePixelRatio / 4)) : 270
             }
 
             FastBlur {
