@@ -13,35 +13,33 @@ Item {
             id: lockSurface
             color: "black"
 
+            property bool forceShow: false
+
             Image {
                 id: lockWallImg
                 anchors.fill: parent
-                asynchronous: true
+                asynchronous: false
                 cache: true
                 source: WallpaperService.currentWall ? ("file://" + WallpaperService.currentWallPreview) : ""
                 fillMode: Image.PreserveAspectCrop
                 visible: false
 
-                function _isSettled() {
-                    return status === Image.Ready || status === Image.Error || source === "";
-                }
-
-                onStatusChanged: if (_isSettled()) lockBlur.opacity = 1
-                Component.onCompleted: if (_isSettled()) lockBlur.opacity = 1
+                readonly property bool settled: status === Image.Ready || status === Image.Error || source === ""
             }
 
             Timer {
                 interval: 2000
-                running: true
-                onTriggered: lockBlur.opacity = 1
+                running: !lockWallImg.settled
+                onTriggered: lockSurface.forceShow = true
             }
 
             FastBlur {
                 id: lockBlur
                 anchors.fill: lockWallImg
                 source: lockWallImg
-                radius: 64
-                opacity: 0
+                radius: Config.blurEffects ? 64 : 0
+
+                opacity: (lockWallImg.settled || lockSurface.forceShow) ? 1 : 0
 
                 Behavior on opacity {
                     NumberAnimation { duration: 400; easing.type: Easing.OutCubic }

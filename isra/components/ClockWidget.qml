@@ -120,6 +120,8 @@ Item {
     Item {
         id: clockRoot
 
+        readonly property bool isClockEnabled: Config.desktopClock || root.forceVisible
+
         readonly property bool isLockedPosition: root.forceCentered || LockscreenService.lockVisualActive || LockscreenService.locked
 
         readonly property real targetCx: isLockedPosition
@@ -137,6 +139,18 @@ Item {
         y: currentCy - height / 2 + root._dragDy
 
         property bool _snapAfterDrag: false
+
+        enabled: isClockEnabled
+        visible: opacity > 0
+        opacity: isClockEnabled ? 1.0 : 0.0
+
+        Behavior on opacity {
+            enabled: root.animate && !root._isInitializing
+            NumberAnimation {
+                duration: clockRoot.isClockEnabled ? 200 : 150
+                easing.type: Easing.OutCubic
+            }
+        }
 
         Behavior on currentCx {
             enabled: root.animate && !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
@@ -193,12 +207,12 @@ Item {
                 }
         }
 
-        scale: dragHandler.active ? 1.06 : 1.0
+        scale: !isClockEnabled ? 0.9 : (dragHandler.active ? 1.06 : 1.0)
         transformOrigin: Item.Center
         Behavior on scale {
-            enabled: root.animate
+            enabled: root.animate && !root._isInitializing
             NumberAnimation {
-                duration: 220
+                duration: clockRoot.isClockEnabled ? (dragHandler.active ? 220 : 200) : 150
                 easing.type: Easing.OutCubic
             }
         }
@@ -213,12 +227,12 @@ Item {
         }
 
         HoverHandler {
-            cursorShape: dragHandler.active ? Qt.ClosedHandCursor : (Config.clock.manualPos ?? false) ? Qt.OpenHandCursor : Qt.ArrowCursor
+            cursorShape: dragHandler.active ? Qt.ClosedHandCursor : ((Config.clock.manualPos ?? false) && clockRoot.isClockEnabled) ? Qt.OpenHandCursor : Qt.ArrowCursor
         }
 
         DragHandler {
             id: dragHandler
-            enabled: Config.clock.manualPos ?? false
+            enabled: (Config.clock.manualPos ?? false) && clockRoot.isClockEnabled
             target: null
             onActiveChanged: {
                 if (!active) {

@@ -176,7 +176,6 @@ PanelWindow {
             asynchronous: true
             source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
             fillMode: Image.PreserveAspectCrop
-            sourceSize.width: root.screen ? Math.round(root.screen.width * root.screen.devicePixelRatio) : 1920
             sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1080
         }
 
@@ -284,14 +283,17 @@ PanelWindow {
                     : ""
                 fillMode: Image.PreserveAspectCrop
                 visible: false
-                sourceSize.width: root.screen ? Math.max(1, Math.round(root.screen.width * root.screen.devicePixelRatio / 4)) : 480
-                sourceSize.height: root.screen ? Math.max(1, Math.round(root.screen.height * root.screen.devicePixelRatio / 4)) : 270
+                layer.enabled: true
+                layer.textureSize: Qt.size(sourceSize.width, sourceSize.height)
+
+                sourceSize.width: root.screen ? Math.max(1, Math.round(root.screen.width * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 480
+                sourceSize.height: root.screen ? Math.max(1, Math.round(root.screen.height * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 270
             }
 
             FastBlur {
                 anchors.fill: parent
                 source: blurSrcImg
-                radius: blurRoot.targetActive ? 64 : 0
+                radius: blurRoot.targetActive && Config.blurEffects ? 64 : 0
 
                 Behavior on radius {
                     NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
@@ -313,8 +315,11 @@ PanelWindow {
     }
 
     Loader {
+        id: clockLoader
         anchors.fill: parent
-        active: Config.desktopClock
+        active: Config.desktopClock || loadedOnce
+        property bool loadedOnce: false
+        onLoaded: loadedOnce = true
         z: 4
         sourceComponent: ClockWidget { modelData: root.modelData }
     }
