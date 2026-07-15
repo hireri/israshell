@@ -16,11 +16,15 @@ Singleton {
     readonly property string barDateText: _barDateText
 
     readonly property string weatherTemp: _weatherTemp
+    readonly property string weatherFeelsLike: _weatherFeelsLike
+    readonly property string weatherRainChance: _weatherRainChance
     readonly property string weatherHigh: _weatherHigh
     readonly property string weatherLow: _weatherLow
     readonly property string weatherDesc: _weatherDesc
     readonly property string weatherHumid: _weatherHumid
     readonly property string weatherUvi: _weatherUvi
+    readonly property string weatherSunrise: _weatherSunrise
+    readonly property string weatherSunset: _weatherSunset
     readonly property string weatherCode: _weatherCode
 
     readonly property bool weatherLoading: _weatherLoading
@@ -40,11 +44,15 @@ Singleton {
     property string _barDateText: ""
 
     property string _weatherTemp: "—"
+    property string _weatherFeelsLike: "—"
+    property string _weatherRainChance: "—"
     property string _weatherHigh: "—"
     property string _weatherLow: "—"
     property string _weatherDesc: "loading…"
     property string _weatherHumid: "—"
     property string _weatherUvi: "—"
+    property string _weatherSunrise: "—"
+    property string _weatherSunset: "—"
     property string _weatherCode: "116"
     property bool _weatherLoading: true
     property string _weatherError: ""
@@ -151,13 +159,28 @@ Singleton {
         try {
             const cur = data.current_condition[0];
             const today = data.weather[0];
+            const astro = today.astronomy[0];
 
             root._weatherTemp = (Config.useFarenheit ? cur.temp_F : cur.temp_C) + "°";
+            root._weatherFeelsLike = (Config.useFarenheit ? cur.FeelsLikeF : cur.FeelsLikeC) + "°";
+
+            const hourly = today.hourly || [];
+            let maxChance = 0;
+            for (let i = 0; i < hourly.length; i++) {
+                let chance = parseInt(hourly[i].chanceofrain || "0");
+                if (chance > maxChance) {
+                    maxChance = chance;
+                }
+            }
+            root._weatherRainChance = String(maxChance) + "%";
+
             root._weatherHigh = (Config.useFarenheit ? today.maxtempF : today.maxtempC) + "°";
             root._weatherLow = (Config.useFarenheit ? today.mintempF : today.mintempC) + "°";
             root._weatherDesc = cur.weatherDesc[0].value;
             root._weatherHumid = cur.humidity + "%";
             root._weatherUvi = String(cur.uvIndex || "0");
+            root._weatherSunrise = astro.sunrise;
+            root._weatherSunset = astro.sunset;
             root._weatherCode = String(cur.weatherCode);
             root._weatherError = "";
         } catch (e) {

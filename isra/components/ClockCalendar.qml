@@ -39,13 +39,13 @@ Item {
         })
 
     readonly property var weatherColor: ({
-            sun: "#F9A825",
+            sun: Colors.md3.tertiary,
             cloud: Colors.md3.on_surface_variant,
-            rain: "#5C8DEA",
-            storm: Colors.md3.tertiary,
-            snow: Colors.md3.on_surface,
-            heat: Colors.md3.tertiary,
-            humidity: "#5C8DEA",
+            rain: Colors.md3.primary,
+            storm: Colors.md3.error,
+            snow: Colors.md3.outline,
+            heat: Colors.md3.error,
+            humidity: Colors.md3.secondary,
             air: Colors.md3.secondary
         })
 
@@ -137,20 +137,19 @@ Item {
         radius: root.shape.large
         border.width: 1
         border.color: Colors.md3.outline_variant
-        layer.enabled: true
 
         Column {
             id: content
             anchors.fill: parent
             anchors.margins: 16
-            spacing: 14
+            spacing: 16
 
             Column {
                 width: parent.width
                 spacing: 0
 
                 Row {
-                    spacing: 6
+                    spacing: 8
 
                     Text {
                         id: timeText
@@ -228,7 +227,7 @@ Item {
                     color: Colors.md3.on_surface_variant
                     font.family: Config.fontFamily
                     font.pixelSize: root.type.bodyMedium
-                    topPadding: 2
+                    topPadding: 4
                     Behavior on color {
                         ColorAnimation {
                             duration: root.motion.short4
@@ -250,11 +249,11 @@ Item {
 
             Column {
                 width: parent.width
-                spacing: 10
+                spacing: 12
 
                 Row {
                     width: parent.width
-                    spacing: 14
+                    spacing: 16
 
                     Loader {
                         sourceComponent: root.getWeatherIconComponent()
@@ -269,7 +268,7 @@ Item {
 
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 2
+                        spacing: 4
 
                         Row {
                             spacing: 8
@@ -317,80 +316,200 @@ Item {
                     }
                 }
 
-                Item {
+                Grid {
+                    id: weatherGrid
                     width: parent.width
-                    height: 16
+                    columns: 3
+                    spacing: 4
 
-                    Row {
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 5
+                    readonly property real cellWidth: (width - spacing * 2) / 3
+                    readonly property real cellHeight: 26
 
-                        HeatIcon {
-                            iconSize: 14
-                            color: root.weatherColor.heat
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Text {
-                            text: LocaleService.weatherUvi + " UVI"
-                            color: Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: root.type.bodySmall
-                            font.weight: Font.Medium
-                            anchors.verticalCenter: parent.verticalCenter
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: root.motion.short4
+                    Rectangle {
+                        width: weatherGrid.cellWidth
+                        height: weatherGrid.cellHeight
+                        color: Colors.md3.surface_container_high
+                        radius: root.shape.extraSmall
+                        topLeftRadius: root.shape.medium
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            HeatIcon {
+                                iconSize: 14
+                                color: root.weatherColor.heat
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: LocaleService.weatherUvi + " UVI"
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: root.type.bodySmall
+                                font.weight: Font.Medium
+                                anchors.verticalCenter: parent.verticalCenter
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: root.motion.short4
+                                    }
                                 }
                             }
                         }
                     }
 
-                    Row {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 5
+                    Rectangle {
+                        width: weatherGrid.cellWidth
+                        height: weatherGrid.cellHeight
+                        color: Colors.md3.surface_container_high
+                        radius: root.shape.extraSmall
 
-                        WaterDropIcon {
-                            iconSize: 14
-                            color: root.weatherColor.humidity
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Text {
-                            text: LocaleService.weatherHumid
-                            color: Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: root.type.bodySmall
-                            font.weight: Font.Medium
-                            anchors.verticalCenter: parent.verticalCenter
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: root.motion.short4
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            WaterDropIcon {
+                                iconSize: 14
+                                color: root.weatherColor.humidity
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: LocaleService.weatherHumid
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: root.type.bodySmall
+                                font.weight: Font.Medium
+                                anchors.verticalCenter: parent.verticalCenter
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: root.motion.short4
+                                    }
                                 }
                             }
                         }
                     }
 
-                    Row {
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 5
+                    Rectangle {
+                        width: weatherGrid.cellWidth
+                        height: weatherGrid.cellHeight
+                        color: Colors.md3.surface_container_high
+                        radius: root.shape.extraSmall
+                        topRightRadius: root.shape.medium
 
-                        AirIcon {
-                            iconSize: 14
-                            color: root.weatherColor.air
-                            anchors.verticalCenter: parent.verticalCenter
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            AirIcon {
+                                iconSize: 14
+                                color: root.weatherColor.air
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: LocaleService.weatherAqi + " AQI"
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: root.type.bodySmall
+                                font.weight: Font.Medium
+                                anchors.verticalCenter: parent.verticalCenter
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: root.motion.short4
+                                    }
+                                }
+                            }
                         }
-                        Text {
-                            text: LocaleService.weatherAqi + " AQI"
-                            color: Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: root.type.bodySmall
-                            font.weight: Font.Medium
-                            anchors.verticalCenter: parent.verticalCenter
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: root.motion.short4
+                    }
+
+                    Rectangle {
+                        width: weatherGrid.cellWidth
+                        height: weatherGrid.cellHeight
+                        color: Colors.md3.surface_container_high
+                        radius: root.shape.extraSmall
+                        bottomLeftRadius: root.shape.medium
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            ThermostatIcon {
+                                iconSize: 14
+                                color: Colors.md3.primary
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "Fl " + LocaleService.weatherFeelsLike
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: root.type.bodySmall
+                                font.weight: Font.Medium
+                                anchors.verticalCenter: parent.verticalCenter
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: root.motion.short4
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: weatherGrid.cellWidth
+                        height: weatherGrid.cellHeight
+                        color: Colors.md3.surface_container_high
+                        radius: root.shape.extraSmall
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            UmbrellaIcon {
+                                iconSize: 14
+                                color: root.weatherColor.rain
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: LocaleService.weatherRainChance
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: root.type.bodySmall
+                                font.weight: Font.Medium
+                                anchors.verticalCenter: parent.verticalCenter
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: root.motion.short4
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: weatherGrid.cellWidth
+                        height: weatherGrid.cellHeight
+                        color: Colors.md3.surface_container_high
+                        radius: root.shape.extraSmall
+                        bottomRightRadius: root.shape.medium
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            WbTwilightIcon {
+                                iconSize: 14
+                                color: root.weatherColor.sun
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: LocaleService.weatherSunset.replace(" AM", "").replace(" PM", "")
+                                color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                font.pixelSize: root.type.bodySmall
+                                font.weight: Font.Medium
+                                anchors.verticalCenter: parent.verticalCenter
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: root.motion.short4
+                                    }
                                 }
                             }
                         }
@@ -407,20 +526,25 @@ Item {
                     width: (parent.width - 8) / 2
                     height: 36
                     radius: root.shape.full
-                    color: calendarMA.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_highest
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: root.motion.short2
+                    color: Colors.md3.secondary_container
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.radius
+                        color: Colors.md3.on_secondary_container
+                        opacity: calendarMA.containsMouse ? 0.08 : 0.0
+                        Behavior on opacity {
+                            NumberAnimation { duration: root.motion.short2 }
                         }
                     }
 
                     Row {
                         anchors.centerIn: parent
-                        spacing: 6
+                        spacing: 8
 
                         CalendarMonthIcon {
                             iconSize: 16
-                            color: calendarMA.containsMouse ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
+                            color: Colors.md3.on_secondary_container
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Text {
@@ -428,7 +552,7 @@ Item {
                             font.family: Config.fontFamily
                             font.pixelSize: root.type.bodySmall
                             font.weight: Font.Medium
-                            color: calendarMA.containsMouse ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
+                            color: Colors.md3.on_secondary_container
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
@@ -450,20 +574,25 @@ Item {
                     width: (parent.width - 8) / 2
                     height: 36
                     radius: root.shape.full
-                    color: settingsMA.containsMouse ? Colors.md3.surface_container_highest : "transparent"
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: root.motion.short2
+                    color: Colors.md3.surface_container_high
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.radius
+                        color: Colors.md3.on_surface
+                        opacity: settingsMA.containsMouse ? 0.08 : 0.0
+                        Behavior on opacity {
+                            NumberAnimation { duration: root.motion.short2 }
                         }
                     }
 
                     Row {
                         anchors.centerIn: parent
-                        spacing: 6
+                        spacing: 8
 
                         SettingsIcon {
                             iconSize: 16
-                            color: Colors.md3.on_surface_variant
+                            color: Colors.md3.on_surface
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Text {
@@ -471,7 +600,7 @@ Item {
                             font.family: Config.fontFamily
                             font.pixelSize: root.type.bodySmall
                             font.weight: Font.Medium
-                            color: Colors.md3.on_surface_variant
+                            color: Colors.md3.on_surface
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
