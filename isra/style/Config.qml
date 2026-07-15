@@ -63,8 +63,8 @@ Singleton {
     property bool screencapEnabled: true
     property var screencap: ({
             blacklist: ["cts", "ocr"],
-            screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
-            recordPath: "~/.config/hypr/scripts/record.sh",
+            screenshotPath: "~/.config/quickshell/isra/scripts/screenshot.sh",
+            recordPath: "~/.config/quickshell/isra/scripts/record.sh",
             ctsPath: "~/.config/quickshell/isra/scripts/cts.sh",
             ocrPath: "~/.config/quickshell/isra/scripts/ocr.sh",
             songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
