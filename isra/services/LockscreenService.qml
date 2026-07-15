@@ -102,13 +102,13 @@ Singleton {
 
     Timer {
         id: lockVisualDelayTimer
-        interval: 200
+        interval: 50
         onTriggered: root.lockVisualActive = true
     }
 
     Timer {
         id: lockEngageTimer
-        interval: 600
+        interval: 450
         onTriggered: {
             root.lockAnimating = false
             root.locked = true

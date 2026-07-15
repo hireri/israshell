@@ -14,6 +14,7 @@ Item {
             color: "black"
 
             property bool forceShow: false
+            readonly property bool mountedAlreadyBlurred: LockscreenService.lockVisualActive
 
             Image {
                 id: lockWallImg
@@ -41,7 +42,14 @@ Item {
 
                 opacity: (lockWallImg.settled || lockSurface.forceShow) ? 1 : 0
 
+                property bool blurBehaviorEnabled: false
+                Component.onCompleted: {
+                    if (!lockSurface.mountedAlreadyBlurred)
+                        blurBehaviorEnabled = true;
+                }
+
                 Behavior on opacity {
+                    enabled: lockBlur.blurBehaviorEnabled
                     NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
                 }
 
