@@ -9,204 +9,48 @@ Item {
 
     required property bool isOpen
 
-    readonly property int todayDay: new Date().getDate()
-    readonly property int todayMonth: new Date().getMonth()
-    readonly property int todayYear: new Date().getFullYear()
+    signal calendarRequested
+    signal settingsRequested
 
-    property int viewYear: todayYear
-    property int viewMonth: todayMonth
+    readonly property var shape: ({
+            extraSmall: 4,
+            small: 8,
+            medium: 12,
+            large: 16,
+            extraLarge: 28,
+            full: 9999
+        })
 
-    property int selDay: todayDay
-    property int selMonth: todayMonth
-    property int selYear: todayYear
+    readonly property var motion: ({
+            short2: 100,
+            short3: 150,
+            short4: 200,
+            medium3: 350,
+            long4: 600
+        })
 
-    readonly property bool isTodaySel: selDay === todayDay && selMonth === todayMonth && selYear === todayYear
+    readonly property var type: ({
+            displayLarge: 57,
+            titleLarge: 22,
+            titleSmall: 14,
+            headlineSmall: 24,
+            bodyMedium: 14,
+            bodySmall: 12
+        })
+
+    readonly property var weatherColor: ({
+            sun: "#F9A825",
+            cloud: Colors.md3.on_surface_variant,
+            rain: "#5C8DEA",
+            storm: Colors.md3.tertiary,
+            snow: Colors.md3.on_surface,
+            heat: Colors.md3.tertiary,
+            humidity: "#5C8DEA",
+            air: Colors.md3.secondary
+        })
 
     implicitWidth: card.implicitWidth
     implicitHeight: card.implicitHeight
-
-    function init() {
-        const now = new Date();
-        viewYear = now.getFullYear();
-        viewMonth = now.getMonth();
-        selDay = now.getDate();
-        selMonth = now.getMonth();
-        selYear = now.getFullYear();
-    }
-
-    function prevMonth() {
-        if (viewMonth === 0) {
-            viewMonth = 11;
-            viewYear--;
-        } else
-            viewMonth--;
-    }
-    function nextMonth() {
-        if (viewMonth === 11) {
-            viewMonth = 0;
-            viewYear++;
-        } else
-            viewMonth++;
-    }
-
-    function buildDays(year, month) {
-        const days = [];
-        const first = new Date(year, month, 1);
-        const lastDate = new Date(year, month + 1, 0).getDate();
-        let startDow = first.getDay();
-        if (Config.weekMonday)
-            startDow = (startDow + 6) % 7;
-
-        const prevLastDate = new Date(year, month, 0).getDate();
-        const prevM = month === 0 ? 11 : month - 1;
-        const prevY = month === 0 ? year - 1 : year;
-        for (let i = startDow - 1; i >= 0; i--)
-            days.push({
-                day: prevLastDate - i,
-                month: prevM,
-                year: prevY,
-                isCurrentMonth: false
-            });
-
-        for (let d = 1; d <= lastDate; d++)
-            days.push({
-                day: d,
-                month: month,
-                year: year,
-                isCurrentMonth: true
-            });
-
-        const nextM = month === 11 ? 0 : month + 1;
-        const nextY = month === 11 ? year + 1 : year;
-        let nd = 1;
-        while (days.length < 42)
-            days.push({
-                day: nd++,
-                month: nextM,
-                year: nextY,
-                isCurrentMonth: false
-            });
-        return days;
-    }
-
-    function isLeapYear(y) {
-        return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-    }
-    function dayOfYear(d, m, y) {
-        return Math.floor((new Date(y, m, d) - new Date(y, 0, 1)) / 86400000) + 1;
-    }
-
-    function weekNumber(d, m, y) {
-        const dt = new Date(y, m, d);
-        dt.setHours(0, 0, 0, 0);
-        dt.setDate(dt.getDate() + 3 - (dt.getDay() + 6) % 7);
-        const jan4 = new Date(dt.getFullYear(), 0, 4);
-        return 1 + Math.round(((dt - jan4) / 86400000 - 3 + (jan4.getDay() + 6) % 7) / 7);
-    }
-
-    function dayName(d, m, y) {
-        return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(y, m, d).getDay()];
-    }
-    function monthName(m) {
-        return ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m];
-    }
-    function weekCount(year, month) {
-        let startDow = new Date(year, month, 1).getDay();
-        if (Config.weekMonday)
-            startDow = (startDow + 6) % 7;
-        return Math.ceil((startDow + new Date(year, month + 1, 0).getDate()) / 7);
-    }
-
-    readonly property var currentDays: buildDays(viewYear, viewMonth)
-
-    readonly property real selYearProgress: {
-        const dy = dayOfYear(selDay, selMonth, selYear);
-        const total = isLeapYear(selYear) ? 366 : 365;
-        return dy / total;
-    }
-
-    readonly property var fixedHolidays: ({
-            "01-01": "New Year's Day",
-            "01-06": "Epiphany",
-            "04-25": "Liberation Day",
-            "05-01": "Labour Day",
-            "06-02": "Republic Day",
-            "08-15": "Ferragosto",
-            "11-01": "All Saints' Day",
-            "12-08": "Immaculate Conception",
-            "12-25": "Christmas Day",
-            "12-26": "St. Stephen's Day",
-            "02-14": "Valentine's Day",
-            "03-08": "International Women's Day",
-            "03-19": "Father's Day",
-            "04-22": "Earth Day",
-            "05-04": "Star Wars Day",
-            "10-31": "Halloween",
-            "12-31": "New Year's Eve"
-        })
-
-    function easterDate(year) {
-        const a = year % 19, b = Math.floor(year / 100), c = year % 100;
-        const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
-        const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
-        const i = Math.floor(c / 4), k = c % 4;
-        const l = (32 + 2 * e + 2 * i - h - k) % 7;
-        const m = Math.floor((a + 11 * h + 22 * l) / 451);
-        const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
-        const day = ((h + l - 7 * m + 114) % 31) + 1;
-        return new Date(year, month, day);
-    }
-
-    function holidayFor(day, month, year) {
-        const key = String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-        if (fixedHolidays[key])
-            return fixedHolidays[key];
-
-        const e = easterDate(year || new Date().getFullYear());
-        const fmt = dt => String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
-        const mon = new Date(e);
-        mon.setDate(mon.getDate() + 1);
-        const carnival = new Date(e);
-        carnival.setDate(carnival.getDate() - 47);
-
-        if (key === fmt(e))
-            return "Easter Sunday";
-        if (key === fmt(mon))
-            return "Easter Monday";
-        if (key === fmt(carnival))
-            return "Mardi Gras";
-        return "";
-    }
-
-    readonly property string currentHoliday: holidayFor(selDay, selMonth, selYear)
-
-    readonly property string selRelativeLabel: {
-        const today = new Date(todayYear, todayMonth, todayDay);
-        const sel = new Date(selYear, selMonth, selDay);
-        const diff = Math.round((sel - today) / 86400000);
-        if (diff === -1)
-            return "yesterday";
-        if (diff === 0)
-            return "today";
-        if (diff === 1)
-            return "tomorrow";
-        if (diff < 0)
-            return Math.abs(diff) + " days ago";
-        return "in " + diff + " days";
-    }
-
-    readonly property string selProseTop: {
-        const d = new Date(selYear, selMonth, selDay);
-        return dayName(selDay, selMonth, selYear) + ", " + Qt.formatDate(d, "dd MMMM yyyy");
-    }
-
-    readonly property string selProseBottom: {
-        const dy = dayOfYear(selDay, selMonth, selYear);
-        const total = isLeapYear(selYear) ? 366 : 365;
-        const wn = weekNumber(selDay, selMonth, selYear);
-        const rem = total - dy;
-        return "Week " + wn + "  ·  " + rem + " day" + (rem !== 1 ? "s" : "") + " left.";
-    }
 
     function getWeatherIconComponent() {
         const c = parseInt(LocaleService.weatherCode);
@@ -228,43 +72,43 @@ Item {
     Component {
         id: sunnyComponent
         WbSunnyIcon {
-            iconSize: 42
-            color: "#f9bc02"
+            iconSize: 36
+            color: root.weatherColor.sun
         }
     }
     Component {
         id: partlyCloudyComponent
         PartlyCloudyDayIcon {
-            iconSize: 42
+            iconSize: 36
             color: Colors.md3.primary
         }
     }
     Component {
         id: cloudyComponent
         CloudyIcon {
-            iconSize: 42
-            color: Qt.alpha(Colors.md3.on_surface, 0.7)
+            iconSize: 36
+            color: root.weatherColor.cloud
         }
     }
     Component {
         id: rainComponent
         RainyIcon {
-            iconSize: 42
-            color: "#a2c9ff"
+            iconSize: 36
+            color: root.weatherColor.rain
         }
     }
     Component {
         id: stormComponent
         ThunderstormIcon {
-            iconSize: 42
-            color: "#dbe1ff"
+            iconSize: 36
+            color: root.weatherColor.storm
         }
     }
     Component {
         id: snowComponent
         SnowyIcon {
-            iconSize: 42
-            color: "#ffffff"
+            iconSize: 36
+            color: root.weatherColor.snow
         }
     }
 
@@ -281,762 +125,365 @@ Item {
         }
         Behavior on y {
             NumberAnimation {
-                duration: 360
+                duration: root.motion.medium3
                 easing.type: Easing.OutExpo
             }
         }
 
-        implicitWidth: 840
-        implicitHeight: 480
+        implicitWidth: 300
+        implicitHeight: content.implicitHeight + 32
 
-        color: Colors.md3.surface_container
-        radius: 20
+        color: Colors.md3.surface_container_low
+        radius: root.shape.large
         border.width: 1
         border.color: Colors.md3.outline_variant
         layer.enabled: true
 
-        Row {
+        Column {
+            id: content
             anchors.fill: parent
             anchors.margins: 16
-            spacing: 16
+            spacing: 14
 
-            Item {
-                width: 254
-                height: parent.height
+            Column {
+                width: parent.width
+                spacing: 0
 
-                Column {
-                    anchors.fill: parent
-                    anchors.topMargin: 8
-                    spacing: 16
+                Row {
+                    spacing: 6
+
+                    Text {
+                        id: timeText
+                        text: LocaleService.liveTime
+                        color: Colors.md3.on_surface
+                        font.family: "Google Sans Display"
+                        font.pixelSize: root.type.displayLarge
+                        font.weight: Font.Light
+                        font.features: ({
+                                "tnum": 1
+                            })
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: root.motion.short4
+                            }
+                        }
+                    }
 
                     Column {
-                        width: parent.width
+                        anchors.verticalCenter: timeText.verticalCenter
                         spacing: 0
 
-                        Row {
-                            width: parent.width
-                            spacing: 6
-
-                            Text {
-                                id: timeText
-                                text: LocaleService.liveTime
-                                color: Colors.md3.on_surface
-                                font.family: "Google Sans Display"
-                                font.pixelSize: 56
-                                font.weight: Font.Light
-                                font.features: {
-                                    "tnum": 1
-                                }
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 200
-                                    }
-                                }
-                            }
-
-                            Column {
-                                anchors.verticalCenter: timeText.verticalCenter
-                                spacing: 0
-
-                                Text {
-                                    opacity: LocaleService.liveAmPm !== "" ? 1.0 : 0.0
-                                    text: LocaleService.liveAmPm !== "" ? LocaleService.liveAmPm.trim() : "am"
-                                    color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
-                                    font.family: "Google Sans Display"
-                                    font.pixelSize: 22
-                                    font.weight: Font.Light
-                                    height: timeText.height / 2
-                                    verticalAlignment: Text.AlignBottom
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
-                                }
-
-                                Text {
-                                    text: ":" + LocaleService.liveSecs
-                                    color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
-                                    font.family: "Google Sans Display"
-                                    font.pixelSize: 22
-                                    font.weight: Font.Light
-                                    font.features: {
-                                        "tnum": 1
-                                    }
-                                    height: timeText.height / 2
-                                    verticalAlignment: Text.AlignTop
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
+                        Text {
+                            opacity: LocaleService.liveAmPm !== "" ? 1.0 : 0.0
+                            text: LocaleService.liveAmPm !== "" ? LocaleService.liveAmPm.trim() : "am"
+                            color: Colors.md3.on_surface_variant
+                            font.family: "Google Sans Display"
+                            font.pixelSize: root.type.titleSmall
+                            font.weight: Font.Light
+                            height: timeText.height / 2
+                            verticalAlignment: Text.AlignBottom
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: root.motion.short4
                                 }
                             }
                         }
 
                         Text {
-                            text: LocaleService.liveDayName
+                            text: ":" + LocaleService.liveSecs
                             color: Colors.md3.primary
-                            font.family: Config.fontFamily
-                            font.pixelSize: 14
-                            font.weight: Font.Medium
-                            topPadding: 4
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 200
-                                }
-                            }
-                        }
-
-                        Text {
-                            text: LocaleService.liveFullDate
-                            color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
-                            font.family: Config.fontFamily
-                            font.pixelSize: 13
-                            topPadding: 2
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 200
-                                }
-                            }
-                        }
-                    }
-
-                    Column {
-                        width: parent.width
-                        spacing: 6
-
-                        Item {
-                            width: parent.width
-                            height: progressLabel.height
-
-                            Row {
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 6
-
-                                Text {
-                                    id: progressLabel
-                                    text: root.selYear + " progress"
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 12
-                                    font.weight: Font.Medium
-                                    color: Colors.md3.on_surface_variant
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
-                                }
-
-                                Text {
-                                    text: {
-                                        const dy = root.dayOfYear(root.selDay, root.selMonth, root.selYear);
-                                        const total = root.isLeapYear(root.selYear) ? 366 : 365;
-                                        return dy + " / " + total;
-                                    }
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 12
-                                    color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    font.features: {
-                                        "tnum": 1
-                                    }
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
-                                }
-                            }
-
-                            Text {
-                                anchors.right: parent.right
-                                text: Math.round(root.selYearProgress * 100) + "%"
-                                font.family: Config.fontFamily
-                                font.pixelSize: 12
-                                font.weight: Font.Medium
-                                color: Colors.md3.primary
-                                font.features: {
+                            font.family: "Google Sans Display"
+                            font.pixelSize: root.type.titleSmall
+                            font.weight: Font.Light
+                            font.features: ({
                                     "tnum": 1
-                                }
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 200
-                                    }
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            id: progressTrack
-                            width: parent.width
-                            height: 5
-                            radius: 3
-                            color: Qt.alpha(Colors.md3.primary, 0.14)
+                                })
+                            height: timeText.height / 2
+                            verticalAlignment: Text.AlignTop
                             Behavior on color {
                                 ColorAnimation {
-                                    duration: 300
-                                }
-                            }
-
-                            Rectangle {
-                                width: Math.max(progressTrack.height, progressTrack.width * root.selYearProgress)
-                                height: parent.height
-                                radius: parent.radius
-                                color: Colors.md3.primary
-                                Behavior on width {
-                                    NumberAnimation {
-                                        duration: 600
-                                        easing.type: Easing.OutCubic
-                                    }
-                                }
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 300
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Column {
-                        width: parent.width
-                        spacing: 1
-
-                        Row {
-                            width: parent.width
-                            spacing: 6
-
-                            Text {
-                                text: root.selProseTop
-                                color: Colors.md3.on_surface
-                                font.family: Config.fontFamily
-                                font.pixelSize: 13
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 200
-                                    }
-                                }
-                            }
-
-                            Text {
-                                text: "·"
-                                color: Qt.alpha(Colors.md3.on_surface_variant, 0.35)
-                                font.family: Config.fontFamily
-                                font.pixelSize: 13
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            Text {
-                                text: root.selRelativeLabel
-                                color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
-                                font.family: Config.fontFamily
-                                font.pixelSize: 13
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 200
-                                    }
-                                }
-                            }
-                        }
-
-                        Text {
-                            width: parent.width
-                            wrapMode: Text.WordWrap
-                            topPadding: 4
-                            text: root.selProseBottom
-                            color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
-                            font.family: Config.fontFamily
-                            font.pixelSize: 12
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 200
-                                }
-                            }
-                        }
-
-                        Item {
-                            visible: root.currentHoliday.length > 0
-                            width: parent.width
-                            height: chipPill.height + 6
-
-                            Rectangle {
-                                id: chipPill
-                                anchors.bottom: parent.bottom
-                                color: Colors.md3.secondary_container
-                                radius: 8
-                                width: chipRow.implicitWidth + 20
-                                height: 28
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 200
-                                    }
-                                }
-
-                                Row {
-                                    id: chipRow
-                                    anchors.centerIn: parent
-                                    spacing: 6
-
-                                    CelebrationIcon {
-                                        iconSize: 16
-                                        color: Colors.md3.on_secondary_container
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: 200
-                                            }
-                                        }
-                                    }
-
-                                    Text {
-                                        text: root.currentHoliday
-                                        color: Colors.md3.on_secondary_container
-                                        font.family: Config.fontFamily
-                                        font.pixelSize: 12
-                                        font.weight: Font.Medium
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: 200
-                                            }
-                                        }
-                                    }
+                                    duration: root.motion.short4
                                 }
                             }
                         }
                     }
                 }
 
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    width: parent.width
-                    height: 124
-                    radius: 10
-                    color: Colors.md3.surface_container_high
+                Text {
+                    text: LocaleService.liveDayName
+                    color: Colors.md3.primary
+                    font.family: Config.fontFamily
+                    font.pixelSize: root.type.titleSmall
+                    font.weight: Font.Medium
+                    topPadding: 4
                     Behavior on color {
                         ColorAnimation {
-                            duration: 200
+                            duration: root.motion.short4
                         }
                     }
+                }
 
-                    Column {
-                        anchors {
-                            fill: parent
-                            leftMargin: 18
-                            rightMargin: 18
-                            topMargin: 16
-                            bottomMargin: 14
-                        }
-                        spacing: 0
-
-                        Row {
-                            width: parent.width
-                            spacing: 14
-
-                            Loader {
-                                sourceComponent: root.getWeatherIconComponent()
-                                anchors.verticalCenter: parent.verticalCenter
-                                Connections {
-                                    target: LocaleService
-                                    function onWeatherCodeChanged() {
-                                        sourceComponent = root.getWeatherIconComponent();
-                                    }
-                                }
-                            }
-
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 2
-
-                                Row {
-                                    spacing: 8
-
-                                    Text {
-                                        id: tempLabel
-                                        text: LocaleService.weatherTemp
-                                        font.pixelSize: 26
-                                        color: Colors.md3.on_surface
-                                        font.family: Config.fontFamily
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: 200
-                                            }
-                                        }
-                                    }
-
-                                    Text {
-                                        text: LocaleService.weatherHigh + " / " + LocaleService.weatherLow
-                                        font.pixelSize: 13
-                                        font.weight: Font.Medium
-                                        color: Qt.alpha(Colors.md3.on_surface_variant, 0.55)
-                                        font.family: Config.fontFamily
-                                        anchors.baseline: tempLabel.baseline
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: 200
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Text {
-                                    text: LocaleService.weatherDesc
-                                    font.pixelSize: 13
-                                    font.weight: Font.Medium
-                                    color: Colors.md3.on_surface_variant
-                                    font.family: Config.fontFamily
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Item {
-                            width: 1
-                            height: 14
-                        }
-
-                        Item {
-                            width: parent.width
-                            height: 16
-
-                            Row {
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 5
-
-                                HeatIcon {
-                                    iconSize: 15
-                                    color: '#b287c7'
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                Text {
-                                    text: LocaleService.weatherUvi + " UVI"
-                                    color: Colors.md3.on_surface_variant
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 12
-                                    font.weight: Font.Medium
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
-                                }
-                            }
-
-                            Row {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 5
-
-                                WaterDropIcon {
-                                    iconSize: 15
-                                    color: "#a2c9ff"
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                Text {
-                                    text: LocaleService.weatherHumid
-                                    color: Colors.md3.on_surface_variant
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 12
-                                    font.weight: Font.Medium
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
-                                }
-                            }
-
-                            Row {
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 5
-
-                                AirIcon {
-                                    iconSize: 15
-                                    color: '#87b895'
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                Text {
-                                    text: LocaleService.weatherAqi + " AQI"
-                                    color: Colors.md3.on_surface_variant
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 12
-                                    font.weight: Font.Medium
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
-                                }
-                            }
+                Text {
+                    text: LocaleService.liveFullDate
+                    color: Colors.md3.on_surface_variant
+                    font.family: Config.fontFamily
+                    font.pixelSize: root.type.bodyMedium
+                    topPadding: 2
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: root.motion.short4
                         }
                     }
                 }
             }
 
             Rectangle {
-                width: parent.width - 254 - 16
-                height: parent.height
-                radius: 10
-                color: Colors.md3.surface_container_high
+                width: parent.width
+                height: 1
+                color: Colors.md3.outline_variant
                 Behavior on color {
                     ColorAnimation {
-                        duration: 200
+                        duration: root.motion.short4
                     }
                 }
+            }
 
-                Item {
-                    anchors.fill: parent
-                    anchors.margins: 20
+            Column {
+                width: parent.width
+                spacing: 10
 
-                    Item {
-                        id: calHeader
-                        width: parent.width
-                        height: 40
+                Row {
+                    width: parent.width
+                    spacing: 14
 
-                        Column {
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 3
+                    Loader {
+                        sourceComponent: root.getWeatherIconComponent()
+                        anchors.verticalCenter: parent.verticalCenter
+                        Connections {
+                            target: LocaleService
+                            function onWeatherCodeChanged() {
+                                sourceComponent = root.getWeatherIconComponent();
+                            }
+                        }
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Row {
+                            spacing: 8
 
                             Text {
-                                text: root.monthName(root.viewMonth) + " " + root.viewYear
-                                font.family: Config.fontFamily
-                                font.pixelSize: 20
-                                font.weight: Font.Medium
+                                id: tempLabel
+                                text: LocaleService.weatherTemp
+                                font.pixelSize: root.type.headlineSmall
                                 color: Colors.md3.on_surface
+                                font.family: Config.fontFamily
                                 Behavior on color {
                                     ColorAnimation {
-                                        duration: 200
+                                        duration: root.motion.short4
                                     }
                                 }
                             }
 
                             Text {
-                                text: root.weekCount(root.viewYear, root.viewMonth) + " weeks · " + new Date(root.viewYear, root.viewMonth + 1, 0).getDate() + " days"
-                                font.family: Config.fontFamily
-                                font.pixelSize: 12
+                                text: LocaleService.weatherHigh + " / " + LocaleService.weatherLow
+                                font.pixelSize: root.type.bodyMedium
+                                font.weight: Font.Medium
                                 color: Colors.md3.on_surface_variant
+                                font.family: Config.fontFamily
+                                anchors.baseline: tempLabel.baseline
                                 Behavior on color {
                                     ColorAnimation {
-                                        duration: 200
+                                        duration: root.motion.short4
                                     }
                                 }
                             }
                         }
 
-                        Row {
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 2
-
-                            Rectangle {
-                                width: 34
-                                height: 34
-                                radius: 17
-                                bottomRightRadius: 5
-                                topRightRadius: 5
-                                color: Colors.md3.surface_container_highest
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 120
-                                    }
-                                }
-
-                                ChevronLeftIcon {
-                                    anchors.centerIn: parent
-                                    iconSize: 22
-                                    color: Colors.md3.on_surface_variant
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.prevMonth()
+                        Text {
+                            text: LocaleService.weatherDesc
+                            font.pixelSize: root.type.bodySmall
+                            font.weight: Font.Medium
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: root.motion.short4
                                 }
                             }
+                        }
+                    }
+                }
 
-                            Rectangle {
-                                width: 34
-                                height: 34
-                                radius: 17
-                                bottomLeftRadius: 5
-                                topLeftRadius: 5
-                                color: Colors.md3.surface_container_highest
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 120
-                                    }
-                                }
+                Item {
+                    width: parent.width
+                    height: 16
 
-                                ChevronRightIcon {
-                                    anchors.centerIn: parent
-                                    iconSize: 22
-                                    color: Colors.md3.on_surface_variant
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.nextMonth()
+                    Row {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 5
+
+                        HeatIcon {
+                            iconSize: 14
+                            color: root.weatherColor.heat
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: LocaleService.weatherUvi + " UVI"
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: root.type.bodySmall
+                            font.weight: Font.Medium
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: root.motion.short4
                                 }
                             }
                         }
                     }
 
                     Row {
-                        id: dayLabels
-                        anchors.top: calHeader.bottom
-                        anchors.topMargin: 18
-                        width: parent.width
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 5
 
-                        Repeater {
-                            model: Config.weekMonday ? ["M", "T", "W", "T", "F", "S", "S"] : ["S", "M", "T", "W", "T", "F", "S"]
-                            Item {
-                                width: dayLabels.width / 7
-                                height: 20
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 11
-                                    font.weight: Font.Medium
-                                    color: Colors.md3.on_surface_variant
-                                    opacity: (Config.weekMonday ? index >= 5 : index === 0 || index === 6) ? 0.30 : 0.55
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 200
-                                        }
-                                    }
+                        WaterDropIcon {
+                            iconSize: 14
+                            color: root.weatherColor.humidity
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: LocaleService.weatherHumid
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: root.type.bodySmall
+                            font.weight: Font.Medium
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: root.motion.short4
                                 }
                             }
                         }
                     }
 
-                    Grid {
-                        id: calGrid
-                        anchors.top: dayLabels.bottom
-                        anchors.topMargin: 6
-                        anchors.bottom: parent.bottom
-                        width: parent.width
-                        columns: 7
-                        spacing: 3
+                    Row {
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 5
 
-                        property real cellW: (width - spacing * 6) / 7
-                        property real cellH: (height - spacing * 5) / 6
-
-                        Repeater {
-                            model: root.currentDays.length
-                            delegate: Item {
-                                required property int index
-                                readonly property var dayData: root.currentDays[index]
-
-                                readonly property bool isToday: dayData.isCurrentMonth && dayData.day === root.todayDay && dayData.month === root.todayMonth && dayData.year === root.todayYear
-                                readonly property bool isSelected: !isToday && dayData.day === root.selDay && dayData.month === root.selMonth && dayData.year === root.selYear
-                                readonly property bool isWeekend: {
-                                    const dow = new Date(dayData.year, dayData.month, dayData.day).getDay();
-                                    return dow === 0 || dow === 6;
-                                }
-                                readonly property bool hasHoliday: dayData.isCurrentMonth && holidayFor(dayData.day, dayData.month, dayData.year).length > 0
-
-                                width: calGrid.cellW
-                                height: calGrid.cellH
-
-                                Rectangle {
-                                    width: 38
-                                    height: 38
-                                    radius: 19
-                                    anchors.centerIn: parent
-
-                                    color: isToday ? Colors.md3.primary_container : isSelected ? Qt.alpha(Colors.md3.primary, 0.12) : (cellMA.containsMouse && dayData.isCurrentMonth) ? Qt.alpha(Colors.md3.on_surface, 0.06) : "transparent"
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 100
-                                        }
-                                    }
-
-                                    border.width: isSelected ? 1.5 : 0
-                                    border.color: isSelected ? Colors.md3.primary : "transparent"
-                                    Behavior on border.color {
-                                        ColorAnimation {
-                                            duration: 150
-                                        }
-                                    }
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: dayData.day
-                                        font.family: Config.fontFamily
-                                        font.pixelSize: 13
-                                        font.features: {
-                                            "tnum": 1
-                                        }
-                                        font.weight: (isToday || isSelected) ? Font.Medium : Font.Normal
-                                        color: isToday ? Colors.md3.on_primary_container : isSelected ? Colors.md3.primary : !dayData.isCurrentMonth ? Qt.alpha(Colors.md3.on_surface, 0.25) : isWeekend ? Qt.alpha(Colors.md3.primary, 0.80) : Colors.md3.on_surface
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: 150
-                                            }
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        visible: hasHoliday && !isToday
-                                        width: 4
-                                        height: 4
-                                        radius: 2
-                                        anchors.bottom: parent.bottom
-                                        anchors.bottomMargin: 5
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        color: isSelected ? Colors.md3.primary : Qt.alpha(Colors.md3.primary, 0.55)
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: 150
-                                            }
-                                        }
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: cellMA
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        if (!dayData.isCurrentMonth) {
-                                            root.selDay = dayData.day;
-                                            root.selMonth = dayData.month;
-                                            root.selYear = dayData.year;
-                                            return;
-                                        }
-                                        if (isToday) {
-                                            root.selDay = root.todayDay;
-                                            root.selMonth = root.todayMonth;
-                                            root.selYear = root.todayYear;
-                                            return;
-                                        }
-                                        if (root.selDay === dayData.day && root.selMonth === dayData.month && root.selYear === dayData.year) {
-                                            root.selDay = root.todayDay;
-                                            root.selMonth = root.todayMonth;
-                                            root.selYear = root.todayYear;
-                                        } else {
-                                            root.selDay = dayData.day;
-                                            root.selMonth = dayData.month;
-                                            root.selYear = dayData.year;
-                                        }
-                                    }
+                        AirIcon {
+                            iconSize: 14
+                            color: root.weatherColor.air
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: LocaleService.weatherAqi + " AQI"
+                            color: Colors.md3.on_surface_variant
+                            font.family: Config.fontFamily
+                            font.pixelSize: root.type.bodySmall
+                            font.weight: Font.Medium
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: root.motion.short4
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            Row {
+                width: parent.width
+                spacing: 8
+
+                Rectangle {
+                    id: calendarBtn
+                    width: (parent.width - 8) / 2
+                    height: 36
+                    radius: root.shape.full
+                    color: calendarMA.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_highest
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: root.motion.short2
+                        }
+                    }
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        CalendarMonthIcon {
+                            iconSize: 16
+                            color: calendarMA.containsMouse ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: "Calendar"
+                            font.family: Config.fontFamily
+                            font.pixelSize: root.type.bodySmall
+                            font.weight: Font.Medium
+                            color: calendarMA.containsMouse ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: calendarMA
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.calendarRequested()
+                            Quickshell.execDetached(["gnome-calendar"])
+                        }
+                    }
+                }
+
+                Rectangle {
+                    id: settingsBtn
+                    width: (parent.width - 8) / 2
+                    height: 36
+                    radius: root.shape.full
+                    color: settingsMA.containsMouse ? Colors.md3.surface_container_highest : "transparent"
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: root.motion.short2
+                        }
+                    }
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        SettingsIcon {
+                            iconSize: 16
+                            color: Colors.md3.on_surface_variant
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: "Settings"
+                            font.family: Config.fontFamily
+                            font.pixelSize: root.type.bodySmall
+                            font.weight: Font.Medium
+                            color: Colors.md3.on_surface_variant
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: settingsMA
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.settingsRequested()
+                            Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "settings", "open", "locale"])
                         }
                     }
                 }
