@@ -249,11 +249,13 @@ Item {
             id: sidebar
             anchor.window: root.panelWindow
             anchor.rect.x: (root.panelWindow.screen?.width ?? 1920) - implicitWidth
-            anchor.rect.y: Config.bar.position === 1 ? -((root.panelWindow.screen?.height ?? 1080) * 0.75 + (Config.bar.transparency === 2 ? 0 : 12)) : root.panelWindow.height + (Config.bar.transparency === 2 ? 0 : 12)
+            anchor.rect.y: Config.bar.position === 1 
+                ? -(implicitHeight + (Config.bar.transparency === 2 ? 0 : 12)) 
+                : root.panelWindow.height + (Config.bar.transparency === 2 ? 0 : 12)
 
             implicitWidth: 432
             anchor.adjustment: PopupAdjustment.None
-            implicitHeight: Math.round((root.panelWindow.screen?.height ?? 1080) * 0.75)
+            implicitHeight: sidebarCard.height
             color: "transparent"
             visible: root._sidebarVisible
 
@@ -286,10 +288,10 @@ Item {
             Rectangle {
                 id: sidebarCard
                 anchors.top: parent.top
-                anchors.bottom: parent.bottom
                 anchors.right: parent.right
                 anchors.rightMargin: 12
                 width: 420
+                height: mainLayout.implicitHeight + 28
                 radius: 18
                 color: Colors.md3.surface_container_low
                 border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
@@ -301,7 +303,10 @@ Item {
                 }
 
                 ColumnLayout {
-                    anchors.fill: parent
+                    id: mainLayout
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
                     anchors.margins: 14
                     spacing: 12
 
@@ -309,15 +314,17 @@ Item {
                         id: userRow
                         Layout.fillWidth: true
                         Layout.topMargin: 4
-                        spacing: 10
+                        Layout.preferredHeight: 44
+                        spacing: 12
 
-                        Item {
-                            Layout.preferredWidth: 44
-                            Layout.preferredHeight: 44
+                        RowLayout {
+                            spacing: 10
+                            Layout.fillWidth: true
 
                             ClippingRectangle {
-                                anchors.fill: parent
-                                radius: 22
+                                implicitWidth: 36
+                                implicitHeight: 36
+                                radius: 18
                                 clip: true
                                 layer.enabled: true
                                 layer.smooth: true
@@ -329,120 +336,143 @@ Item {
                                     id: profileImage
                                     source: "file://" + Quickshell.env("HOME") + "/.face"
                                     anchors.fill: parent
-                                    sourceSize: Qt.size(144, 144)
+                                    sourceSize: Qt.size(108, 108)
                                     fillMode: Image.PreserveAspectCrop
                                     antialiasing: true
                                     smooth: true
                                     mipmap: true
                                 }
                             }
-                        }
 
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 1
+                            Rectangle {
+                                implicitWidth: 36
+                                implicitHeight: 36
+                                radius: 18
+                                color: Colors.md3.primary_container
+                                visible: profileImage.status !== Image.Ready
 
-                            Text {
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: SystemInfo.username ? SystemInfo.username.charAt(0).toUpperCase() : "U"
+                                    color: Colors.md3.on_primary_container
+                                    font.family: Config.fontFamily
+                                    font.pixelSize: 14
+                                    font.weight: Font.Bold
+                                }
+                            }
+
+                            Column {
                                 Layout.fillWidth: true
-                                elide: Text.ElideRight
-                                text: SystemInfo.username
-                                color: Colors.md3.on_surface
-                                font.family: Config.fontFamily
-                                font.pixelSize: 15
-                                font.weight: Font.DemiBold
-                            }
+                                spacing: 2
 
-                            Text {
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                                text: SystemInfo.hostname + " · " + SystemInfo.uptime
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: 12
-                            }
-                        }
+                                Text {
+                                    width: parent.width
+                                    elide: Text.ElideRight
+                                    text: SystemInfo.username
+                                    color: Colors.md3.on_surface
+                                    font.family: Config.fontFamily
+                                    font.pixelSize: 14
+                                    font.weight: Font.DemiBold
+                                }
 
-                        Rectangle {
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 36
-                            radius: 12
-                            color: reloadMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
-
-                            Behavior on color {
-                                ColorAnimation { duration: 150 }
-                            }
-
-                            RestartIcon {
-                                anchors.centerIn: parent
-                                iconSize: 16
-                                color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                            }
-
-                            MouseArea {
-                                id: reloadMouse
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    root.isOpen = false;
-                                    Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -n -c isra"]);
+                                Text {
+                                    width: parent.width
+                                    elide: Text.ElideRight
+                                    text: SystemInfo.hostname + " · " + SystemInfo.uptime
+                                    color: Colors.md3.on_surface_variant
+                                    font.family: Config.fontFamily
+                                    font.pixelSize: 11
                                 }
                             }
                         }
 
-                        Rectangle {
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 36
-                            radius: 12
-                            color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                        Row {
+                            spacing: 8
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
-                            Behavior on color {
-                                ColorAnimation { duration: 150 }
-                            }
+                            Rectangle {
+                                width: 36
+                                height: 36
+                                radius: 12
+                                color: reloadMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
 
-                            SettingsIcon {
-                                anchors.centerIn: parent
-                                iconSize: 16
-                                color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                            }
+                                Behavior on color {
+                                    ColorAnimation { duration: 150 }
+                                }
 
-                            MouseArea {
-                                id: editMouse
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    root.isOpen = false;
-                                    sysProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"];
-                                    sysProc.running = true;
+                                RestartIcon {
+                                    anchors.centerIn: parent
+                                    iconSize: 16
+                                    color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+                                }
+
+                                MouseArea {
+                                    id: reloadMouse
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+                                    onClicked: {
+                                        root.isOpen = false;
+                                        Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -n -c isra"]);
+                                    }
                                 }
                             }
-                        }
 
-                        Rectangle {
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 36
-                            radius: 12
-                            color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.error_container
+                            Rectangle {
+                                width: 36
+                                height: 36
+                                radius: 12
+                                color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
 
-                            Behavior on color {
-                                ColorAnimation { duration: 150 }
+                                Behavior on color {
+                                    ColorAnimation { duration: 150 }
+                                }
+
+                                SettingsIcon {
+                                    anchors.centerIn: parent
+                                    iconSize: 16
+                                    color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+                                }
+
+                                MouseArea {
+                                    id: editMouse
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+                                    onClicked: {
+                                        root.isOpen = false;
+                                        sysProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"];
+                                        sysProc.running = true;
+                                    }
+                                }
                             }
 
-                            ShutdownIcon {
-                                anchors.centerIn: parent
-                                iconSize: 16
-                                color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
-                            }
+                            Rectangle {
+                                id: userRowRight
+                                width: 36
+                                height: 36
+                                radius: 12
+                                color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.error_container
 
-                            MouseArea {
-                                id: pwrMouse
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    root.isOpen = false;
-                                    PowerMenuState.toggle();
+                                Behavior on color {
+                                    ColorAnimation { duration: 150 }
+                                }
+
+                                ShutdownIcon {
+                                    anchors.centerIn: parent
+                                    iconSize: 16
+                                    color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
+                                }
+
+                                MouseArea {
+                                    id: pwrMouse
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+                                    onClicked: {
+                                        root.isOpen = false;
+                                        PowerMenuState.toggle();
+                                    }
                                 }
                             }
                         }
@@ -459,6 +489,43 @@ Item {
                             anchors.fill: parent
                             anchors.margins: 14
                             spacing: 12
+
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: Config.verticalQSSliders ? 1 : 2
+                                columnSpacing: 8
+                                rowSpacing: 8
+
+                                QsSliderRow {
+                                    Layout.fillWidth: true
+                                    value: AudioService.volume
+                                    onMoved: val => AudioService.setVolume(val)
+                                    onMuteClicked: AudioService.toggleMute()
+                                    onRightClicked: {
+                                        root.isOpen = false;
+                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "sound"];
+                                        appletProc.running = true;
+                                    }
+                                    dimmed: AudioService.muted
+                                }
+
+                                QsSliderRow {
+                                    id: brightnessSlider
+                                    Layout.fillWidth: true
+                                    iconSet: "brightness"
+                                    value: BrightnessService.value
+                                    from: BrightnessService.from
+                                    to: BrightnessService.to
+                                    onMoved: val => BrightnessService.setBrightness(val)
+                                    onMuteClicked: BrightnessService.setBrightness(1.0)
+                                    onRightClicked: {
+                                        root.isOpen = false;
+                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
+                                        appletProc.running = true;
+                                    }
+                                    dimmed: false
+                                }
+                            }
 
                             RowLayout {
                                 Layout.fillWidth: true
@@ -579,49 +646,12 @@ Item {
                                 QsPowerProfileChip {}
                                 QsGameModeChip {}
                             }
-
-                            GridLayout {
-                                Layout.fillWidth: true
-                                columns: Config.verticalQSSliders ? 1 : 2
-                                columnSpacing: 8
-                                rowSpacing: 8
-
-                                QsSliderRow {
-                                    Layout.fillWidth: true
-                                    value: AudioService.volume
-                                    onMoved: val => AudioService.setVolume(val)
-                                    onMuteClicked: AudioService.toggleMute()
-                                    onRightClicked: {
-                                        root.isOpen = false;
-                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "sound"];
-                                        appletProc.running = true;
-                                    }
-                                    dimmed: AudioService.muted
-                                }
-
-                                QsSliderRow {
-                                    id: brightnessSlider
-                                    Layout.fillWidth: true
-                                    iconSet: "brightness"
-                                    value: BrightnessService.value
-                                    from: BrightnessService.from
-                                    to: BrightnessService.to
-                                    onMoved: val => BrightnessService.setBrightness(val)
-                                    onMuteClicked: BrightnessService.setBrightness(1.0)
-                                    onRightClicked: {
-                                        root.isOpen = false;
-                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
-                                        appletProc.running = true;
-                                    }
-                                    dimmed: false
-                                }
-                            }
                         }
                     }
 
                     ColumnLayout {
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
+                        Layout.alignment: Qt.AlignTop
                         spacing: 0
 
                         Rectangle {
@@ -641,7 +671,7 @@ Item {
                                 }
                                 spacing: 4
 
-                            Rectangle {
+                                Rectangle {
                                     Layout.preferredWidth: 56
                                     Layout.fillHeight: true
                                     radius: 10
@@ -721,7 +751,7 @@ Item {
 
                         ClippingRectangle {
                             Layout.fillWidth: true
-                            Layout.fillHeight: true
+                            Layout.preferredHeight: width * 1.2
                             radius: 24
                             topRightRadius: 0
                             topLeftRadius: 0
@@ -729,9 +759,30 @@ Item {
                             clip: true
 
                             Column {
+                                id: caughtUpCol
                                 anchors.centerIn: parent
                                 spacing: 12
-                                visible: NotificationService.qsGroupModel.count === 0
+                                readonly property bool isAllCaughtUp: NotificationService.qsGroupModel.count === 0
+
+                                opacity: isAllCaughtUp ? 1.0 : 0.0
+                                visible: opacity > 0
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 200
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+
+                                transform: Translate {
+                                    y: caughtUpCol.isAllCaughtUp ? 0 : 25
+                                    Behavior on y {
+                                        NumberAnimation {
+                                            duration: 300
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
+                                }
 
                                 Rectangle {
                                     implicitWidth: 200
