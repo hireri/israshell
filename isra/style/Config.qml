@@ -79,7 +79,6 @@ Singleton {
     property string colorScheme: "scheme-tonal-spot"
     property int sourceColorIndex: 0
     property bool desktopClock: true
-    property bool screencapEnabled: true
     property var screencap: ({
             blacklist: ["cts", "ocr"],
             screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
@@ -198,7 +197,6 @@ Singleton {
             colorScheme: "scheme-tonal-spot",
             sourceColorIndex: 0,
             desktopClock: true,
-            screencapEnabled: true,
             screencap: {
                 blacklist: ["cts", "ocr"],
                 screenshotPath: "~/.config/quickshell/isra/scripts/screenshot.sh",

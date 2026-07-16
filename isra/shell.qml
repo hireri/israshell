@@ -314,9 +314,25 @@ ShellRoot {
                     quicksettings: quicksettingsComponent
                 })
 
-            readonly property var visibleBarLeft: Config.bar.left.filter(id => !Config.bar.disabled.includes(id))
-            readonly property var visibleBarRight: Config.bar.right.filter(id => !Config.bar.disabled.includes(id))
-            readonly property var visibleBarCenterItems: Config.bar.center.items.filter(id => !Config.bar.disabled.includes(id))
+            function isWidgetDisabled(id) {
+                if (Config.bar.disabled.includes(id))
+                    return true;
+
+                if (id === "screencap") {
+                    const blacklist = Config.screencap.blacklist;
+                    return blacklist.includes("screenshot") &&
+                           blacklist.includes("cts") &&
+                           blacklist.includes("ocr") &&
+                           blacklist.includes("songrec") &&
+                           blacklist.includes("record");
+                }
+
+                return false;
+            }
+
+            readonly property var visibleBarLeft: Config.bar.left.filter(id => !isWidgetDisabled(id))
+            readonly property var visibleBarRight: Config.bar.right.filter(id => !isWidgetDisabled(id))
+            readonly property var visibleBarCenterItems: Config.bar.center.items.filter(id => !isWidgetDisabled(id))
 
             Component { id: activeWindowComponent; ActiveWindow {} }
             Component { id: workspacesComponent; Workspaces { panelWindow: window } }

@@ -15,10 +15,8 @@ Rectangle {
         return path.replace(/^~/, Quickshell.env("HOME"));
     }
 
-    visible: Config.screencapEnabled && Config.screencap.blacklist.length < 5
-
     function isEnabled(name) {
-        return Config.screencapEnabled && !Config.screencap.blacklist.includes(name);
+        return !Config.screencap.blacklist.includes(name);
     }
 
     color: {

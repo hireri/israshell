@@ -368,21 +368,10 @@ PageBase {
         label: "Screen capture"
         Layout.fillWidth: true
 
-        SettingSwitch {
-            label: "Enable screen capture"
-            sublabel: "Expose capture actions in the bar"
-            checked: Config.screencapEnabled
-            onToggled: v => Config.update({
-                screencapEnabled: v
-            })
-        }
-
         SettingRow {
             isLast: true
             label: "Actions"
             sublabel: "Toggle individual capture actions"
-            enabled: Config.screencapEnabled
-            opacity: Config.screencapEnabled ? 1 : 0.45
 
             Behavior on opacity {
                 NumberAnimation {
