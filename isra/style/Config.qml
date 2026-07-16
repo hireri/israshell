@@ -22,13 +22,13 @@ Singleton {
             layout: "edges",            // "mono" | "edges" | "center"
 
             renderType: "curve",        // "curve" | "bars" | "blocks"
-            curveType: "smooth",        // "smooth" | "sharp" (applies if renderType === "curve")
-            drawFill: true,             // Enables filled gradient area (applies to "curve" and "bars")
-            drawStroke: true,           // Enables outer outline line (applies to "curve" and "bars")
+            curveType: "smooth",        // "smooth" | "sharp"
+            drawFill: true,
+            drawStroke: true,
 
             colorStyle: "loudness",     // "solid" | "loudness" | "gradient-v" | "gradient-h"
-            color: "primary",           // Quieter frequencies / Low spectrum color
-            colorAlt: "error",          // Louder peaks / High spectrum color
+            color: "primary",
+            colorAlt: "error",
 
             height: 150,
             opacity: 0.3
@@ -52,7 +52,8 @@ Singleton {
                 anchor: "workspaces",
                 items: ["media", "workspaces", "clock", "wallpaper"]
             },
-            right: ["screencap", "tray", "quicksettings"]
+            right: ["screencap", "tray", "quicksettings"],
+            disabled: []
         })
     property var nightLight: ({
             scheduleEnabled: true,
@@ -170,7 +171,8 @@ Singleton {
                     anchor: "workspaces",
                     items: ["media", "workspaces", "clock", "wallpaper"]
                 },
-                right: ["screencap", "tray", "quicksettings"]
+                right: ["screencap", "tray", "quicksettings"],
+                disabled: []
             },
             nightLight: {
                 scheduleEnabled: true,

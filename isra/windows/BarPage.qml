@@ -127,7 +127,6 @@ PageBase {
         }
 
         SettingChips {
-            isLast: true
             label: "Transparency"
             sublabel: "Background opacity level"
             options: [
@@ -153,7 +152,6 @@ PageBase {
         }
 
         SettingSwitch {
-            isLast: true
             label: "Transparent pills"
             sublabel: "Remove pills background"
             checked: Config.bar.transparentPills
@@ -165,7 +163,6 @@ PageBase {
         }
 
         SettingSwitch {
-            isLast: true
             label: "Compact workspaces"
             sublabel: "Shrink workspaces to hide empty ones"
             checked: Config.bar.compactWorkspaces
@@ -177,11 +174,29 @@ PageBase {
         }
 
         SettingSwitch {
-            isLast: true
             label: "Stacked sliders"
             sublabel: "Volume and brightness sliders arranged vertically"
             checked: Config.verticalQSSliders
             onToggled: v => Config.update({ verticalQSSliders: v })
+        }
+    }
+
+    SectionCard {
+        label: "Widget order"
+        Layout.fillWidth: true
+
+        WidgetOrderEditor {
+            width: parent.width
+            isLast: true
+            leftIds: Config.bar.left
+            centerData: Config.bar.center
+            rightIds: Config.bar.right
+            disabledIds: Config.bar.disabled
+            onOrderChanged: (newLeft, newCenter, newRight, newDisabled) => Config.update({
+                bar: Object.assign({}, Config.bar, {
+                    left: newLeft, center: newCenter, right: newRight, disabled: newDisabled
+                })
+            })
         }
     }
 

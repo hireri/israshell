@@ -314,6 +314,10 @@ ShellRoot {
                     quicksettings: quicksettingsComponent
                 })
 
+            readonly property var visibleBarLeft: Config.bar.left.filter(id => !Config.bar.disabled.includes(id))
+            readonly property var visibleBarRight: Config.bar.right.filter(id => !Config.bar.disabled.includes(id))
+            readonly property var visibleBarCenterItems: Config.bar.center.items.filter(id => !Config.bar.disabled.includes(id))
+
             Component { id: activeWindowComponent; ActiveWindow {} }
             Component { id: workspacesComponent; Workspaces { panelWindow: window } }
             Component { id: mediaComponent; MediaPlayer { panelScreen: screenScope.modelData } }
@@ -512,13 +516,13 @@ ShellRoot {
                                 anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
                                 registry: barWidgetComponents
-                                itemNames: Config.bar.left
+                                itemNames: screenScope.visibleBarLeft
                             }
 
                             Item {
                                 anchors.fill: parent
 
-                                readonly property int centerAnchorIndex: Config.bar.center.items.indexOf(Config.bar.center.anchor)
+                                readonly property int centerAnchorIndex: screenScope.visibleBarCenterItems.indexOf(Config.bar.center.anchor)
                                 readonly property bool centerUseAnchor: Config.bar.center.mode === "anchor" && centerAnchorIndex !== -1
 
                                 BarZone {
@@ -526,7 +530,7 @@ ShellRoot {
                                     anchors.centerIn: parent
                                     visible: !parent.centerUseAnchor
                                     registry: barWidgetComponents
-                                    itemNames: !parent.centerUseAnchor ? Config.bar.center.items : []
+                                    itemNames: !parent.centerUseAnchor ? screenScope.visibleBarCenterItems : []
                                 }
 
                                 Loader {
@@ -543,7 +547,7 @@ ShellRoot {
                                     anchors.verticalCenter: parent.verticalCenter
                                     visible: parent.centerUseAnchor
                                     registry: barWidgetComponents
-                                    itemNames: parent.centerUseAnchor ? Config.bar.center.items.slice(0, parent.centerAnchorIndex) : []
+                                    itemNames: parent.centerUseAnchor ? screenScope.visibleBarCenterItems.slice(0, parent.centerAnchorIndex) : []
                                 }
 
                                 BarZone {
@@ -553,7 +557,7 @@ ShellRoot {
                                     anchors.verticalCenter: parent.verticalCenter
                                     visible: parent.centerUseAnchor
                                     registry: barWidgetComponents
-                                    itemNames: parent.centerUseAnchor ? Config.bar.center.items.slice(parent.centerAnchorIndex + 1) : []
+                                    itemNames: parent.centerUseAnchor ? screenScope.visibleBarCenterItems.slice(parent.centerAnchorIndex + 1) : []
                                 }
                             }
 
@@ -562,7 +566,7 @@ ShellRoot {
                                 anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
                                 registry: barWidgetComponents
-                                itemNames: Config.bar.right
+                                itemNames: screenScope.visibleBarRight
                                 separators: true
                             }
                         }

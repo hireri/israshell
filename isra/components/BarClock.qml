@@ -115,19 +115,15 @@ Item {
                 item: root.isOpen ? calContent : null
             }
 
-            // 1. Anchor directly to the entire bar window to fix the vertical height
             anchor.window: root.panelWindow
 
             anchor.edges: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Left
             anchor.gravity: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Right
 
-            // 2. Map the coordinate of the pill to the bar window to center it accurately
             anchor.rect: {
-                // Map the center-point of the pill to the panelWindow coordinate system
                 const pillCenterLocal = root.width / 2;
                 const mappedPoint = root.mapToItem(root.panelWindow.contentItem, pillCenterLocal, 0);
                 
-                // Calculate X centered relative to the mapped point
                 const popupX = Math.round(mappedPoint.x - (calContent.implicitWidth / 2));
                 
                 return Qt.rect(
