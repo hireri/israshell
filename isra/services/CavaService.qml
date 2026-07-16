@@ -10,28 +10,50 @@ Singleton {
 
     property var targetValues: []
     property bool cavaEnabled: Config.cava.enabled
-    property bool commandReady: true
+    
+    property int activeBars: Config.cava.bars + (Config.cava.bars % 2)
+    
+    property bool restarting: false
+
+    function updateProcessState() {
+        var shouldBeRunning = service.cavaEnabled && !retryTimer.running;
+        if (cavaProcess.running !== shouldBeRunning) {
+            cavaProcess.running = shouldBeRunning;
+        }
+    }
 
     function rearrange(arr, layout) {
         if (!arr || arr.length < 2) return arr;
 
         var m = Math.floor(arr.length / 2);
-        var left = arr.slice(0, m);
-        var right = arr.slice(m);
 
         if (layout === "edges") {
-            var leftMirrored = left.slice().reverse();
-            var rightMirrored = right.slice().reverse();
-            return leftMirrored.concat(rightMirrored);
+            var left = arr.slice(0, m);
+            var right = arr.slice(m);
+            return left.reverse().concat(right.reverse());
         }
+        
         if (layout === "mono") {
-            var leftAligned = left.slice().reverse();
+            var leftAligned = arr.slice(0, m).reverse();
+            var rightAligned = arr.slice(m);
             var combined = [];
-            for (var i = 0; i < right.length; i++) {
-                combined.push((leftAligned[i] + right[i]) / 2);
+            var maxLen = Math.max(leftAligned.length, rightAligned.length);
+            
+            for (var i = 0; i < maxLen; i++) {
+                var lVal = leftAligned[i];
+                var rVal = rightAligned[i];
+                
+                if (lVal === undefined) {
+                    combined.push(rVal);
+                } else if (rVal === undefined) {
+                    combined.push(lVal);
+                } else {
+                    combined.push((lVal + rVal) / 2);
+                }
             }
             return combined;
         }
+        
         return arr;
     }
 
@@ -40,7 +62,7 @@ Singleton {
         "printf '" +
         "[general]\\n" +
         "framerate = 60\\n" +
-        "bars = " + Config.cava.bars + "\\n" +
+        "bars = " + service.activeBars + "\\n" +
         "[output]\\n" +
         "method = raw\\n" +
         "raw_target = /dev/stdout\\n" +
@@ -54,18 +76,16 @@ Singleton {
         "' > /tmp/cava_quickshell.conf && exec cava -p /tmp/cava_quickshell.conf"
     ]
 
-    property int _lastBars: Config.cava.bars
+    Component.onCompleted: {
+        updateProcessState();
+    }
 
-    Connections {
-        target: Config
-        function onCavaChanged() {
-            if (Config.cava.bars !== service._lastBars) {
-                service._lastBars = Config.cava.bars;
-                if (service.commandReady) {
-                    service.commandReady = false;
-                    restartTimer.restart();
-                }
-            }
+    onActiveBarsChanged: {
+        if (cavaProcess.running) {
+            service.restarting = true;
+            cavaProcess.running = false;
+        } else if (!service.restarting) {
+            updateProcessState();
         }
     }
 
@@ -75,28 +95,22 @@ Singleton {
         } else {
             targetValues = [];
         }
-    }
-
-    Timer {
-        id: restartTimer
-        interval: 100
-        repeat: false
-        onTriggered: {
-            service.commandReady = true;
-        }
+        updateProcessState();
     }
 
     Timer {
         id: retryTimer
         interval: 5000
         repeat: false
+        onTriggered: {
+            updateProcessState();
+        }
     }
 
     Process {
         id: cavaProcess
         command: service.cavaCommand
-        
-        running: service.cavaEnabled && !retryTimer.running && service.commandReady
+        running: false
 
         stdout: SplitParser {
             onRead: data => {
@@ -114,7 +128,10 @@ Singleton {
         }
 
         onExited: {
-            if (service.cavaEnabled && service.commandReady) {
+            if (service.restarting) {
+                service.restarting = false;
+                updateProcessState();
+            } else if (service.cavaEnabled) {
                 retryTimer.restart();
             }
         }

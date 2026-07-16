@@ -16,7 +16,7 @@ Singleton {
     property int blurRadius: 50
     property real blurOpacity: 0.65
     property var cava: ({
-            enabled: true,
+            enabled: false,
             bars: 30,
             position: 1,                // 0 = top, 1 = bottom
             layout: "edges",            // "mono" | "edges" | "center"
@@ -138,7 +138,7 @@ Singleton {
             blurRadius: 50,
             blurOpacity: 0.65,
             cava: {
-                enabled: true,
+                enabled: false,
                 bars: 30,
                 position: 1,
                 layout: "edges",

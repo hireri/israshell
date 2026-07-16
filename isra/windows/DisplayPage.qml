@@ -655,6 +655,7 @@ PageBase {
                 sublabel: "Number of frequency bars rendered"
                 from: 8
                 to: 100
+                stepSize: 2
                 value: Config.cava.bars
                 onMoved: v => Config.update({
                         cava: Object.assign({}, Config.cava, {
