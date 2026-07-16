@@ -59,6 +59,13 @@ Item {
                 }
             }
 
+            CavaVisualizer {
+                id: cavaVisualizer
+                anchors.fill: parent
+                pause: false
+                visible: Config.cava.enabled
+            }
+
             Item {
                 id: clockWrapper
                 anchors.fill: parent

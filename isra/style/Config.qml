@@ -15,6 +15,24 @@ Singleton {
     property bool blurEffects: false
     property int blurRadius: 50
     property real blurOpacity: 0.65
+    property var cava: ({
+            enabled: true,
+            bars: 30,
+            position: 1,                // 0 = top, 1 = bottom
+            layout: "edges",            // "mono" | "edges" | "center"
+
+            renderType: "curve",        // "curve" | "bars" | "blocks"
+            curveType: "smooth",        // "smooth" | "sharp" (applies if renderType === "curve")
+            drawFill: true,             // Enables filled gradient area (applies to "curve" and "bars")
+            drawStroke: true,           // Enables outer outline line (applies to "curve" and "bars")
+
+            colorStyle: "loudness",     // "solid" | "loudness" | "gradient-v" | "gradient-h"
+            color: "primary",           // Quieter frequencies / Low spectrum color
+            colorAlt: "error",          // Louder peaks / High spectrum color
+
+            height: 150,
+            opacity: 0.3
+        })
     property var bar: ({
             mode: 0,                    // 0 = hugging, 1 = rect,   2 = floating
             position: 0,                // 0 = top,     1 = bottom
@@ -63,8 +81,8 @@ Singleton {
     property bool screencapEnabled: true
     property var screencap: ({
             blacklist: ["cts", "ocr"],
-            screenshotPath: "~/.config/quickshell/isra/scripts/screenshot.sh",
-            recordPath: "~/.config/quickshell/isra/scripts/record.sh",
+            screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
+            recordPath: "~/.config/hypr/scripts/record.sh",
             ctsPath: "~/.config/quickshell/isra/scripts/cts.sh",
             ocrPath: "~/.config/quickshell/isra/scripts/ocr.sh",
             songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
@@ -118,6 +136,21 @@ Singleton {
             blurEffects: false,
             blurRadius: 50,
             blurOpacity: 0.65,
+            cava: {
+                enabled: true,
+                bars: 30,
+                position: 1,
+                layout: "edges",
+                renderType: "curve",
+                curveType: "smooth",
+                drawFill: true,
+                drawStroke: true,
+                colorStyle: "loudness",
+                color: "primary",
+                colorAlt: "error",
+                height: 150,
+                opacity: 0.3
+            },
             bar: {
                 mode: 0,
                 position: 0,

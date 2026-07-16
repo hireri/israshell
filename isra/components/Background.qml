@@ -314,6 +314,15 @@ PanelWindow {
         }
     }
 
+
+    CavaVisualizer {
+        id: cavaVisualizer
+        anchors.fill: parent
+        z: 3
+        pause: root.shouldPause
+        visible: Config.cava.enabled
+    }
+
     Loader {
         id: clockLoader
         anchors.fill: parent
