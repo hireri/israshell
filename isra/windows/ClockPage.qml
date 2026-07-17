@@ -33,7 +33,7 @@ PageBase {
     Component {
         id: alignAutoComp
         MaterialIcon {
-    name: "align-auto"
+            name: "align-auto"
             iconSize: 16
             filled: Config.clock.align === "auto"
         }
@@ -41,7 +41,7 @@ PageBase {
     Component {
         id: alignLeftComp
         MaterialIcon {
-    name: "align-left"
+            name: "align-left"
             iconSize: 16
             filled: Config.clock.align === "left"
         }
@@ -49,7 +49,7 @@ PageBase {
     Component {
         id: alignCenterComp
         MaterialIcon {
-    name: "align-center"
+            name: "align-center"
             iconSize: 16
             filled: Config.clock.align === "center"
         }
@@ -57,7 +57,7 @@ PageBase {
     Component {
         id: alignRightComp
         MaterialIcon {
-    name: "align-right"
+            name: "align-right"
             iconSize: 16
             filled: Config.clock.align === "right"
         }
@@ -138,8 +138,7 @@ PageBase {
         cardColor: Colors.md3.surface_container
         checked: Config.desktopClock ?? false
         onToggled: v => Config.update({ desktopClock: v })
-        MaterialIcon {
-    name: "analog-clock"}
+        MaterialIcon { name: "analog-clock"}
     }
 
     Rectangle {
@@ -201,7 +200,7 @@ PageBase {
                         spacing: 6
 
                         MaterialIcon {
-    name: "vertical-clock"
+                            name: "vertical-clock"
                             iconSize: 14
                             filled: btnVertical.active
                             color: btnVertical.contentColor
@@ -263,7 +262,7 @@ PageBase {
                         spacing: 6
 
                         MaterialIcon {
-    name: "horizontal-clock"
+                            name: "horizontal-clock"
                             iconSize: 14
                             filled: btnHorizontal.active
                             color: btnHorizontal.contentColor
@@ -325,7 +324,7 @@ PageBase {
                         spacing: 6
 
                         MaterialIcon {
-    name: "word-clock"
+                            name: "word-clock"
                             iconSize: 14
                             filled: btnWord.active
                             color: btnWord.contentColor
@@ -392,7 +391,7 @@ PageBase {
                         spacing: 6
 
                         MaterialIcon {
-    name: "analog-clock"
+                            name: "analog-clock"
                             iconSize: 14
                             filled: btnAnalog.active
                             color: btnAnalog.contentColor

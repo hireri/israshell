@@ -706,7 +706,7 @@ Item {
             }
 
             MaterialIcon {
-    name: "battery"
+                name: "battery"
                 Layout.alignment: Qt.AlignVCenter
                 visible: root.hasBattery
             }

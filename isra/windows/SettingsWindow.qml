@@ -134,16 +134,14 @@ FloatingWindow {
                             label: "Overview"
                             sublabel: "Wallpaper, appearance"
                             onClicked: root.currentPage = page
-                            MaterialIcon {
-    name: "overview"}
+                            MaterialIcon { name: "overview"; transitionType: "wipe-right" }
                         }
                         SidebarItem {
                             page: root.pageNetwork
                             label: "Connectivity"
                             sublabel: "Wi-Fi, Bluetooth"
                             onClicked: root.currentPage = page
-                            MaterialIcon {
-    name: "networking"}
+                            MaterialIcon { name: "networking" }
                         }
                     }
 
@@ -159,32 +157,28 @@ FloatingWindow {
                             label: "Bar"
                             sublabel: "Layout, media, tray"
                             onClicked: root.currentPage = page
-                            MaterialIcon {
-    name: "customization"}
+                            MaterialIcon { name: "customization"; transitionType: "wipe-up" }
                         }
                         SidebarItem {
                             page: root.pageClock
                             label: "Desktop Clock"
                             sublabel: "Mode, colors"
                             onClicked: root.currentPage = page
-                            MaterialIcon {
-    name: "analog-clock"}
+                            MaterialIcon { name: "analog-clock"; transitionType: "circle" }
                         }
                         SidebarItem {
                             page: root.pageDisplay
                             label: "Visuals"
                             sublabel: "Night light, blur, audio visualizer"
                             onClicked: root.currentPage = page
-                            MaterialIcon {
-    name: "monitor"}
+                            MaterialIcon { name: "monitor"; transitionType: "wipe-down" }
                         }
                         SidebarItem {
                             page: root.pageSound
                             label: "Sound & Notifications"
                             sublabel: "Audio, popups"
                             onClicked: root.currentPage = page
-                            MaterialIcon {
-    name: "notifications"}
+                            MaterialIcon { name: "notifications"; transitionType: "wipe-up" }
                         }
                     }
 
@@ -199,8 +193,7 @@ FloatingWindow {
                             label: "Locale"
                             sublabel: "Time, date, units"
                             onClicked: root.currentPage = page
-                            MaterialIcon {
-    name: "locale"}
+                            MaterialIcon { name: "locale" }
                         }
 
                         SidebarItem {
@@ -208,8 +201,7 @@ FloatingWindow {
                             label: "System"
                             sublabel: "About, paths, keybinds"
                             onClicked: root.currentPage = page
-                            MaterialIcon {
-    name: "about"}
+                            MaterialIcon { name: "about"; transitionType: "circle" }
                         }
                     }
                 }

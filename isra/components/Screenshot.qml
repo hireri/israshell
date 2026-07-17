@@ -1081,7 +1081,7 @@ Item {
                                             }
                                         }
                                         MaterialIcon {
-    name: "close"
+                                            name: "close"
                                             anchors.centerIn: parent
                                             iconSize: 20
                                             color: Colors.md3.on_surface_variant
@@ -1103,37 +1103,44 @@ Item {
                             Component {
                                 id: ssIconComp
                                 MaterialIcon {
-    name: "snipping"}
+                                    name: "snipping"
+                                }
                             }
                             Component {
                                 id: recIconComp
                                 MaterialIcon {
-    name: "record"}
+                                    name: "record"
+                                }
                             }
                             Component {
                                 id: ctsIconComp
                                 MaterialIcon {
-    name: "image-search"}
+                                    name: "image-search"
+                                }
                             }
                             Component {
                                 id: ocrIconComp
                                 MaterialIcon {
-    name: "ocr"}
+                                    name: "ocr"
+                                }
                             }
                             Component {
                                 id: regionIconComp
                                 MaterialIcon {
-    name: "region"}
+                                    name: "region"
+                                }
                             }
                             Component {
                                 id: windowIconComp
                                 MaterialIcon {
-    name: "window"}
+                                    name: "window"
+                                }
                             }
                             Component {
                                 id: screenIconComp
                                 MaterialIcon {
-    name: "screen"}
+                                    name: "screen"
+                                }
                             }
                         }
                     }

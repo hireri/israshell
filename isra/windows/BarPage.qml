@@ -15,56 +15,56 @@ PageBase {
     Component {
         id: huggingIconComp
         MaterialIcon {
-    name: "hugging-bar"
+            name: "hugging-bar"
             iconSize: 16
         }
     }
     Component {
         id: straightIconComp
         MaterialIcon {
-    name: "straight-bar"
+            name: "straight-bar"
             iconSize: 16
         }
     }
     Component {
         id: floatingIconComp
         MaterialIcon {
-    name: "floating-bar"
+            name: "floating-bar"
             iconSize: 16
         }
     }
     Component {
         id: albumIconComp
         MaterialIcon {
-    name: "album"
+            name: "album"
             iconSize: 16
         }
     }
     Component {
         id: queueMusicIconComp
         MaterialIcon {
-    name: "queue-music"
+            name: "queue-music"
             iconSize: 16
         }
     }
     Component {
         id: menuIconComp
         MaterialIcon {
-    name: "menu"
+            name: "menu"
             iconSize: 16
         }
     }
     Component {
         id: arrowUpwardComp
         MaterialIcon {
-    name: "arrow-upward"
+            name: "arrow-upward"
             iconSize: 16
         }
     }
     Component {
         id: arrowDownwardComp
         MaterialIcon {
-    name: "arrow-downward"
+            name: "arrow-downward"
             iconSize: 16
         }
     }

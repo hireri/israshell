@@ -314,8 +314,7 @@ Item {
                         spacing: 0
 
                         PillButton {
-                            iconComponent: MaterialIcon {
-    name: "edit"}
+                            iconComponent: MaterialIcon { name: "edit" }
                             onClicked: {
                                 editProc.command = ["satty", "--filename", outer.imagePath, "--output-filename", outer.imagePath, "--actions-on-enter", "save-to-clipboard", "--save-after-copy", "--early-exit", "--copy-command", "wl-copy"];
                                 editProc.startDetached();
@@ -323,8 +322,7 @@ Item {
                             }
                         }
                         PillButton {
-                            iconComponent: MaterialIcon {
-    name: "folder"}
+                            iconComponent: MaterialIcon { name: "folder" }
                             onClicked: {
                                 Qt.openUrlExternally("file://" + panel.outputDir);
                                 outer.dismiss("scale");
@@ -332,16 +330,14 @@ Item {
                         }
                         PillButton {
                             danger: true
-                            iconComponent: MaterialIcon {
-    name: "delete"}
+                            iconComponent: MaterialIcon { name: "delete" }
                             onClicked: {
                                 deleteProc.exec(["rm", outer.imagePath]);
                                 outer.dismiss("scale");
                             }
                         }
                         PillButton {
-                            iconComponent: MaterialIcon {
-    name: "close"}
+                            iconComponent: MaterialIcon { name: "close" }
                             onClicked: outer.dismiss("scale")
                         }
                     }

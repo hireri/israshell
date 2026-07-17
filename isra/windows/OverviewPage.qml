@@ -227,7 +227,7 @@ PageBase {
                         onClicked: WallpaperService.isDark = false
 
                         MaterialIcon {
-    name: "light-mode"
+                            name: "light-mode"
                             color: WallpaperService.isDark ? Colors.md3.on_surface : Colors.md3.on_primary
                             iconSize: 26
                             filled: !WallpaperService.isDark
@@ -241,7 +241,7 @@ PageBase {
                         onClicked: WallpaperService.isDark = true
 
                         MaterialIcon {
-    name: "dark-mode"
+                            name: "dark-mode"
                             color: !WallpaperService.isDark ? Colors.md3.on_surface : Colors.md3.on_primary
                             iconSize: 26
                             filled: WallpaperService.isDark

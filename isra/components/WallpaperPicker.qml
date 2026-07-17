@@ -86,7 +86,7 @@ Item {
         }
 
         MaterialIcon {
-    name: "wallpapers"
+            name: "wallpapers"
             anchors.centerIn: parent
             iconSize: 20
             color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
@@ -124,14 +124,14 @@ Item {
             Component {
                 id: videoIconComp
                 MaterialIcon {
-    name: "video"
+                    name: "video"
                     iconSize: 16
                 }
             }
             Component {
                 id: imageIconComp
                 MaterialIcon {
-    name: "image"
+                    name: "image"
                     iconSize: 16
                 }
             }

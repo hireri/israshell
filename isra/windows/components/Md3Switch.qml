@@ -25,7 +25,7 @@ Item {
     Component {
         id: checkIconComp
         MaterialIcon {
-    name: "check"
+            name: "check"
             color: root.checked && root.enabled ? Colors.md3.primary : Colors.md3.outline
             iconSize: 18
         }
@@ -34,7 +34,7 @@ Item {
     Component {
         id: crossIconComp
         MaterialIcon {
-    name: "close"
+            name: "close"
             color: Colors.md3.surface_variant
             iconSize: 18
         }

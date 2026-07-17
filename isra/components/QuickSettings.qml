@@ -404,7 +404,7 @@ Item {
                                 }
 
                                 MaterialIcon {
-    name: "restart"
+                                    name: "restart"
                                     anchors.centerIn: parent
                                     iconSize: 16
                                     color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
@@ -433,7 +433,7 @@ Item {
                                 }
 
                                 MaterialIcon {
-    name: "settings"
+                                    name: "settings"
                                     anchors.centerIn: parent
                                     iconSize: 16
                                     color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
@@ -464,7 +464,7 @@ Item {
                                 }
 
                                 MaterialIcon {
-    name: "shutdown"
+                                    name: "shutdown"
                                     anchors.centerIn: parent
                                     iconSize: 16
                                     color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
@@ -629,9 +629,10 @@ Item {
                                 QsToggleChip {
                                     active: CaffeineService.active
                                     iconComponent: MaterialIcon {
-    name: "caffeine"
+                                        name: "caffeine"
                                         iconSize: 22
                                         filled: CaffeineService.active
+                                        transitionType: "wipe-up"
                                     }
                                     onToggled: CaffeineService.toggle()
                                 }
@@ -639,7 +640,7 @@ Item {
                                 QsToggleChip {
                                     active: NightLightService.active
                                     iconComponent: MaterialIcon {
-    name: "nightlight"
+                                        name: "nightlight"
                                         iconSize: 22
                                         filled: NightLightService.active
                                     }
@@ -693,11 +694,12 @@ Item {
                                     }
 
                                     MaterialIcon {
-    name: "dnd"
+                                        name: "dnd"
                                         anchors.centerIn: parent
                                         iconSize: 16
                                         color: Colors.md3.on_surface
                                         filled: NotificationService.dnd
+                                        transitionType: "circle"
                                     }
 
                                     MouseArea {
@@ -740,7 +742,7 @@ Item {
                                     }
 
                                     MaterialIcon {
-    name: "clear-all"
+                                        name: "clear-all"
                                         anchors.centerIn: parent
                                         iconSize: 16
                                         filled: NotificationService.qsGroupModel.count > 0
@@ -1063,6 +1065,7 @@ Item {
             iconSize: 22
             filled: GameModeService.active
             color: GameModeService.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+            transitionType: "wipe-up"
         }
 
         MouseArea {

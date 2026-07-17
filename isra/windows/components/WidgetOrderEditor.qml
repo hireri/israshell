@@ -318,7 +318,7 @@ Item {
                             height: parent.height
 
                             MaterialIcon {
-    name: "drag-indicator"
+                                name: "drag-indicator"
                                 anchors.centerIn: parent
                                 iconSize: 15
                                 color: Colors.md3.on_surface_variant
@@ -372,7 +372,7 @@ Item {
                                 onClicked: root._setPivot(rowRoot.index)
 
                                 MaterialIcon {
-    name: "keep"
+                                    name: "keep"
                                     anchors.centerIn: parent
                                     iconSize: 15
                                     filled: rowRoot.pivot
@@ -386,14 +386,14 @@ Item {
                                 onClicked: root._toggleHidden(rowRoot.index)
 
                                 MaterialIcon {
-    name: "visibility-off"
+                                    name: "visibility-off"
                                     anchors.centerIn: parent
                                     iconSize: 15
                                     visible: rowRoot.hidden
                                     color: Colors.md3.on_surface_variant
                                 }
                                 MaterialIcon {
-    name: "visibility"
+                                    name: "visibility"
                                     anchors.centerIn: parent
                                     iconSize: 15
                                     visible: !rowRoot.hidden

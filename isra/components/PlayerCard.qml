@@ -677,11 +677,12 @@ CAVAEOF`]
                 }
 
                 MaterialIcon {
-    name: "play-pause"
+                    name: "play-pause"
                     anchors.centerIn: parent
                     iconSize: 20
                     filled: middleRow.isPlaying
                     color: root.colOnPrimary
+                    transitionType: "wipe-right"
 
                     Behavior on color {
                         ColorAnimation {
@@ -741,7 +742,7 @@ CAVAEOF`]
                 }
 
                 MaterialIcon {
-    name: "next-prev"
+                    name: "next-prev"
                     anchors.centerIn: parent
                     iconSize: 16
                     filled: false
@@ -916,7 +917,7 @@ CAVAEOF`]
                 }
 
                 MaterialIcon {
-    name: "next-prev"
+                    name: "next-prev"
                     anchors.centerIn: parent
                     iconSize: 16
                     filled: true
