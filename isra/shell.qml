@@ -9,6 +9,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Widgets
 import QtQuick
 import Qt5Compat.GraphicalEffects
 
@@ -372,6 +373,7 @@ ShellRoot {
                     anchors.rightMargin: (Config.bar.mode === 2) ? 12 : 0
                     anchors.topMargin: (Config.bar.mode === 2) && Config.bar.position === 0 ? 10 : 0
                     anchors.bottomMargin: (Config.bar.mode === 2) && Config.bar.position === 1 ? 10 : 0
+                    clip: Config.bar.mode === 3
 
                     opacity: window.shouldHide ? 0 : 1
 
@@ -382,10 +384,18 @@ ShellRoot {
                         }
                     }
 
-                    Rectangle {
+                    ClippingRectangle {
                         id: barContainer
-                        anchors.fill: parent
-                        radius: (Config.bar.mode === 2) ? 22 : 0
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: (Config.bar.mode === 3) ? parent.height * 2 : parent.height
+                        y: (Config.bar.mode === 3 && Config.bar.position === 0) ? -parent.height : 0
+
+                        radius: (Config.bar.mode === 3) ? 0 : (Config.bar.mode === 2) ? 22 : 0
+                        bottomLeftRadius: (Config.bar.mode === 3 && Config.bar.position === 0) ? height / 4 : radius
+                        bottomRightRadius: (Config.bar.mode === 3 && Config.bar.position === 0) ? height / 4 : radius
+                        topLeftRadius: (Config.bar.mode === 3 && Config.bar.position === 1) ? height / 4 : radius
+                        topRightRadius: (Config.bar.mode === 3 && Config.bar.position === 1) ? height / 4 : radius
 
                         border.width: (Config.bar.mode === 2) ? 1 : 0
                         border.color: Config.bar.transparency ? Qt.alpha(Colors.md3.outline_variant, 0.5) : Colors.md3.outline_variant
@@ -431,14 +441,19 @@ ShellRoot {
                                         width: screenScope.modelData ? screenScope.modelData.width : 0
                                         height: screenScope.modelData ? screenScope.modelData.height : 0
                                         
-                                        readonly property int leftMargin: (Config.bar.mode === 2) ? 12 : 0
-                                        readonly property int topMargin: (Config.bar.mode === 2) && Config.bar.position === 0 ? 10 : 0
-                                        readonly property int bottomMargin: (Config.bar.mode === 2) && Config.bar.position === 1 ? 10 : 0
+                                        readonly property int screenHeight: screenScope.modelData ? screenScope.modelData.height : 0
+                                        readonly property int windowHeight: window.implicitHeight
+                                        readonly property bool isTop: Config.bar.position === 0
+                                        
+                                        readonly property int visualContentY: isTop 
+                                            ? (Config.bar.mode === 2 ? 10 : 0) 
+                                            : (screenHeight - windowHeight)
+                                            
+                                        readonly property int barContainerY: visualContentY + ((Config.bar.mode === 3 && isTop) ? -windowHeight : 0)
+                                        readonly property int barContainerX: (Config.bar.mode === 2) ? 12 : 0
 
-                                        x: -leftMargin
-                                        y: (Config.bar.position === 0) 
-                                            ? -topMargin 
-                                            : -( (screenScope.modelData ? screenScope.modelData.height : 0) - barContainer.height - bottomMargin)
+                                        x: -barContainerX
+                                        y: -barContainerY
                                         
                                         sourceSize.width: screenScope.modelData ? screenScope.modelData.width / 4 : 0
                                         sourceSize.height: screenScope.modelData ? screenScope.modelData.height / 4 : 0
@@ -510,8 +525,12 @@ ShellRoot {
 
                         Item {
                             anchors.fill: parent
-                            anchors.rightMargin: 8
-                            anchors.leftMargin: 6
+                            
+                            anchors.topMargin: (Config.bar.mode === 3 && Config.bar.position === 0) ? parent.height / 2 : 0
+                            anchors.bottomMargin: (Config.bar.mode === 3 && Config.bar.position === 1) ? parent.height / 2 : 0
+                            
+                            anchors.rightMargin: (Config.bar.mode === 3) ? 6 : 8
+                            anchors.leftMargin: (Config.bar.mode === 3) ? 0 : 6
 
                             BarMenu {
                                 id: barContextMenu

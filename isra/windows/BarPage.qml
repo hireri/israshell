@@ -34,6 +34,13 @@ PageBase {
         }
     }
     Component {
+        id: chromeOsIconComp
+        MaterialIcon {
+            name: "chromeos-bar"
+            iconSize: 16
+        }
+    }
+    Component {
         id: albumIconComp
         MaterialIcon {
             name: "album"
@@ -83,6 +90,8 @@ PageBase {
                     return "Attached to screen edge";
                 case 2:
                     return "Floating, detached";
+                case 3:
+                    return "Chromebook corners";
                 default:
                     return "";
                 }
@@ -100,6 +109,11 @@ PageBase {
                 },
                 {
                     label: "",
+                    value: 3,
+                    icon: chromeOsIconComp
+                },
+                {
+                    label: "",
                     value: 2,
                     icon: floatingIconComp
                 }
@@ -111,7 +125,6 @@ PageBase {
                 })
             })
         }
-
         SettingChips {
             label: "Position"
             options: [
