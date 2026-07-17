@@ -676,7 +676,8 @@ CAVAEOF`]
                     }
                 }
 
-                PlayPauseIcon {
+                MaterialIcon {
+    name: "play-pause"
                     anchors.centerIn: parent
                     iconSize: 20
                     filled: middleRow.isPlaying
@@ -739,7 +740,8 @@ CAVAEOF`]
                     }
                 }
 
-                NextPrevIcon {
+                MaterialIcon {
+    name: "next-prev"
                     anchors.centerIn: parent
                     iconSize: 16
                     filled: false
@@ -913,7 +915,8 @@ CAVAEOF`]
                     }
                 }
 
-                NextPrevIcon {
+                MaterialIcon {
+    name: "next-prev"
                     anchors.centerIn: parent
                     iconSize: 16
                     filled: true

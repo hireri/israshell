@@ -76,7 +76,8 @@ Rectangle {
             visible: isEnabled("screenshot")
             tooltip: "Screenshot"
             onClicked: screenshotScript.startDetached()
-            ScreenshotIcon {
+            MaterialIcon {
+                name: "screenshot"
                 iconSize: 18
                 anchors.centerIn: parent
                 color: Colors.md3.on_surface
@@ -87,7 +88,8 @@ Rectangle {
             visible: isEnabled("cts")
             tooltip: "Circle to Search"
             onClicked: ctsScript.startDetached()
-            ImageSearchIcon {
+            MaterialIcon {
+                name: "image-search"
                 iconSize: 18
                 anchors.centerIn: parent
                 color: Colors.md3.on_surface
@@ -98,7 +100,8 @@ Rectangle {
             visible: isEnabled("ocr")
             tooltip: "OCR Text"
             onClicked: ocrScript.startDetached()
-            OcrIcon {
+            MaterialIcon {
+                name: "ocr"
                 iconSize: 18
                 anchors.centerIn: parent
                 color: Colors.md3.on_surface
@@ -137,7 +140,8 @@ Rectangle {
                 }
             }
 
-            SongrecIcon {
+            MaterialIcon {
+                name: "songrec"
                 iconSize: 18
                 anchors.centerIn: parent
                 color: ScreencapService.isRecognizing ? Colors.md3.primary : Colors.md3.on_surface
@@ -196,7 +200,8 @@ Rectangle {
                     }
                 }
 
-                RecordIcon {
+                MaterialIcon {
+                    name: "record"
                     id: recIcon
                     iconSize: 18
                     anchors.verticalCenter: parent.verticalCenter

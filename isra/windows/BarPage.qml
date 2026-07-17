@@ -14,49 +14,57 @@ PageBase {
 
     Component {
         id: huggingIconComp
-        HuggingBarIcon {
+        MaterialIcon {
+    name: "hugging-bar"
             iconSize: 16
         }
     }
     Component {
         id: straightIconComp
-        StraightBarIcon {
+        MaterialIcon {
+    name: "straight-bar"
             iconSize: 16
         }
     }
     Component {
         id: floatingIconComp
-        FloatingBarIcon {
+        MaterialIcon {
+    name: "floating-bar"
             iconSize: 16
         }
     }
     Component {
         id: albumIconComp
-        AlbumIcon {
+        MaterialIcon {
+    name: "album"
             iconSize: 16
         }
     }
     Component {
         id: queueMusicIconComp
-        QueueMusicIcon {
+        MaterialIcon {
+    name: "queue-music"
             iconSize: 16
         }
     }
     Component {
         id: menuIconComp
-        MenuIcon {
+        MaterialIcon {
+    name: "menu"
             iconSize: 16
         }
     }
     Component {
         id: arrowUpwardComp
-        ArrowUpwardIcon {
+        MaterialIcon {
+    name: "arrow-upward"
             iconSize: 16
         }
     }
     Component {
         id: arrowDownwardComp
-        ArrowDownwardIcon {
+        MaterialIcon {
+    name: "arrow-downward"
             iconSize: 16
         }
     }

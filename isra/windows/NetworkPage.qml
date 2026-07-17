@@ -66,7 +66,8 @@ PageBase {
 
     Component {
         id: ethIconComp
-        EthernetIcon {
+        MaterialIcon {
+            name: "ethernet"
             iconSize: 22
             filled: NetworkService.ethConnected
             color: NetworkService.ethConnected ? Colors.md3.on_tertiary_container : Colors.md3.outline
@@ -96,7 +97,8 @@ PageBase {
 
     Component {
         id: headphonesComp
-        HeadphonesIcon {
+        MaterialIcon {
+            name: "headphones"
             iconSize: 22
             color: Colors.md3.on_secondary_container
         }
@@ -104,7 +106,8 @@ PageBase {
 
     Component {
         id: phoneComp
-        PhoneIcon {
+        MaterialIcon {
+            name: "phone"
             iconSize: 22
             color: Colors.md3.on_secondary_container
         }
@@ -112,7 +115,8 @@ PageBase {
 
     Component {
         id: keyboardComp
-        KeyboardIcon {
+        MaterialIcon {
+            name: "keyboard"
             iconSize: 22
             color: Colors.md3.on_secondary_container
         }
@@ -120,7 +124,8 @@ PageBase {
 
     Component {
         id: btRowHeadphones
-        HeadphonesIcon {
+        MaterialIcon {
+            name: "headphones"
             iconSize: 20
             color: Colors.md3.on_surface
         }
@@ -128,7 +133,8 @@ PageBase {
 
     Component {
         id: btRowPhone
-        PhoneIcon {
+        MaterialIcon {
+            name: "phone"
             iconSize: 20
             color: Colors.md3.on_surface
         }

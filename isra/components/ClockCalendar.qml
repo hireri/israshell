@@ -71,42 +71,48 @@ Item {
 
     Component {
         id: sunnyComponent
-        WbSunnyIcon {
+        MaterialIcon {
+    name: "wb-sunny"
             iconSize: 36
             color: root.weatherColor.sun
         }
     }
     Component {
         id: partlyCloudyComponent
-        PartlyCloudyDayIcon {
+        MaterialIcon {
+    name: "partly-cloudy-day"
             iconSize: 36
             color: Colors.md3.primary
         }
     }
     Component {
         id: cloudyComponent
-        CloudyIcon {
+        MaterialIcon {
+    name: "cloudy"
             iconSize: 36
             color: root.weatherColor.cloud
         }
     }
     Component {
         id: rainComponent
-        RainyIcon {
+        MaterialIcon {
+    name: "rainy"
             iconSize: 36
             color: root.weatherColor.rain
         }
     }
     Component {
         id: stormComponent
-        ThunderstormIcon {
+        MaterialIcon {
+    name: "thunderstorm"
             iconSize: 36
             color: root.weatherColor.storm
         }
     }
     Component {
         id: snowComponent
-        SnowyIcon {
+        MaterialIcon {
+    name: "snowy"
             iconSize: 36
             color: root.weatherColor.snow
         }
@@ -336,7 +342,8 @@ Item {
                             anchors.centerIn: parent
                             spacing: 6
 
-                            HeatIcon {
+                            MaterialIcon {
+    name: "heat"
                                 iconSize: 14
                                 color: root.weatherColor.heat
                                 anchors.verticalCenter: parent.verticalCenter
@@ -367,7 +374,8 @@ Item {
                             anchors.centerIn: parent
                             spacing: 6
 
-                            WaterDropIcon {
+                            MaterialIcon {
+    name: "water-drop"
                                 iconSize: 14
                                 color: root.weatherColor.humidity
                                 anchors.verticalCenter: parent.verticalCenter
@@ -399,7 +407,8 @@ Item {
                             anchors.centerIn: parent
                             spacing: 6
 
-                            AirIcon {
+                            MaterialIcon {
+    name: "air"
                                 iconSize: 14
                                 color: root.weatherColor.air
                                 anchors.verticalCenter: parent.verticalCenter
@@ -431,7 +440,8 @@ Item {
                             anchors.centerIn: parent
                             spacing: 6
 
-                            ThermostatIcon {
+                            MaterialIcon {
+    name: "thermostat"
                                 iconSize: 14
                                 color: Colors.md3.primary
                                 anchors.verticalCenter: parent.verticalCenter
@@ -462,7 +472,8 @@ Item {
                             anchors.centerIn: parent
                             spacing: 6
 
-                            UmbrellaIcon {
+                            MaterialIcon {
+    name: "umbrella"
                                 iconSize: 14
                                 color: root.weatherColor.rain
                                 anchors.verticalCenter: parent.verticalCenter
@@ -494,7 +505,8 @@ Item {
                             anchors.centerIn: parent
                             spacing: 6
 
-                            WbTwilightIcon {
+                            MaterialIcon {
+    name: "wb-twilight"
                                 iconSize: 14
                                 color: root.weatherColor.sun
                                 anchors.verticalCenter: parent.verticalCenter
@@ -542,7 +554,8 @@ Item {
                         anchors.centerIn: parent
                         spacing: 8
 
-                        CalendarMonthIcon {
+                        MaterialIcon {
+    name: "calendar-month"
                             iconSize: 16
                             color: Colors.md3.on_secondary_container
                             anchors.verticalCenter: parent.verticalCenter
@@ -590,7 +603,8 @@ Item {
                         anchors.centerIn: parent
                         spacing: 8
 
-                        SettingsIcon {
+                        MaterialIcon {
+    name: "settings"
                             iconSize: 16
                             color: Colors.md3.on_surface
                             anchors.verticalCenter: parent.verticalCenter

@@ -32,28 +32,32 @@ PageBase {
 
     Component {
         id: alignAutoComp
-        AlignAutoIcon {
+        MaterialIcon {
+    name: "align-auto"
             iconSize: 16
             filled: Config.clock.align === "auto"
         }
     }
     Component {
         id: alignLeftComp
-        AlignLeftIcon {
+        MaterialIcon {
+    name: "align-left"
             iconSize: 16
             filled: Config.clock.align === "left"
         }
     }
     Component {
         id: alignCenterComp
-        AlignCenterIcon {
+        MaterialIcon {
+    name: "align-center"
             iconSize: 16
             filled: Config.clock.align === "center"
         }
     }
     Component {
         id: alignRightComp
-        AlignRightIcon {
+        MaterialIcon {
+    name: "align-right"
             iconSize: 16
             filled: Config.clock.align === "right"
         }
@@ -134,7 +138,8 @@ PageBase {
         cardColor: Colors.md3.surface_container
         checked: Config.desktopClock ?? false
         onToggled: v => Config.update({ desktopClock: v })
-        AnalogClockIcon {}
+        MaterialIcon {
+    name: "analog-clock"}
     }
 
     Rectangle {
@@ -195,7 +200,8 @@ PageBase {
                         anchors.rightMargin: 12
                         spacing: 6
 
-                        VerticalClockIcon {
+                        MaterialIcon {
+    name: "vertical-clock"
                             iconSize: 14
                             filled: btnVertical.active
                             color: btnVertical.contentColor
@@ -256,7 +262,8 @@ PageBase {
                         anchors.rightMargin: 12
                         spacing: 6
 
-                        HorizontalClockIcon {
+                        MaterialIcon {
+    name: "horizontal-clock"
                             iconSize: 14
                             filled: btnHorizontal.active
                             color: btnHorizontal.contentColor
@@ -317,7 +324,8 @@ PageBase {
                         anchors.rightMargin: 12
                         spacing: 6
 
-                        WordClockIcon {
+                        MaterialIcon {
+    name: "word-clock"
                             iconSize: 14
                             filled: btnWord.active
                             color: btnWord.contentColor
@@ -383,7 +391,8 @@ PageBase {
                         anchors.rightMargin: 12
                         spacing: 6
 
-                        AnalogClockIcon {
+                        MaterialIcon {
+    name: "analog-clock"
                             iconSize: 14
                             filled: btnAnalog.active
                             color: btnAnalog.contentColor

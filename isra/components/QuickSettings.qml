@@ -117,21 +117,24 @@ Item {
             }
             StatusIcon {
                 active: CaffeineService.active
-                iconComponent: CaffeineIcon {
+                iconComponent: MaterialIcon {
+                    name: "caffeine"
                     iconSize: 16
                     filled: true
                 }
             }
             StatusIcon {
                 active: NightLightService.active
-                iconComponent: NightlightIcon {
+                iconComponent: MaterialIcon {
+                    name: "nightlight"
                     iconSize: 16
                     filled: true
                 }
             }
             StatusIcon {
                 active: NotificationService.dnd
-                iconComponent: DndIcon {
+                iconComponent: MaterialIcon {
+                    name: "dnd"
                     iconSize: 16
                     filled: true
                 }
@@ -400,7 +403,8 @@ Item {
                                     ColorAnimation { duration: 150 }
                                 }
 
-                                RestartIcon {
+                                MaterialIcon {
+    name: "restart"
                                     anchors.centerIn: parent
                                     iconSize: 16
                                     color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
@@ -428,7 +432,8 @@ Item {
                                     ColorAnimation { duration: 150 }
                                 }
 
-                                SettingsIcon {
+                                MaterialIcon {
+    name: "settings"
                                     anchors.centerIn: parent
                                     iconSize: 16
                                     color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
@@ -458,7 +463,8 @@ Item {
                                     ColorAnimation { duration: 150 }
                                 }
 
-                                ShutdownIcon {
+                                MaterialIcon {
+    name: "shutdown"
                                     anchors.centerIn: parent
                                     iconSize: 16
                                     color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
@@ -622,7 +628,8 @@ Item {
 
                                 QsToggleChip {
                                     active: CaffeineService.active
-                                    iconComponent: CaffeineIcon {
+                                    iconComponent: MaterialIcon {
+    name: "caffeine"
                                         iconSize: 22
                                         filled: CaffeineService.active
                                     }
@@ -631,7 +638,8 @@ Item {
 
                                 QsToggleChip {
                                     active: NightLightService.active
-                                    iconComponent: NightlightIcon {
+                                    iconComponent: MaterialIcon {
+    name: "nightlight"
                                         iconSize: 22
                                         filled: NightLightService.active
                                     }
@@ -684,7 +692,8 @@ Item {
                                         }
                                     }
 
-                                    DndIcon {
+                                    MaterialIcon {
+    name: "dnd"
                                         anchors.centerIn: parent
                                         iconSize: 16
                                         color: Colors.md3.on_surface
@@ -730,7 +739,8 @@ Item {
                                         }
                                     }
 
-                                    ClearAllIcon {
+                                    MaterialIcon {
+    name: "clear-all"
                                         anchors.centerIn: parent
                                         iconSize: 16
                                         filled: NotificationService.qsGroupModel.count > 0
@@ -1047,7 +1057,8 @@ Item {
             }
         }
 
-        GameModeIcon {
+        MaterialIcon {
+            name: "game-mode"
             anchors.centerIn: parent
             iconSize: 22
             filled: GameModeService.active

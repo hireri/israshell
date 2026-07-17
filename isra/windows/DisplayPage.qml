@@ -20,18 +20,21 @@ PageBase {
         cardColor: Colors.md3.surface_container
         checked: NightLightService.active
         onToggled: v => NightLightService.toggle()
-        NightlightIcon {}
+        MaterialIcon {
+    name: "nightlight"}
     }
 
     Component {
         id: arrowUpwardComp
-        ArrowUpwardIcon {
+        MaterialIcon {
+    name: "arrow-upward"
             iconSize: 16
         }
     }
     Component {
         id: arrowDownwardComp
-        ArrowDownwardIcon {
+        MaterialIcon {
+    name: "arrow-downward"
             iconSize: 16
         }
     }
@@ -160,7 +163,8 @@ PageBase {
                 })
             })
         
-        EqualizerIcon {
+        MaterialIcon {
+    name: "equalizer"
             iconSize: 22
             color: Colors.md3.primary
         }
@@ -224,7 +228,8 @@ PageBase {
                         anchors.rightMargin: 12
                         spacing: 6
 
-                        EarthquakeIcon {
+                        MaterialIcon {
+    name: "earthquake"
                             iconSize: 14
                             color: btnCurve.contentColor
                             Behavior on color { ColorAnimation { duration: 120 } }
@@ -286,7 +291,8 @@ PageBase {
                         anchors.rightMargin: 12
                         spacing: 6
 
-                        BarChartIcon {
+                        MaterialIcon {
+    name: "bar-chart"
                             iconSize: 14
                             color: btnBars.contentColor
                             Behavior on color { ColorAnimation { duration: 120 } }
@@ -353,7 +359,8 @@ PageBase {
                         anchors.rightMargin: 12
                         spacing: 6
 
-                        GridViewIcon {
+                        MaterialIcon {
+    name: "grid-view"
                             iconSize: 14
                             color: btnBlocks.contentColor
                             Behavior on color { ColorAnimation { duration: 120 } }

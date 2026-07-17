@@ -15,60 +15,60 @@ Item {
 
     Component {
         id: previousIconComp
-        NextPrevIcon { iconSize: 15; color: Colors.md3.on_surface }
+        MaterialIcon { name: "next-prev"; iconSize: 15; color: Colors.md3.on_surface }
     }
     Component {
         id: nextIconComp
-        NextPrevIcon { iconSize: 15; color: Colors.md3.on_surface; filled: true }
+        MaterialIcon { name: "next-prev"; iconSize: 15; color: Colors.md3.on_surface; filled: true }
     }
     Component {
         id: playIconComp
-        PlayPauseIcon { iconSize: 16; color: Colors.md3.on_surface }
+        MaterialIcon { name: "play-pause"; iconSize: 16; color: Colors.md3.on_surface }
     }
     Component {
         id: pauseIconComp
-        PlayPauseIcon { iconSize: 16; color: Colors.md3.on_surface; filled: true }
+        MaterialIcon { name: "play-pause"; iconSize: 16; color: Colors.md3.on_surface; filled: true }
     }
     Component {
         id: musicNoteIconComp
-        MusicNoteIcon { iconSize: 15; color: Colors.md3.on_surface_variant }
+        MaterialIcon { name: "music-note"; iconSize: 15; color: Colors.md3.on_surface_variant }
     }
     Component {
         id: arrowRightIconComp
-        ArrowForwardIcon { iconSize: 18 }
+        MaterialIcon { name: "arrow-forward"; iconSize: 18 }
     }
     Component {
         id: logoutIconComp
-        LogoutIcon { iconSize: 18 }
+        MaterialIcon { name: "logout"; iconSize: 18 }
     }
     Component {
         id: restartIconComp
-        RestartIcon { iconSize: 18 }
+        MaterialIcon { name: "restart"; iconSize: 18 }
     }
     Component {
         id: powerIconComp
-        ShutdownIcon { iconSize: 18 }
+        MaterialIcon { name: "shutdown"; iconSize: 18 }
     }
 
     Component {
         id: notifBellIconComp
-        NotificationsIcon { iconSize: 16; color: Colors.md3.on_surface_variant }
+        MaterialIcon { name: "notifications"; iconSize: 16; color: Colors.md3.on_surface_variant }
     }
     Component {
         id: notifBellIconFilledComp
-        NotificationsIcon { iconSize: 16; color: Colors.md3.on_surface_variant; filled: true }
+        MaterialIcon { name: "notifications"; iconSize: 16; color: Colors.md3.on_surface_variant; filled: true }
     }
     Component {
         id: dndIconComp
-        DndIcon { iconSize: 16; color: Colors.md3.on_surface_variant }
+        MaterialIcon { name: "dnd"; iconSize: 16; color: Colors.md3.on_surface_variant }
     }
     Component {
         id: capsLockIconComp
-        ShiftLockIcon { iconSize: 16; color: Colors.md3.on_surface_variant }
+        MaterialIcon { name: "shift-lock"; iconSize: 16; color: Colors.md3.on_surface_variant }
     }
     Component {
         id: capsLockIconFilledComp
-        ShiftLockIcon { iconSize: 16; color: Colors.md3.on_surface_variant; filled: true }
+        MaterialIcon { name: "shift-lock"; iconSize: 16; color: Colors.md3.on_surface_variant; filled: true }
     }
 
     readonly property var powerEntries: [
@@ -705,7 +705,8 @@ Item {
                 }
             }
 
-            BatteryIcon {
+            MaterialIcon {
+    name: "battery"
                 Layout.alignment: Qt.AlignVCenter
                 visible: root.hasBattery
             }

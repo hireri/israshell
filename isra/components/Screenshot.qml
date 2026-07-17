@@ -1080,7 +1080,8 @@ Item {
                                                 duration: 150
                                             }
                                         }
-                                        CloseIcon {
+                                        MaterialIcon {
+    name: "close"
                                             anchors.centerIn: parent
                                             iconSize: 20
                                             color: Colors.md3.on_surface_variant
@@ -1101,31 +1102,38 @@ Item {
 
                             Component {
                                 id: ssIconComp
-                                SnippingIcon {}
+                                MaterialIcon {
+    name: "snipping"}
                             }
                             Component {
                                 id: recIconComp
-                                RecordIcon {}
+                                MaterialIcon {
+    name: "record"}
                             }
                             Component {
                                 id: ctsIconComp
-                                ImageSearchIcon {}
+                                MaterialIcon {
+    name: "image-search"}
                             }
                             Component {
                                 id: ocrIconComp
-                                OcrIcon {}
+                                MaterialIcon {
+    name: "ocr"}
                             }
                             Component {
                                 id: regionIconComp
-                                RegionIcon {}
+                                MaterialIcon {
+    name: "region"}
                             }
                             Component {
                                 id: windowIconComp
-                                WindowIcon {}
+                                MaterialIcon {
+    name: "window"}
                             }
                             Component {
                                 id: screenIconComp
-                                ScreenIcon {}
+                                MaterialIcon {
+    name: "screen"}
                             }
                         }
                     }

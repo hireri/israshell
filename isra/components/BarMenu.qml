@@ -20,14 +20,16 @@ PanelWindow {
 
     Component {
         id: missionCenterIconComp
-        MissionCenterIcon {
+        MaterialIcon {
+            name: "mission-center"
             iconSize: 16
             color: Colors.md3.on_surface_variant
         }
     }
     Component {
         id: settingsIconComp
-        SettingsIcon {
+        MaterialIcon {
+            name: "settings"
             iconSize: 16
             color: Colors.md3.on_surface_variant
         }
