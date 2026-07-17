@@ -10,7 +10,7 @@ import Quickshell.Widgets
 
 PageBase {
     title: "Visuals"
-    subtitle: "Night light, blur, and audio visualizer"
+    subtitle: "Night light, blur, audio visualizer"
 
     HeroCard {
         Layout.fillWidth: true

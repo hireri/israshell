@@ -168,10 +168,10 @@ FloatingWindow {
                         }
                         SidebarItem {
                             page: root.pageDisplay
-                            label: "Display"
-                            sublabel: "Nightlight, gamma"
+                            label: "Visuals"
+                            sublabel: "Night light, blur, audio visualizer"
                             onClicked: root.currentPage = page
-                            NightlightIcon {}
+                            MonitorIcon {}
                         }
                         SidebarItem {
                             page: root.pageSound
