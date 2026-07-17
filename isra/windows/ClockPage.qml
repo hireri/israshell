@@ -115,6 +115,28 @@ PageBase {
         }
     }
 
+    HeroCard {
+        Layout.fillWidth: true
+        title: "Desktop clock"
+        subtitle: {
+            if (!Config.desktopClock) return "Hidden";
+            
+            var layoutNames = {
+                "vertical": "Vertical style",
+                "horizontal": "Horizontal style",
+                "word": "Word clock",
+                "analog": "Analog face"
+            };
+            var layout = layoutNames[Config.clock.layout] ?? "Standard";
+            return "Visible • " + layout;
+        }
+        iconBg: Colors.md3.tertiary_container
+        cardColor: Colors.md3.surface_container
+        checked: Config.desktopClock ?? false
+        onToggled: v => Config.update({ desktopClock: v })
+        AnalogClockIcon {}
+    }
+
     Rectangle {
         Layout.fillWidth: true
         implicitHeight: layoutInner.implicitHeight + 32
@@ -130,14 +152,6 @@ PageBase {
                 margins: 16
             }
             spacing: 16
-
-            Text {
-                text: "Layout Style"
-                font.family: Config.fontFamily
-                font.pixelSize: 11
-                font.weight: Font.Medium
-                color: Colors.md3.outline
-            }
 
             RowLayout {
                 Layout.fillWidth: true
