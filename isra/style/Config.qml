@@ -118,7 +118,17 @@ Singleton {
             ringAmplitude: 4,
             outlineWidth: 2
         })
+    property var weyes: ({
+            enabled: false,
+            x: 100,
+            y: 100,
+            width: 220,
+            height: 120,
+            tinted: false,
+            mirror: true
+        })
     property var clockPositions: ({})
+    property var weyesPositions: ({})
     property bool checkUpdates: true
     property bool checkDeps: true
     property string githubRepo: "hireri/israshell"
@@ -228,6 +238,7 @@ Singleton {
                 shadowX: 0,
                 shadowY: 0,
                 shadowOpacity: 0.2,
+                shadowVisible: true,
                 manualPos: false,
                 showDigitalInside: true,
                 analogSize: 200,
@@ -235,8 +246,18 @@ Singleton {
                 ringAmplitude: 4,
                 outlineWidth: 2
             },
+            weyes: {
+                enabled: false,
+                x: 100,
+                y: 100,
+                width: 220,
+                height: 120,
+                tinted: false,
+                mirror: true
+            },
             useAwww: false,
             clockPositions: {},
+            weyesPositions: {},
             checkUpdates: true,
             checkDeps: true,
             githubRepo: "hireri/israshell",

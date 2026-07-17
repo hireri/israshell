@@ -695,4 +695,43 @@ PageBase {
             }
         }
     }
+
+    SectionCard {
+        label: "Weyes"
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: "Enable"
+            sublabel: "Show wayland-weyes 👀"
+            checked: Config.weyes.enabled
+            onToggled: v => Config.update({
+                    weyes: Object.assign({}, Config.weyes, {
+                        enabled: v
+                    })
+                })
+        }
+
+        SettingSwitch {
+            label: "Mirror layout"
+            sublabel: "Synchronize coords and size across all screens"
+            checked: Config.weyes.mirror
+            onToggled: v => Config.update({
+                    weyes: Object.assign({}, Config.weyes, {
+                        mirror: v
+                    })
+                })
+        }
+
+        SettingSwitch {
+            label: "Tinted"
+            sublabel: "Match colors to the system theme"
+            checked: Config.weyes.tinted
+            onToggled: v => Config.update({
+                    weyes: Object.assign({}, Config.weyes, {
+                        tinted: v
+                    })
+                })
+            isLast: true
+        }
+    }
 }

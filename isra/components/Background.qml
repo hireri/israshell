@@ -314,6 +314,14 @@ PanelWindow {
         }
     }
 
+    Loader {
+        id: weyesLoader
+        active: Config.weyes.enabled
+
+        sourceComponent: Weyes {
+            modelData: root.modelData
+        }
+    }
 
     CavaVisualizer {
         id: cavaVisualizer
