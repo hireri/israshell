@@ -94,7 +94,7 @@ Item {
     Row {
         id: eyesRow
         anchors.centerIn: parent
-        spacing: Math.max(4, root.width * 0.03)
+        spacing: Math.max(4, root.width * 0.07)
 
         Eye {
             width: (root.width - eyesRow.spacing) / 2
