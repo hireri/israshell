@@ -23,6 +23,19 @@ PageBase {
         NightlightIcon {}
     }
 
+    Component {
+        id: arrowUpwardComp
+        ArrowUpwardIcon {
+            iconSize: 16
+        }
+    }
+    Component {
+        id: arrowDownwardComp
+        ArrowDownwardIcon {
+            iconSize: 16
+        }
+    }
+
     SectionCard {
         label: "Temperature"
         Layout.fillWidth: true
@@ -532,15 +545,16 @@ PageBase {
 
             SettingChips {
                 label: "Position"
-                sublabel: "Where the visualizer is anchored"
                 options: [
                     {
                         label: "Top",
-                        value: 0
+                        value: 0,
+                        icon: arrowUpwardComp
                     },
                     {
                         label: "Bottom",
-                        value: 1
+                        value: 1,
+                        icon: arrowDownwardComp
                     }
                 ]
                 currentValue: Config.cava.position

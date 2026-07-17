@@ -109,7 +109,7 @@ Item {
     component Eye: Item {
         id: eye
 
-        readonly property real borderWidth: Math.max(3.0, Math.min(eye.width, eye.height) * 0.06)
+        readonly property real borderWidth: Math.max(3.0, Math.min(eye.width, eye.height) * 0.1)
         
         readonly property real pupilMargin: Math.max(3.0, Math.min(eye.width, eye.height) * 0.07)
 
