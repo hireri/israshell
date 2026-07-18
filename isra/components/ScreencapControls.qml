@@ -77,6 +77,7 @@ Rectangle {
         rightPadding: 3
 
         ToolButton {
+            visible: isEnabled("wallpaper")
             tooltip: "Wallpaper"
             active: root.wallpaperOpen
             opacity: WallpaperService.applying ? 0.4 : 1.0

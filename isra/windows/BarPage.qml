@@ -439,13 +439,13 @@ PageBase {
     }
 
     SectionCard {
-        label: "Screen capture"
+        label: "Toolbar"
         Layout.fillWidth: true
 
         SettingRow {
             isLast: true
             label: "Actions"
-            sublabel: "Toggle individual capture actions"
+            sublabel: "Toggle individual toolbar actions"
 
             Behavior on opacity {
                 NumberAnimation {
@@ -477,6 +477,10 @@ PageBase {
                     {
                         key: "songrec",
                         label: "Recognize Music"
+                    },
+                    {
+                        key: "wallpaper",
+                        label: "Wallpaper Picker"
                     }
                 ]
 
