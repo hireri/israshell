@@ -50,10 +50,10 @@ Singleton {
             center: {
                 mode: "anchor",         // "auto" | "anchor"
                 anchor: "workspaces",
-                items: ["media", "workspaces", "clock", "wallpaper"]
+                items: ["media", "workspaces", "dock", "clock", "wallpaper"]
             },
             right: ["screencap", "tray", "quicksettings"],
-            disabled: []
+            disabled: ["dock"]
         })
     property var nightLight: ({
             scheduleEnabled: true,
@@ -133,6 +133,7 @@ Singleton {
     property bool checkDeps: true
     property string githubRepo: "hireri/israshell"
     property bool allowNsfw: false
+    property var pinnedApps: ["helium", "kitty", "dolphin"]
 
     function __defaults() {
         return {
@@ -178,10 +179,10 @@ Singleton {
                 center: {
                     mode: "anchor",
                     anchor: "workspaces",
-                    items: ["media", "workspaces", "clock", "wallpaper"]
+                    items: ["media", "workspaces", "dock", "clock", "wallpaper"]
                 },
                 right: ["screencap", "tray", "quicksettings"],
-                disabled: []
+                disabled: ["dock"]
             },
             nightLight: {
                 scheduleEnabled: true,
@@ -261,7 +262,8 @@ Singleton {
             checkUpdates: true,
             checkDeps: true,
             githubRepo: "hireri/israshell",
-            allowNsfw: false
+            allowNsfw: false,
+            pinnedApps: ["helium", "kitty", "dolphin"]
         };
     }
 

@@ -172,6 +172,12 @@ ShellRoot {
                     Loader {
                         id: slotLoader
                         sourceComponent: zone.registry[delegateRoot.modelData] || null
+                        
+                        onStatusChanged: {
+                            if (status === Loader.Error) {
+                                console.log("[BarZone Error] Failed loading component:", delegateRoot.modelData);
+                            }
+                        }
                     }
 
                     Item {
@@ -299,6 +305,14 @@ ShellRoot {
             id: screenScope
             required property var modelData
 
+            Component.onCompleted: {
+                console.log("[Diagnostics] Variant loaded for screen:", modelData ? modelData.name : "unknown");
+                console.log("[Diagnostics] Left zone widgets:", visibleBarLeft);
+                console.log("[Diagnostics] Center zone widgets:", visibleBarCenterItems);
+                console.log("[Diagnostics] Right zone widgets:", visibleBarRight);
+                console.log("[Diagnostics] Is 'dock' disabled via config?:", isWidgetDisabled("dock"));
+            }
+
             Background {
                 id: wallpaperBackgroundItem
                 modelData: screenScope.modelData
@@ -312,7 +326,8 @@ ShellRoot {
                     wallpaper: wallpaperComponent,
                     screencap: screencapComponent,
                     tray: trayComponent,
-                    quicksettings: quicksettingsComponent
+                    quicksettings: quicksettingsComponent,
+                    dock: dockComponent
                 })
 
             function isWidgetDisabled(id) {
@@ -343,6 +358,7 @@ ShellRoot {
             Component { id: screencapComponent; ScreencapControls {} }
             Component { id: trayComponent; TrayWidget { panelWindow: window } }
             Component { id: quicksettingsComponent; QuickSettings { panelWindow: window } }
+            Component { id: dockComponent; BarDock {} }
 
             PanelWindow {
                 id: window
