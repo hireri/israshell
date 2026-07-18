@@ -247,7 +247,10 @@ ClippingRectangle {
                 anchors.left: parent.left
                 implicitWidth: 20
                 height: parent.height
-                visible: marqueeContainer.shouldScroll && !(Config.bar.transparency && Config.bar.transparentPills)
+                visible: marqueeContainer.shouldScroll && (
+                    (Config.bar.transparentPills && Config.bar.transparency === 0) || 
+                    !(Config.bar.transparency > 0 || Config.bar.transparentPills)
+                )
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop {
@@ -269,7 +272,10 @@ ClippingRectangle {
                 anchors.right: parent.right
                 implicitWidth: 20
                 height: parent.height
-                visible: marqueeContainer.shouldScroll && !(Config.bar.transparency && Config.bar.transparentPills)
+                visible: marqueeContainer.shouldScroll && (
+                    (Config.bar.transparentPills && Config.bar.transparency === 0) || 
+                    !(Config.bar.transparency > 0 || Config.bar.transparentPills)
+                )
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop {
