@@ -89,7 +89,7 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"
 
 ## Dependencies
 
-- **Core**: `quickshell`, `hyprland`, `hyprsunset`, `hypridle`
+- **Core**: `quickshell`, `hyprland`, `hyprsunset`
 - **Visuals**: `matugen`, `awww`, `cava`
 - **Services**: `networkmanager`, `blueman`, `pipewire`, `wireplumber`, `bluez`, `bluez-utils`
 - **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
@@ -98,7 +98,7 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"
 - **Fonts**: `inter-font`, `ttf-roboto-mono` (fonts are configurable)
 
 ```bash
-yay -Q quickshell hyprland hyprsunset hypridle matugen awww cava\
+yay -Q quickshell hyprland hyprsunset matugen awww cava\
         networkmanager blueman pipewire wireplumber bluez bluez-utils \
         qt6-declarative qt6-5compat qt6-svg clipvault rdap kakasi \
         mpv wl-clipboard xdg-utils pavucontrol inter-font \

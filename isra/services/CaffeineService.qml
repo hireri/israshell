@@ -2,50 +2,34 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import Quickshell.Io
+import Quickshell.Wayland
 
 Singleton {
     id: root
 
     property bool active: false
 
-    Timer {
-        id: pollTimer
-        interval: 5000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: pollProc.running = true
-    }
+    LazyLoader {
+        active: true
 
-    Process {
-        id: pollProc
-        command: ["pgrep", "-x", "hypridle"]
-        onExited: code => {
-            root.active = (code !== 0);
+        PanelWindow {
+            id: inhibitorWindow
+
+            implicitWidth: 1
+            implicitHeight: 1
+            color: "transparent"
+            WlrLayershell.exclusiveZone: -1
+            exclusionMode: ExclusionMode.Ignore
+            visible: false
+
+            IdleInhibitor {
+                enabled: root.active
+                window: inhibitorWindow
+            }
         }
-    }
-
-    Process {
-        id: killProc
-        command: ["pkill", "-x", "hypridle"]
-        onExited: pollProc.running = true
-    }
-
-    Process {
-        id: startProc
-        command: ["hypridle"]
-        onExited: pollProc.running = true
     }
 
     function toggle() {
-        if (root.active) {
-            root.active = false;
-            startProc.startDetached();
-        } else {
-            root.active = true;
-            killProc.running = true;
-        }
-        pollTimer.restart();
+        root.active = !root.active;
     }
 }
