@@ -40,7 +40,7 @@ Rectangle {
     property int activeIndex: Math.max(0, Math.min(activeWorkspaceId - 1, 9))
 
     property var visibleIds: {
-        if (!Config.bar.compactWorkspaces) {
+        if (!Config.workspaces.compact) {
             return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         }
         const ids = [];
@@ -83,6 +83,18 @@ Rectangle {
             return "image://icon/" + entry.icon + "?fallback=application-x-executable";
         }
         return "image://icon/" + appId + "?fallback=application-x-executable";
+    }
+
+    function getWorkspaceLabel(id) {
+        const style = Config.workspaces.style || 0;
+        if (style === 1) {
+            const roman = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+            return roman[(id - 1) % 10] || "";
+        } else if (style === 2) {
+            const kanji = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+            return kanji[(id - 1) % 10] || "";
+        }
+        return id.toString();
     }
 
     MouseArea {
@@ -158,10 +170,13 @@ Rectangle {
                     property var firstToplevel: Hyprland.toplevels.values.find(t => t.workspace && t.workspace.id === wsId)
                     property bool hasWindows: firstToplevel !== undefined
 
-                    property bool isVisible: !Config.bar.compactWorkspaces || hasWindows || takenByMonitor || isActiveHere || isActiveOther
+                    property bool isVisible: !Config.workspaces.compact || hasWindows || takenByMonitor || isActiveHere || isActiveOther
 
                     property string clientAppId: root.getAppId(firstToplevel)
                     property string iconPath: root.getIconSource(clientAppId)
+
+                    property bool showIcon: Config.workspaces.useIcons && hasWindows
+                    property bool showNumber: !showIcon && (root.isHovered || isActiveHere || isActiveOther || hasWindows)
 
                     width: isVisible ? 32 : 0
                     height: 24
@@ -230,7 +245,7 @@ Rectangle {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: wsItem.wsId
+                                text: root.getWorkspaceLabel(wsItem.wsId)
 
                                 color: {
                                     if (wsItem.isActiveHere)
@@ -244,7 +259,7 @@ Rectangle {
                                 font.family: Config.fontFamily
                                 z: 2
 
-                                property bool showNumber: !wsItem.hasWindows && (root.isHovered || wsItem.isActiveHere || wsItem.isActiveOther)
+                                property bool showNumber: wsItem.showNumber
 
                                 opacity: showNumber ? 1 : 0
                                 scale: showNumber ? 1 : 0.5
@@ -273,7 +288,7 @@ Rectangle {
                                 anchors.fill: parent
                                 z: 3
 
-                                property bool showIcon: wsItem.hasWindows
+                                property bool showIcon: wsItem.showIcon
                                 opacity: showIcon ? 1 : 0
                                 scale: showIcon ? 1 : 0.5
 

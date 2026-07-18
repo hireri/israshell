@@ -545,8 +545,8 @@ ShellRoot {
                             anchors.topMargin: (Config.bar.mode === 3 && Config.bar.position === 0) ? parent.height / 2 : 0
                             anchors.bottomMargin: (Config.bar.mode === 3 && Config.bar.position === 1) ? parent.height / 2 : 0
                             
-                            anchors.rightMargin: (Config.bar.mode === 3) ? 6 : 8
-                            anchors.leftMargin: (Config.bar.mode === 3) ? 0 : 6
+                            anchors.rightMargin: (Config.bar.mode === 3) ? 5 : 8
+                            anchors.leftMargin: (Config.bar.mode === 3) ? 5 : 6
 
                             BarMenu {
                                 id: barContextMenu

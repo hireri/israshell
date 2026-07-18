@@ -184,21 +184,74 @@ PageBase {
         }
 
         SettingSwitch {
+            label: "Stacked sliders"
+            sublabel: "Volume and brightness sliders arranged vertically"
+            checked: Config.verticalQSSliders
+            onToggled: v => Config.update({ verticalQSSliders: v })
+        }
+    }
+
+    SectionCard {
+        label: "Workspaces"
+        Layout.fillWidth: true
+
+        SettingSwitch {
             label: "Compact workspaces"
             sublabel: "Shrink workspaces to hide empty ones"
-            checked: Config.bar.compactWorkspaces
+            checked: Config.workspaces.compact
             onToggled: v => Config.update({
-                bar: Object.assign({}, Config.bar, {
-                    compactWorkspaces: v
+                workspaces: Object.assign({}, Config.workspaces, {
+                    compact: v
                 })
             })
         }
 
         SettingSwitch {
-            label: "Stacked sliders"
-            sublabel: "Volume and brightness sliders arranged vertically"
-            checked: Config.verticalQSSliders
-            onToggled: v => Config.update({ verticalQSSliders: v })
+            label: "Use icons"
+            sublabel: "Show application icons for workspaces with active windows"
+            checked: Config.workspaces.useIcons
+            onToggled: v => Config.update({
+                workspaces: Object.assign({}, Config.workspaces, {
+                    useIcons: v
+                })
+            })
+        }
+
+        SettingChips {
+            isLast: true
+            label: "Workspace style"
+            sublabel: {
+                switch (currentValue) {
+                case 0:
+                    return "Numbers (1, 2, 3)";
+                case 1:
+                    return "Roman numerals (I, II, III)";
+                case 2:
+                    return "Kanji (一, 二, 三)";
+                default:
+                    return "";
+                }
+            }
+            options: [
+                {
+                    label: "4",
+                    value: 0
+                },
+                {
+                    label: "IV",
+                    value: 1
+                },
+                {
+                    label: "四",
+                    value: 2
+                }
+            ]
+            currentValue: Config.workspaces.style
+            onSelected: v => Config.update({
+                workspaces: Object.assign({}, Config.workspaces, {
+                    style: v
+                })
+            })
         }
     }
 

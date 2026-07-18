@@ -33,12 +33,16 @@ Singleton {
             height: 150,
             opacity: 0.3
         })
+    property var workspaces: ({
+        compact: false,
+        useIcons: true,
+        style: 0
+    })
     property var bar: ({
             mode: 0,                    // 0 = hugging, 1 = rect,   2 = floating
             position: 0,                // 0 = top,     1 = bottom
             transparency: 0,            // 0 = solid,   1 = opaque, 2 = transparent
             transparentPills: false,
-            compactWorkspaces: false,
 
             spinningCover: true,
             playerMode: 0,
@@ -162,12 +166,16 @@ Singleton {
                 height: 150,
                 opacity: 0.3
             },
+            workspaces: {
+                compact: false,
+                useIcons: true,
+                style: 0
+            },
             bar: {
                 mode: 0,
                 position: 0,
                 transparency: 0,
                 transparentPills: false,
-                compactWorkspaces: false,
 
                 spinningCover: true,
                 playerMode: 0,

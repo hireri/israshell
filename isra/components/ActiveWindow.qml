@@ -5,14 +5,38 @@ import QtQuick
 
 import qs.style
 
-Item {
+Rectangle {
     id: root
-    readonly property int maxTextWidth: 450
+    readonly property int activeWidth: 220
+    readonly property int horizontalPadding: 10
 
     readonly property var activeWindow: Hyprland.activeToplevel
 
-    implicitWidth: leftContent.implicitWidth + 20
+    color: {
+        if (Config.bar.transparentPills) {
+            Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+        } else {
+            Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+        }
+    }
+    radius: 16
     height: 32
+
+    width: showFallback ? (iconContainer.implicitWidth + (horizontalPadding * 2)) : activeWidth
+    implicitWidth: width
+
+    Behavior on width {
+        NumberAnimation {
+            duration: 180
+            easing.type: Easing.InOutQuad
+        }
+    }
+
+    Behavior on color {
+        ColorAnimation {
+            duration: 150
+        }
+    }
 
     property bool layerA: true
 
@@ -160,17 +184,19 @@ Item {
     }
 
     Row {
-        id: leftContent
-        anchors.centerIn: parent
+        id: contentRow
+        anchors.left: parent.left
+        anchors.leftMargin: root.horizontalPadding
+        anchors.verticalCenter: parent.verticalCenter
         spacing: 8
 
         ClippingRectangle {
             id: iconContainer
-            implicitWidth: showFallback ? kaomojiFallbackWidth : 32
-            implicitHeight: 32
+            implicitWidth: showFallback ? kaomojiFallbackWidth : 22
+            implicitHeight: 22
             anchors.verticalCenter: parent.verticalCenter
-            radius: 10
-            color: "transparent"
+            radius: showFallback ? 11 : 6
+            color: Colors.md3.surface_container_highest
 
             Behavior on implicitWidth {
                 NumberAnimation {
@@ -199,7 +225,7 @@ Item {
                 anchors.fill: parent
                 source: iconSourceA
                 opacity: 1
-                sourceSize: Qt.size(32, 32)
+                sourceSize: Qt.size(22, 22)
                 fillMode: Image.PreserveAspectCrop
             }
 
@@ -208,7 +234,7 @@ Item {
                 anchors.fill: parent
                 source: iconSourceB
                 opacity: 0
-                sourceSize: Qt.size(32, 32)
+                sourceSize: Qt.size(22, 22)
                 fillMode: Image.PreserveAspectCrop
             }
         }
@@ -219,15 +245,12 @@ Item {
             height: Math.max(textColA.implicitHeight, textColB.implicitHeight)
             clip: true
 
-            width: {
-                const activeW = layerA ? Math.max(appIdTextA.implicitWidth, titleTextA.implicitWidth) : Math.max(appIdTextB.implicitWidth, titleTextB.implicitWidth);
-                return Math.min(activeW, maxTextWidth);
-            }
+            width: showFallback ? 0 : Math.max(0, root.width - iconContainer.width - contentRow.spacing - (root.horizontalPadding * 2))
+            opacity: showFallback ? 0 : 1
 
-            Behavior on width {
+            Behavior on opacity {
                 NumberAnimation {
-                    duration: 180
-                    easing.type: Easing.InOutQuad
+                    duration: 150
                 }
             }
 
