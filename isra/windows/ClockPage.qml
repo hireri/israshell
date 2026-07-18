@@ -138,7 +138,7 @@ PageBase {
         cardColor: Colors.md3.surface_container
         checked: Config.desktopClock ?? false
         onToggled: v => Config.update({ desktopClock: v })
-        MaterialIcon { name: "analog-clock"}
+        MaterialIcon { name: "analog-clock"; transitionType: "circle" }
     }
 
     Rectangle {
