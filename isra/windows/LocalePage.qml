@@ -35,12 +35,31 @@ PageBase {
         }
 
         SettingSwitch {
-            isLast: true
             label: "Show seconds"
             sublabel: "Display seconds in the bar clock"
             checked: Config.showSeconds
             onToggled: v => Config.update({
                     showSeconds: v
+                })
+        }
+
+        SettingInput {
+            label: "Custom time format"
+            sublabel: "Overrides clock settings. Leave empty to restore dynamic defaults"
+            value: Config.barTimeFormat
+            placeholder: "hh:mm"
+            onCommitted: v => Config.update({
+                    barTimeFormat: v
+                })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: "Show weather glance"
+            sublabel: "Display weather icon and temp on the bar clock"
+            checked: Config.showBarWeather
+            onToggled: v => Config.update({
+                    showBarWeather: v
                 })
         }
     }
@@ -49,31 +68,39 @@ PageBase {
         label: "Date"
         Layout.fillWidth: true
 
-        SettingChips {
-            label: "Date format"
-            options: [
-                {
-                    label: "DD/MM/YYYY",
-                    value: 0
-                },
-                {
-                    label: "MM/DD/YYYY",
-                    value: 1
-                }
-            ]
-            currentValue: Config.dateFormat
-            onSelected: v => Config.update({
-                    dateFormat: v
-                })
-        }
-
         SettingSwitch {
-            isLast: true
             label: "Week starts on Monday"
             sublabel: "ISO week, Monday as first day"
             checked: Config.weekMonday
             onToggled: v => Config.update({
                     weekMonday: v
+                })
+        }
+
+        SettingInput {
+            isLast: true
+            label: "Custom date format"
+            sublabel: "Overrides settings. Leave empty to restore dynamic defaults"
+            value: Config.barDateFormat
+            placeholder: "ddd, dd/MM"
+            onCommitted: v => Config.update({
+                    barDateFormat: v
+                })
+        }
+    }
+
+    SectionCard {
+        label: "Location"
+        Layout.fillWidth: true
+
+        SettingInput {
+            isLast: true
+            label: "City name"
+            sublabel: "Leave empty to auto locate via IP address"
+            value: Config.cityName
+            placeholder: "e.g., Paris"
+            onCommitted: v => Config.update({
+                    cityName: v
                 })
         }
     }

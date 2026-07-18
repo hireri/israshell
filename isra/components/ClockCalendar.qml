@@ -52,72 +52,6 @@ Item {
     implicitWidth: card.implicitWidth
     implicitHeight: card.implicitHeight
 
-    function getWeatherIconComponent() {
-        const c = parseInt(LocaleService.weatherCode);
-        if (c === 113)
-            return sunnyComponent;
-        if (c === 116)
-            return partlyCloudyComponent;
-        if (c === 119 || c === 122 || c === 143)
-            return cloudyComponent;
-        if ([176, 263, 266, 293, 296, 299, 302, 305, 308, 311, 314, 353, 356, 359].includes(c))
-            return rainComponent;
-        if ([200, 386, 389].includes(c))
-            return stormComponent;
-        if ([227, 230, 320, 323, 326, 329, 332, 335, 338, 368, 371].includes(c))
-            return snowComponent;
-        return partlyCloudyComponent;
-    }
-
-    Component {
-        id: sunnyComponent
-        MaterialIcon {
-            name: "wb-sunny"
-            iconSize: 36
-            color: root.weatherColor.sun
-        }
-    }
-    Component {
-        id: partlyCloudyComponent
-        MaterialIcon {
-            name: "partly-cloudy-day"
-            iconSize: 36
-            color: Colors.md3.primary
-        }
-    }
-    Component {
-        id: cloudyComponent
-        MaterialIcon {
-            name: "cloudy"
-            iconSize: 36
-            color: root.weatherColor.cloud
-        }
-    }
-    Component {
-        id: rainComponent
-        MaterialIcon {
-            name: "rainy"
-            iconSize: 36
-            color: root.weatherColor.rain
-        }
-    }
-    Component {
-        id: stormComponent
-        MaterialIcon {
-            name: "thunderstorm"
-            iconSize: 36
-            color: root.weatherColor.storm
-        }
-    }
-    Component {
-        id: snowComponent
-        MaterialIcon {
-            name: "snowy"
-            iconSize: 36
-            color: root.weatherColor.snow
-        }
-    }
-
     Rectangle {
         id: card
         property bool _ready: false
@@ -261,15 +195,11 @@ Item {
                     width: parent.width
                     spacing: 16
 
-                    Loader {
-                        sourceComponent: root.getWeatherIconComponent()
+                    MaterialIcon {
+                        name: LocaleService.weatherIconName
+                        iconSize: 36
+                        color: LocaleService.weatherIconColor
                         anchors.verticalCenter: parent.verticalCenter
-                        Connections {
-                            target: LocaleService
-                            function onWeatherCodeChanged() {
-                                sourceComponent = root.getWeatherIconComponent();
-                            }
-                        }
                     }
 
                     Column {
@@ -506,13 +436,13 @@ Item {
                             spacing: 6
 
                             MaterialIcon {
-                                name: "wb-twilight"
+                                name: LocaleService.activeAstroMaterialIcon
                                 iconSize: 14
-                                color: root.weatherColor.sun
+                                color: LocaleService.activeAstroColorType === "moon" ? Colors.md3.primary : root.weatherColor.sun
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             Text {
-                                text: LocaleService.weatherSunset.replace(" AM", "").replace(" PM", "")
+                                text: LocaleService.activeAstroTime.replace(" AM", "").replace(" PM", "").replace(" am", "").replace(" pm", "")
                                 color: Colors.md3.on_surface_variant
                                 font.family: Config.fontFamily
                                 font.pixelSize: root.type.bodySmall

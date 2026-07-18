@@ -15,6 +15,11 @@ Singleton {
     readonly property string barTimeText: _barTimeText
     readonly property string barDateText: _barDateText
 
+    readonly property string activeAstroName: _activeAstroName
+    readonly property string activeAstroTime: _activeAstroTime
+    readonly property string activeAstroMaterialIcon: _activeAstroMaterialIcon
+    readonly property string activeAstroColorType: _activeAstroColorType
+
     readonly property string weatherTemp: _weatherTemp
     readonly property string weatherFeelsLike: _weatherFeelsLike
     readonly property string weatherRainChance: _weatherRainChance
@@ -26,6 +31,9 @@ Singleton {
     readonly property string weatherSunrise: _weatherSunrise
     readonly property string weatherSunset: _weatherSunset
     readonly property string weatherCode: _weatherCode
+    
+    readonly property string weatherIconName: _weatherIconName
+    readonly property color weatherIconColor: _weatherIconColor
 
     readonly property bool weatherLoading: _weatherLoading
     readonly property string weatherError: _weatherError
@@ -43,6 +51,16 @@ Singleton {
     property string _barTimeText: ""
     property string _barDateText: ""
 
+    property string _activeAstroName: "—"
+    property string _activeAstroTime: "—"
+    property string _activeAstroMaterialIcon: "wb-twilight"
+    property string _activeAstroColorType: "sun"
+
+    property string _rawSunrise: ""
+    property string _rawSunset: ""
+    property string _rawMoonrise: ""
+    property string _rawMoonset: ""
+
     property string _weatherTemp: "—"
     property string _weatherFeelsLike: "—"
     property string _weatherRainChance: "—"
@@ -53,9 +71,12 @@ Singleton {
     property string _weatherUvi: "—"
     property string _weatherSunrise: "—"
     property string _weatherSunset: "—"
-    property string _weatherCode: "116"
+    property string _weatherCode: "0"
     property bool _weatherLoading: true
     property string _weatherError: ""
+
+    property string _weatherIconName: "partly-cloudy-day"
+    property color _weatherIconColor: Colors.md3.primary
 
     property string _weatherAqi: "—"
     property bool _aqiLoading: true
@@ -66,15 +87,19 @@ Singleton {
     Connections {
         target: Config
 
-        function onUseFarenheitChanged() {
-            if (root._lastWeatherData) {
-                root._applyWeatherData(root._lastWeatherData);
-            }
-        }
-
+        function onUseFarenheitChanged() { root._fetchWeather(); }
         function onHourFormatChanged() { root._updateClock(); }
         function onShowSecondsChanged() { root._updateClock(); }
         function onDateFormatChanged() { root._updateClock(); }
+        
+        function onBarTimeFormatChanged() { root._updateClock(); }
+        function onBarDateFormatChanged() { root._updateClock(); }
+
+        function onCityNameChanged() {
+            root._coordsKnown = false;
+            root._maybeFetchAqi();
+            root._fetchWeather();
+        }
 
         function onLatitudeChanged() {
             root._coordsKnown = false;
@@ -96,6 +121,109 @@ Singleton {
         onTriggered: root._updateClock()
     }
 
+    
+
+    function _resolveCityCoords(cityName, callback) {
+        const url = "https://geocoding-api.open-meteo.com/v1/search"
+            + "?name=" + encodeURIComponent(cityName)
+            + "&count=1"
+            + "&language=en"
+            + "&format=json";
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+        xhr.timeout = 10000;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (xhr.status === 200) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.results && data.results.length > 0) {
+                        const result = data.results[0];
+                        const lat = parseFloat(result.latitude);
+                        const lon = parseFloat(result.longitude);
+                        if (!isNaN(lat) && !isNaN(lon)) {
+                            callback(lat, lon);
+                        } else {
+                            console.warn("[LocaleService] Geocoder returned invalid coordinates for city:", cityName);
+                        }
+                    } else {
+                        console.warn("[LocaleService] No geocoding results found for city:", cityName);
+                    }
+                } catch (e) {
+                    console.warn("[LocaleService] Geocoding parse error:", e);
+                }
+            } else {
+                console.warn("[LocaleService] Geocoding API call failed with status:", xhr.status);
+            }
+        };
+        xhr.send();
+    }
+
+    function _adjustTimeFormat(fmt) {
+        if (!fmt) return "";
+        let result = fmt;
+
+        const hasAmPm = /a[pp]/i.test(result);
+        
+        if (Config.hourFormat === 0) {
+            result = result.replace(/h+/g, function(match) {
+                return match.length === 1 ? "H" : "HH";
+            });
+            result = result.replace(/\s*a[pp]\s*/gi, "").trim();
+        } else {
+            result = result.replace(/H+/g, function(match) {
+                return match.length === 1 ? "h" : "hh";
+            });
+            
+            const amPmTag = Config.hourFormat === 2 ? "AP" : "ap";
+            if (!hasAmPm) {
+                result = result + " " + amPmTag;
+            } else {
+                result = result.replace(/a[pp]/gi, amPmTag);
+            }
+        }
+
+        const hasSeconds = /s+/i.test(result);
+        if (Config.showSeconds) {
+            if (!hasSeconds) {
+                if (result.includes("mm")) {
+                    result = result.replace("mm", "mm:ss");
+                } else if (result.includes("m")) {
+                    result = result.replace("m", "m:ss");
+                } else {
+                    result = result + ":ss";
+                }
+            }
+        } else {
+            if (hasSeconds) {
+                result = result.replace(/[:\s]*s+/gi, "");
+            }
+        }
+
+        return result;
+    }
+
+    function _adjustDateFormat(fmt) {
+        if (!fmt) return "";
+        let result = fmt;
+
+        const separatorRegex = /([d]{1,2})([./\-\s]+)([M]{1,2})/;
+        const revSeparatorRegex = /([M]{1,2})([./\-\s]+)([d]{1,2})/;
+
+        if (Config.dateFormat === 0) {
+            if (revSeparatorRegex.test(result)) {
+                result = result.replace(revSeparatorRegex, "$3$2$1");
+            }
+        } else if (Config.dateFormat === 1) {
+            if (separatorRegex.test(result)) {
+                result = result.replace(separatorRegex, "$3$2$1");
+            }
+        }
+        return result;
+    }
+
     function _updateClock() {
         const now = new Date();
         const fmt12 = Config.hourFormat !== 0;
@@ -111,10 +239,129 @@ Singleton {
         _liveDayName = Qt.formatDate(now, "dddd");
         _liveFullDate = Qt.formatDate(now, "dd MMMM yyyy");
 
-        const secSuffix = Config.showSeconds ? ":" + _liveSecs : "";
-        const amPmSuffix = _liveAmPm;
-        _barTimeText = _liveTime + secSuffix + amPmSuffix;
-        _barDateText = Qt.formatDate(now, ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat]);
+        const adjustedTimeFmt = Config.barTimeFormat !== "" ? _adjustTimeFormat(Config.barTimeFormat) : "";
+        const adjustedDateFmt = Config.barDateFormat !== "" ? _adjustDateFormat(Config.barDateFormat) : "";
+
+        _barTimeText = adjustedTimeFmt !== "" ? Qt.formatDateTime(now, adjustedTimeFmt) : "";
+        _barDateText = adjustedDateFmt !== "" ? Qt.formatDateTime(now, adjustedDateFmt) : "";
+
+        root._updateAstroEvent(now);
+    }
+
+    function _parseOpenMeteoDateTime(str) {
+        if (!str) return null;
+        const parts = str.split('T');
+        if (parts.length !== 2) return null;
+        const dateParts = parts[0].split('-');
+        const timeParts = parts[1].split(':');
+        if (dateParts.length !== 3 || timeParts.length < 2) return null;
+        
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1;
+        const day = parseInt(dateParts[2]);
+        const hour = parseInt(timeParts[0]);
+        const minute = parseInt(timeParts[1]);
+        
+        return new Date(year, month, day, hour, minute, 0, 0);
+    }
+
+    function _dateToAstroRaw(date) {
+        if (!date || isNaN(date.getTime())) return "";
+        let hours = date.getHours();
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? "pm" : "am";
+        hours = hours % 12 || 12;
+        return hours + ":" + minutes + " " + ampm;
+    }
+
+    function _parseAstroTime(timeStr, referenceDate) {
+        if (!timeStr) return null;
+        const cleanStr = timeStr.trim().toLowerCase();
+        if (cleanStr.includes("no") || cleanStr === "" || cleanStr === "—") {
+            return null;
+        }
+
+        const match = cleanStr.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/);
+        if (!match) return null;
+
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const ampm = match[3];
+
+        if (ampm === "pm" && hours < 12) {
+            hours += 12;
+        } else if (ampm === "am" && hours === 12) {
+            hours = 0;
+        }
+
+        const d = new Date(referenceDate);
+        d.setHours(hours, minutes, 0, 0);
+        return d;
+    }
+
+    function _formatAstroTime(date) {
+        if (!date) return "—";
+        const fmt12 = Config.hourFormat !== 0;
+        const h = date.getHours();
+        const m = date.getMinutes();
+        const hDisp = fmt12 ? (h % 12 || 12) : h;
+        const mDisp = String(m).padStart(2, '0');
+        const isPm = h >= 12;
+        const ampm = Config.hourFormat === 0 ? "" : (isPm ? (Config.hourFormat === 2 ? " PM" : " pm") : (Config.hourFormat === 2 ? " AM" : " am"));
+        return String(hDisp).padStart(2, '0') + ":" + mDisp + ampm;
+    }
+
+    function _updateAstroEvent(now) {
+        if (!root._rawSunrise && !root._rawSunset && !root._rawMoonrise && !root._rawMoonset) {
+            root._activeAstroName = "—";
+            root._activeAstroTime = "—";
+            root._activeAstroMaterialIcon = "wb-twilight";
+            root._activeAstroColorType = "sun";
+            return;
+        }
+
+        const events = [
+            { name: "Sunrise", materialIcon: "wb-twilight", colorType: "sun", raw: root._rawSunrise },
+            { name: "Sunset", materialIcon: "wb-twilight", colorType: "sun", raw: root._rawSunset },
+            { name: "Moonrise", materialIcon: "wb-twilight2", colorType: "moon", raw: root._rawMoonrise },
+            { name: "Moonset", materialIcon: "wb-twilight2", colorType: "moon", raw: root._rawMoonset }
+        ];
+
+        let bestEvent = null;
+        let bestDiff = Infinity;
+        const oneDayMs = 24 * 60 * 60 * 1000;
+
+        events.forEach(function(ev) {
+            const todayTime = root._parseAstroTime(ev.raw, now);
+            if (!todayTime) return;
+
+            const times = [todayTime, new Date(todayTime.getTime() - oneDayMs)];
+
+            times.forEach(function(t) {
+                const diff = now.getTime() - t.getTime();
+                if (diff >= 0 && diff < bestDiff) {
+                    bestDiff = diff;
+                    bestEvent = {
+                        name: ev.name,
+                        materialIcon: ev.materialIcon,
+                        colorType: ev.colorType,
+                        time: t
+                    };
+                }
+            });
+        });
+
+        if (bestEvent) {
+            root._activeAstroName = bestEvent.name;
+            root._activeAstroTime = root._formatAstroTime(bestEvent.time);
+            root._activeAstroMaterialIcon = bestEvent.materialIcon;
+            root._activeAstroColorType = bestEvent.colorType;
+        } else {
+            root._activeAstroName = "—";
+            root._activeAstroTime = "—";
+            root._activeAstroMaterialIcon = "wb-twilight";
+            root._activeAstroColorType = "sun";
+        }
     }
 
     property var _weatherTimer: Timer {
@@ -126,10 +373,21 @@ Singleton {
     }
 
     function _fetchWeather() {
-        let url = "https://wttr.in/?format=j1";
-        if (_coordsKnown && _lat !== 0 && _lon !== 0) {
-            url = "https://wttr.in/" + _lat + "," + _lon + "?format=j1";
+        if (!_coordsKnown) {
+            root._maybeFetchAqi();
+            return;
         }
+
+        const tempUnit = Config.useFarenheit ? "fahrenheit" : "celsius";
+        const url = "https://api.open-meteo.com/v1/forecast"
+            + "?latitude=" + _lat
+            + "&longitude=" + _lon
+            + "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day"
+            + "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max"
+            + "&hourly=precipitation_probability"
+            + "&temperature_unit=" + tempUnit
+            + "&timezone=auto"
+            + "&forecast_days=1";
 
         const xhr = new XMLHttpRequest();
         xhr.open("GET", url);
@@ -155,34 +413,98 @@ Singleton {
         xhr.send();
     }
 
+    function _updateWeatherIcon(wmoCode, isDay) {
+        const c = parseInt(wmoCode);
+        const day = parseInt(isDay) !== 0;
+
+        if (c === 0) {
+            if (day) {
+                _weatherIconName = "wb-sunny";
+                _weatherIconColor = Colors.md3.tertiary;
+                _weatherDesc = "Sunny";
+            } else {
+                _weatherIconName = "moon-stars"; 
+                _weatherIconColor = Colors.md3.primary;
+                _weatherDesc = "Clear Night";
+            }
+        } else if (c === 1 || c === 2) {
+            if (day) {
+                _weatherIconName = "partly-cloudy-day";
+                _weatherIconColor = Colors.md3.primary;
+                _weatherDesc = "Partly Cloudy";
+            } else {
+                _weatherIconName = "partly-cloudy-night"; 
+                _weatherIconColor = Colors.md3.primary;
+                _weatherDesc = "Partly Cloudy";
+            }
+        } else if (c === 3) {
+            _weatherIconName = "cloudy";
+            _weatherIconColor = Colors.md3.on_surface_variant;
+            _weatherDesc = "Overcast";
+        } else if (c === 45 || c === 48) {
+            _weatherIconName = "foggy";
+            _weatherIconColor = Colors.md3.on_surface_variant;
+            _weatherDesc = "Foggy";
+        } else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(c)) {
+            _weatherIconName = "rainy";
+            _weatherIconColor = Colors.md3.primary;
+            _weatherDesc = c < 60 ? "Drizzle" : "Rain";
+        } else if ([71, 73, 75, 77, 85, 86].includes(c)) {
+            _weatherIconName = "snowy";
+            _weatherIconColor = Colors.md3.outline;
+            _weatherDesc = "Snow";
+        } else if ([95, 96, 99].includes(c)) {
+            _weatherIconName = "thunderstorm";
+            _weatherIconColor = Colors.md3.error;
+            _weatherDesc = "Thunderstorm";
+        } else {
+            _weatherIconName = "partly-cloudy-day";
+            _weatherIconColor = Colors.md3.primary;
+            _weatherDesc = "Unknown";
+        }
+    }
+
     function _applyWeatherData(data) {
         try {
-            const cur = data.current_condition[0];
-            const today = data.weather[0];
-            const astro = today.astronomy[0];
+            const cur = data.current;
+            const daily = data.daily;
+            const hourly = data.hourly;
 
-            root._weatherTemp = (Config.useFarenheit ? cur.temp_F : cur.temp_C) + "°";
-            root._weatherFeelsLike = (Config.useFarenheit ? cur.FeelsLikeF : cur.FeelsLikeC) + "°";
+            root._weatherTemp = Math.round(cur.temperature_2m) + "°";
+            root._weatherFeelsLike = Math.round(cur.apparent_temperature) + "°";
 
-            const hourly = today.hourly || [];
+            const precipProb = hourly.precipitation_probability || [];
             let maxChance = 0;
-            for (let i = 0; i < hourly.length; i++) {
-                let chance = parseInt(hourly[i].chanceofrain || "0");
+            for (let i = 0; i < Math.min(24, precipProb.length); i++) {
+                let chance = parseInt(precipProb[i]);
                 if (chance > maxChance) {
                     maxChance = chance;
                 }
             }
             root._weatherRainChance = String(maxChance) + "%";
 
-            root._weatherHigh = (Config.useFarenheit ? today.maxtempF : today.maxtempC) + "°";
-            root._weatherLow = (Config.useFarenheit ? today.mintempF : today.mintempC) + "°";
-            root._weatherDesc = cur.weatherDesc[0].value;
-            root._weatherHumid = cur.humidity + "%";
-            root._weatherUvi = String(cur.uvIndex || "0");
-            root._weatherSunrise = astro.sunrise;
-            root._weatherSunset = astro.sunset;
-            root._weatherCode = String(cur.weatherCode);
+            root._weatherHigh = Math.round(daily.temperature_2m_max[0]) + "°";
+            root._weatherLow = Math.round(daily.temperature_2m_min[0]) + "°";
+            
+            root._weatherHumid = Math.round(cur.relative_humidity_2m) + "%";
+            root._weatherUvi = String(Math.round(daily.uv_index_max[0] || 0));
+
+            const sunriseDate = _parseOpenMeteoDateTime(daily.sunrise[0]);
+            const sunsetDate = _parseOpenMeteoDateTime(daily.sunset[0]);
+
+            root._weatherSunrise = sunriseDate ? _formatAstroTime(sunriseDate) : "—";
+            root._weatherSunset = sunsetDate ? _formatAstroTime(sunsetDate) : "—";
+            
+            root._weatherCode = String(cur.weather_code);
+            root._updateWeatherIcon(cur.weather_code, cur.is_day);
             root._weatherError = "";
+
+            root._rawSunrise = sunriseDate ? _dateToAstroRaw(sunriseDate) : "";
+            root._rawSunset = sunsetDate ? _dateToAstroRaw(sunsetDate) : "";
+            root._rawMoonrise = "";
+            root._rawMoonset = "";
+
+            root._updateAstroEvent(new Date());
         } catch (e) {
             root._weatherError = "format error: " + e;
             console.warn("[LocaleService] weather format error:", e);
@@ -210,6 +532,14 @@ Singleton {
 
         if (_coordsKnown) {
             _fetchAqi(_lat, _lon);
+        } else if (Config.cityName && Config.cityName !== "") {
+            _resolveCityCoords(Config.cityName, function (lat, lon) {
+                _lat = lat;
+                _lon = lon;
+                _coordsKnown = true;
+                _fetchAqi(lat, lon);
+                _fetchWeather();
+            });
         } else {
             _resolveCoords(function (lat, lon) {
                 _lat = lat;
@@ -223,21 +553,26 @@ Singleton {
 
     function _resolveCoords(callback) {
         const xhr = new XMLHttpRequest();
-        xhr.open("GET", "https://wttr.in/?format=j1");
-        xhr.timeout = 15000;
+        xhr.open("GET", "https://freeipapi.com/api/json");
+        xhr.timeout = 10000;
         xhr.onreadystatechange = function () {
             if (xhr.readyState !== XMLHttpRequest.DONE)
                 return;
             if (xhr.status === 200) {
                 try {
                     const data = JSON.parse(xhr.responseText);
-                    const area = data.nearest_area[0];
-                    const lat = parseFloat(area.latitude);
-                    const lon = parseFloat(area.longitude);
-                    callback(lat, lon);
+                    const lat = parseFloat(data.latitude);
+                    const lon = parseFloat(data.longitude);
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        callback(lat, lon);
+                    } else {
+                        console.warn("[LocaleService] Invalid coords resolved:", data.latitude, data.longitude);
+                    }
                 } catch (e) {
-                    console.warn("[LocaleService] coord resolve error:", e);
+                    console.warn("[LocaleService] Geolocation parse error:", e);
                 }
+            } else {
+                console.warn("[LocaleService] Geolocation failed with status:", xhr.status);
             }
         };
         xhr.send();

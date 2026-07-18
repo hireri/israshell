@@ -15,6 +15,12 @@ Singleton {
     property bool blurEffects: false
     property int blurRadius: 50
     property real blurOpacity: 0.65
+    
+    property bool showBarWeather: true
+    property string barTimeFormat: "hh:mm"
+    property string barDateFormat: "ddd, dd/MM"
+    property string cityName: ""
+
     property var cava: ({
             enabled: false,
             bars: 30,
@@ -151,6 +157,12 @@ Singleton {
             blurEffects: false,
             blurRadius: 50,
             blurOpacity: 0.65,
+            
+            showBarWeather: true,
+            barTimeFormat: "hh:mm",
+            barDateFormat: "ddd, dd/MM",
+            cityName: "",
+
             cava: {
                 enabled: false,
                 bars: 30,

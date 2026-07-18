@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import qs.style
+import qs.icons
 import qs.services
 
 Item {
@@ -51,10 +52,44 @@ Item {
                 duration: 150
             }
         }
+
         Row {
             id: row
             anchors.centerIn: parent
             spacing: 6
+
+            Row {
+                id: weatherGlance
+                spacing: 4
+
+                visible: Config.showBarWeather && LocaleService.weatherTemp !== "—" && (clockTime.visible || clockDate.visible)
+                anchors.verticalCenter: parent.verticalCenter
+
+                MaterialIcon {
+                    name: LocaleService.weatherIconName
+                    iconSize: 14
+                    color: LocaleService.weatherIconColor
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    text: LocaleService.weatherTemp
+                    color: Colors.md3.on_surface
+                    font.family: Config.fontFamily
+                    font.pixelSize: 14
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+
+            Text {
+                text: "•"
+                color: Colors.md3.on_surface
+                font.family: Config.fontFamily
+                font.pixelSize: 14
+                opacity: 0.5
+                visible: weatherGlance.visible && (clockTime.visible || clockDate.visible)
+                anchors.verticalCenter: parent.verticalCenter
+            }
 
             Text {
                 id: clockTime
@@ -65,6 +100,8 @@ Item {
                     "tnum": 1
                 }
                 text: LocaleService.barTimeText
+                visible: text !== ""
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             Text {
@@ -73,6 +110,8 @@ Item {
                 font.family: Config.fontFamily
                 font.pixelSize: 14
                 opacity: 0.5
+                visible: clockTime.visible && clockDate.visible
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             Text {
@@ -84,6 +123,8 @@ Item {
                     "tnum": 1
                 }
                 text: LocaleService.barDateText
+                visible: text !== ""
+                anchors.verticalCenter: parent.verticalCenter
             }
         }
 
@@ -137,11 +178,6 @@ Item {
             implicitWidth: calContent.implicitWidth
             implicitHeight: calContent.implicitHeight + 8
             color: "transparent"
-
-            onVisibleChanged: {
-                if (visible)
-                    calContent.init();
-            }
 
             ClockCalendar {
                 id: calContent
