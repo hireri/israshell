@@ -318,12 +318,15 @@ ShellRoot {
                 modelData: screenScope.modelData
             }
 
+            WallpaperPicker {
+                panelWindow: window
+            }
+
             readonly property var barWidgetComponents: ({
                     activeWindow: activeWindowComponent,
                     workspaces: workspacesComponent,
                     media: mediaComponent,
                     clock: clockComponent,
-                    wallpaper: wallpaperComponent,
                     screencap: screencapComponent,
                     tray: trayComponent,
                     quicksettings: quicksettingsComponent,
@@ -354,8 +357,7 @@ ShellRoot {
             Component { id: workspacesComponent; Workspaces { panelWindow: window } }
             Component { id: mediaComponent; MediaPlayer { panelScreen: screenScope.modelData } }
             Component { id: clockComponent; BarClock { panelWindow: window } }
-            Component { id: wallpaperComponent; WallpaperPicker { panelWindow: window } }
-            Component { id: screencapComponent; ScreencapControls {} }
+            Component { id: screencapComponent; ScreencapControls { panelWindow: window } }
             Component { id: trayComponent; TrayWidget { panelWindow: window } }
             Component { id: quicksettingsComponent; QuickSettings { panelWindow: window } }
             Component { id: dockComponent; BarDock {} }

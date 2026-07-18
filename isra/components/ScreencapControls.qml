@@ -9,6 +9,10 @@ import Quickshell.Widgets
 Rectangle {
     id: root
 
+    required property var panelWindow
+
+    readonly property bool wallpaperOpen: WallpaperService.isOpen && WallpaperService.openWindow === root.panelWindow
+
     function getScript(path) {
         if (!path || path === "")
             return "";
@@ -71,6 +75,24 @@ Rectangle {
         spacing: 4
         leftPadding: 6
         rightPadding: 3
+
+        ToolButton {
+            tooltip: "Wallpaper"
+            active: root.wallpaperOpen
+            opacity: WallpaperService.applying ? 0.4 : 1.0
+            onClicked: WallpaperService.toggleFor(root.panelWindow)
+            MaterialIcon {
+                name: "wallpapers"
+                iconSize: 18
+                anchors.centerIn: parent
+                color: root.wallpaperOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+                }
+            }
+        }
 
         ToolButton {
             visible: isEnabled("screenshot")
@@ -258,13 +280,21 @@ Rectangle {
     }
 
     component ToolButton: Rectangle {
+        id: toolBtn
         property string tooltip
+        property bool active: false
         signal clicked
 
         width: 32
         height: 32
         radius: 16
-        color: hoverHandler.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent"
+        color: active ? Colors.md3.secondary_container : Qt.alpha(Colors.md3.secondary_container, 0)
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 150
+            }
+        }
 
         HoverHandler {
             id: hoverHandler

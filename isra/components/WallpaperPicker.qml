@@ -16,10 +16,7 @@ Item {
 
     required property var panelWindow
 
-    implicitWidth: btnRect.implicitWidth
-    implicitHeight: btnRect.implicitHeight
-
-    property bool isOpen: false
+    readonly property bool isOpen: WallpaperService.isOpen && WallpaperService.openWindow === root.panelWindow
     property bool _popupVisible: false
 
     onIsOpenChanged: {
@@ -39,9 +36,7 @@ Item {
                 return;
             if (Hyprland.focusedMonitor?.name !== screen.name)
                 return;
-            root.isOpen = !root.isOpen;
-            if (root.isOpen)
-                WallpaperService.openFor(root.panelWindow);
+            WallpaperService.toggleFor(root.panelWindow);
         }
     }
 
@@ -55,59 +50,7 @@ Item {
     HyprlandFocusGrab {
         windows: [popupLoader.item]
         active: root.isOpen && popupLoader.active
-        onCleared: root.isOpen = false
-    }
-
-    Rectangle {
-        id: btnRect
-        implicitWidth: 42
-        implicitHeight: 32
-        radius: 16
-        color: {
-            if (root.isOpen) {
-                Colors.md3.secondary_container
-            } else if (Config.bar.transparentPills) {
-                Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
-            } else { 
-                Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
-            }
-        }        
-        opacity: WallpaperService.applying ? 0.4 : 1.0
-
-        Behavior on color {
-            ColorAnimation {
-                duration: 150
-            }
-        }
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 200
-            }
-        }
-
-        MaterialIcon {
-            name: "wallpapers"
-            anchors.centerIn: parent
-            iconSize: 20
-            color: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
-
-            Behavior on color {
-                ColorAnimation {
-                    duration: 150
-                }
-            }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: WallpaperService.applying ? Qt.ForbiddenCursor : Qt.PointingHandCursor
-            enabled: !WallpaperService.applying
-            onClicked: {
-                root.isOpen = !root.isOpen;
-                if (root.isOpen)
-                    WallpaperService.openFor(root.panelWindow);
-            }
-        }
+        onCleared: WallpaperService.close()
     }
 
     LazyLoader {
@@ -169,7 +112,7 @@ Item {
 
                 Keys.onEscapePressed: event => {
                     event.accepted = true;
-                    root.isOpen = false;
+                    WallpaperService.close();
                 }
                 Keys.onPressed: event => {
                     if (event.key === Qt.Key_Slash) {
@@ -327,12 +270,12 @@ Item {
                             btnIcon: "󰉋"
                             onBtnClicked: {
                                 WallpaperService.openFolder();
-                                root.isOpen = false;
+                                WallpaperService.close();
                             }
                         }
                         IconBtn {
                             btnIcon: "󰅖"
-                            onBtnClicked: root.isOpen = false
+                            onBtnClicked: WallpaperService.close()
                         }
                     }
                 }
@@ -598,7 +541,7 @@ Item {
 
                                 Keys.onEscapePressed: event => {
                                     event.accepted = true;
-                                    root.isOpen = false;
+                                    WallpaperService.close();
                                 }
 
                                 MouseArea {

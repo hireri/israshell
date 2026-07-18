@@ -10,6 +10,7 @@ Singleton {
     id: root
 
     property bool isOpen: false
+    property var openWindow: null
     property bool applying: false
     property bool loading: false
     property bool isDark: Config.darkMode
@@ -73,6 +74,8 @@ Singleton {
     }
 
     function openFor(_panelWindow) {
+        openWindow = _panelWindow;
+        isOpen = true;
         if (currentWall) {
             const wallDir = currentWall.substring(0, currentWall.lastIndexOf("/"));
             if (wallDir && wallDir !== currentDir) {
@@ -81,6 +84,18 @@ Singleton {
             }
         }
         _runList();
+    }
+
+    function toggleFor(_panelWindow) {
+        if (isOpen && openWindow === _panelWindow) {
+            close();
+        } else {
+            openFor(_panelWindow);
+        }
+    }
+
+    function close() {
+        isOpen = false;
     }
 
     function navigate(path) {
