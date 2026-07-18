@@ -252,6 +252,7 @@ Item {
 
     FileView {
         id: outlineFileView
+        printErrors: false
         onLoaded: {
             root._outlineContent = text();
             root._outlineLoaded = true;
@@ -266,6 +267,7 @@ Item {
 
     FileView {
         id: filledFileView
+        printErrors: false
         onLoaded: {
             root._filledContent = text();
             root._filledLoaded = true;
