@@ -87,10 +87,7 @@ Item {
 
         visible: Config.clock.showDate
         color:   root.subColor
-        text:    Qt.formatDate(
-                     root.currentTime,
-                     ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat] ?? "ddd, dd/MM"
-                 )
+        text:    LocaleService.shortDateText
 
         width:               timeRow.width
         horizontalAlignment: root.halign

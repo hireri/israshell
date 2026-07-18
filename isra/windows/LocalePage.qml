@@ -18,6 +18,8 @@ PageBase {
 
         SettingChips {
             label: "Hour format"
+            enabled: Config.timeFormat === ""
+            opacity: Config.timeFormat === "" ? 1 : 0.6
             options: [
                 {
                     label: "12h",
@@ -36,6 +38,8 @@ PageBase {
 
         SettingSwitch {
             label: "Show seconds"
+            enabled: Config.timeFormat === ""
+            opacity: Config.timeFormat === "" ? 1 : 0.6
             sublabel: "Display seconds in the bar clock"
             checked: Config.showSeconds
             onToggled: v => Config.update({
@@ -46,10 +50,10 @@ PageBase {
         SettingInput {
             label: "Custom time format"
             sublabel: "Overrides clock settings. Leave empty to restore dynamic defaults"
-            value: Config.barTimeFormat
+            value: Config.timeFormat
             placeholder: "hh:mm"
             onCommitted: v => Config.update({
-                    barTimeFormat: v
+                    timeFormat: v
                 })
         }
 
@@ -77,14 +81,34 @@ PageBase {
                 })
         }
 
+        SettingChips {
+            label: "Date order"
+            enabled: Config.dateFormat === ""
+            opacity: Config.dateFormat === "" ? 1 : 0.6
+            options: [
+                {
+                    label: "Day first",
+                    value: 0
+                },
+                {
+                    label: "Month first",
+                    value: 1
+                }
+            ]
+            currentValue: Config.dateOrder
+            onSelected: v => Config.update({
+                    dateOrder: v
+                })
+        }
+
         SettingInput {
             isLast: true
             label: "Custom date format"
-            sublabel: "Overrides settings. Leave empty to restore dynamic defaults"
-            value: Config.barDateFormat
+            sublabel: "Overrides date order. Leave empty to restore dynamic defaults"
+            value: Config.dateFormat
             placeholder: "ddd, dd/MM"
             onCommitted: v => Config.update({
-                    barDateFormat: v
+                    dateFormat: v
                 })
         }
     }

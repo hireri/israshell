@@ -580,24 +580,6 @@ PageBase {
         label: "Quick Toggles"
         Layout.fillWidth: true
 
-        SettingChips {
-            label: "Hour format"
-            options: [
-                {
-                    label: "24h",
-                    value: 0
-                },
-                {
-                    label: "12h",
-                    value: 1
-                }
-            ]
-            currentValue: Config.hourFormat
-            onSelected: v => Config.update({
-                    hourFormat: v
-                })
-        }
-
         SettingSwitch {
             label: "Desktop clock"
             sublabel: "Clock widget on wallpaper"

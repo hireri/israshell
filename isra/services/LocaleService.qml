@@ -14,6 +14,7 @@ Singleton {
 
     readonly property string barTimeText: _barTimeText
     readonly property string barDateText: _barDateText
+    readonly property string shortDateText: _shortDateText
 
     readonly property string activeAstroName: _activeAstroName
     readonly property string activeAstroTime: _activeAstroTime
@@ -50,6 +51,7 @@ Singleton {
     property string _liveFullDate: ""
     property string _barTimeText: ""
     property string _barDateText: ""
+    property string _shortDateText: ""
 
     property string _activeAstroName: "—"
     property string _activeAstroTime: "—"
@@ -91,9 +93,8 @@ Singleton {
         function onHourFormatChanged() { root._updateClock(); }
         function onShowSecondsChanged() { root._updateClock(); }
         function onDateFormatChanged() { root._updateClock(); }
-        
-        function onBarTimeFormatChanged() { root._updateClock(); }
-        function onBarDateFormatChanged() { root._updateClock(); }
+        function onDateOrderChanged() { root._updateClock(); }
+        function onTimeFormatChanged() { root._updateClock(); }
 
         function onCityNameChanged() {
             root._coordsKnown = false;
@@ -161,67 +162,21 @@ Singleton {
         xhr.send();
     }
 
-    function _adjustTimeFormat(fmt) {
-        if (!fmt) return "";
-        let result = fmt;
-
-        const hasAmPm = /a[pp]/i.test(result);
-        
-        if (Config.hourFormat === 0) {
-            result = result.replace(/h+/g, function(match) {
-                return match.length === 1 ? "H" : "HH";
-            });
-            result = result.replace(/\s*a[pp]\s*/gi, "").trim();
-        } else {
-            result = result.replace(/H+/g, function(match) {
-                return match.length === 1 ? "h" : "hh";
-            });
-            
-            const amPmTag = Config.hourFormat === 2 ? "AP" : "ap";
-            if (!hasAmPm) {
-                result = result + " " + amPmTag;
-            } else {
-                result = result.replace(/a[pp]/gi, amPmTag);
-            }
-        }
-
-        const hasSeconds = /s+/i.test(result);
+    function _dynamicTimeFormat() {
+        let fmt = Config.hourFormat === 0 ? "HH:mm" : "h:mm";
         if (Config.showSeconds) {
-            if (!hasSeconds) {
-                if (result.includes("mm")) {
-                    result = result.replace("mm", "mm:ss");
-                } else if (result.includes("m")) {
-                    result = result.replace("m", "m:ss");
-                } else {
-                    result = result + ":ss";
-                }
-            }
-        } else {
-            if (hasSeconds) {
-                result = result.replace(/[:\s]*s+/gi, "");
-            }
+            fmt += ":ss";
         }
-
-        return result;
+        if (Config.hourFormat === 1) {
+            fmt += " ap";
+        } else if (Config.hourFormat === 2) {
+            fmt += " AP";
+        }
+        return fmt;
     }
 
-    function _adjustDateFormat(fmt) {
-        if (!fmt) return "";
-        let result = fmt;
-
-        const separatorRegex = /([d]{1,2})([./\-\s]+)([M]{1,2})/;
-        const revSeparatorRegex = /([M]{1,2})([./\-\s]+)([d]{1,2})/;
-
-        if (Config.dateFormat === 0) {
-            if (revSeparatorRegex.test(result)) {
-                result = result.replace(revSeparatorRegex, "$3$2$1");
-            }
-        } else if (Config.dateFormat === 1) {
-            if (separatorRegex.test(result)) {
-                result = result.replace(separatorRegex, "$3$2$1");
-            }
-        }
-        return result;
+    function _dynamicDateFormat() {
+        return Config.dateOrder === 1 ? "MM/dd" : "dd/MM";
     }
 
     function _updateClock() {
@@ -239,11 +194,12 @@ Singleton {
         _liveDayName = Qt.formatDate(now, "dddd");
         _liveFullDate = Qt.formatDate(now, "dd MMMM yyyy");
 
-        const adjustedTimeFmt = Config.barTimeFormat !== "" ? _adjustTimeFormat(Config.barTimeFormat) : "";
-        const adjustedDateFmt = Config.barDateFormat !== "" ? _adjustDateFormat(Config.barDateFormat) : "";
+        const barTimeFmt = Config.timeFormat !== "" ? Config.timeFormat : root._dynamicTimeFormat();
+        _barTimeText = Qt.formatDateTime(now, barTimeFmt);
 
-        _barTimeText = adjustedTimeFmt !== "" ? Qt.formatDateTime(now, adjustedTimeFmt) : "";
-        _barDateText = adjustedDateFmt !== "" ? Qt.formatDateTime(now, adjustedDateFmt) : "";
+        const barDateFmt = Config.dateFormat !== "" ? Config.dateFormat : root._dynamicDateFormat();
+        _barDateText = Qt.formatDateTime(now, barDateFmt);
+        _shortDateText = Qt.formatDateTime(now, "ddd, " + barDateFmt);
 
         root._updateAstroEvent(now);
     }

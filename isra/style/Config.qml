@@ -7,6 +7,7 @@ Singleton {
     id: configRoot
     property bool showSeconds: false
     property int hourFormat: 0
+    property int dateOrder: 0
     property bool stackedSliders: false
     property int carouselSpeed: 30
     property string fontFamily: "Inter"
@@ -17,8 +18,8 @@ Singleton {
     property real blurOpacity: 0.65
     
     property bool showBarWeather: true
-    property string barTimeFormat: "hh:mm"
-    property string barDateFormat: "ddd, dd/MM"
+    property string timeFormat: ""
+    property string dateFormat: ""
     property string cityName: ""
 
     property var cava: ({
@@ -78,7 +79,6 @@ Singleton {
             showAllMonitors: false,
             popupPosition: 0
         })
-    property int dateFormat: 0
     property bool weekMonday: true
     property bool useFarenheit: false
     property bool verticalQSSliders: false
@@ -150,6 +150,7 @@ Singleton {
             showSeconds: false,
             stackedSliders: false,
             hourFormat: 0,
+            dateOrder: 0,
             carouselSpeed: 30,
             fontFamily: "Inter",
             fontMonospace: "Roboto Mono",
@@ -159,8 +160,8 @@ Singleton {
             blurOpacity: 0.65,
             
             showBarWeather: true,
-            barTimeFormat: "hh:mm",
-            barDateFormat: "ddd, dd/MM",
+            timeFormat: "",
+            dateFormat: "",
             cityName: "",
 
             cava: {
@@ -217,7 +218,6 @@ Singleton {
                 showAllMonitors: false,
                 popupPosition: 0
             },
-            dateFormat: 0,
             weekMonday: true,
             useFarenheit: false,
             verticalQSSliders: false,
