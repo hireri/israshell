@@ -304,12 +304,20 @@ Item {
     }
 
 
+    readonly property string _mathFuncNames: "sqrt|cbrt|sin|cos|tan|asin|acos|atan2|atan|sinh|cosh|tanh|asinh|acosh|atanh|log|ln|exp|pow|abs|floor|ceil|round|trunc|min|max|sind|cosd|tand"
+
     function _evalMath(expr) {
         try {
             let p = expr.replace(/\s+/g, "").toLowerCase();
 
-            if (!/^[\d()+\-*\/^%.,]+$/.test(
-                    p.replace(/\b(?:sqrt|cbrt|sin|cos|tan|asin|acos|atan|atan2|sinh|cosh|tanh|asinh|acosh|atanh|log|ln|exp|pow|abs|floor|ceil|round|trunc|min|max|pi|e|sind|cosd|tand)\b/g, "")))
+            p = p.replace(/(\d),(?=\d{3}(?:\D|$))/g, "$1");
+            p = p.replace(/(?<![a-z])(\d)\(/g, "$1*(");
+            p = p.replace(/\)(\d)/g, ")*$1");
+            p = p.replace(/\)\(/g, ")*(");
+            p = p.replace(new RegExp("(\\d|\\))(" + _mathFuncNames + "|pi|e)\\(", "g"), "$1*$2(");
+
+            if (!/^[\d()+\-*\/^%.]+$/.test(
+                    p.replace(new RegExp("\\b(?:" + _mathFuncNames + "|pi|e)\\b", "g"), "").replace(/,/g, "")))
                 return null;
 
             p = p.replace(/\bpi\b/g, String(Math.PI)).replace(/\be\b/g, String(Math.E));
@@ -327,11 +335,6 @@ Item {
                 .replace(/\bsinh\(/g,  "Math.sinh(")
                 .replace(/\bcosh\(/g,  "Math.cosh(")
                 .replace(/\btanh\(/g,  "Math.tanh(")
-                
-                .replace(/\bsind\(/g,  "(function(x){return Math.sin(x*" + (Math.PI/180) + ");})(")
-                .replace(/\bcosd\(/g,  "(function(x){return Math.cos(x*" + (Math.PI/180) + ");})(")
-                .replace(/\btand\(/g,  "(function(x){return Math.tan(x*" + (Math.PI/180) + ");})(")
-                
                 .replace(/\bsin\(/g,   "Math.sin(")
                 .replace(/\bcos\(/g,   "Math.cos(")
                 .replace(/\btan\(/g,   "Math.tan(")
@@ -345,10 +348,13 @@ Item {
                 .replace(/\bround\(/g, "Math.round(")
                 .replace(/\btrunc\(/g, "Math.trunc(")
                 .replace(/\bmin\(/g,   "Math.min(")
-                .replace(/\bmax\(/g,   "Math.max(");
+                .replace(/\bmax\(/g,   "Math.max(")
+                .replace(/\bsind\(/g,  "(function(x){return Math.sin(x*" + (Math.PI/180) + ");})(")
+                .replace(/\bcosd\(/g,  "(function(x){return Math.cos(x*" + (Math.PI/180) + ");})(")
+                .replace(/\btand\(/g,  "(function(x){return Math.tan(x*" + (Math.PI/180) + ");})(");
 
-            for (let i = 0; i < 8; i++)
-                p = p.replace(/([\d.]+|\))\^([\d.]+|\()/g, "Math.pow($1,$2)");
+            p = p.replace(/\^/g, "**");
+            p = p.replace(/(^|[+\-(,])-([\d.]+)\*\*/g, "$10-$2**");
 
             const result = new Function("return " + p)();
             if (!isFinite(result) || isNaN(result)) return null;

@@ -69,6 +69,9 @@ Scope {
         if (/^ip\s+[\d.]/i.test(q))
             return "whois";
 
+        if (/^kao(?:moji)?(?:\s|$)/i.test(q))
+            return "kaomoji";
+
         if (/^[+-]?[\d.,]+\s*°?\s*[a-zA-Z][a-zA-Z\/]{0,19}\s+(?:to|in)\s+°?\s*[a-zA-Z][a-zA-Z\/]{0,19}$/i.test(q))
             return "math";
         if (/\d/.test(q) && /[+\-*\/^%]/.test(q))
@@ -89,6 +92,9 @@ Scope {
         const whoisM = /^(?:whois|ip)\s+(.+)$/i.exec(q);
         if (whoisM)
             return whoisM[1].trim();
+        const kaoM = /^kao(?:moji)?(?:\s+(.*))?$/i.exec(q);
+        if (kaoM)
+            return (kaoM[1] || "").trim();
         return q;
     }
 
@@ -105,6 +111,8 @@ Scope {
             return widgetQuery.trim() !== "";
         if (widgetType === "whois")
             return widgetQuery.trim() !== "";
+        if (widgetType === "kaomoji")
+            return true;
         return false;
     }
 
@@ -309,6 +317,70 @@ Scope {
         }
     }
 
+    property var _kaomojiData: []
+    property bool _kaomojiLoaded: false
+
+    function _splitCsvLine(line) {
+        const fields = [];
+        let cur = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (inQuotes) {
+                if (c === "\"") {
+                    if (line[i + 1] === "\"") {
+                        cur += "\"";
+                        i++;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    cur += c;
+                }
+            } else if (c === "\"" && cur === "") {
+                inQuotes = true;
+            } else if (c === ",") {
+                fields.push(cur);
+                cur = "";
+            } else {
+                cur += c;
+            }
+        }
+        fields.push(cur);
+        return fields;
+    }
+
+    Process {
+        id: kaomojiLoader
+        command: ["sh", "-c", "cat \"$HOME/.config/quickshell/isra/components/emojis/kaomoji.csv\" 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parsed = [];
+                for (const rawLine of this.text.split("\n")) {
+                    const line = rawLine.replace(/\r$/, "");
+                    if (!line.trim())
+                        continue;
+                    const fields = root._splitCsvLine(line);
+                    if (fields.length < 3)
+                        continue;
+                    const face = fields[0].trim();
+                    if (face.toLowerCase() === "emoji")
+                        continue;
+                    const tagsStr = fields[fields.length - 1];
+                    const tags = tagsStr.split("|").map(t => t.trim().toLowerCase()).filter(Boolean);
+                    if (face === "" || tags.length === 0)
+                        continue;
+                    parsed.push({
+                        face: face,
+                        tags: tags
+                    });
+                }
+                root._kaomojiData = parsed;
+                root._kaomojiLoaded = true;
+            }
+        }
+    }
+
     property var _clipEntries: []
 
     Process {
@@ -357,6 +429,11 @@ Scope {
         }
         if (mode === "emoji" && !root._emojiLoaded)
             emojiLoader.running = true;
+    }
+
+    onWidgetTypeChanged: {
+        if (widgetType === "kaomoji" && !root._kaomojiLoaded)
+            kaomojiLoader.running = true;
     }
 
     ScriptModel {
@@ -614,7 +691,7 @@ Scope {
 
             width: {
                 if (root.mode === "apps")
-                    return 420;
+                    return root.widgetType === "kaomoji" ? 480 : 420;
                 if (root.mode === "emoji")
                     return 480;
                 return 520;
@@ -733,7 +810,7 @@ Scope {
                         right: parent.right
                         margins: 16
                     }
-                    implicitHeight: mathWidget.visible ? mathWidget.implicitHeight : translateWidget.visible ? translateWidget.implicitHeight : colorWidget.visible ? colorWidget.implicitHeight : timestampWidget.visible ? timestampWidget.implicitHeight : defineWidget.visible ? defineWidget.implicitHeight : whoisWidget.visible ? whoisWidget.implicitHeight : 0
+                    implicitHeight: mathWidget.visible ? mathWidget.implicitHeight : translateWidget.visible ? translateWidget.implicitHeight : colorWidget.visible ? colorWidget.implicitHeight : timestampWidget.visible ? timestampWidget.implicitHeight : defineWidget.visible ? defineWidget.implicitHeight : whoisWidget.visible ? whoisWidget.implicitHeight : kaomojiWidget.visible ? kaomojiWidget.implicitHeight : 0
 
                     MathWidget {
                         id: mathWidget
@@ -826,6 +903,25 @@ Scope {
                         onCopyResult: text => {
                             copyProc.command = ["wl-copy", text];
                             copyProc.running = true;
+                        }
+                    }
+
+                    KaomojiWidget {
+                        id: kaomojiWidget
+                        anchors {
+                            top: parent.top
+                            left: parent.left
+                            right: parent.right
+                        }
+                        visible: root.widgetType === "kaomoji"
+                        entries: root._kaomojiData
+                        query: root.widgetQuery
+                        onCopyResult: result => {
+                            copyProc.command = ["wl-copy", result];
+                            copyProc.running = true;
+                        }
+                        onCategoryRequested: tag => {
+                            launcherInput.prefill("kao " + tag);
                         }
                     }
                 }

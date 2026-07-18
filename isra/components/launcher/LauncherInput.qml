@@ -49,11 +49,12 @@ Item {
             "emoji": "󰱨",
             "translate": "󰗊",
             "math": "󰪚",
-            "color": "󰏘"
+            "color": "󰏘",
+            "kaomoji": "󰄛"
         })
 
     readonly property string _activeIcon: {
-        if (mode === "apps" && (widgetType === "math" || widgetType === "color"))
+        if (mode === "apps" && (widgetType === "math" || widgetType === "color" || widgetType === "kaomoji"))
             return _icon[widgetType];
         return _icon[mode] ?? "󱗼";
     }

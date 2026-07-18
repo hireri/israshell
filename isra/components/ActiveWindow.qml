@@ -22,7 +22,7 @@ Rectangle {
     radius: 16
     height: 32
 
-    width: showFallback ? (iconContainer.implicitWidth + (horizontalPadding * 2)) : activeWidth
+    width: activeWidth
     implicitWidth: width
 
     Behavior on width {
@@ -50,17 +50,10 @@ Rectangle {
     property string displayedTitle: ""
 
     readonly property bool showFallback: !activeWindow
+    readonly property string fallbackAppId: "Desktop"
+    readonly property string fallbackTitle: "Empty workspace"
 
     readonly property string kaomoji: " > ⩊ < "
-    readonly property int kaomojiFallbackWidth: kaomeasure.implicitWidth + 12
-
-    Text {
-        id: kaomeasure
-        visible: false
-        text: root.kaomoji
-        font.pixelSize: 10
-        font.family: Config.fontFamily
-    }
 
     function getAppId(w) {
         if (!w)
@@ -95,14 +88,17 @@ Rectangle {
         displayedAppId = rawAppId;
         displayedTitle = rawTitle;
 
+        const appIdText = w ? rawAppId : fallbackAppId;
+        const titleText = w ? rawTitle : fallbackTitle;
+
         if (layerA) {
             iconSourceB = newSource;
-            textAppIdB = rawAppId;
-            textTitleB = rawTitle;
+            textAppIdB = appIdText;
+            textTitleB = titleText;
         } else {
             iconSourceA = newSource;
-            textAppIdA = rawAppId;
-            textTitleA = rawTitle;
+            textAppIdA = appIdText;
+            textTitleA = titleText;
         }
 
         layerA = !layerA;
@@ -147,8 +143,8 @@ Rectangle {
         displayedAppId = rawAppId;
         displayedTitle = rawTitle;
         iconSourceA = getIconSource(rawAppId);
-        textAppIdA = rawAppId;
-        textTitleA = rawTitle;
+        textAppIdA = w ? rawAppId : fallbackAppId;
+        textTitleA = w ? rawTitle : fallbackTitle;
     }
 
     ParallelAnimation {
@@ -192,18 +188,11 @@ Rectangle {
 
         ClippingRectangle {
             id: iconContainer
-            implicitWidth: showFallback ? kaomojiFallbackWidth : 22
+            implicitWidth: 22
             implicitHeight: 22
             anchors.verticalCenter: parent.verticalCenter
             radius: showFallback ? 11 : 6
             color: Colors.md3.surface_container_highest
-
-            Behavior on implicitWidth {
-                NumberAnimation {
-                    duration: 180
-                    easing.type: Easing.InOutQuad
-                }
-            }
 
             Rectangle {
                 anchors.fill: parent
@@ -245,14 +234,7 @@ Rectangle {
             height: Math.max(textColA.implicitHeight, textColB.implicitHeight)
             clip: true
 
-            width: showFallback ? 0 : Math.max(0, root.width - iconContainer.width - contentRow.spacing - (root.horizontalPadding * 2))
-            opacity: showFallback ? 0 : 1
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 150
-                }
-            }
+            width: Math.max(0, root.width - iconContainer.width - contentRow.spacing - (root.horizontalPadding * 2))
 
             Column {
                 id: textColA
