@@ -34,7 +34,15 @@ Singleton {
     readonly property string weatherCode: _weatherCode
     
     readonly property string weatherIconName: _weatherIconName
-    readonly property color weatherIconColor: _weatherIconColor
+    readonly property color weatherIconColor: {
+        switch (_weatherIconColorRole) {
+        case "tertiary": return Colors.md3.tertiary;
+        case "on_surface_variant": return Colors.md3.on_surface_variant;
+        case "outline": return Colors.md3.outline;
+        case "error": return Colors.md3.error;
+        default: return Colors.md3.primary;
+        }
+    }
 
     readonly property bool weatherLoading: _weatherLoading
     readonly property string weatherError: _weatherError
@@ -78,7 +86,7 @@ Singleton {
     property string _weatherError: ""
 
     property string _weatherIconName: "partly-cloudy-day"
-    property color _weatherIconColor: Colors.md3.primary
+    property string _weatherIconColorRole: "primary"
 
     property string _weatherAqi: "—"
     property bool _aqiLoading: true
@@ -376,46 +384,46 @@ Singleton {
         if (c === 0) {
             if (day) {
                 _weatherIconName = "wb-sunny";
-                _weatherIconColor = Colors.md3.tertiary;
+                _weatherIconColorRole = "tertiary";
                 _weatherDesc = "Sunny";
             } else {
                 _weatherIconName = "moon-stars"; 
-                _weatherIconColor = Colors.md3.primary;
+                _weatherIconColorRole = "primary";
                 _weatherDesc = "Clear Night";
             }
         } else if (c === 1 || c === 2) {
             if (day) {
                 _weatherIconName = "partly-cloudy-day";
-                _weatherIconColor = Colors.md3.primary;
+                _weatherIconColorRole = "primary";
                 _weatherDesc = "Partly Cloudy";
             } else {
                 _weatherIconName = "partly-cloudy-night"; 
-                _weatherIconColor = Colors.md3.primary;
+                _weatherIconColorRole = "primary";
                 _weatherDesc = "Partly Cloudy";
             }
         } else if (c === 3) {
             _weatherIconName = "cloudy";
-            _weatherIconColor = Colors.md3.on_surface_variant;
+            _weatherIconColorRole = "on_surface_variant";
             _weatherDesc = "Overcast";
         } else if (c === 45 || c === 48) {
             _weatherIconName = "foggy";
-            _weatherIconColor = Colors.md3.on_surface_variant;
+            _weatherIconColorRole = "on_surface_variant";
             _weatherDesc = "Foggy";
         } else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(c)) {
             _weatherIconName = "rainy";
-            _weatherIconColor = Colors.md3.primary;
+            _weatherIconColorRole = "primary";
             _weatherDesc = c < 60 ? "Drizzle" : "Rain";
         } else if ([71, 73, 75, 77, 85, 86].includes(c)) {
             _weatherIconName = "snowy";
-            _weatherIconColor = Colors.md3.outline;
+            _weatherIconColorRole = "outline";
             _weatherDesc = "Snow";
         } else if ([95, 96, 99].includes(c)) {
             _weatherIconName = "thunderstorm";
-            _weatherIconColor = Colors.md3.error;
+            _weatherIconColorRole = "error";
             _weatherDesc = "Thunderstorm";
         } else {
             _weatherIconName = "partly-cloudy-day";
-            _weatherIconColor = Colors.md3.primary;
+            _weatherIconColorRole = "primary";
             _weatherDesc = "Unknown";
         }
     }

@@ -17,8 +17,6 @@ Item {
 
     width: iconSize
     height: iconSize
-    layer.enabled: true
-    layer.samples: 4
 
     property var _outlinePaths: []
     property var _filledPaths: []
