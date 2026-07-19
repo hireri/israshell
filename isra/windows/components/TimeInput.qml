@@ -107,6 +107,7 @@ SettingRow {
     }
 
     component SpinField: Rectangle {
+        id: spinField
         property int value: 0
         property int max: 23
         signal committed(int value)
@@ -115,17 +116,23 @@ SettingRow {
         width: 28
         height: 28
         radius: 4
-        color: field.activeFocus ? Colors.md3.surface_container_high : Colors.md3.surface_container
+        color: field.activeFocus ? Colors.md3.surface_container_high : Qt.alpha(Colors.md3.surface_container_high, 0)
+
         Behavior on color {
             ColorAnimation {
                 duration: 80
+            }
+        }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: 120
             }
         }
 
         TextInput {
             id: field
             anchors.centerIn: parent
-            text: String(parent.value).padStart(2, "0")
+            text: String(spinField.value).padStart(2, "0")
             font.family: Config.fontMonospace
             font.pixelSize: 14
             font.weight: Font.Medium
@@ -136,25 +143,34 @@ SettingRow {
             inputMethodHints: Qt.ImhDigitsOnly
             selectByMouse: true
 
-            onEditingFinished: {
+            function _commitText() {
                 const v = parseInt(text, 10);
                 if (!isNaN(v))
-                    parent.committed(Math.max(0, Math.min(parent.max, v)));
+                    spinField.committed(Math.max(0, Math.min(spinField.max, v)));
                 else
-                    text = String(parent.value).padStart(2, "0");
+                    text = String(spinField.value).padStart(2, "0");
             }
 
+            Keys.onReturnPressed: {
+                field._commitText();
+                focus = false;
+            }
+            Keys.onEscapePressed: {
+                text = String(spinField.value).padStart(2, "0");
+                focus = false;
+            }
             onActiveFocusChanged: {
                 if (!activeFocus)
-                    text = String(parent.value).padStart(2, "0");
+                    field._commitText();
             }
         }
 
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.NoButton
+            cursorShape: Qt.IBeamCursor
             onWheel: event => {
-                parent.scrolled(event.angleDelta.y > 0 ? 1 : -1);
+                spinField.scrolled(event.angleDelta.y > 0 ? 1 : -1);
             }
         }
     }
