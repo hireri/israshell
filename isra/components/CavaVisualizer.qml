@@ -132,6 +132,9 @@ Item {
         id: canvas
         anchors.fill: parent
 
+        renderTarget: Canvas.FramebufferObject
+        renderStrategy: Canvas.Threaded
+
         onWidthChanged: canvas.requestPaint()
         onHeightChanged: canvas.requestPaint()
 
@@ -186,31 +189,49 @@ Item {
                 }
 
                 if (Config.cava.drawFill) {
+                    const gradVAlphaFalloff = 0.15;
+                    const otherAlphaFalloff = 0.4;
+                    let gradVPalette = null;
+                    if (colorStyle === "gradient-v") {
+                        gradVPalette = new Array(maxBlocks);
+                        for (let b = 0; b < maxBlocks; b++) {
+                            const c = lerpColor(colBase, colAlt, b / Math.max(1, maxBlocks - 1));
+                            gradVPalette[b] = "rgb(" + Math.round(c.r * 255) + "," + Math.round(c.g * 255) + "," + Math.round(c.b * 255) + ")";
+                        }
+                    }
+
                     for (let i = 0; i < n; i++) {
                         const activeBlocks = activeBlocksList[i];
+                        if (activeBlocks <= 0) continue;
                         const x = i * (barWidth + spacing);
                         const barPct = (visualizer.renderValues[i] || 0) / 100;
+
+                        let barColorStr = null;
+                        if (colorStyle === "gradient-h") {
+                            const c = lerpColor(colBase, colAlt, x / width);
+                            barColorStr = "rgb(" + Math.round(c.r * 255) + "," + Math.round(c.g * 255) + "," + Math.round(c.b * 255) + ")";
+                        } else if (colorStyle === "loudness") {
+                            const c = lerpColor(colBase, colAlt, barPct);
+                            barColorStr = "rgb(" + Math.round(c.r * 255) + "," + Math.round(c.g * 255) + "," + Math.round(c.b * 255) + ")";
+                        } else if (colorStyle !== "gradient-v") {
+                            barColorStr = "rgb(" + Math.round(colBase.r * 255) + "," + Math.round(colBase.g * 255) + "," + Math.round(colBase.b * 255) + ")";
+                        }
+                        if (barColorStr !== null) ctx.fillStyle = barColorStr;
+
+                        const alphaFalloff = colorStyle === "gradient-v" ? gradVAlphaFalloff : otherAlphaFalloff;
 
                         for (let b = 0; b < activeBlocks; b++) {
                             const blockYOffset = b * (blockHeight + blockGap);
                             const y = isBottom ? (height - blockYOffset - blockHeight) : blockYOffset;
 
-                            let blockCol;
                             if (colorStyle === "gradient-v") {
-                                blockCol = lerpColor(colBase, colAlt, b / Math.max(1, maxBlocks - 1));
-                            } else if (colorStyle === "gradient-h") {
-                                blockCol = lerpColor(colBase, colAlt, x / width);
-                            } else if (colorStyle === "loudness") {
-                                blockCol = lerpColor(colBase, colAlt, barPct);
-                            } else {
-                                blockCol = colBase;
+                                ctx.fillStyle = gradVPalette[b];
                             }
-
-                            const alphaFalloff = colorStyle === "gradient-v" ? 0.15 : 0.4;
-                            ctx.fillStyle = Qt.rgba(blockCol.r, blockCol.g, blockCol.b, Config.cava.opacity * (1.0 - (b / maxBlocks) * alphaFalloff));
+                            ctx.globalAlpha = Config.cava.opacity * (1.0 - (b / maxBlocks) * alphaFalloff);
                             ctx.fillRect(x, y, barWidth, blockHeight);
                         }
                     }
+                    ctx.globalAlpha = 1.0;
                 }
 
                 if (Config.cava.drawStroke) {
