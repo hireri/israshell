@@ -106,9 +106,8 @@ Item {
                         anchors.fill: img
                         sourceComponent: MultiEffect {
                             source: img
-                            saturation: -1.0
-                            colorization: 1.0
-                            colorizationColor: Qt.alpha(Colors.md3.on_surface, 0.4)
+                            colorization: 1
+                            colorizationColor: Colors.md3.on_surface
                         }
                     }
 

@@ -308,14 +308,6 @@ ShellRoot {
             id: screenScope
             required property var modelData
 
-            Component.onCompleted: {
-                console.log("[Diagnostics] Variant loaded for screen:", modelData ? modelData.name : "unknown");
-                console.log("[Diagnostics] Left zone widgets:", visibleBarLeft);
-                console.log("[Diagnostics] Center zone widgets:", visibleBarCenterItems);
-                console.log("[Diagnostics] Right zone widgets:", visibleBarRight);
-                console.log("[Diagnostics] Is 'dock' disabled via config?:", isWidgetDisabled("dock"));
-            }
-
             Background {
                 id: wallpaperBackgroundItem
                 modelData: screenScope.modelData
@@ -333,7 +325,8 @@ ShellRoot {
                     screencap: screencapComponent,
                     tray: trayComponent,
                     quicksettings: quicksettingsComponent,
-                    dock: dockComponent
+                    dock: dockComponent,
+                    launcher: launcherBtnComponent
                 })
 
             function isWidgetDisabled(id) {
@@ -364,6 +357,7 @@ ShellRoot {
             Component { id: trayComponent; TrayWidget { panelWindow: window } }
             Component { id: quicksettingsComponent; QuickSettings { panelWindow: window } }
             Component { id: dockComponent; BarDock {} }
+            Component { id: launcherBtnComponent; LauncherButton {} }
 
             PanelWindow {
                 id: window
