@@ -189,6 +189,7 @@ Item {
                     for (let i = 0; i < n; i++) {
                         const activeBlocks = activeBlocksList[i];
                         const x = i * (barWidth + spacing);
+                        const barPct = (visualizer.renderValues[i] || 0) / 100;
 
                         for (let b = 0; b < activeBlocks; b++) {
                             const blockYOffset = b * (blockHeight + blockGap);
@@ -196,14 +197,17 @@ Item {
 
                             let blockCol;
                             if (colorStyle === "gradient-v") {
-                                blockCol = lerpColor(colBase, colAlt, b / maxBlocks);
+                                blockCol = lerpColor(colBase, colAlt, b / Math.max(1, maxBlocks - 1));
                             } else if (colorStyle === "gradient-h") {
                                 blockCol = lerpColor(colBase, colAlt, x / width);
+                            } else if (colorStyle === "loudness") {
+                                blockCol = lerpColor(colBase, colAlt, barPct);
                             } else {
-                                blockCol = (colorStyle === "loudness") ? lerpColor(colBase, colAlt, loudness) : colBase;
+                                blockCol = colBase;
                             }
 
-                            ctx.fillStyle = Qt.rgba(blockCol.r, blockCol.g, blockCol.b, Config.cava.opacity * (1.0 - (b / maxBlocks) * 0.4));
+                            const alphaFalloff = colorStyle === "gradient-v" ? 0.15 : 0.4;
+                            ctx.fillStyle = Qt.rgba(blockCol.r, blockCol.g, blockCol.b, Config.cava.opacity * (1.0 - (b / maxBlocks) * alphaFalloff));
                             ctx.fillRect(x, y, barWidth, blockHeight);
                         }
                     }
@@ -256,17 +260,20 @@ Item {
 
                     let startCol = colBase;
                     let endCol = colBase;
+                    let tipAlpha = 0.0;
 
                     if (colorStyle === "solid") {
                         startCol = colBase;
                         endCol = colBase;
                     } else if (colorStyle === "loudness") {
-                        const lCol = lerpColor(colBase, colAlt, loudness);
+                        const lCol = lerpColor(colBase, colAlt, pct);
                         startCol = lCol;
                         endCol = lCol;
+                        tipAlpha = 0.0;
                     } else if (colorStyle === "gradient-v") {
                         startCol = colBase;
                         endCol = lerpColor(colBase, colAlt, pct);
+                        tipAlpha = 0.0;
                     } else if (colorStyle === "gradient-h") {
                         const pctX = x / width;
                         const hCol = lerpColor(colBase, colAlt, pctX);
@@ -274,8 +281,20 @@ Item {
                         endCol = hCol;
                     }
 
-                    fillStyle.addColorStop(0.0, Qt.rgba(startCol.r, startCol.g, startCol.b, Config.cava.opacity));
-                    fillStyle.addColorStop(1.0, Qt.rgba(endCol.r, endCol.g, endCol.b, 0.01));
+                    if (colorStyle === "gradient-v") {
+                        const stopCount = 6;
+                        for (let s = 0; s <= stopCount; s++) {
+                            const p = s / stopCount;
+                            const colorT = Math.min(1.0, p / 0.65);
+                            const stopCol = lerpColor(startCol, endCol, colorT);
+                            const alphaT = Math.pow(1.0 - p, 1.3);
+                            const stopAlpha = tipAlpha + (Config.cava.opacity - tipAlpha) * alphaT;
+                            fillStyle.addColorStop(p, Qt.rgba(stopCol.r, stopCol.g, stopCol.b, stopAlpha));
+                        }
+                    } else {
+                        fillStyle.addColorStop(0.0, Qt.rgba(startCol.r, startCol.g, startCol.b, Config.cava.opacity));
+                        fillStyle.addColorStop(1.0, Qt.rgba(endCol.r, endCol.g, endCol.b, tipAlpha));
+                    }
 
                     if (Config.cava.drawFill) {
                         ctx.fillStyle = fillStyle;
@@ -333,18 +352,23 @@ Item {
                         fillStyle = ctx.createLinearGradient(0, startY, 0, isBottom ? (height - maxHeight) : maxHeight);
                         let startCol = colBase;
                         let endCol = colAlt;
+                        let tipAlpha = 0.0;
 
                         if (colorStyle === "solid") {
                             startCol = colBase;
                             endCol = colBase;
+                        } else if (colorStyle === "gradient-v") {
+                            startCol = colBase;
+                            endCol = colAlt;
+                            tipAlpha = Config.cava.opacity;
                         } else if (colorStyle === "loudness") {
-                            const lCol = lerpColor(colBase, colAlt, loudness);
-                            startCol = lCol;
-                            endCol = lCol;
+                            startCol = colBase;
+                            endCol = lerpColor(colBase, colAlt, loudness);
+                            tipAlpha = Config.cava.opacity;
                         }
 
                         fillStyle.addColorStop(0.0, Qt.rgba(startCol.r, startCol.g, startCol.b, Config.cava.opacity));
-                        fillStyle.addColorStop(1.0, Qt.rgba(endCol.r, endCol.g, endCol.b, 0.0));
+                        fillStyle.addColorStop(1.0, Qt.rgba(endCol.r, endCol.g, endCol.b, tipAlpha));
                     }
 
                     ctx.fillStyle = fillStyle;
@@ -375,7 +399,9 @@ Item {
                         strokeStyle.addColorStop(1.0, Qt.rgba(colAlt.r, colAlt.g, colAlt.b, Math.min(1.0, Config.cava.opacity * 2.5)));
                     } else {
                         let sCol = colBase;
-                        if (colorStyle === "loudness") {
+                        if (colorStyle === "gradient-v") {
+                            sCol = colAlt;
+                        } else if (colorStyle === "loudness") {
                             sCol = lerpColor(colBase, colAlt, loudness);
                         }
                         strokeStyle = Qt.rgba(sCol.r, sCol.g, sCol.b, Math.min(1.0, Config.cava.opacity * 2.5));
