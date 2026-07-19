@@ -127,6 +127,8 @@ Item {
 
         Shape {
             id: outlineShape
+            property color shapeColor: root.color
+
             width: root.width
             height: root.height
             x: -outlineClip.x
@@ -145,7 +147,7 @@ Item {
 
                 ShapePath {
                     strokeWidth: 0
-                    fillColor: root.color
+                    fillColor: outlineShape.shapeColor
                     scale: Qt.size(outlineShape.width / 960, outlineShape.height / 960)
                     PathSvg { path: modelData }
                 }
@@ -206,6 +208,8 @@ Item {
 
         Shape {
             id: filledShape
+            property color shapeColor: root.color
+
             width: root.width
             height: root.height
             x: -filledClip.x
@@ -224,7 +228,7 @@ Item {
 
                 ShapePath {
                     strokeWidth: 0
-                    fillColor: root.color
+                    fillColor: filledShape.shapeColor
                     scale: Qt.size(filledShape.width / 960, filledShape.height / 960)
                     PathSvg { path: modelData }
                 }
