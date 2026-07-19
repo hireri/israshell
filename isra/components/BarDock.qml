@@ -11,7 +11,7 @@ import QtQuick.Layouts
 
 import qs.style
 
-Item {
+Rectangle {
     id: dockRoot
 
     readonly property var pinnedApps: (Config && Config.pinnedApps) ? Config.pinnedApps : []
@@ -307,8 +307,21 @@ Item {
         syncListModel();
     }
 
-    implicitWidth: dockListView.contentWidth
+    implicitWidth: dockListView.contentWidth + leftPad + rightPad
     implicitHeight: 32
+
+    readonly property int leftPad: 3
+    readonly property int rightPad: 3
+
+    color: Config.bar.transparentPills
+        ? (Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container)
+        : (Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
+
+    Behavior on color {
+        ColorAnimation { duration: 150 }
+    }
+
+    radius: 20
 
     width: implicitWidth
     Behavior on width {
@@ -318,6 +331,8 @@ Item {
 
     ListView {
         id: dockListView
+        anchors.left: parent.left
+        anchors.leftMargin: dockRoot.leftPad
         anchors.verticalCenter: parent.verticalCenter
         height: 32
         orientation: ListView.Horizontal

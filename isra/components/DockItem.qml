@@ -81,10 +81,10 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 8
+        radius: width / 2
         color: root.isActive
-            ? Qt.alpha(Colors.md3.primary, 0.15)
-            : (mouseArea.containsMouse ? Qt.alpha(Colors.md3.on_surface_variant, 0.1) : "transparent")
+            ? Colors.md3.secondary_container
+            : (mouseArea.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : Qt.alpha(Colors.md3.secondary_container, 0))
 
         Behavior on color {
             ColorAnimation { duration: 150 }
@@ -118,7 +118,7 @@ Item {
                     width: root.isActive ? 5 : 3
                     height: 3
                     radius: 1.5
-                    color: root.isActive ? Colors.md3.primary : Colors.md3.outline
+                    color: root.isActive ? Colors.md3.on_secondary_container : Colors.md3.outline
 
                     Behavior on width {
                         NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
