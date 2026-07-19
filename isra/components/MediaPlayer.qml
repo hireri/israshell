@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -149,16 +150,16 @@ ClippingRectangle {
                 radius: 30
                 visible: pillArt.status === Image.Ready
                 color: "transparent"
+                antialiasing: true
 
                 Image {
                     id: pillArt
                     anchors.fill: parent
                     source: MediaPlayerState.displayPlayer?.trackArtUrl ?? ""
-                    antialiasing: true
-                    smooth: true
-                    layer.enabled: true
-                    layer.smooth: true
                     fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                    sourceSize: Qt.size(60, 60)
 
                     property real angle: 0
                     property real velocity: pillCover.shouldSpin ? 0.5 : 0
@@ -217,6 +218,7 @@ ClippingRectangle {
                 color: Colors.md3.on_surface
                 font.family: Config.fontFamily
                 font.pixelSize: 14
+                renderType: Text.NativeRendering
                 text: {
                     const p = MediaPlayerState.displayPlayer;
                     if (!p)
@@ -240,6 +242,7 @@ ClippingRectangle {
                 color: Colors.md3.on_surface
                 font.family: Config.fontFamily
                 font.pixelSize: 14
+                renderType: Text.NativeRendering
                 text: marqueeText.text
             }
 
@@ -551,6 +554,7 @@ ClippingRectangle {
                                     color: root._frontCard.colOnSurface
                                     font.pixelSize: 13
                                     font.family: Config.fontFamily
+                                    renderType: Text.NativeRendering
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: 400

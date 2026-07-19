@@ -437,6 +437,7 @@ PageBase {
                     fillMode: Image.PreserveAspectCrop
                     anchors.fill: parent
                     visible: source !== ""
+                    sourceSize: Qt.size(480, 270)
                 }
 
                 Rectangle {

@@ -2,7 +2,6 @@
 //@ pragma AppId israshell
 //@ pragma Env QS_NO_RELOAD_POPUP = 1
 //@ pragma Env QT_QUICK_CONTROLS_STYLE=Basic
-//@ pragma Env QSG_RENDER_LOOP=threaded
 //@ pragma DefaultEnv QT_LOGGING_RULES = quickshell.dbus.properties=false
 //@ pragma Env QT_QUICK_FLICKABLE_WHEEL_DECELERATION=7500
 
@@ -268,6 +267,9 @@ ShellRoot {
                     fillMode: Image.PreserveAspectCrop
                     visible: false
                     asynchronous: true
+                    sourceSize.width: block.panelScreen ? block.panelScreen.width / 4 : 0
+                    sourceSize.height: block.panelScreen ? block.panelScreen.height / 4 : 0
+                    smooth: false
                 }
 
                 FastBlur {

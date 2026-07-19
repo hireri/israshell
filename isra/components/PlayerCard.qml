@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -1081,6 +1082,7 @@ CAVAEOF`]
         opacity: 0
         cache: true
         asynchronous: true
+        sourceSize: Qt.size(120, 120)
         layer.enabled: true
         layer.effect: MultiEffect {
             blurEnabled: true

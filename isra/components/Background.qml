@@ -177,6 +177,7 @@ PanelWindow {
             source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
             fillMode: Image.PreserveAspectCrop
             sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1080
+            playing: slot.isFront && !slot.pause
         }
 
         Loader {

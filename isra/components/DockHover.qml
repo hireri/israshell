@@ -395,6 +395,7 @@ PopupWindow {
                 spacing: 10
                 clip: true
                 model: cardModel
+                cacheBuffer: 200
 
                 NumberAnimation {
                     id: scrollAnimation

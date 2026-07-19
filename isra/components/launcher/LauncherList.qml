@@ -152,6 +152,7 @@ Item {
         model: root.model
         clip: true
         spacing: 2
+        cacheBuffer: 200
 
         flickDeceleration: 4000
         maximumFlickVelocity: 2200
@@ -524,6 +525,9 @@ Item {
                                     source: imgItem.b64 !== "" ? ("data:" + imgLoader.entryMime + ";base64," + imgItem.b64) : ""
                                     visible: source !== ""
                                     smooth: true
+                                    asynchronous: true
+                                    cache: true
+                                    sourceSize: Qt.size(400, 160)
                                 }
                                 Text {
                                     anchors.centerIn: parent

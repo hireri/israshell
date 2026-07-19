@@ -15,7 +15,6 @@ pavucontrol
 # Networking
 networkmanager
 # Bluetooth
-blueman
 bluez
 bluez-utils
 # Clipboard & screenshots

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import qs.style
@@ -66,6 +67,9 @@ Item {
                 width: 18
                 height: 18
                 smooth: true
+                asynchronous: true
+                cache: true
+                sourceSize: Qt.size(36, 36)
             }
         }
 

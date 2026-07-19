@@ -35,7 +35,7 @@ A Quickshell shell for Hyprland 0.55+. Uses matugen colors, smart desktop clock 
 ## Features
 
 - **Top bar** — Workspaces, window title, media controls, tray. Floating or hugging layout.
-- **Quick settings** — NetworkManager, Blueman, Pipewire volume, hyprsunset night light, caffeine toggle.
+- **Quick settings** — NetworkManager, Pipewire volume, hyprsunset night light, caffeine toggle.
 - **Launcher** — App search, emoji picker (`:`), clipboard (`;`). Context widgets for math, translation, colors, whois, unit conversions...
 - **Desktop clock** — Horizontal, vertical, analog, or word (text) layouts. Auto positions finding the least busy spot for itself.
 - **Wallpaper picker** — Directory browser with breadcrumb and image preview.
@@ -91,7 +91,7 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"
 
 - **Core**: `quickshell`, `hyprland`, `hyprsunset`
 - **Visuals**: `matugen`, `awww`, `cava`
-- **Services**: `networkmanager`, `blueman`, `pipewire`, `wireplumber`, `bluez`, `bluez-utils`
+- **Services**: `networkmanager`, `pipewire`, `wireplumber`, `bluez`, `bluez-utils`
 - **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
 - **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`
 - **Python Stack**: `python`, `python-numpy`, `python-pillow`, `python-scipy`, `python-matplotlib`, `python-gtts`
@@ -99,7 +99,7 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"
 
 ```bash
 yay -Q quickshell hyprland hyprsunset matugen awww cava\
-        networkmanager blueman pipewire wireplumber bluez bluez-utils \
+        networkmanager pipewire wireplumber bluez bluez-utils \
         qt6-declarative qt6-5compat qt6-svg clipvault rdap kakasi \
         mpv wl-clipboard xdg-utils pavucontrol inter-font \
         python python-numpy python-pillow python-scipy python-matplotlib python-gtts ttf-roboto-mono \

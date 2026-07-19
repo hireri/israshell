@@ -90,13 +90,11 @@ Item {
             ColorAnimation { duration: 150 }
         }
 
-        Image {
+        IconImage {
             id: appIcon
             anchors.centerIn: parent
-            width: 18
-            height: 18
+            implicitSize: 18
             source: root.iconPath
-            fillMode: Image.PreserveAspectFit
             asynchronous: true
 
             scale: mouseArea.containsMouse && !root.dragging ? 1.12 : 1.0

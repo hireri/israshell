@@ -320,6 +320,9 @@ Rectangle {
                                         fillMode: Image.PreserveAspectCrop
                                         smooth: true
                                         antialiasing: true
+                                        asynchronous: true
+                                        cache: true
+                                        sourceSize: Qt.size(24, 24)
                                     }
                                 }
 

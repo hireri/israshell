@@ -216,14 +216,13 @@ Item {
                     height: 44
                     radius: 22
                     color: Colors.md3.surface_container_high
+                    antialiasing: true
 
                     Image {
                         anchors.fill: parent
                         source: "file://" + Quickshell.env("HOME") + "/.face"
                         sourceSize: Qt.size(44, 44)
                         fillMode: Image.PreserveAspectCrop
-                        antialiasing: true
-                        smooth: true
                     }
                 }
 
@@ -267,6 +266,7 @@ Item {
                     orientation: ListView.Horizontal
                     spacing: 6
                     boundsBehavior: Flickable.StopAtBounds
+                    cacheBuffer: 0
 
                     Behavior on contentX {
                         NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
@@ -423,6 +423,9 @@ Item {
                         fillMode: Image.PreserveAspectCrop
                         antialiasing: true
                         smooth: true
+                        asynchronous: true
+                        cache: true
+                        sourceSize: Qt.size(72, 72)
                         layer.enabled: true
                         layer.smooth: true
 

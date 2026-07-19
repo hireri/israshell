@@ -327,6 +327,7 @@ Item {
 
         width: contentWidth
         model: dockListModel
+        cacheBuffer: 0
 
         add: Transition {
             NumberAnimation { property: "scale"; from: 0.4; to: 1.0; duration: 180; easing.type: Easing.OutBack }

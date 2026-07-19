@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Widgets
 import qs.style
 import qs.services
+import qs.icons
 
 MouseArea {
     id: group
@@ -455,7 +456,7 @@ MouseArea {
                 Rectangle {
                     visible: group.canExpand
                     anchors.verticalCenter: parent.verticalCenter
-                    implicitWidth: pillRow.implicitWidth + 20
+                    implicitWidth: pillRow.implicitWidth + 12
                     implicitHeight: 20
                     radius: 10
                     color: group.isCritical ? Qt.alpha(Colors.md3.secondary, 0.1) : Colors.md3.surface_container_highest
@@ -468,21 +469,22 @@ MouseArea {
                     RowLayout {
                         id: pillRow
                         anchors.centerIn: parent
-                        spacing: 6
+                        spacing: 0
                         Text {
                             visible: group.count > 1
                             text: group.count
                             color: group.isCritical ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
                             font.family: Config.fontFamily
+                            Layout.leftMargin: 4
                             font.pixelSize: 10
                             font.bold: true
                         }
-                        Text {
-                            text: ""
+                        MaterialIcon {
+                            name: "keyboard-arrow-down"
                             color: group.isCritical ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
-                            font.family: Config.fontFamily
-                            font.pixelSize: 11
                             rotation: group.expandedState ? 180 : 0
+                            width: 18
+                            height: width
                             Behavior on rotation {
                                 NumberAnimation {
                                     duration: 300
@@ -491,6 +493,7 @@ MouseArea {
                             }
                         }
                     }
+
                     MouseArea {
                         id: pillHov
                         anchors.fill: parent
@@ -529,12 +532,13 @@ MouseArea {
                             radius: 14
                             color: group.isCritical ? Colors.md3.primary : (group.inPanel ? Colors.md3.surface_container : Colors.md3.surface_container_high)
 
-                            Text {
-                                text: group.isCritical ? "" : "󰂚"
+                            MaterialIcon {
+                                name: group.isCritical ? "brightness-alert" : "notification-active"
                                 color: group.isCritical ? Colors.md3.on_primary : Colors.md3.on_surface_variant
                                 anchors.centerIn: parent
-                                font.pixelSize: 26
-                                font.family: Config.fontFamily
+                                width: 32
+                                filled: true
+                                height: width
                                 visible: group._mainIcon === ""
                             }
 
@@ -563,6 +567,8 @@ MouseArea {
                                 anchors.margins: 2
                                 source: group._badgeIcon
                                 fillMode: Image.PreserveAspectFit
+                                sourceSize: Qt.size(44, 44)
+                                asynchronous: true
                             }
                         }
                     }

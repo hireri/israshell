@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Widgets
 import QtQuick.Controls.Basic
@@ -119,6 +120,7 @@ SettingRow {
                     anchors.fill: parent
                     model: combo.delegateModel
                     clip: false
+                    cacheBuffer: 0
                 }
             }
         }

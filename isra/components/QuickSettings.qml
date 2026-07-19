@@ -361,6 +361,7 @@ Item {
                                     font.family: Config.fontFamily
                                     font.pixelSize: 14
                                     font.weight: Font.Bold
+                                    renderType: Text.NativeRendering
                                 }
                             }
 
@@ -376,6 +377,7 @@ Item {
                                     font.family: Config.fontFamily
                                     font.pixelSize: 14
                                     font.weight: Font.DemiBold
+                                    renderType: Text.NativeRendering
                                 }
 
                                 Text {
@@ -385,6 +387,7 @@ Item {
                                     color: Colors.md3.on_surface_variant
                                     font.family: Config.fontFamily
                                     font.pixelSize: 11
+                                    renderType: Text.NativeRendering
                                 }
                             }
                         }
@@ -716,7 +719,6 @@ Item {
                                     Layout.fillHeight: true
                                     radius: 10
                                     color: Colors.md3.surface_container_high
-
                                     Text {
                                         anchors.centerIn: parent
                                         text: NotificationService.qsGroupModel.count === 0 ? "No notifications" : NotificationService.qsGroupModel.count + " notification" + (NotificationService.qsGroupModel.count === 1 ? "" : "s")
@@ -724,6 +726,7 @@ Item {
                                         font.family: Config.fontFamily
                                         font.weight: Font.Medium
                                         color: Colors.md3.on_surface
+                                        renderType: Text.NativeRendering
                                     }
                                 }
 
@@ -806,6 +809,7 @@ Item {
                                         anchors.centerIn: parent
                                         text: "(˶˃ ᵕ ˂˶) .ᐟ.ᐟ"
                                         font.pixelSize: 32
+                                        renderType: Text.NativeRendering
                                         color: Colors.md3.on_primary_container
                                     }
                                 }
@@ -814,6 +818,7 @@ Item {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: "All caught up . . !"
                                     font.pixelSize: 16
+                                    renderType: Text.NativeRendering
                                     font.family: Config.fontFamily
                                     color: Colors.md3.on_surface_variant
                                     opacity: 0.8
@@ -963,6 +968,7 @@ Item {
                     font.family: Config.fontFamily
                     color: Colors.md3.on_surface
                     elide: Text.ElideRight
+                    renderType: Text.NativeRendering
                 }
 
                 Text {
@@ -973,6 +979,7 @@ Item {
                     color: Colors.md3.on_surface_variant
                     elide: Text.ElideRight
                     visible: wideChip.sublabel !== ""
+                    renderType: Text.NativeRendering
                 }
             }
         }

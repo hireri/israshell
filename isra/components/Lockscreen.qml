@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Qt5Compat.GraphicalEffects
 import Quickshell
@@ -24,6 +25,9 @@ Item {
                 source: WallpaperService.currentWall ? ("file://" + WallpaperService.currentWallPreview) : ""
                 fillMode: Image.PreserveAspectCrop
                 visible: false
+                sourceSize.width: lockSurface.screen ? Math.max(1, Math.round(lockSurface.screen.width * lockSurface.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 480
+                sourceSize.height: lockSurface.screen ? Math.max(1, Math.round(lockSurface.screen.height * lockSurface.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 270
+                smooth: false
 
                 readonly property bool settled: status === Image.Ready || status === Image.Error || source === ""
             }

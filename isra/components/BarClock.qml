@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -29,6 +30,12 @@ Item {
         interval: 380
         onTriggered: if (!root.isOpen)
             root._calVisible = false
+    }
+
+    TransformWatcher {
+        id: pillTransform
+        a: root
+        b: root.panelWindow.contentItem
     }
 
     Rectangle {
@@ -78,6 +85,7 @@ Item {
                     font.family: Config.fontFamily
                     font.pixelSize: 14
                     anchors.verticalCenter: parent.verticalCenter
+                    renderType: Text.NativeRendering
                 }
             }
 
@@ -89,6 +97,7 @@ Item {
                 opacity: 0.5
                 visible: weatherGlance.visible && (clockTime.visible || clockDate.visible)
                 anchors.verticalCenter: parent.verticalCenter
+                renderType: Text.NativeRendering
             }
 
             Text {
@@ -102,6 +111,7 @@ Item {
                 text: LocaleService.barTimeText
                 visible: text !== ""
                 anchors.verticalCenter: parent.verticalCenter
+                renderType: Text.NativeRendering
             }
 
             Text {
@@ -112,6 +122,7 @@ Item {
                 opacity: 0.5
                 visible: clockTime.visible && clockDate.visible
                 anchors.verticalCenter: parent.verticalCenter
+                renderType: Text.NativeRendering
             }
 
             Text {
@@ -125,6 +136,7 @@ Item {
                 text: LocaleService.barDateText
                 visible: text !== ""
                 anchors.verticalCenter: parent.verticalCenter
+                renderType: Text.NativeRendering
             }
         }
 
@@ -162,6 +174,8 @@ Item {
             anchor.gravity: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Right
 
             anchor.rect: {
+                pillTransform.transform;
+
                 const pillCenterLocal = root.width / 2;
                 const mappedPoint = root.mapToItem(root.panelWindow.contentItem, pillCenterLocal, 0);
                 

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 
@@ -15,6 +16,7 @@ ListView {
 
     clip: false
     interactive: false
+    cacheBuffer: 0
 
     add: Transition {
         ParallelAnimation {

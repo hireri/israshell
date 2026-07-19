@@ -101,6 +101,7 @@ Item {
                 asynchronous: true
                 mipmap: true
                 autoTransform: true
+                sourceSize.width: 640
             }
         }
     }

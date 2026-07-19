@@ -146,7 +146,8 @@ Item {
                     video=\"$1\"
                     cache_dir=\"$HOME/.cache/isra/wallpaper-frames\"
                     mkdir -p \"$cache_dir\"
-                    key=$(printf '%s' \"$video\" | sha256sum | cut -d' ' -f1)
+                    mtime=$(stat -c '%Y' \"$video\" 2>/dev/null || echo 0)
+                    key=$(printf '%s:%s' \"$video\" \"$mtime\" | sha256sum | cut -d' ' -f1)
                     frame=\"$cache_dir/$key.png\"
                     if [ -s \"$frame\" ]; then printf '%s' \"$frame\"; exit 0; fi
                     ffmpeg -y -i \"$video\" -vf \"thumbnail,scale=320:-1\" -frames:v 1 \"$frame\" -loglevel error >/dev/null 2>&1 && printf '%s' \"$frame\"
@@ -188,10 +189,13 @@ Item {
                     }
                 }
 
+                property string _lastRebuildKey: ""
+
                 function rebuildModel(query, entries) {
                     const q = (query ?? "").toLowerCase().trim();
                     const src = entries ?? WallpaperService.entries;
                     const filtered = q ? src.filter(e => e.name.toLowerCase().includes(q)) : src;
+                    
                     const sorted = [...filtered].sort((a, b) => {
                         if (a.isDir !== b.isDir)
                             return a.isDir ? -1 : 1;
@@ -199,9 +203,17 @@ Item {
                             sensitivity: 'base'
                         });
                     });
+
+                    const key = sorted.map(e => e.path).join("\u0001");
+                    if (key === panel._lastRebuildKey)
+                        return;
+                    panel._lastRebuildKey = key;
+
+                    grid.visible = false;
                     panel.gridModel.clear();
-                    for (const e of sorted)
-                        panel.gridModel.append(e);
+                    
+                    panel.gridModel.append(sorted);
+                    grid.visible = true;
 
                     if (root.isOpen && !q && WallpaperService.currentWall) {
                         Qt.callLater(() => {
@@ -305,7 +317,7 @@ Item {
 
                     Timer {
                         id: searchDebounce
-                        interval: 120
+                        interval: 200
                         onTriggered: panel.searchQuery = searchInput.text
                     }
 
@@ -331,7 +343,7 @@ Item {
                                 return panel.imageInset + imgH + panel.textAreaH + panel.cardMargin * 2;
                             }
 
-                            cacheBuffer: 600
+                            cacheBuffer: 200
                             flickableDirection: Flickable.VerticalFlick
                             boundsBehavior: Flickable.DragOverBounds
                             pixelAligned: true
@@ -846,17 +858,28 @@ Item {
 
         property string thumbPath: ""
         property bool thumbRequested: false
+        property int thumbAttempts: 0
 
         function ensureThumbnail() {
             if (!card.isVideo || card.thumbRequested)
                 return;
+            
+            if (!card.GridView.view)
+                return;
+
             card.thumbRequested = true;
             thumbQueue.request(() => {
                 thumbProc.running = true;
             });
         }
 
-        Component.onCompleted: card.ensureThumbnail()
+
+        Timer {
+            interval: 100
+            running: card.isVideo && !card.thumbRequested
+            repeat: true
+            onTriggered: card.ensureThumbnail()
+        }
 
         Process {
             id: thumbProc
@@ -865,8 +888,12 @@ Item {
                 id: thumbCollector
                 onStreamFinished: {
                     const p = thumbCollector.text.trim();
-                    if (p)
+                    if (p) {
                         card.thumbPath = p;
+                    } else if (card.thumbAttempts < 1) {
+                        card.thumbAttempts++;
+                        card.thumbRequested = false;
+                    }
                     thumbQueue.release();
                 }
             }
@@ -964,11 +991,13 @@ Item {
                         return "file://" + card.entryPath;
                     }
                     fillMode: Image.PreserveAspectCrop
-                    sourceSize.width: Math.round(imageClip.width)
-                    sourceSize.height: Math.round(imageClip.height)
+                    
+                    sourceSize.width: Math.round((grid.cellWidth - panel.cardMargin * 2) - panel.imageInset * 2)
+                    sourceSize.height: Math.round(((grid.cellWidth - panel.cardMargin * 2) - panel.imageInset * 2) * 9 / 16)
+                    
                     asynchronous: true
                     smooth: false
-                    cache: false
+                    cache: true
                     opacity: status === Image.Ready ? 1 : 0
                     Behavior on opacity {
                         NumberAnimation {

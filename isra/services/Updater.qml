@@ -63,7 +63,7 @@ Singleton {
                 const missing = _depProc._stdout.trim().split("\n").filter(s => s.length > 0);
                 console.warn("[Updater] missing dependencies:", missing.join(", "));
                 if (missing.length > 0)
-                    _notify("Missing dependencies", "These packages are required:\n" + missing.join(", "), "dialog-warning", "critical", 0);
+                    _notify("Missing dependencies", "These packages are required:\n" + missing.join(", "), "critical", 0);
             } else if (code === 2) {
                 console.warn("[Updater] check-deps.sh error — deps file missing?");
             }
@@ -105,7 +105,7 @@ Singleton {
                 _promptUpdate();
             } else if (code === 2) {
                 console.warn("[Updater] check-update.sh returned error");
-                _notify("Update check failed", "Could not reach GitHub.", "network-error", "normal", 8000);
+                _notify("Update check failed", "Could not reach GitHub.", "normal", 8000);
             } else {
                 console.log("[Updater] already up to date");
                 root._updateAvailable = false;
@@ -162,7 +162,7 @@ Singleton {
                 root._updateAvailable = false;
             } else {
                 console.warn("[Updater] do-update.sh failed:\n" + out);
-                _notify("Update failed", "Something went wrong, check shell logs for details.", "dialog-error", "critical", 0);
+                _notify("Update failed", "Something went wrong, check shell logs for details.", "critical", 0);
             }
         }
     }
@@ -218,13 +218,13 @@ Singleton {
         }
         console.log("[Updater] starting apply");
         root._applyInProgress = true;
-        _notify("Updating QuickShell...", root._currentVersion + " → " + root._latestVersion + "\nThis will only take a moment.", "software-update-available", "low", 6000);
+        _notify("Updating QuickShell...", root._currentVersion + " → " + root._latestVersion + "\nThis will only take a moment.", "low", 6000);
         _applyProc.running = true;
     }
 
-    function _notify(summary, body, icon, urgency, timeout) {
+    function _notify(summary, body, urgency, timeout) {
         const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        proc.command = ["notify-send", "-u", urgency, "-i", icon, "-a", "QuickShell", "-t", String(timeout ?? 5000), summary, body];
+        proc.command = ["notify-send", "-u", urgency, "-a", "QuickShell", "-t", String(timeout ?? 5000), summary, body];
         proc.onExited.connect(() => proc.destroy());
         proc.running = true;
     }
