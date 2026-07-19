@@ -199,7 +199,7 @@ Singleton {
 
         const barDateFmt = Config.dateFormat !== "" ? Config.dateFormat : root._dynamicDateFormat();
         _barDateText = Qt.formatDateTime(now, barDateFmt);
-        _shortDateText = Qt.formatDateTime(now, "ddd, " + barDateFmt);
+        _shortDateText = Qt.formatDateTime(now, Config.dateOrder === 1 ? "ddd, MMM dd" : "ddd, dd MMM");
 
         root._updateAstroEvent(now);
     }

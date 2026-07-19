@@ -83,8 +83,6 @@ PageBase {
 
         SettingChips {
             label: "Date order"
-            enabled: Config.dateFormat === ""
-            opacity: Config.dateFormat === "" ? 1 : 0.6
             options: [
                 {
                     label: "Day first",
