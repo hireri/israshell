@@ -72,7 +72,7 @@ Item {
 
     Timer {
         id: smoothTimer
-        interval: 16
+        interval: 26
         running: (Config.cava.enabled || visualizer.useMock) && visualizer.visible && !visualizer.pause
         repeat: true
         onTriggered: {
