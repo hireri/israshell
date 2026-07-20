@@ -30,11 +30,9 @@ PageBase {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 16
 
-                Image {
-                    source: Quickshell.iconPath(SystemInfo.logo) || "image://icon/" + SystemInfo.logo
-                    sourceSize.width: 96
-                    sourceSize.height: 96
-                    fillMode: Image.PreserveAspectFit
+                IconImage {
+                    source: Quickshell.iconPath(SystemInfo.logo, "distributor-logo-linux")
+                    implicitSize: 96
                     smooth: true
                 }
 

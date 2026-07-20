@@ -124,15 +124,15 @@ Item {
                             var yPos = Config.bar.position === 1 ? 0 : cell.height;
                             tooltip.targetPos = cell.mapToGlobal(cell.width / 2, yPos);
                             tooltip.tipTitle = name;
-                            tooltip.visible = true;
+                            tooltip.open = true;
                         }
-                        onExited: tooltip.visible = false
+                        onExited: tooltip.open = false
 
                         onClicked: mouse => {
                             if (mouse.button === Qt.LeftButton) {
                                 cell.modelData?.activate();
                             } else if (mouse.button === Qt.RightButton) {
-                                tooltip.visible = false;
+                                tooltip.open = false;
                                 var yEdge = Config.bar.position === 1 ? 0 : cell.height;
                                 var globalPos = cell.mapToGlobal(cell.width / 2, yEdge);
                                 menu.open(cell.modelData, globalPos);

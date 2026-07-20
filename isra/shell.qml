@@ -317,16 +317,22 @@ ShellRoot {
                 panelWindow: window
             }
 
-            readonly property var barWidgetComponents: ({
-                    activeWindow: activeWindowComponent,
+            Component { id: workspacesComponent; Workspaces { panelWindow: window } }
+            Component { id: mediaComponent; MediaPlayer { panelScreen: screenScope.modelData } }
+            Component { id: clockComponent; BarClock { panelWindow: window } }
+            Component { id: screencapComponent; ScreencapControls { panelWindow: window } }
+            Component { id: trayComponent; TrayWidget { panelWindow: window } }
+            Component { id: quicksettingsComponent; QuickSettings { panelWindow: window } }
+            Component { id: sysMonitorComponent; SysMonitor { panelWindow: window } }
+
+            readonly property var barWidgetComponents: Object.assign({}, WidgetService.componentMap, {
                     workspaces: workspacesComponent,
                     media: mediaComponent,
                     clock: clockComponent,
                     screencap: screencapComponent,
                     tray: trayComponent,
                     quicksettings: quicksettingsComponent,
-                    dock: dockComponent,
-                    launcher: launcherBtnComponent
+                    sysMonitor: sysMonitorComponent
                 })
 
             function isWidgetDisabled(id) {
@@ -348,16 +354,6 @@ ShellRoot {
             readonly property var visibleBarLeft: Config.bar.left.filter(id => !isWidgetDisabled(id))
             readonly property var visibleBarRight: Config.bar.right.filter(id => !isWidgetDisabled(id))
             readonly property var visibleBarCenterItems: Config.bar.center.items.filter(id => !isWidgetDisabled(id))
-
-            Component { id: activeWindowComponent; ActiveWindow {} }
-            Component { id: workspacesComponent; Workspaces { panelWindow: window } }
-            Component { id: mediaComponent; MediaPlayer { panelScreen: screenScope.modelData } }
-            Component { id: clockComponent; BarClock { panelWindow: window } }
-            Component { id: screencapComponent; ScreencapControls { panelWindow: window } }
-            Component { id: trayComponent; TrayWidget { panelWindow: window } }
-            Component { id: quicksettingsComponent; QuickSettings { panelWindow: window } }
-            Component { id: dockComponent; BarDock {} }
-            Component { id: launcherBtnComponent; LauncherButton {} }
 
             PanelWindow {
                 id: window

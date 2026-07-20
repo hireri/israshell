@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Controls.Basic
 import qs.style
 import qs.icons
+import qs.services
 
 Item {
     id: root
@@ -17,6 +18,9 @@ Item {
     property var rightIds: []
     property var disabledIds: []
     property bool isLast: false
+
+    property var allWidgetIds: []
+    property var widgetLabels: ({})
 
     signal orderChanged(var newLeft, var newCenter, var newRight, var newDisabled)
 
@@ -38,6 +42,9 @@ Item {
     }
 
     function _displayName(id) {
+        const known = WidgetService.labelMap[id];
+        if (known)
+            return known;
         return id.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase());
     }
 
@@ -49,17 +56,56 @@ Item {
         const anchor = (root.centerData && typeof root.centerData.anchor === "string") ? root.centerData.anchor : "";
         const disabledSet = new Set(Array.isArray(root.disabledIds) ? root.disabledIds : []);
 
+        const positioned = new Set([...leftItems, ...centerItems, ...rightItems]);
+        
+        const fallbackLeft = [];
+        const fallbackCenter = [];
+        const fallbackRight = [];
+
+        const defaultZoneMap = {};
+        if (Array.isArray(WidgetService.definitions)) {
+            for (const def of WidgetService.definitions) {
+                defaultZoneMap[def.id] = def.defaultZone;
+            }
+        }
+
+        const allPossibleIds = new Set([...WidgetService.allIds, ...disabledSet]);
+        for (const id of allPossibleIds) {
+            if (!positioned.has(id)) {
+                disabledSet.add(id);
+                
+                const targetZone = defaultZoneMap[id] || "left";
+                if (targetZone === "center") {
+                    fallbackCenter.push(id);
+                } else if (targetZone === "right") {
+                    fallbackRight.push(id);
+                } else {
+                    fallbackLeft.push(id);
+                }
+            }
+        }
+
         widgetModel.append({ kind: "sep", zone: "left", widgetId: "", pivot: false, hidden: false });
         for (const id of leftItems)
             widgetModel.append({ kind: "item", zone: "left", widgetId: id, pivot: false, hidden: disabledSet.has(id) });
+        for (const id of fallbackLeft)
+            widgetModel.append({ kind: "item", zone: "left", widgetId: id, pivot: false, hidden: true });
 
         widgetModel.append({ kind: "sep", zone: "center", widgetId: "", pivot: false, hidden: false });
         for (const id of centerItems)
             widgetModel.append({ kind: "item", zone: "center", widgetId: id, pivot: id === anchor, hidden: disabledSet.has(id) });
+        for (const id of fallbackCenter)
+            widgetModel.append({ kind: "item", zone: "center", widgetId: id, pivot: false, hidden: true });
 
         widgetModel.append({ kind: "sep", zone: "right", widgetId: "", pivot: false, hidden: false });
         for (const id of rightItems)
             widgetModel.append({ kind: "item", zone: "right", widgetId: id, pivot: false, hidden: disabledSet.has(id) });
+        for (const id of fallbackRight)
+            widgetModel.append({ kind: "item", zone: "right", widgetId: id, pivot: false, hidden: true });
+
+        const totalUnassigned = fallbackLeft.length + fallbackCenter.length + fallbackRight.length;
+        if (totalUnassigned > 0)
+            root._emit();
     }
 
     function _emit() {

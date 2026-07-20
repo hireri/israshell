@@ -191,9 +191,9 @@ Rectangle {
                     var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                     tooltipWindow.tipTitle = ScreencapService.isRecognizing ? "Stop Recognizing" : "Recognize Music";
-                    tooltipWindow.visible = true;
+                    tooltipWindow.open = true;
                 }
-                onExited: tooltipWindow.visible = false
+                onExited: tooltipWindow.open = false
             }
         }
 
@@ -273,9 +273,9 @@ Rectangle {
                     var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                     tooltipWindow.tipTitle = ScreencapService.isRecording ? "Stop Recording" : "Start Recording";
-                    tooltipWindow.visible = true;
+                    tooltipWindow.open = true;
                 }
-                onExited: tooltipWindow.visible = false
+                onExited: tooltipWindow.open = false
             }
         }
     }
@@ -310,9 +310,9 @@ Rectangle {
                 var yPos = Config.bar.position === 1 ? 0 : height;
                 tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
                 tooltipWindow.tipTitle = parent.tooltip;
-                tooltipWindow.visible = true;
+                tooltipWindow.open = true;
             }
-            onExited: tooltipWindow.visible = false
+            onExited: tooltipWindow.open = false
         }
     }
 }

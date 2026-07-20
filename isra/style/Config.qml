@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.services
 
 Singleton {
     id: configRoot
@@ -45,7 +46,17 @@ Singleton {
         useIcons: true,
         style: 0
     })
-    property var bar: ({
+    property var sysMonitor: ({
+        style: 0,                          // 0 = icon+percent, 1 = radial pie, 2 = small progress bar
+        metrics: ["cpu", "ram"],            // subset/order of: cpu, ram, gpu, temp, swap
+        showPercent: true,
+        smooth: true,
+        colored: true,
+        unifiedPill: false                 // false = each metric in its own pill, true = all metrics in one pill
+    })
+    function __barDefaults() {
+        const layout = WidgetService.defaultLayout();
+        return {
             mode: 0,                    // 0 = hugging, 1 = rect,   2 = floating
             position: 0,                // 0 = top,     1 = bottom
             transparency: 0,            // 0 = solid,   1 = opaque, 2 = transparent
@@ -57,15 +68,18 @@ Singleton {
             tintTrayIcons: false,
             trayBlacklist: ["spotify", "blueman", "Network"],
 
-            left: ["activeWindow"],
+            left: layout.left,
             center: {
                 mode: "anchor",         // "auto" | "anchor"
                 anchor: "workspaces",
-                items: ["media", "workspaces", "dock", "clock", "wallpaper"]
+                items: layout.center
             },
-            right: ["screencap", "tray", "quicksettings"],
-            disabled: ["dock"]
-        })
+            right: layout.right,
+            disabled: layout.disabled
+        };
+    }
+
+    property var bar: __barDefaults()
     property var nightLight: ({
             scheduleEnabled: true,
             autoDarkMode: false,
@@ -184,27 +198,15 @@ Singleton {
                 useIcons: true,
                 style: 0
             },
-            bar: {
-                mode: 0,
-                position: 0,
-                transparency: 0,
-                transparentPills: false,
-
-                spinningCover: true,
-                playerMode: 0,
-
-                tintTrayIcons: false,
-                trayBlacklist: ["spotify", "blueman", "Network"],
-
-                left: ["activeWindow"],
-                center: {
-                    mode: "anchor",
-                    anchor: "workspaces",
-                    items: ["media", "workspaces", "dock", "clock", "wallpaper"]
-                },
-                right: ["screencap", "tray", "quicksettings"],
-                disabled: ["dock"]
+            sysMonitor: {
+                style: 0,
+                metrics: ["cpu", "ram"],
+                showPercent: true,
+                smooth: true,
+                colored: true,
+                unifiedPill: false
             },
+            bar: __barDefaults(),
             nightLight: {
                 scheduleEnabled: true,
                 autoDarkMode: false,
@@ -325,6 +327,8 @@ Singleton {
         for (const key in defs) {
             result[key] = __deepMergeObj(defs[key], data[key]);
         }
+        if (result.bar)
+            result.bar = WidgetService.reconcile(result.bar);
         return result;
     }
 

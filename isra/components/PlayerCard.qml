@@ -991,8 +991,6 @@ CAVAEOF`]
             id: cavaViz
             anchors.fill: parent
             opacity: root.player !== null ? 0.28 : 0
-            renderTarget: FramebufferObject
-            renderStrategy: Threaded
             Behavior on opacity {
                 NumberAnimation {
                     duration: 600

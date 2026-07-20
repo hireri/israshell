@@ -259,6 +259,29 @@ PageBase {
         label: "Widget order"
         Layout.fillWidth: true
 
+        SettingChips {
+            label: "Center layout mode"
+            sublabel: currentValue === "auto" ? "Automatically fills center space" : "Pins space around a selected anchor widget"
+            options: [
+                {
+                    label: "Auto",
+                    value: "auto"
+                },
+                {
+                    label: "Anchor",
+                    value: "anchor"
+                }
+            ]
+            currentValue: Config.bar.center?.mode || "auto"
+            onSelected: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
+                    center: Object.assign({}, Config.bar.center, {
+                        mode: v
+                    })
+                })
+            })
+        }
+
         WidgetOrderEditor {
             width: parent.width
             isLast: true
@@ -266,6 +289,8 @@ PageBase {
             centerData: Config.bar.center
             rightIds: Config.bar.right
             disabledIds: Config.bar.disabled
+            allWidgetIds: WidgetService.allIds
+            widgetLabels: WidgetService.labelMap
             onOrderChanged: (newLeft, newCenter, newRight, newDisabled) => Config.update({
                 bar: Object.assign({}, Config.bar, {
                     left: newLeft, center: newCenter, right: newRight, disabled: newDisabled
@@ -377,6 +402,81 @@ PageBase {
             currentValue: Config.osdPosition
             onSelected: v => Config.update({
                 osdPosition: v
+            })
+        }
+    }
+
+    SectionCard {
+        label: "System monitor"
+        Layout.fillWidth: true
+
+        SettingChips {
+            label: "Style"
+            sublabel: {
+                switch (currentValue) {
+                case 1:
+                    return "Circular pie charts";
+                case 2:
+                    return "Horizontal progress bars";
+                default:
+                    return "Minimal icons with text";
+                }
+            }
+            options: [
+                {
+                    label: "Icons",
+                    value: 0
+                },
+                {
+                    label: "Pie",
+                    value: 1
+                },
+                {
+                    label: "Bar",
+                    value: 2
+                }
+            ]
+            currentValue: Config.sysMonitor?.style ?? 0
+            onSelected: v => Config.update({
+                sysMonitor: Object.assign({}, Config.sysMonitor, {
+                    style: v
+                })
+            })
+        }
+
+        SettingSwitch {
+            label: "Unified pill"
+            sublabel: "Group all metrics into a single container background"
+            checked: Config.sysMonitor?.unifiedPill ?? false
+            onToggled: v => Config.update({
+                sysMonitor: Object.assign({}, Config.sysMonitor, {
+                    unifiedPill: v
+                })
+            })
+        }
+
+        SettingSwitch {
+            label: "Show percentages"
+            sublabel: (Config.sysMonitor?.style ?? 0) === 0 ? "Always enabled for standard icon style" : "Display numerical values next to indicators"
+            enabled: (Config.sysMonitor?.style ?? 0) !== 0
+            opacity: Config.sysMonitor?.style == 0 ? 0.6 : 1
+            checked: (Config.sysMonitor?.style ?? 0) === 0 ? true : (Config.sysMonitor?.showPercent ?? true)
+            onToggled: v => Config.update({
+                sysMonitor: Object.assign({}, Config.sysMonitor, {
+                    showPercent: v
+                })
+            })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: "Colored metrics"
+            sublabel: "Use distinct colors for each metric instead of the primary color"
+            checked: Config.sysMonitor?.colored ?? true
+            onToggled: v => Config.update({
+                sysMonitor: Object.assign({}, Config.sysMonitor, {
+                    colored: v
+                })
             })
         }
     }
