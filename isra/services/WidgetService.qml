@@ -23,7 +23,7 @@ Singleton {
         { id: "media",         label: "Media player",   defaultZone: "center",   component: mediaComp },
         { id: "clock",         label: "Clock",          defaultZone: "center",   component: clockComp },
         { id: "sysMonitor",    label: "System monitor", defaultZone: "right",    component: sysMonitorComp },
-        { id: "screencap",     label: "Screen capture", defaultZone: "right",    component: screencapComp },
+        { id: "screencap",     label: "Toolbar", defaultZone: "right",    component: screencapComp },
         { id: "tray",          label: "Tray",           defaultZone: "right",    component: trayComp },
         { id: "quicksettings", label: "Quick settings", defaultZone: "right",    component: quicksettingsComp },
         { id: "dock",          label: "Dock",           defaultZone: "disabled", component: dockComp },
