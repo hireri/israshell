@@ -37,6 +37,7 @@ ffmpeg
 libnotify
 jq
 file
+nvtop
 # AI / audio features
 songrec
 python
