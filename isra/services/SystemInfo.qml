@@ -44,6 +44,8 @@ Singleton {
 
     property string gpuPower: "—"
     property string cpuPower: "—"
+    property string cpuFreq: "—"
+    property string gpuFreq: "—"
 
     property var cpuHistory: []
     property var ramHistory: []
@@ -65,6 +67,8 @@ Singleton {
 
     property string _stageGpuPower: "—"
     property string _stageCpuPower: "—"
+    property string _stageCpuFreq: "—"
+    property string _stageGpuFreq: "—"
 
     property bool _isFirstRun: true
 
@@ -87,6 +91,8 @@ Singleton {
 
         root.gpuPower = root._stageGpuPower;
         root.cpuPower = root._stageCpuPower;
+        root.cpuFreq = root._stageCpuFreq;
+        root.gpuFreq = root._stageGpuFreq;
         
         if (root._stageCpuTemp !== -1) root.cpuTemp = root._stageCpuTemp;
         if (root._stageGpuUsage !== -1) root.gpuUsage = root._stageGpuUsage;
@@ -146,6 +152,15 @@ Singleton {
             fileMemInfo.reload();
             tempProc.running = true;
             gpuProc.running = true;
+            cpuFreqProc.running = true;
+        }
+    }
+
+    Process {
+        id: cpuFreqProc
+        command: ["sh", "-c", "awk '/cpu MHz/ {sum+=$4; count++} END {if (count>0) printf \"%.1f GHz\", sum/count/1000; else print \"—\"}' /proc/cpuinfo"]
+        stdout: SplitParser {
+            onRead: data => root._stageCpuFreq = data.trim()
         }
     }
 
@@ -287,6 +302,9 @@ Singleton {
                             if (!isNaN(usage)) root._stageGpuUsage = Math.max(0, Math.min(100, usage));
                             if (!isNaN(temp)) root._stageGpuTemp = temp;
                             root._stageGpuPower = gpuDev.power_draw ? gpuDev.power_draw.trim() : "—";
+                            
+                            let gClk = gpuDev.gpu_clock;
+                            root._stageGpuFreq = (gClk && !isNaN(parseInt(gClk, 10))) ? parseInt(gClk, 10) + " MHz" : "—";
                         }
 
                         if (cpuDev) {

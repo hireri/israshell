@@ -479,6 +479,66 @@ PageBase {
                 })
             })
         }
+        SettingRow {
+            isLast: true
+            label: "Glance metrics"
+            sublabel: "Toggle individual metrics on the bar"
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
+                }
+            }
+
+            Flow {
+                width: 220
+                spacing: 6
+
+                readonly property var actions: [
+                    {
+                        key: "cpu",
+                        label: "CPU"
+                    },
+                    {
+                        key: "ram",
+                        label: "RAM"
+                    },
+                    {
+                        key: "gpu",
+                        label: "GPU"
+                    },
+                    {
+                        key: "temp",
+                        label: "Temperature"
+                    },
+                    {
+                        key: "swap",
+                        label: "Swap"
+                    }
+                ]
+
+                Repeater {
+                    model: parent.actions
+
+                    FilterChip {
+                        required property var modelData
+                        label: modelData.label
+                        active: Config.sysMonitor.metrics.includes(modelData.key)
+                        onToggled: isActive => {
+                            const key = modelData.key;
+                            const metricsList = Config.sysMonitor.metrics;
+                            const updated = isActive ? metricsList.concat([key]) : metricsList.filter(x => x !== key);
+                            
+                            Config.update({
+                                sysMonitor: Object.assign({}, Config.sysMonitor, {
+                                    metrics: updated
+                                })
+                            });
+                        }
+                    }
+                }
+            }
+        }
     }
 
     SectionCard {

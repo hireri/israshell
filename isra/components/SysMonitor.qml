@@ -39,7 +39,8 @@ Item {
         case "cpu":  return SystemInfo.cpuUsage;
         case "ram":  return SystemInfo.ramUsage;
         case "gpu":  return Math.max(0, SystemInfo.gpuUsage);
-        case "temp": return SystemInfo.cpuTemp;
+        case "temp":
+            return Math.max(SystemInfo.cpuTemp, SystemInfo.gpuTemp);
         case "swap": return SystemInfo.swapUsage;
         }
         return 0;
@@ -48,7 +49,7 @@ Item {
     function metricAvailable(id) {
         switch (id) {
         case "gpu":  return SystemInfo.gpuUsage >= 0;
-        case "temp": return SystemInfo.cpuTemp >= 0;
+        case "temp": return SystemInfo.cpuTemp >= 0 || SystemInfo.gpuTemp >= 0;
         default:     return true;
         }
     }
@@ -57,22 +58,20 @@ Item {
         switch (id) {
         case "cpu":  
             let cpuName = SystemInfo.cpu.replace(/ \d+-Core| Processor| CPU/gi, "").trim();
-            let cpuTempStr = SystemInfo.cpuTemp >= 0 ? Math.round(SystemInfo.cpuTemp) + "°C" : "";
-            if (SystemInfo.cpuPower !== "—" && SystemInfo.cpuPower !== "") {
-                cpuTempStr += " • " + SystemInfo.cpuPower;
-            }
-            return cpuName + (cpuTempStr ? "\n" + cpuTempStr : "");
+            let cpuSpecs = [];
+            if (SystemInfo.cpuFreq !== "—" && SystemInfo.cpuFreq !== "") cpuSpecs.push(SystemInfo.cpuFreq);
+            if (SystemInfo.cpuPower !== "—" && SystemInfo.cpuPower !== "") cpuSpecs.push(SystemInfo.cpuPower);
+            return cpuName + (cpuSpecs.length > 0 ? "\n" + cpuSpecs.join(" • ") : "");
 
         case "ram":  
             return SystemInfo.ramUsedLabel + " / " + SystemInfo.ramTotalLabel;
 
         case "gpu":  
             let gpuName = SystemInfo.gpu.replace(/AMD |NVIDIA |Intel /gi, "").trim();
-            let gpuTempStr = SystemInfo.gpuTemp >= 0 ? Math.round(SystemInfo.gpuTemp) + "°C" : "";
-            if (SystemInfo.gpuPower !== "—" && SystemInfo.gpuPower !== "") {
-                gpuTempStr += " • " + SystemInfo.gpuPower;
-            }
-            return gpuName + (gpuTempStr ? "\n" + gpuTempStr : "");
+            let gpuSpecs = [];
+            if (SystemInfo.gpuFreq !== "—" && SystemInfo.gpuFreq !== "") gpuSpecs.push(SystemInfo.gpuFreq);
+            if (SystemInfo.gpuPower !== "—" && SystemInfo.gpuPower !== "") gpuSpecs.push(SystemInfo.gpuPower);
+            return gpuName + (gpuSpecs.length > 0 ? "\n" + gpuSpecs.join(" • ") : "");
 
         case "temp": 
             let tempParts = [];
@@ -386,7 +385,9 @@ Item {
                     }
 
                     Text {
-                        text: metricDelegate.liveAvailable ? Math.round(metricDelegate.liveValue) + "%" : "—"
+                        text: metricDelegate.liveAvailable 
+                                ? Math.round(metricDelegate.liveValue) + (metricDelegate.modelData.id === "temp" ? "°C" : "%") 
+                                : "—"
                         color: Colors.md3.on_surface
                         font.family: Config.fontFamily
                         font.pixelSize: 15
