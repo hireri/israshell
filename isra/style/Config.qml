@@ -62,6 +62,9 @@ Singleton {
             transparency: 0,            // 0 = solid,   1 = opaque, 2 = transparent
             transparentPills: false,
 
+            showClock: true,
+            showDate: true,
+
             spinningCover: true,
             playerMode: 0,
 

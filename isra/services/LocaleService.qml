@@ -122,6 +122,17 @@ Singleton {
         }
     }
 
+    Connections {
+        target: NetworkService
+        function onIsOnlineChanged() {
+            if (NetworkService.isOnline) {
+                console.log("[LocaleService] Connection back online. Re-fetching data.");
+                root._maybeFetchAqi();
+                root._fetchWeather();
+            }
+        }
+    }
+
     property var _clockTimer: Timer {
         interval: 100
         running: true
@@ -130,9 +141,9 @@ Singleton {
         onTriggered: root._updateClock()
     }
 
-    
-
     function _resolveCityCoords(cityName, callback) {
+        if (!NetworkService.isOnline) return;
+
         const url = "https://geocoding-api.open-meteo.com/v1/search"
             + "?name=" + encodeURIComponent(cityName)
             + "&count=1"
@@ -330,13 +341,19 @@ Singleton {
 
     property var _weatherTimer: Timer {
         interval: 900000
-        running: true
+        running: NetworkService.isOnline
         repeat: true
         triggeredOnStart: true
         onTriggered: root._fetchWeather()
     }
 
     function _fetchWeather() {
+        if (!NetworkService.isOnline) {
+            root._weatherError = "Offline";
+            root._weatherLoading = false;
+            return;
+        }
+
         if (!_coordsKnown) {
             root._maybeFetchAqi();
             return;
@@ -481,13 +498,19 @@ Singleton {
 
     property var _aqiTimer: Timer {
         interval: 1800000
-        running: true
+        running: NetworkService.isOnline
         repeat: true
         triggeredOnStart: true
         onTriggered: root._maybeFetchAqi()
     }
 
     function _maybeFetchAqi() {
+        if (!NetworkService.isOnline) {
+            root._aqiError = "Offline";
+            root._aqiLoading = false;
+            return;
+        }
+
         if (typeof Config.latitude !== "undefined" && typeof Config.longitude !== "undefined" && Config.latitude !== 0 && Config.longitude !== 0) {
             _lat = Config.latitude;
             _lon = Config.longitude;
@@ -516,6 +539,8 @@ Singleton {
     }
 
     function _resolveCoords(callback) {
+        if (!NetworkService.isOnline) return;
+
         const xhr = new XMLHttpRequest();
         xhr.open("GET", "https://freeipapi.com/api/json");
         xhr.timeout = 10000;
@@ -543,6 +568,8 @@ Singleton {
     }
 
     function _fetchAqi(lat, lon) {
+        if (!NetworkService.isOnline) return;
+
         const url = "https://air-quality-api.open-meteo.com/v1/air-quality" + "?latitude=" + lat + "&longitude=" + lon + "&hourly=us_aqi" + "&timezone=auto" + "&forecast_days=1";
 
         const xhr = new XMLHttpRequest();

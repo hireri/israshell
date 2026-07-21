@@ -65,11 +65,13 @@ Item {
             anchors.centerIn: parent
             spacing: 6
 
+            readonly property bool fallbackToTime: !Config.showBarWeather && !Config.bar.showClock && !Config.bar.showDate
+
             Row {
                 id: weatherGlance
                 spacing: 4
 
-                visible: Config.showBarWeather && LocaleService.weatherTemp !== "—" && (clockTime.visible || clockDate.visible)
+                visible: Config.showBarWeather && LocaleService.weatherTemp !== "—"
                 anchors.verticalCenter: parent.verticalCenter
 
                 MaterialIcon {
@@ -109,7 +111,7 @@ Item {
                     "tnum": 1
                 }
                 text: LocaleService.barTimeText
-                visible: text !== ""
+                visible: (Config.bar.showClock || row.fallbackToTime) && text !== ""
                 anchors.verticalCenter: parent.verticalCenter
                 renderType: Text.NativeRendering
             }
@@ -134,7 +136,7 @@ Item {
                     "tnum": 1
                 }
                 text: LocaleService.barDateText
-                visible: text !== ""
+                visible: Config.bar.showDate && !row.fallbackToTime && text !== ""
                 anchors.verticalCenter: parent.verticalCenter
                 renderType: Text.NativeRendering
             }

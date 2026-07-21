@@ -64,6 +64,11 @@ Rectangle {
         command: ["sh", "-c", getScript(Config.screencap.songrecPath)]
     }
 
+    Process {
+        id: colorPickerScript
+        command: ["hyprpicker", "--autocopy"]
+    }
+
     BarTooltip {
         id: tooltipWindow
         yOffset: 8
@@ -125,6 +130,18 @@ Rectangle {
             onClicked: ocrScript.startDetached()
             MaterialIcon {
                 name: "ocr"
+                iconSize: 18
+                anchors.centerIn: parent
+                color: Colors.md3.on_surface
+            }
+        }
+
+        ToolButton {
+            visible: isEnabled("colorpicker")
+            tooltip: "Color Picker"
+            onClicked: colorPickerScript.startDetached()
+            MaterialIcon {
+                name: "colorize"
                 iconSize: 18
                 anchors.centerIn: parent
                 color: Colors.md3.on_surface

@@ -8,6 +8,8 @@ import Quickshell.Io
 Singleton {
     id: root
 
+    readonly property bool isOnline: wifiConnected || ethConnected
+
     property bool wifiEnabled: false
     property bool wifiConnected: false
     property bool ethConnected: false

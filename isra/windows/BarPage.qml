@@ -539,6 +539,17 @@ PageBase {
                 }
             }
         }
+
+        SettingSwitch {
+            label: "Smooth graphs"
+            sublabel: "Scrolls the performance graphs smoothly, instead of snapping on update"
+            checked: (Config.sysMonitor?.style ?? 0) === 0 ? true : (Config.sysMonitor?.smooth ?? true)
+            onToggled: v => Config.update({
+                sysMonitor: Object.assign({}, Config.sysMonitor, {
+                    smooth: v
+                })
+            })
+        }
     }
 
     SectionCard {
@@ -633,6 +644,10 @@ PageBase {
                     {
                         key: "ocr",
                         label: "OCR"
+                    },
+                    {
+                        key: "colorpicker",
+                        label: "Color Picker"
                     },
                     {
                         key: "songrec",

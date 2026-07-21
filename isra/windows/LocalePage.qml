@@ -59,12 +59,14 @@ PageBase {
 
         SettingSwitch {
             isLast: true
-            label: "Show weather glance"
-            sublabel: "Display weather icon and temp on the bar clock"
-            checked: Config.showBarWeather
+            label: "Show bar clock"
+            sublabel: "Display the system time in the status bar"
+            checked: Config.bar.showClock ?? true
             onToggled: v => Config.update({
-                    showBarWeather: v
+                bar: Object.assign({}, Config.bar, {
+                    showClock: v
                 })
+            })
         }
     }
 
@@ -100,7 +102,6 @@ PageBase {
         }
 
         SettingInput {
-            isLast: true
             label: "Custom date format"
             sublabel: "Overrides date order. Leave empty to restore dynamic defaults"
             value: Config.dateFormat
@@ -109,14 +110,25 @@ PageBase {
                     dateFormat: v
                 })
         }
+
+        SettingSwitch {
+            isLast: true
+            label: "Show bar date"
+            sublabel: "Display the current date in the status bar"
+            checked: Config.bar.showDate ?? true
+            onToggled: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
+                    showDate: v
+                })
+            })
+        }
     }
 
     SectionCard {
-        label: "Location"
+        label: "Weather & Location"
         Layout.fillWidth: true
 
         SettingInput {
-            isLast: true
             label: "City name"
             sublabel: "Leave empty to auto locate via IP address"
             value: Config.cityName
@@ -125,16 +137,20 @@ PageBase {
                     cityName: v
                 })
         }
-    }
 
-    SectionCard {
-        label: "Units"
-        Layout.fillWidth: true
+        SettingSwitch {
+            label: "Show bar weather info"
+            sublabel: "Display weather icon and current temp on the status bar"
+            checked: Config.showBarWeather
+            onToggled: v => Config.update({
+                    showBarWeather: v
+                })
+        }
 
         SettingSwitch {
             isLast: true
-            label: "Fahrenheit"
-            sublabel: "Use °F instead of °C for temperature"
+            label: "Use Fahrenheit units"
+            sublabel: "Use °F instead of °C for temperature metrics"
             checked: Config.useFarenheit
             onToggled: v => Config.update({
                     useFarenheit: v

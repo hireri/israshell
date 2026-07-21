@@ -167,11 +167,21 @@ Singleton {
         }
     }
 
+    Connections {
+        target: NetworkService
+        function onIsOnlineChanged() {
+            if (NetworkService.isOnline && Config.checkUpdates) {
+                console.log("[Updater] Network back online, running checkNow().");
+                root.checkNow();
+            }
+        }
+    }
+
     Timer {
         id: _pollTimer
         interval: 60 * 60 * 1000
         repeat: true
-        running: Config.checkUpdates
+        running: Config.checkUpdates && NetworkService.isOnline
         onTriggered: {
             console.log("[Updater] poll timer triggered");
             root.checkNow();
@@ -188,15 +198,19 @@ Singleton {
             console.log("[Updater] starting dependency check");
             _depProc.running = true;
         }
-        if (Config.checkUpdates) {
+        if (Config.checkUpdates && NetworkService.isOnline) {
             console.log("[Updater] starting update check");
             root.checkNow();
         }
     }
 
     function checkNow() {
+        if (!NetworkService.isOnline) {
+            console.log("[Updater] checkNow skipped, network is offline");
+            return;
+        }
         if (_checkProc.running || _applyInProgress) {
-            console.log("[Updater] checkNow skipped — already running");
+            console.log("[Updater] checkNow skipped, already running");
             return;
         }
         _checkProc.running = true;
