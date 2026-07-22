@@ -16,6 +16,7 @@ Item {
     property string _phonetic: ""
     property var _meanings: []
     property var _activeXhr: null
+    readonly property bool hasResult: true
 
     implicitHeight: col.implicitHeight
 
