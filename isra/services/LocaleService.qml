@@ -394,55 +394,63 @@ Singleton {
         xhr.send();
     }
 
-    function _updateWeatherIcon(wmoCode, isDay) {
+    function _getWmoDetails(wmoCode, isDay) {
         const c = parseInt(wmoCode);
         const day = parseInt(isDay) !== 0;
+        let iconName = "partly-cloudy-day";
+        let colorRole = "primary";
+        let desc = "Unknown";
 
         if (c === 0) {
             if (day) {
-                _weatherIconName = "wb-sunny";
-                _weatherIconColorRole = "tertiary";
-                _weatherDesc = "Sunny";
+                iconName = "wb-sunny";
+                colorRole = "tertiary";
+                desc = "Sunny";
             } else {
-                _weatherIconName = "moon-stars"; 
-                _weatherIconColorRole = "primary";
-                _weatherDesc = "Clear Night";
+                iconName = "moon-stars"; 
+                colorRole = "primary";
+                desc = "Clear Night";
             }
         } else if (c === 1 || c === 2) {
             if (day) {
-                _weatherIconName = "partly-cloudy-day";
-                _weatherIconColorRole = "primary";
-                _weatherDesc = "Partly Cloudy";
+                iconName = "partly-cloudy-day";
+                colorRole = "primary";
+                desc = "Partly Cloudy";
             } else {
-                _weatherIconName = "partly-cloudy-night"; 
-                _weatherIconColorRole = "primary";
-                _weatherDesc = "Partly Cloudy";
+                iconName = "partly-cloudy-night"; 
+                colorRole = "primary";
+                desc = "Partly Cloudy";
             }
         } else if (c === 3) {
-            _weatherIconName = "cloudy";
-            _weatherIconColorRole = "on_surface_variant";
-            _weatherDesc = "Overcast";
+            iconName = "cloudy";
+            colorRole = "on_surface_variant";
+            desc = "Overcast";
         } else if (c === 45 || c === 48) {
-            _weatherIconName = "foggy";
-            _weatherIconColorRole = "on_surface_variant";
-            _weatherDesc = "Foggy";
+            iconName = "foggy";
+            colorRole = "on_surface_variant";
+            desc = "Foggy";
         } else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(c)) {
-            _weatherIconName = "rainy";
-            _weatherIconColorRole = "primary";
-            _weatherDesc = c < 60 ? "Drizzle" : "Rain";
+            iconName = "rainy";
+            colorRole = "primary";
+            desc = c < 60 ? "Drizzle" : "Rain";
         } else if ([71, 73, 75, 77, 85, 86].includes(c)) {
-            _weatherIconName = "snowy";
-            _weatherIconColorRole = "outline";
-            _weatherDesc = "Snow";
+            iconName = "snowy";
+            colorRole = "outline";
+            desc = "Snow";
         } else if ([95, 96, 99].includes(c)) {
-            _weatherIconName = "thunderstorm";
-            _weatherIconColorRole = "error";
-            _weatherDesc = "Thunderstorm";
-        } else {
-            _weatherIconName = "partly-cloudy-day";
-            _weatherIconColorRole = "primary";
-            _weatherDesc = "Unknown";
+            iconName = "thunderstorm";
+            colorRole = "error";
+            desc = "Thunderstorm";
         }
+        
+        return { iconName: iconName, colorRole: colorRole, desc: desc };
+    }
+
+    function _updateWeatherIcon(wmoCode, isDay) {
+        const details = _getWmoDetails(wmoCode, isDay);
+        _weatherIconName = details.iconName;
+        _weatherIconColorRole = details.colorRole;
+        _weatherDesc = details.desc;
     }
 
     function _applyWeatherData(data) {
@@ -490,6 +498,211 @@ Singleton {
             root._weatherError = "format error: " + e;
             console.warn("[LocaleService] weather format error:", e);
         }
+    }
+
+    function fetchWeatherForQuery(cityName, callback) {
+        if (!NetworkService.isOnline) {
+            callback("Offline", null);
+            return;
+        }
+
+        const geoUrl = "https://geocoding-api.open-meteo.com/v1/search"
+            + "?name=" + encodeURIComponent(cityName)
+            + "&count=1"
+            + "&language=en"
+            + "&format=json";
+
+        const geoXhr = new XMLHttpRequest();
+        geoXhr.open("GET", geoUrl);
+        geoXhr.timeout = 10000;
+        geoXhr.onreadystatechange = function () {
+            if (geoXhr.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (geoXhr.status === 200) {
+                try {
+                    const geoData = JSON.parse(geoXhr.responseText);
+                    if (geoData.results && geoData.results.length > 0) {
+                        const result = geoData.results[0];
+                        const lat = parseFloat(result.latitude);
+                        const lon = parseFloat(result.longitude);
+                        const name = result.name;
+                        const country = result.country || "";
+                        const prettyLocation = country ? (name + ", " + country) : name;
+
+                        if (!isNaN(lat) && !isNaN(lon)) {
+                            root._fetchWeatherForCoords(lat, lon, prettyLocation, callback);
+                        } else {
+                            callback("Invalid coordinates", null);
+                        }
+                    } else {
+                        callback("Location not found", null);
+                    }
+                } catch (e) {
+                    callback("Geocoder parse error", null);
+                }
+            } else {
+                callback("Geocoder HTTP error " + geoXhr.status, null);
+            }
+        };
+        geoXhr.send();
+    }
+
+    function _fetchWeatherForCoords(lat, lon, prettyLocation, callback) {
+        const tempUnit = Config.useFarenheit ? "fahrenheit" : "celsius";
+        const url = "https://api.open-meteo.com/v1/forecast"
+            + "?latitude=" + lat
+            + "&longitude=" + lon
+            + "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day"
+            + "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max"
+            + "&hourly=precipitation_probability"
+            + "&temperature_unit=" + tempUnit
+            + "&timezone=auto"
+            + "&forecast_days=1";
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+        xhr.timeout = 15000;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (xhr.status === 200) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    const cur = data.current;
+                    const daily = data.daily;
+                    const hourly = data.hourly;
+
+                    const temp = Math.round(cur.temperature_2m) + "°";
+                    const feelsLike = Math.round(cur.apparent_temperature) + "°";
+                    const high = Math.round(daily.temperature_2m_max[0]) + "°";
+                    const low = Math.round(daily.temperature_2m_min[0]) + "°";
+                    const humidity = Math.round(cur.relative_humidity_2m) + "%";
+                    const uvi = String(Math.round(daily.uv_index_max[0] || 0));
+
+                    const precipProb = hourly.precipitation_probability || [];
+                    let maxChance = 0;
+                    for (let i = 0; i < Math.min(24, precipProb.length); i++) {
+                        let chance = parseInt(precipProb[i]);
+                        if (chance > maxChance) {
+                            maxChance = chance;
+                        }
+                    }
+                    const rainChance = String(maxChance) + "%";
+
+                    const sunriseDate = _parseOpenMeteoDateTime(daily.sunrise[0]);
+                    const sunsetDate = _parseOpenMeteoDateTime(daily.sunset[0]);
+
+                    let activeAstroTime = "—";
+                    let activeAstroIcon = "wb-twilight";
+                    let activeAstroColorType = "sun";
+
+                    const now = new Date();
+                    if (sunriseDate && sunsetDate) {
+                        const oneDayMs = 24 * 60 * 60 * 1000;
+                        const events = [
+                            { name: "Sunrise", icon: "wb-twilight", colorType: "sun", time: sunriseDate },
+                            { name: "Sunset", icon: "wb-twilight", colorType: "sun", time: sunsetDate }
+                        ];
+
+                        let bestEvent = null;
+                        let bestDiff = Infinity;
+
+                        events.forEach(function(ev) {
+                            const times = [ev.time, new Date(ev.time.getTime() - oneDayMs)];
+                            times.forEach(function(t) {
+                                const diff = now.getTime() - t.getTime();
+                                if (diff >= 0 && diff < bestDiff) {
+                                    bestDiff = diff;
+                                    bestEvent = {
+                                        name: ev.name,
+                                        icon: ev.icon,
+                                        colorType: ev.colorType,
+                                        time: t
+                                    };
+                                }
+                            });
+                        });
+
+                        if (bestEvent) {
+                            activeAstroTime = _formatAstroTime(bestEvent.time);
+                            activeAstroIcon = bestEvent.icon;
+                            activeAstroColorType = bestEvent.colorType;
+                        }
+                    } else if (sunriseDate) {
+                        activeAstroTime = _formatAstroTime(sunriseDate);
+                    }
+
+                    const details = _getWmoDetails(cur.weather_code, cur.is_day);
+                    
+                    let mappedColor = Colors.md3.primary;
+                    switch (details.colorRole) {
+                    case "tertiary": mappedColor = Colors.md3.tertiary; break;
+                    case "on_surface_variant": mappedColor = Colors.md3.on_surface_variant; break;
+                    case "outline": mappedColor = Colors.md3.outline; break;
+                    case "error": mappedColor = Colors.md3.error; break;
+                    }
+
+                    const aqiUrl = "https://air-quality-api.open-meteo.com/v1/air-quality"
+                        + "?latitude=" + lat
+                        + "&longitude=" + lon
+                        + "&hourly=us_aqi"
+                        + "&timezone=auto"
+                        + "&forecast_days=1";
+
+                    const aqiXhr = new XMLHttpRequest();
+                    aqiXhr.open("GET", aqiUrl);
+                    aqiXhr.timeout = 10000;
+                    aqiXhr.onreadystatechange = function () {
+                        if (aqiXhr.readyState !== XMLHttpRequest.DONE)
+                            return;
+                        let aqiVal = "—";
+                        if (aqiXhr.status === 200) {
+                            try {
+                                const aqiData = JSON.parse(aqiXhr.responseText);
+                                const times = aqiData.hourly.time;
+                                const aqiArr = aqiData.hourly.us_aqi;
+                                const nowHour = new Date();
+                                nowHour.setMinutes(0, 0, 0);
+                                const nowStr = nowHour.toISOString().slice(0, 16);
+                                let idx = times.indexOf(nowStr);
+                                if (idx < 0) idx = 0;
+                                const aqiParsed = aqiArr[idx];
+                                if (aqiParsed !== null && aqiParsed !== undefined) {
+                                    aqiVal = String(Math.round(aqiParsed));
+                                }
+                            } catch (e) {
+                                console.warn("[LocaleService] Query AQI parse error:", e);
+                            }
+                        }
+
+                        callback(null, {
+                            temp: temp,
+                            feelsLike: feelsLike,
+                            high: high,
+                            low: low,
+                            humidity: humidity,
+                            uvi: uvi,
+                            rainChance: rainChance,
+                            astroTime: activeAstroTime,
+                            astroIcon: activeAstroIcon,
+                            astroColorType: activeAstroColorType,
+                            location: prettyLocation,
+                            desc: details.desc,
+                            iconName: details.iconName,
+                            iconColor: mappedColor,
+                            aqi: aqiVal
+                        });
+                    };
+                    aqiXhr.send();
+
+                } catch (e) {
+                    callback("Parse error", null);
+                }
+            } else {
+                callback("HTTP error " + xhr.status, null);
+            }
+        };
+        xhr.send();
     }
 
     property real _lat: 0.0
