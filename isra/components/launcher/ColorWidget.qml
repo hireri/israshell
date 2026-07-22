@@ -6,7 +6,7 @@ Item {
     id: root
 
     property string query: ""
-    property bool hasResult: _valid
+    readonly property bool hasResult: _valid
 
     signal copyResult(string text)
 

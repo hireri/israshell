@@ -14,8 +14,20 @@ Scope {
     property bool isOpen: false
     property bool _opening: false
     property bool _animating: false
+    property var _targetScreen: null
 
     readonly property var _visual: visualLoader.item
+
+    function _findFocusedScreen() {
+        const hm = Hyprland.focusedMonitor;
+        if (!hm)
+            return Quickshell.screens[0] ?? null;
+        for (const s of Quickshell.screens) {
+            if (s.name === hm.name)
+                return s;
+        }
+        return Quickshell.screens[0] ?? null;
+    }
 
     property string _query: ""
 
@@ -60,7 +72,7 @@ Scope {
 
         if (/^\d{9,11}$/.test(q))
             return "timestamp";
-        if (/^(?:days?\s+(?:until|since|to|from)|time\s+since|how\s+long\s+(?:since|ago))/i.test(q))
+        if (/^(?:(?:days?|weeks?|months?|years?|hours?|minutes?)\s+(?:until|since|to|from)\s+|time\s+(?:since|until)\s+|how\s+long\s+(?:until|since|ago)\b|in\s+\d+\s+(?:day|days|week|weeks|month|months|year|years|hour|hours|minute|minutes)\b|\d+\s+(?:day|days|week|weeks|month|months|year|years|hour|hours|minute|minutes)\s+ago\b)/i.test(q))
             return "timestamp";
 
         if (/^def(?:ine)?\s+\S+/i.test(q))
@@ -82,7 +94,10 @@ Scope {
             return "math";
         if (/\b(?:pi|e)\b/.test(q) && /[+\-*\/^%]/.test(q))
             return "math";
-
+        if (/^(?:pw|gen|pwgen)(?:\s|$)/i.test(q))
+            return "password";
+        if (/^(?:weather|temp)(?:\s|$)/i.test(q))
+            return "weather";
         return "";
     }
 
@@ -97,6 +112,9 @@ Scope {
         const kaoM = /^kao(?:moji)?(?:\s+(.*))?$/i.exec(q);
         if (kaoM)
             return (kaoM[1] || "").trim();
+        const weatherM = /^(?:weather|temp)(?:\s+(.*))?$/i.exec(q);
+        if (weatherM)
+            return (weatherM[1] || "").trim();
         return q;
     }
 
@@ -563,6 +581,7 @@ Scope {
     }
 
     function open(prefix) {
+        _targetScreen = _findFocusedScreen();
         _animating = false;
         _opening = true;
         isOpen = true;
@@ -656,6 +675,8 @@ Scope {
                         case "define":    return defineWidget;
                         case "whois":     return whoisWidget;
                         case "kaomoji":   return kaomojiWidget;
+                        case "password":  return passwordWidget;
+                        case "weather":   return weatherWidget;
                         default:          return null;
                     }
                 }
@@ -695,7 +716,7 @@ Scope {
                     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
                     WlrLayershell.namespace: "quickshell-launcher"
                     exclusionMode: ExclusionMode.Ignore
-                    screen: Quickshell.screens[0]
+                    screen: root._targetScreen ?? Quickshell.screens[0]
                     anchors {
                         top: true
                         bottom: true
@@ -839,7 +860,7 @@ Scope {
                                     right: parent.right
                                     margins: 16
                                 }
-                                implicitHeight: mathWidget.visible ? mathWidget.implicitHeight : translateWidget.visible ? translateWidget.implicitHeight : colorWidget.visible ? colorWidget.implicitHeight : timestampWidget.visible ? timestampWidget.implicitHeight : defineWidget.visible ? defineWidget.implicitHeight : whoisWidget.visible ? whoisWidget.implicitHeight : kaomojiWidget.visible ? kaomojiWidget.implicitHeight : 0
+                                implicitHeight: loaderRoot.activeWidget ? loaderRoot.activeWidget.implicitHeight : 0
 
                                 MathWidget {
                                     id: mathWidget
@@ -951,6 +972,28 @@ Scope {
                                     }
                                     onCategoryRequested: tag => {
                                         _launcherInput.prefill("kao " + tag);
+                                    }
+                                }
+
+                                PasswordWidget {
+                                    id: passwordWidget
+                                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                                    visible: root.widgetType === "password"
+                                    query: root.modeQuery
+                                    onCopyResult: text => {
+                                        copyProc.command = ["wl-copy", text];
+                                        copyProc.running = true;
+                                    }
+                                }
+
+                                WeatherWidget {
+                                    id: weatherWidget
+                                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                                    visible: root.widgetType === "weather"
+                                    query: root.widgetQuery
+                                    onCopyResult: text => {
+                                        copyProc.command = ["wl-copy", text];
+                                        copyProc.running = true;
                                     }
                                 }
                             }

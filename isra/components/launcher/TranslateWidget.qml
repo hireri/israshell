@@ -15,6 +15,8 @@ Item {
     property bool _loading: false
     property bool _error: false
 
+    readonly property bool hasResult: sourceText.trim() !== ""
+
     signal copyResult(string text)
 
     implicitHeight: col.implicitHeight

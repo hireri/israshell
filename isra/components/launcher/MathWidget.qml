@@ -290,9 +290,9 @@ Item {
 
         if (/[+\-*\/^%]/.test(s)) return true;
         if (new RegExp("\\b" + fn + "\\s*\\(", "i").test(s)) return true;
-        if (new RegExp("\\d\\s*" + fn + "\\b", "i").test(s)) return true; // e.g. 2pi, 3sqrt(4)
-        if (new RegExp("\\)\\s*" + fn + "\\b", "i").test(s)) return true; // e.g. (1+1)pi
-        if (/\d\s*\(|\)\s*\(/.test(s)) return true; // e.g. 3(4), (1+1)(2+2)
+        if (new RegExp("\\d\\s*" + fn + "\\b", "i").test(s)) return true;
+        if (new RegExp("\\)\\s*" + fn + "\\b", "i").test(s)) return true;
+        if (/\d\s*\(|\)\s*\(/.test(s)) return true;
         return false;
     }
 
@@ -322,7 +322,7 @@ Item {
             p = p.replace(/\)(\d)/g, ")*$1");
             p = p.replace(/\)\(/g, ")*(");
             p = p.replace(new RegExp("(\\d|\\))(" + _mathFuncNames + "|pi|e)\\(", "g"), "$1*$2(");
-            p = p.replace(/(\d|\))(pi|e)\b/g, "$1*$2"); // e.g. 2pi, (1+1)e with no trailing paren
+            p = p.replace(/(\d|\))(pi|e)\b/g, "$1*$2");
 
             if (!/^[\d()+\-*\/^%.]+$/.test(
                     p.replace(new RegExp("\\b(?:" + _mathFuncNames + "|pi|e)\\b", "g"), "").replace(/,/g, "")))

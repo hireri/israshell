@@ -9,6 +9,8 @@ Item {
     property string subject: ""
     signal copyResult(string text)
 
+    readonly property bool hasResult: subject.trim() !== ""
+
     property bool _loading: false
     property bool _error: false
     property string _errorMsg: ""
