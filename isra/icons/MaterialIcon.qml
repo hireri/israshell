@@ -12,7 +12,7 @@ Item {
     property color color: "white"
     property real iconSize: 24
     property int transitionDuration: 220
-    // "wipe-up", "wipe-down", "wipe-left", "wipe-right", "circle", "crossfade-scale"
+    // "none", "wipe-up", "wipe-down", "wipe-left", "wipe-right", "circle", "crossfade-scale"
     property string transitionType: "wipe-left"
 
     width: iconSize
@@ -32,6 +32,7 @@ Item {
     }
 
     Behavior on _progress {
+        enabled: transitionType !== "none"
         NumberAnimation {
             duration: root.transitionDuration
             easing.type: Easing.InOutQuad
@@ -83,11 +84,11 @@ Item {
 
     Item {
         id: outlineClip
-        clip: transitionType !== "circle" && transitionType !== "crossfade-scale"
+        clip: transitionType !== "circle" && transitionType !== "crossfade-scale" && transitionType !== "none"
         visible: root._hasOutline && root._progress < 1
         
         width: {
-            if (transitionType === "circle" || transitionType === "crossfade-scale")
+            if (transitionType === "circle" || transitionType === "crossfade-scale" || transitionType === "none")
                 return root.width;
             let w = root.width;
             if (transitionType === "wipe-left" || transitionType === "wipe-right")
@@ -95,7 +96,7 @@ Item {
             return Math.round(w);
         }
         height: {
-            if (transitionType === "circle" || transitionType === "crossfade-scale")
+            if (transitionType === "circle" || transitionType === "crossfade-scale" || transitionType === "none")
                 return root.height;
             let h = root.height;
             if (transitionType === "wipe-up" || transitionType === "wipe-down")
@@ -103,7 +104,7 @@ Item {
             return Math.round(h);
         }
         x: {
-            if (transitionType === "circle" || transitionType === "crossfade-scale")
+            if (transitionType === "circle" || transitionType === "crossfade-scale" || transitionType === "none")
                 return 0;
             let val = 0;
             if (transitionType === "wipe-right")
@@ -111,7 +112,7 @@ Item {
             return Math.round(val);
         }
         y: {
-            if (transitionType === "circle" || transitionType === "crossfade-scale")
+            if (transitionType === "circle" || transitionType === "crossfade-scale" || transitionType === "none")
                 return 0;
             let val = 0;
             if (transitionType === "wipe-down")
@@ -158,7 +159,7 @@ Item {
         visible: root._hasFilled && root._progress > 0
         
         width: {
-            if (transitionType === "circle" || transitionType === "crossfade-scale")
+            if (transitionType === "circle" || transitionType === "crossfade-scale" || transitionType === "none")
                 return root.width;
             let w = root.width;
             if (transitionType === "wipe-left" || transitionType === "wipe-right")
@@ -166,7 +167,7 @@ Item {
             return Math.round(w);
         }
         height: {
-            if (transitionType === "circle" || transitionType === "crossfade-scale")
+            if (transitionType === "circle" || transitionType === "crossfade-scale" || transitionType === "none")
                 return root.height;
             let h = root.height;
             if (transitionType === "wipe-up" || transitionType === "wipe-down")
@@ -174,7 +175,7 @@ Item {
             return Math.round(h);
         }
         x: {
-            if (transitionType === "circle" || transitionType === "crossfade-scale")
+            if (transitionType === "circle" || transitionType === "crossfade-scale" || transitionType === "none")
                 return 0;
             let val = 0;
             if (transitionType === "wipe-left")
@@ -182,7 +183,7 @@ Item {
             return Math.round(val);
         }
         y: {
-            if (transitionType === "circle" || transitionType === "crossfade-scale")
+            if (transitionType === "circle" || transitionType === "crossfade-scale" || transitionType === "none")
                 return 0;
             let val = 0;
             if (transitionType === "wipe-up")
@@ -190,7 +191,7 @@ Item {
             return Math.round(val);
         }
 
-        clip: transitionType !== "circle" && transitionType !== "crossfade-scale"
+        clip: transitionType !== "circle" && transitionType !== "crossfade-scale" && transitionType !== "none"
         
         layer.enabled: transitionType === "circle" && root._progress > 0 && root._progress < 1
         layer.samples: 4
