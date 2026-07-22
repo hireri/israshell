@@ -100,24 +100,6 @@ Scope {
         return q;
     }
 
-    readonly property bool _widgetShown: {
-        if (widgetType === "math")
-            return mathWidget.hasResult;
-        if (widgetType === "translate")
-            return modeQuery.trim() !== "";
-        if (widgetType === "color")
-            return colorWidget.hasResult;
-        if (widgetType === "timestamp")
-            return timestampWidget._mode !== "" && (timestampWidget._unixDate !== null || timestampWidget._daysResult !== null);
-        if (widgetType === "define")
-            return widgetQuery.trim() !== "";
-        if (widgetType === "whois")
-            return widgetQuery.trim() !== "";
-        if (widgetType === "kaomoji")
-            return true;
-        return false;
-    }
-
     readonly property var _langMap: ({
             "en": "en",
             "english": "en",
@@ -657,11 +639,28 @@ Scope {
 
         sourceComponent: Component {
             Item {
+                id: loaderRoot
+
                 property alias panel:       _panel
                 property alias stack:       _stack
                 property alias closeAnim:   _closeAnim
                 property alias launcherInput: _launcherInput
                 property alias launcherList:  _launcherList
+
+                readonly property var activeWidget: {
+                    switch (root.widgetType) {
+                        case "math":      return mathWidget;
+                        case "translate": return translateWidget;
+                        case "color":     return colorWidget;
+                        case "timestamp": return timestampWidget;
+                        case "define":    return defineWidget;
+                        case "whois":     return whoisWidget;
+                        case "kaomoji":   return kaomojiWidget;
+                        default:          return null;
+                    }
+                }
+
+                readonly property bool widgetShown: activeWidget !== null && activeWidget.hasResult
 
                 Variants {
                     model: Quickshell.screens
@@ -696,6 +695,7 @@ Scope {
                     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
                     WlrLayershell.namespace: "quickshell-launcher"
                     exclusionMode: ExclusionMode.Ignore
+                    screen: Quickshell.screens[0]
                     anchors {
                         top: true
                         bottom: true
@@ -801,9 +801,9 @@ Scope {
                             color: Colors.md3.surface_container
                             clip: true
 
-                            height: root._widgetShown ? (widgetInner.implicitHeight + 32) : 0
-                            opacity: root._widgetShown ? 1.0 : 0.0
-                            scale: root._widgetShown ? 1.0 : 0.80
+                            height: loaderRoot.widgetShown ? (widgetInner.implicitHeight + 32) : 0
+                            opacity: loaderRoot.widgetShown ? 1.0 : 0.0
+                            scale: loaderRoot.widgetShown ? 1.0 : 0.80
                             transformOrigin: Item.Top
 
                             border.width: 1

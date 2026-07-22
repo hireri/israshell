@@ -281,11 +281,18 @@ Item {
     }
 
     function _looksLikeMath(q) {
-        if (!/^[\d(+\-]|^(?:sqrt|cbrt|sin|cos|tan|asin|acos|atan|log|ln|abs|floor|ceil|round|trunc|pi\b)/i.test(q))
+        const s = q.trim();
+        if (s === "") return false;
+
+        const fn = "(?:" + _mathFuncNames + "|pi|e)";
+        if (!new RegExp("^(?:[\\d.(+\\-]|" + fn + "\\b)", "i").test(s))
             return false;
 
-        if (/[+\-*\/^%]/.test(q)) return true;
-        if (/\b(?:sqrt|cbrt|sin|cos|tan|asin|acos|atan|log|ln|exp|abs|floor|ceil|round|trunc|pow|min|max)\s*\(/.test(q)) return true;
+        if (/[+\-*\/^%]/.test(s)) return true;
+        if (new RegExp("\\b" + fn + "\\s*\\(", "i").test(s)) return true;
+        if (new RegExp("\\d\\s*" + fn + "\\b", "i").test(s)) return true; // e.g. 2pi, 3sqrt(4)
+        if (new RegExp("\\)\\s*" + fn + "\\b", "i").test(s)) return true; // e.g. (1+1)pi
+        if (/\d\s*\(|\)\s*\(/.test(s)) return true; // e.g. 3(4), (1+1)(2+2)
         return false;
     }
 
@@ -315,6 +322,7 @@ Item {
             p = p.replace(/\)(\d)/g, ")*$1");
             p = p.replace(/\)\(/g, ")*(");
             p = p.replace(new RegExp("(\\d|\\))(" + _mathFuncNames + "|pi|e)\\(", "g"), "$1*$2(");
+            p = p.replace(/(\d|\))(pi|e)\b/g, "$1*$2"); // e.g. 2pi, (1+1)e with no trailing paren
 
             if (!/^[\d()+\-*\/^%.]+$/.test(
                     p.replace(new RegExp("\\b(?:" + _mathFuncNames + "|pi|e)\\b", "g"), "").replace(/,/g, "")))
