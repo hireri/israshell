@@ -151,9 +151,9 @@ PageBase {
             isLast: true
             label: "Use Fahrenheit units"
             sublabel: "Use °F instead of °C for temperature metrics"
-            checked: Config.useFarenheit
+            checked: Config.useFahrenheit
             onToggled: v => Config.update({
-                    useFarenheit: v
+                    useFahrenheit: v
                 })
         }
     }

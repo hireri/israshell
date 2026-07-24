@@ -94,11 +94,14 @@ Item {
 
                     Image {
                         id: img
-                        source: cell.modelData?.icon ?? ""
+                        source: {
+                            let icon = cell.modelData?.icon ?? "";
+                            return icon.length > 0 ? icon : "";
+                        }
                         anchors.fill: parent
                         sourceSize: Qt.size(20, 20)
                         fillMode: Image.PreserveAspectFit
-                        visible: !Config.bar.tintTrayIcons
+                        visible: source.length > 0 && !Config.bar.tintTrayIcons
                     }
 
                     Loader {

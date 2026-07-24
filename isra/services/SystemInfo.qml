@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.style
 
 Singleton {
     id: root
@@ -53,6 +54,17 @@ Singleton {
     property var gpuHistory: []
     property var cpuTempHistory: []
     property var gpuTempHistory: []
+
+    function celsiusToFahrenheit(c) {
+        return c * 9 / 5 + 32;
+    }
+
+    readonly property real cpuTempDisplay: cpuTemp < 0 ? -1 : (Config.useFahrenheit ? celsiusToFahrenheit(cpuTemp) : cpuTemp)
+    readonly property real gpuTempDisplay: gpuTemp < 0 ? -1 : (Config.useFahrenheit ? celsiusToFahrenheit(gpuTemp) : gpuTemp)
+    readonly property string tempUnit: Config.useFahrenheit ? "°F" : "°C"
+
+    readonly property var cpuTempHistoryDisplay: Config.useFahrenheit ? cpuTempHistory.map(c => celsiusToFahrenheit(c)) : cpuTempHistory
+    readonly property var gpuTempHistoryDisplay: Config.useFahrenheit ? gpuTempHistory.map(c => celsiusToFahrenheit(c)) : gpuTempHistory
 
     property real _stageCpuUsage: 0
     property real _stageRamUsage: 0

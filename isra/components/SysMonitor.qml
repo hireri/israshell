@@ -40,7 +40,7 @@ Item {
         case "ram":  return SystemInfo.ramUsage;
         case "gpu":  return Math.max(0, SystemInfo.gpuUsage);
         case "temp":
-            return Math.max(SystemInfo.cpuTemp, SystemInfo.gpuTemp);
+            return Math.max(SystemInfo.cpuTempDisplay, SystemInfo.gpuTempDisplay);
         case "swap": return SystemInfo.swapUsage;
         }
         return 0;
@@ -76,10 +76,10 @@ Item {
         case "temp": 
             let tempParts = [];
             if (SystemInfo.cpuTemp >= 0) {
-                tempParts.push("CPU " + Math.round(SystemInfo.cpuTemp) + "°C" + (SystemInfo.cpuPower !== "—" ? " • " + SystemInfo.cpuPower : ""));
+                tempParts.push("CPU " + Math.round(SystemInfo.cpuTempDisplay) + SystemInfo.tempUnit + (SystemInfo.cpuPower !== "—" ? " • " + SystemInfo.cpuPower : ""));
             }
             if (SystemInfo.gpuTemp >= 0) {
-                tempParts.push("GPU " + Math.round(SystemInfo.gpuTemp) + "°C" + (SystemInfo.gpuPower !== "—" ? " • " + SystemInfo.gpuPower : ""));
+                tempParts.push("GPU " + Math.round(SystemInfo.gpuTempDisplay) + SystemInfo.tempUnit + (SystemInfo.gpuPower !== "—" ? " • " + SystemInfo.gpuPower : ""));
             }
             return tempParts.length > 0 ? tempParts.join("\n") : "—";
 
@@ -94,10 +94,17 @@ Item {
         case "cpu":  return SystemInfo.cpuHistory;
         case "ram":  return SystemInfo.ramHistory;
         case "gpu":  return SystemInfo.gpuHistory;
-        case "temp": return SystemInfo.cpuTempHistory;
+        case "temp": return SystemInfo.cpuTempHistoryDisplay;
         case "swap": return SystemInfo.swapHistory;
         }
         return [];
+    }
+
+    function metricScale(id) {
+        if (id === "temp") {
+            return Config.useFahrenheit ? 250 : 120;
+        }
+        return 100;
     }
 
     implicitWidth: pillsRow.implicitWidth
@@ -112,6 +119,7 @@ Item {
 
         property real liveValue: owner.metricValue(metricData.id)
         property bool liveAvailable: owner.metricAvailable(metricData.id)
+        property real liveScale: owner.metricScale(metricData.id)
         property color resolvedColor: owner.colored ? metricData.color : Colors.md3.primary
 
         Item {
@@ -125,10 +133,12 @@ Item {
                 id: pieCanvas
                 anchors.fill: parent
                 property real value: metricContent.liveValue
+                property real scaleMax: metricContent.liveScale
                 property bool available: metricContent.liveAvailable
                 property color pieColor: available ? metricContent.resolvedColor : Qt.alpha(Colors.md3.on_surface, 0.35)
 
                 onValueChanged: requestPaint()
+                onScaleMaxChanged: requestPaint()
                 onAvailableChanged: requestPaint()
                 onPieColorChanged: requestPaint()
                 onVisibleChanged: if (visible) requestPaint()
@@ -151,7 +161,7 @@ Item {
                     ctx.fillStyle = Qt.alpha(pieColor, 0.5);
                     ctx.fill();
 
-                    var frac = Math.max(0, Math.min(100, value)) / 100;
+                    var frac = Math.max(0, Math.min(scaleMax, value)) / scaleMax;
                     if (frac > 0) {
                         var start = -Math.PI / 2;
                         var end = start + frac * Math.PI * 2;
@@ -190,7 +200,7 @@ Item {
             color: Qt.alpha(metricContent.resolvedColor, 0.2)
 
             Rectangle {
-                width: parent.width * Math.max(0, Math.min(100, metricContent.liveValue)) / 100
+                width: parent.width * Math.max(0, Math.min(metricContent.liveScale, metricContent.liveValue)) / metricContent.liveScale
                 height: parent.height
                 radius: parent.radius
                 color: metricContent.liveAvailable ? metricContent.resolvedColor : Qt.alpha(Colors.md3.on_surface, 0.35)
@@ -229,6 +239,7 @@ Item {
                     property bool liveAvailable: root.metricAvailable(modelData.id)
                     property string liveDetail: root.metricDetail(modelData.id)
                     property var liveHistory: root.metricHistory(modelData.id)
+                    property real liveScale: root.metricScale(modelData.id)
                     property color resolvedColor: root.colored ? modelData.color : Colors.md3.primary
 
                     Row {
@@ -263,6 +274,7 @@ Item {
                             anchors.fill: parent
                             property real sampleSpacing: width / Math.max(1, SystemInfo.historyLength - 1)
                             property var points: metricDelegate.liveHistory
+                            property real scaleMax: metricDelegate.liveScale
                             property color lineColor: metricDelegate.liveAvailable ? metricDelegate.resolvedColor : Qt.alpha(Colors.md3.on_surface, 0.35)
                             property color gridColor: Qt.alpha(lineColor, 0.15)
                             renderStrategy: Canvas.Immediate
@@ -314,6 +326,7 @@ Item {
 
                             onLineColorChanged: requestPaint()
                             onWidthChanged: requestPaint()
+                            onScaleMaxChanged: requestPaint()
                             onPaint: {
                                 var ctx = getContext("2d");
                                 ctx.reset();
@@ -357,8 +370,8 @@ Item {
                                 }
 
                                 function yFor(v) {
-                                    var clamped = Math.max(0, Math.min(100, v));
-                                    return pad + usableH - (clamped / 100) * usableH;
+                                    var clamped = Math.max(0, Math.min(scaleMax, v));
+                                    return pad + usableH - (clamped / scaleMax) * usableH;
                                 }
 
                                 ctx.beginPath();
@@ -386,7 +399,7 @@ Item {
 
                     Text {
                         text: metricDelegate.liveAvailable 
-                                ? Math.round(metricDelegate.liveValue) + (metricDelegate.modelData.id === "temp" ? "°C" : "%") 
+                                ? Math.round(metricDelegate.liveValue) + (metricDelegate.modelData.id === "temp" ? SystemInfo.tempUnit : "%") 
                                 : "—"
                         color: Colors.md3.on_surface
                         font.family: Config.fontFamily

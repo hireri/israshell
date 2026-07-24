@@ -97,7 +97,7 @@ Singleton {
             popupPosition: 0
         })
     property bool weekMonday: true
-    property bool useFarenheit: false
+    property bool useFahrenheit: false
     property bool verticalQSSliders: false
     property bool startLocked: false
     property bool useHyprlock: false
@@ -224,7 +224,7 @@ Singleton {
                 popupPosition: 0
             },
             weekMonday: true,
-            useFarenheit: false,
+            useFahrenheit: false,
             verticalQSSliders: false,
             startLocked: false,
             useHyprlock: false,

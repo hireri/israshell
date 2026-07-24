@@ -97,7 +97,7 @@ Singleton {
     Connections {
         target: Config
 
-        function onUseFarenheitChanged() { root._fetchWeather(); }
+        function onuseFahrenheitChanged() { root._fetchWeather(); }
         function onHourFormatChanged() { root._updateClock(); }
         function onShowSecondsChanged() { root._updateClock(); }
         function onDateFormatChanged() { root._updateClock(); }
@@ -359,7 +359,7 @@ Singleton {
             return;
         }
 
-        const tempUnit = Config.useFarenheit ? "fahrenheit" : "celsius";
+        const tempUnit = Config.useFahrenheit ? "fahrenheit" : "celsius";
         const url = "https://api.open-meteo.com/v1/forecast"
             + "?latitude=" + _lat
             + "&longitude=" + _lon
@@ -548,7 +548,7 @@ Singleton {
     }
 
     function _fetchWeatherForCoords(lat, lon, prettyLocation, callback) {
-        const tempUnit = Config.useFarenheit ? "fahrenheit" : "celsius";
+        const tempUnit = Config.useFahrenheit ? "fahrenheit" : "celsius";
         const url = "https://api.open-meteo.com/v1/forecast"
             + "?latitude=" + lat
             + "&longitude=" + lon
