@@ -308,6 +308,13 @@ ShellRoot {
             id: screenScope
             required property var modelData
 
+            readonly property int barMode: {
+                if (Config.bar.transparency === 2) {
+                    return Config.bar.mode === 2 ? 2 : 0;
+                }
+                return Config.bar.mode;
+            }
+
             Background {
                 id: wallpaperBackgroundItem
                 modelData: screenScope.modelData
@@ -372,19 +379,19 @@ ShellRoot {
                 anchors.left: true
                 anchors.right: true
 
-                implicitHeight: ((Config.bar.mode === 2) ? 56 : 44)
+                implicitHeight: ((screenScope.barMode === 2) ? 56 : 44)
                 color: "transparent"
-                exclusiveZone: ((Config.bar.mode === 2) ? 56 : Config.bar.transparency === 2 & !GameModeService.active ? 34 : 44)
+                exclusiveZone: ((screenScope.barMode === 2) ? 56 : Config.bar.transparency === 2 & !GameModeService.active ? 34 : 44)
                 visible: true
 
                 Item {
                     id: visualContent
                     anchors.fill: parent
-                    anchors.leftMargin: (Config.bar.mode === 2) ? 12 : 0
-                    anchors.rightMargin: (Config.bar.mode === 2) ? 12 : 0
-                    anchors.topMargin: (Config.bar.mode === 2) && Config.bar.position === 0 ? 10 : 0
-                    anchors.bottomMargin: (Config.bar.mode === 2) && Config.bar.position === 1 ? 10 : 0
-                    clip: Config.bar.mode === 3
+                    anchors.leftMargin: (screenScope.barMode === 2) ? 12 : 0
+                    anchors.rightMargin: (screenScope.barMode === 2) ? 12 : 0
+                    anchors.topMargin: (screenScope.barMode === 2) && Config.bar.position === 0 ? 10 : 0
+                    anchors.bottomMargin: (screenScope.barMode === 2) && Config.bar.position === 1 ? 10 : 0
+                    clip: screenScope.barMode === 3
 
                     opacity: window.shouldHide ? 0 : 1
 
@@ -399,16 +406,16 @@ ShellRoot {
                         id: barContainer
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        height: (Config.bar.mode === 3) ? parent.height * 2 : parent.height
-                        y: (Config.bar.mode === 3 && Config.bar.position === 0) ? -parent.height : 0
+                        height: (screenScope.barMode === 3) ? parent.height * 2 : parent.height
+                        y: (screenScope.barMode === 3 && Config.bar.position === 0) ? -parent.height : 0
 
-                        radius: (Config.bar.mode === 3) ? 0 : (Config.bar.mode === 2) ? 22 : 0
-                        bottomLeftRadius: (Config.bar.mode === 3 && Config.bar.position === 0) ? height / 4 : radius
-                        bottomRightRadius: (Config.bar.mode === 3 && Config.bar.position === 0) ? height / 4 : radius
-                        topLeftRadius: (Config.bar.mode === 3 && Config.bar.position === 1) ? height / 4 : radius
-                        topRightRadius: (Config.bar.mode === 3 && Config.bar.position === 1) ? height / 4 : radius
+                        radius: (screenScope.barMode === 3) ? 0 : (screenScope.barMode === 2) ? 22 : 0
+                        bottomLeftRadius: (screenScope.barMode === 3 && Config.bar.position === 0) ? height / 4 : radius
+                        bottomRightRadius: (screenScope.barMode === 3 && Config.bar.position === 0) ? height / 4 : radius
+                        topLeftRadius: (screenScope.barMode === 3 && Config.bar.position === 1) ? height / 4 : radius
+                        topRightRadius: (screenScope.barMode === 3 && Config.bar.position === 1) ? height / 4 : radius
 
-                        border.width: (Config.bar.mode === 2) ? 1 : 0
+                        border.width: (screenScope.barMode === 2) ? 1 : 0
                         border.color: Config.bar.transparency ? Qt.alpha(Colors.md3.outline_variant, 0.5) : Colors.md3.outline_variant
                         Behavior on border.color {
                             ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
@@ -418,7 +425,7 @@ ShellRoot {
                         Loader {
                             id: barBlurLoader
                             anchors.fill: parent
-                            active: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && Config.bar.mode === 2))
+                            active: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && screenScope.barMode === 2))
                             
                             sourceComponent: Item {
                                 id: barBlurContainer
@@ -457,11 +464,11 @@ ShellRoot {
                                         readonly property bool isTop: Config.bar.position === 0
                                         
                                         readonly property int visualContentY: isTop 
-                                            ? (Config.bar.mode === 2 ? 10 : 0) 
+                                            ? (screenScope.barMode === 2 ? 10 : 0) 
                                             : (screenHeight - windowHeight)
                                             
-                                        readonly property int barContainerY: visualContentY + ((Config.bar.mode === 3 && isTop) ? -windowHeight : 0)
-                                        readonly property int barContainerX: (Config.bar.mode === 2) ? 12 : 0
+                                        readonly property int barContainerY: visualContentY + ((screenScope.barMode === 3 && isTop) ? -windowHeight : 0)
+                                        readonly property int barContainerX: (screenScope.barMode === 2) ? 12 : 0
 
                                         x: -barContainerX
                                         y: -barContainerY
@@ -491,14 +498,14 @@ ShellRoot {
                             anchors.fill: parent
                             radius: parent.radius
 
-                            readonly property bool blurActive: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && Config.bar.mode === 2))
+                            readonly property bool blurActive: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && screenScope.barMode === 2))
                             readonly property real dimAlpha: Config.blurOpacity
 
                             property color topColor: {
                                 const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, dimAlpha) : Colors.md3.surface_container;
                                 const fadeAtTop = Config.bar.position === 0;
                                 if (Config.bar.transparency === 2) {
-                                    if (!(Config.bar.mode === 2))
+                                    if (!(screenScope.barMode === 2))
                                         return Qt.alpha(Colors.md3.background, 0);
                                     return fadeAtTop ? Qt.alpha(Colors.md3.background, 0.5) : Qt.alpha(Colors.md3.background, 0);
                                 }
@@ -508,7 +515,7 @@ ShellRoot {
                                 const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, dimAlpha) : Colors.md3.surface_container;
                                 const fadeAtTop = Config.bar.position === 0;
                                 if (Config.bar.transparency === 2) {
-                                    if (!(Config.bar.mode === 2))
+                                    if (!(screenScope.barMode === 2))
                                         return Qt.alpha(Colors.md3.background, 0);
                                     return fadeAtTop ? Qt.alpha(Colors.md3.background, 0) : Qt.alpha(Colors.md3.background, 0.5);
                                 }
@@ -537,11 +544,11 @@ ShellRoot {
                         Item {
                             anchors.fill: parent
                             
-                            anchors.topMargin: (Config.bar.mode === 3 && Config.bar.position === 0) ? parent.height / 2 : 0
-                            anchors.bottomMargin: (Config.bar.mode === 3 && Config.bar.position === 1) ? parent.height / 2 : 0
+                            anchors.topMargin: (screenScope.barMode === 3 && Config.bar.position === 0) ? parent.height / 2 : 0
+                            anchors.bottomMargin: (screenScope.barMode === 3 && Config.bar.position === 1) ? parent.height / 2 : 0
                             
-                            anchors.rightMargin: (Config.bar.mode === 3) ? 5 : 8
-                            anchors.leftMargin: (Config.bar.mode === 3) ? 5 : 6
+                            anchors.rightMargin: (screenScope.barMode === 3) ? 5 : 8
+                            anchors.leftMargin: (screenScope.barMode === 3) ? 5 : 6
 
                             BarMenu {
                                 id: barContextMenu
@@ -624,7 +631,7 @@ ShellRoot {
                 id: huggingWindow
                 screen: modelData
 
-                visible: Config.bar.mode === 0 && Config.bar.transparency !== 2
+                visible: screenScope.barMode === 0 && Config.bar.transparency !== 2
 
                 anchors.top: Config.bar.position === 0
                 anchors.bottom: Config.bar.position === 1
