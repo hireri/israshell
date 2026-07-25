@@ -91,8 +91,7 @@ Item {
             onVisibleChanged: {
                 if (visible) {
                     breadcrumbs.updatePath(WallpaperService.currentDir);
-                    searchInput.focus = false;
-                    keyHandler.forceActiveFocus();
+                    searchInput.forceActiveFocus();
                 }
             }
 
@@ -102,6 +101,9 @@ Item {
                     breadcrumbs.updatePath(WallpaperService.currentDir);
                 }
                 function onEntriesChanged() {
+                    panel.rebuildModel(panel.searchQuery, WallpaperService.entries);
+                }
+                function onSortModeChanged() {
                     panel.rebuildModel(panel.searchQuery, WallpaperService.entries);
                 }
             }
@@ -130,7 +132,7 @@ Item {
                 readonly property int headerH: 52
                 readonly property int gridPad: 8
                 readonly property int cardMargin: 4
-                readonly property int cols: 4
+                readonly property int cols: 5
                 readonly property int innerRadius: 16
                 readonly property int scrollbarWidth: 8
                 readonly property int imageInset: 4
@@ -199,9 +201,20 @@ Item {
                     const sorted = [...filtered].sort((a, b) => {
                         if (a.isDir !== b.isDir)
                             return a.isDir ? -1 : 1;
-                        return a.name.localeCompare(b.name, undefined, {
-                            sensitivity: 'base'
-                        });
+                        switch (WallpaperService.sortMode) {
+                        case 1:
+                            return b.name.localeCompare(a.name, undefined, {
+                                sensitivity: 'base'
+                            });
+                        case 2:
+                            return (b.mtime ?? 0) - (a.mtime ?? 0);
+                        case 3:
+                            return (a.mtime ?? 0) - (b.mtime ?? 0);
+                        default:
+                            return a.name.localeCompare(b.name, undefined, {
+                                sensitivity: 'base'
+                            });
+                        }
                     });
 
                     const key = sorted.map(e => e.path).join("\u0001");
@@ -231,7 +244,7 @@ Item {
 
                 onSearchQueryChanged: rebuildModel(panel.searchQuery, WallpaperService.entries)
 
-                width: 900
+                width: 1100
                 height: 600
                 radius: 20
                 color: Colors.md3.surface_container
@@ -278,15 +291,25 @@ Item {
                         }
                         spacing: 6
 
+                        SortBtn {
+                            onBtnClicked: WallpaperService.cycleSortMode()
+                        }
                         IconBtn {
-                            btnIcon: "󰉋"
+                            btnIcon: "folder-open"
                             onBtnClicked: {
                                 WallpaperService.openFolder();
                                 WallpaperService.close();
                             }
                         }
                         IconBtn {
-                            btnIcon: "󰅖"
+                            btnIcon: "settings"
+                            onBtnClicked: {
+                                Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"])
+                                WallpaperService.close();
+                            }
+                        }
+                        IconBtn {
+                            btnIcon: "close"
                             onBtnClicked: WallpaperService.close()
                         }
                     }
@@ -309,8 +332,6 @@ Item {
                     function navigateTo(path) {
                         panel.searchQuery = "";
                         searchInput.text = "";
-                        searchInput.focus = false;
-                        keyHandler.forceActiveFocus();
                         WallpaperService.navigate(path);
                         grid.positionViewAtBeginning();
                     }
@@ -347,6 +368,7 @@ Item {
                             flickableDirection: Flickable.VerticalFlick
                             boundsBehavior: Flickable.DragOverBounds
                             pixelAligned: true
+                            reuseItems: true
                             model: panel.gridModel
 
                             footer: Item {
@@ -354,15 +376,38 @@ Item {
                                 height: panel.pillH + panel.pillMargin + panel.gridPad
                             }
 
-                            Text {
+                            Column {
                                 anchors.centerIn: parent
+                                spacing: 20
                                 visible: panel.gridModel.count === 0
-                                text: WallpaperService.loading ? "Loading..." : (panel.searchQuery !== "" ? "No results" : "No wallpapers found")
-                                font.pixelSize: 14
-                                font.family: Config.fontFamily
-                                renderType: Text.NativeRendering
-                                color: Colors.md3.on_surface_variant
-                                opacity: 0.6
+
+                                Rectangle {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    implicitWidth: kaoLbl.implicitWidth + 36
+                                    height: 70
+                                    radius: 35
+                                    color: Colors.md3.primary_container
+
+                                    Text {
+                                        id: kaoLbl
+                                        anchors.centerIn: parent
+                                        text: WallpaperService.loading ? "(╭ರ_•́)" : "(ᵕ—ᴗ—)?"
+                                        color: Colors.md3.primary
+                                        font.pixelSize: 38
+                                        font.family: Config.fontFamily
+                                        renderType: Text.NativeRendering
+                                    }
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: WallpaperService.loading ? "Loading..." : (panel.searchQuery !== "" ? "No results" : "No wallpapers found")
+                                    color: Colors.md3.on_surface_variant
+                                    font.pixelSize: 16
+                                    font.family: Config.fontFamily
+                                    renderType: Text.NativeRendering
+                                    opacity: 0.45
+                                }
                             }
 
                             delegate: EntryCard {
@@ -428,12 +473,10 @@ Item {
                                     }
                                 }
 
-                                Text {
+                                MaterialIcon {
                                     anchors.centerIn: parent
-                                    text: "󰖙"
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 17
-                                    renderType: Text.NativeRendering
+                                    name: "light-mode"
+                                    iconSize: 17
                                     color: Colors.md3.on_surface_variant
                                     opacity: WallpaperService.isDark ? 0 : 1
                                     Behavior on opacity {
@@ -442,12 +485,10 @@ Item {
                                         }
                                     }
                                 }
-                                Text {
+                                MaterialIcon {
                                     anchors.centerIn: parent
-                                    text: "󰖔"
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 17
-                                    renderType: Text.NativeRendering
+                                    name: "dark-mode"
+                                    iconSize: 17
                                     color: Colors.md3.on_surface_variant
                                     opacity: WallpaperService.isDark ? 1 : 0
                                     Behavior on opacity {
@@ -480,12 +521,10 @@ Item {
                                     }
                                 }
 
-                                Text {
+                                MaterialIcon {
                                     anchors.centerIn: parent
-                                    text: "󰒝"
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 17
-                                    renderType: Text.NativeRendering
+                                    name: "shuffle"
+                                    iconSize: 17
                                     color: Colors.md3.on_surface_variant
                                 }
 
@@ -512,7 +551,7 @@ Item {
                             radius: 18
                             color: Colors.md3.surface_container_low
 
-                            Text {
+                            Row {
                                 anchors {
                                     left: parent.left
                                     leftMargin: 14
@@ -520,16 +559,28 @@ Item {
                                     rightMargin: 4
                                     verticalCenter: parent.verticalCenter
                                 }
-                                text: "󰍉  Search..."
-                                font.pixelSize: 13
-                                font.family: Config.fontFamily
-                                renderType: Text.NativeRendering
-                                color: Colors.md3.on_surface_variant
+                                spacing: 6
                                 opacity: searchInput.text.length === 0 ? 0.5 : 0
                                 Behavior on opacity {
                                     NumberAnimation {
                                         duration: 100
                                     }
+                                }
+
+                                MaterialIcon {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    name: "search"
+                                    iconSize: 15
+                                    color: Colors.md3.on_surface_variant
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "Search..."
+                                    font.pixelSize: 13
+                                    font.family: Config.fontFamily
+                                    renderType: Text.NativeRendering
+                                    color: Colors.md3.on_surface_variant
                                 }
                             }
 
@@ -587,12 +638,10 @@ Item {
                                     }
                                 }
 
-                                Text {
+                                MaterialIcon {
                                     anchors.centerIn: parent
-                                    text: "󰅖"
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 11
-                                    renderType: Text.NativeRendering
+                                    name: "close"
+                                    iconSize: 12
                                     color: Colors.md3.on_surface_variant
                                 }
                                 MouseArea {
@@ -617,6 +666,63 @@ Item {
         }
     }
 
+    component SortBtn: Rectangle {
+        id: sBtn
+        signal btnClicked
+
+        readonly property int mode: WallpaperService.sortMode
+        readonly property bool isAlphaMode: mode === 0 || mode === 1
+        readonly property bool isDescending: mode === 1 || mode === 2
+        readonly property color iconColor: sBtnMA.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+
+        width: sortRow.implicitWidth + 16
+        height: 34
+        radius: 17
+        color: sBtnMA.containsMouse ? Qt.alpha(Colors.md3.on_surface_variant, 0.15) : Qt.alpha(Colors.md3.on_surface_variant, 0.06)
+        Behavior on color {
+            ColorAnimation {
+                duration: 100
+            }
+        }
+
+        Row {
+            id: sortRow
+            anchors.centerIn: parent
+            spacing: 2
+
+            MaterialIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: sBtn.isAlphaMode ? "sort-by-alpha" : "history"
+                iconSize: 15
+                color: sBtn.iconColor
+                transitionType: "crossfade-scale"
+            }
+
+            MaterialIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: "arrow-upward"
+                iconSize: 15
+                color: sBtn.iconColor
+                rotation: sBtn.isDescending ? 180 : 0
+
+                Behavior on rotation {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+        }
+
+        MouseArea {
+            id: sBtnMA
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onClicked: sBtn.btnClicked()
+        }
+    }
+
     component IconBtn: Rectangle {
         id: iBtn
         property string btnIcon: ""
@@ -632,12 +738,10 @@ Item {
             }
         }
 
-        Text {
+        MaterialIcon {
             anchors.centerIn: parent
-            text: iBtn.btnIcon
-            font.family: Config.fontFamily
-            font.pixelSize: 18
-            renderType: Text.NativeRendering
+            name: iBtn.btnIcon
+            iconSize: 18
             color: iBtnMA.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
             Behavior on color {
                 ColorAnimation {
@@ -655,30 +759,48 @@ Item {
         }
     }
 
-    component BreadCrumbBar: Row {
+    component BreadCrumbBar: Item {
         id: bar
-        spacing: 4
+        readonly property int spacing: 3
         clip: true
+        implicitWidth: bar._contentWidth
+        implicitHeight: 32
 
-        property var currentPathItems: []
+        property var pathItems: []
+        property int activeIndex: -1
         property string currentDir: ""
         property var navigateCallback: function (path) {
             WallpaperService.navigate(path);
         }
 
+        property real _contentWidth: 0
+
+        function relayout() {
+            let x = 0;
+            for (const c of bar.children) {
+                if (c._removing)
+                    continue;
+                c.targetX = x;
+                x += c.width + bar.spacing;
+            }
+            bar._contentWidth = Math.max(0, x - bar.spacing);
+        }
+
         function updatePath(newPath) {
             const home = Quickshell.env("HOME");
-            let newItems = [];
             currentDir = newPath;
 
+            let newItems = [];
             if (newPath === home) {
                 newItems.push({
-                    label: "󰋜",
+                    label: "",
+                    icon: "home",
                     path: home
                 });
             } else if (newPath.startsWith(home)) {
                 newItems.push({
-                    label: "󰋜",
+                    label: "",
+                    icon: "home",
                     path: home
                 });
                 let p = home;
@@ -701,26 +823,39 @@ Item {
                 }
             }
 
-            let common = 0;
-            while (common < currentPathItems.length && common < newItems.length && currentPathItems[common].path === newItems[common].path)
-                common++;
+            let matchLen = 0;
+            while (matchLen < bar.pathItems.length && matchLen < newItems.length && bar.pathItems[matchLen].path === newItems[matchLen].path)
+                matchLen++;
 
-            for (let i = 0; i < common; i++) {
-                if (i < children.length)
-                    children[i].updateIsLast(i === newItems.length - 1);
+            const isBackNavWithinBranch = matchLen === newItems.length && newItems.length <= bar.pathItems.length;
+            const nextItems = isBackNavWithinBranch ? bar.pathItems : bar.pathItems.slice(0, matchLen).concat(newItems.slice(matchLen));
+            const newActiveIndex = newItems.length - 1;
+
+            let structCommon = 0;
+            while (structCommon < bar.pathItems.length && structCommon < nextItems.length && bar.pathItems[structCommon].path === nextItems[structCommon].path)
+                structCommon++;
+
+            for (let i = 0; i < structCommon; i++) {
+                if (i < children.length) {
+                    children[i].updateActive(i === newActiveIndex);
+                    children[i].updateRightmost(i === nextItems.length - 1);
+                }
             }
-            for (let i = currentPathItems.length - 1; i >= common; i--) {
+            for (let i = bar.pathItems.length - 1; i >= structCommon; i--) {
                 if (i < children.length)
                     children[i].animateOut();
             }
-            for (let i = common; i < newItems.length; i++) {
+            for (let i = structCommon; i < nextItems.length; i++) {
                 crumbComponent.createObject(bar, {
-                    crumbData: newItems[i],
-                    isLast: i === newItems.length - 1,
+                    crumbData: nextItems[i],
+                    isActive: i === newActiveIndex,
+                    isRightmost: i === nextItems.length - 1,
                     indexInBar: i
                 });
             }
-            currentPathItems = newItems;
+
+            bar.pathItems = nextItems;
+            bar.activeIndex = newActiveIndex;
         }
 
         Component {
@@ -729,21 +864,54 @@ Item {
             Rectangle {
                 id: chip
                 property var crumbData
-                property bool isLast: false
+                property bool isActive: false
+                property bool isRightmost: false
                 property int indexInBar: 0
 
+                property bool _removing: false
+                property real targetX: 0
+
+                readonly property bool hasIcon: !!crumbData?.icon
+
                 height: 32
-                radius: isLast ? height / 2 : 8
-                width: Math.max(isLast ? 48 : 38, chipLabel.implicitWidth + (isLast ? 24 : 16))
-                anchors.verticalCenter: parent.verticalCenter
+                width: hasIcon ? height : Math.max(isActive ? 48 : 38, chipLabel.implicitWidth + (isActive ? 24 : 16))
+                y: (bar.height - height) / 2
+                x: targetX
                 opacity: 0
                 scale: 0.82
 
-                color: isLast ? Colors.md3.primary : (chipMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                readonly property real innerRadius: 6
 
-                Behavior on radius {
+                topLeftRadius: isActive || indexInBar === 0 ? height / 2 : innerRadius
+                bottomLeftRadius: isActive || indexInBar === 0 ? height / 2 : innerRadius
+                topRightRadius: isActive || isRightmost ? height / 2 : innerRadius
+                bottomRightRadius: isActive || isRightmost ? height / 2 : innerRadius
+                
+                color: isActive ? Colors.md3.primary : (chipMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+
+                onWidthChanged: bar.relayout()
+
+                Behavior on topLeftRadius {
                     NumberAnimation {
-                        duration: 220
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on bottomLeftRadius {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on topRightRadius {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on bottomRightRadius {
+                    NumberAnimation {
+                        duration: 180
                         easing.type: Easing.OutCubic
                     }
                 }
@@ -754,23 +922,28 @@ Item {
                 }
                 Behavior on width {
                     NumberAnimation {
-                        duration: 200
+                        duration: 180
                         easing.type: Easing.OutCubic
                     }
                 }
 
-                function updateIsLast(last) {
-                    isLast = last;
+                function updateActive(active) {
+                    isActive = active;
+                }
+                function updateRightmost(rightmost) {
+                    isRightmost = rightmost;
                 }
                 function animateOut() {
+                    chip._removing = true;
+                    bar.relayout();
                     outAnim.start();
                 }
 
-                Timer {
-                    interval: chip.indexInBar * 35
-                    running: true
-                    onTriggered: inAnim.start()
+                Component.onCompleted: {
+                    bar.relayout();
+                    inAnim.start();
                 }
+                Component.onDestruction: bar.relayout()
 
                 ParallelAnimation {
                     id: inAnim
@@ -778,16 +951,15 @@ Item {
                         target: chip
                         property: "opacity"
                         to: 1
-                        duration: 200
+                        duration: 160
                         easing.type: Easing.OutCubic
                     }
                     NumberAnimation {
                         target: chip
                         property: "scale"
                         to: 1
-                        duration: 280
-                        easing.type: Easing.OutBack
-                        easing.overshoot: 1.4
+                        duration: 200
+                        easing.type: Easing.OutCubic
                     }
                 }
                 SequentialAnimation {
@@ -811,17 +983,31 @@ Item {
                     }
                 }
 
+                MaterialIcon {
+                    visible: chip.hasIcon
+                    anchors.centerIn: parent
+                    name: chip.crumbData?.icon ?? ""
+                    iconSize: 16
+                    color: chip.isActive ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 200
+                        }
+                    }
+                }
+
                 Text {
                     id: chipLabel
+                    visible: !chip.hasIcon
                     anchors.centerIn: parent
-                    text: chip.crumbData?.label ?? ""
+                    text: chip.hasIcon ? "" : (chip.crumbData?.label ?? "")
                     font.pixelSize: 12
                     font.weight: Font.Medium
                     font.family: Config.fontFamily
                     renderType: Text.NativeRendering
                     elide: Text.ElideRight
                     maximumLineCount: 1
-                    color: chip.isLast ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                    color: chip.isActive ? Colors.md3.on_primary : Colors.md3.on_surface_variant
                     Behavior on color {
                         ColorAnimation {
                             duration: 200
@@ -833,8 +1019,8 @@ Item {
                     id: chipMouse
                     anchors.fill: parent
                     hoverEnabled: true
-                    cursorShape: chip.isLast ? Qt.ArrowCursor : Qt.PointingHandCursor
-                    enabled: !chip.isLast
+                    cursorShape: chip.isActive ? Qt.ArrowCursor : Qt.PointingHandCursor
+                    enabled: !chip.isActive
                     onClicked: bar.navigateCallback(chip.crumbData.path)
                 }
             }
@@ -859,6 +1045,14 @@ Item {
         property string thumbPath: ""
         property bool thumbRequested: false
         property int thumbAttempts: 0
+        property string _thumbTargetPath: ""
+
+        GridView.onReused: {
+            card.thumbRequested = false;
+            card.thumbPath = "";
+            card.thumbAttempts = 0;
+            card._thumbTargetPath = "";
+        }
 
         function ensureThumbnail() {
             if (!card.isVideo || card.thumbRequested)
@@ -868,6 +1062,7 @@ Item {
                 return;
 
             card.thumbRequested = true;
+            card._thumbTargetPath = card.entryPath;
             thumbQueue.request(() => {
                 thumbProc.running = true;
             });
@@ -887,6 +1082,10 @@ Item {
             stdout: StdioCollector {
                 id: thumbCollector
                 onStreamFinished: {
+                    if (card._thumbTargetPath !== card.entryPath) {
+                        thumbQueue.release();
+                        return;
+                    }
                     const p = thumbCollector.text.trim();
                     if (p) {
                         card.thumbPath = p;
@@ -941,12 +1140,10 @@ Item {
                     radius: 10
                     color: Colors.md3.surface_container_high
 
-                    Text {
+                    MaterialIcon {
                         anchors.centerIn: parent
-                        text: "󰉋"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 20
-                        renderType: Text.NativeRendering
+                        name: "folder"
+                        iconSize: 20
                         color: Colors.md3.on_surface_variant
                     }
                 }
@@ -1056,12 +1253,10 @@ Item {
                     color: Colors.md3.primary
                     z: 2
 
-                    Text {
+                    MaterialIcon {
                         anchors.centerIn: parent
-                        text: "󰄬"
-                        font.family: Config.fontFamily
-                        font.pixelSize: 12
-                        renderType: Text.NativeRendering
+                        name: "check"
+                        iconSize: 14
                         color: Colors.md3.on_primary
                     }
                 }
@@ -1105,9 +1300,7 @@ Item {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 hoverEnabled: true
-                onClicked: {
-                    searchInput.focus = false;
-                    keyHandler.forceActiveFocus();
+                onClicked: {                    
                     if (card.isDir) {
                         card.navigateCallback(card.entryPath);
                     } else {

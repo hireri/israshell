@@ -78,7 +78,7 @@ Item {
                 text: root._password
                 color: Colors.md3.on_surface
                 font.pixelSize: root._length > 24 ? 14 : 18
-                font.family: "JetBrains Mono"
+                font.family: Config.fontMonospace
                 font.weight: Font.Medium
                 elide: Text.ElideRight
                 Layout.fillWidth: true

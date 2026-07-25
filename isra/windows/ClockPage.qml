@@ -16,6 +16,22 @@ PageBase {
     title: "Desktop Clock"
     subtitle: "Layout, style and sizing"
 
+    readonly property var systemFontsModel: {
+        var families = Qt.fontFamilies();
+        var uniqueFamilies = families.filter(function(item, pos, self) {
+            return self.indexOf(item) === pos;
+        });
+        uniqueFamilies.sort(function(a, b) {
+            return a.localeCompare(b);
+        });
+        return uniqueFamilies.map(function(family) {
+            return {
+                label: family,
+                value: family
+            };
+        });
+    }
+    
     property var previewTime: new Date()
     Timer {
         interval: 1000
@@ -672,13 +688,18 @@ PageBase {
             onSelected: (val) => updateClock({ align: val })
         }
 
-        SettingInput {
+        SettingSelect {
             label: "Font family"
             sublabel: "Leave empty to use the shell font"
-            value: Config.clock.fontFamily
-            placeholder: "e.g. Google Sans Flex"
-            fieldWidth: 180
-            onCommitted: v => updateClock({ fontFamily: v })
+            options: pageRoot.systemFontsModel
+            currentValue: Config.clock.fontFamily
+            onSelected: v => {
+                if (v && v.trim().length > 0) {
+                    updateClock({
+                        fontFamily: v.trim()
+                    });
+                }
+            }
         }
         SettingSlider {
             label: "Weight"

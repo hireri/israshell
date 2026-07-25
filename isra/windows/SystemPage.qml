@@ -8,8 +8,25 @@ import qs.services
 import qs.windows.components
 
 PageBase {
+    id: pageRoot
     title: "System"
     subtitle: "About and script paths"
+
+    readonly property var systemFontsModel: {
+        var families = Qt.fontFamilies();
+        var uniqueFamilies = families.filter(function(item, pos, self) {
+            return self.indexOf(item) === pos;
+        });
+        uniqueFamilies.sort(function(a, b) {
+            return a.localeCompare(b);
+        });
+        return uniqueFamilies.map(function(family) {
+            return {
+                label: family,
+                value: family
+            };
+        });
+    }
 
     Component.onCompleted: Updater.checkNow()
 
@@ -262,30 +279,32 @@ PageBase {
             label: "Fonts"
             Layout.fillWidth: true
 
-            SettingInput {
+            SettingSelect {
                 label: "Interface font"
-                sublabel: Config.fontFamily
-                value: Config.fontFamily
-                placeholder: "Font name..."
-                onCommitted: v => {
-                    if (v.trim().length > 0)
+                sublabel: "System default typeface"
+                options: pageRoot.systemFontsModel
+                currentValue: Config.fontFamily
+                onSelected: v => {
+                    if (v && v.trim().length > 0) {
                         Config.update({
                             fontFamily: v.trim()
                         });
+                    }
                 }
             }
 
-            SettingInput {
+            SettingSelect {
                 isLast: true
                 label: "Monospace font"
-                sublabel: Config.fontMonospace
-                value: Config.fontMonospace
-                placeholder: "Monospace font name..."
-                onCommitted: v => {
-                    if (v.trim().length > 0)
+                sublabel: "Fixed-width terminal typeface"
+                options: pageRoot.systemFontsModel
+                currentValue: Config.fontMonospace
+                onSelected: v => {
+                    if (v && v.trim().length > 0) {
                         Config.update({
                             fontMonospace: v.trim()
                         });
+                    }
                 }
             }
         }

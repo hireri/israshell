@@ -18,6 +18,13 @@ Singleton {
     property string currentWallPreview: ""
     property string currentDir: Quickshell.env("HOME") + "/Pictures"
 
+    property int sortMode: 0
+    readonly property var sortModeLabels: ["A → Z", "Z → A", "Newest", "Oldest"]
+
+    function cycleSortMode(): void {
+        sortMode = (sortMode + 1) % 4;
+    }
+
     property string currentScheme: Config.colorScheme || "scheme-tonal-spot"
     property var schemePreviews: ({})
     property bool previewsLoading: false
@@ -111,7 +118,6 @@ Singleton {
         applying = true;
         currentWall = path;
         currentWallPreview = "";
-        isOpen = false;
         applyProc.wallPath = path;
         applyProc.mode = isDark ? "dark" : "light";
         applyProc.scheme = currentScheme;
@@ -445,7 +451,7 @@ Singleton {
     function _runList() {
         loading = true;
         listProc.running = false;
-        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' " + "-o -iname '*.mp4' -o -iname '*.mkv' -o -iname '*.webm' -o -iname '*.mov' -o -iname '*.avi' -o -iname '*.m4v' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; } | sort -rn | cut -f2-"];
+        listProc.command = ["bash", "-c", "{ find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%T@\\tD\\t%f\\t%p\\n'; " + "find " + JSON.stringify(currentDir) + " -maxdepth 1 -mindepth 1 -type f ! -name '.*' " + "\\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' " + "-o -iname '*.mp4' -o -iname '*.mkv' -o -iname '*.webm' -o -iname '*.mov' -o -iname '*.avi' -o -iname '*.m4v' \\) " + "-printf '%T@\\tF\\t%f\\t%p\\n'; }"];
         listProc.running = true;
     }
 
@@ -458,9 +464,10 @@ Singleton {
                 root.entries = lines.map(l => {
                     const p = l.split("\t");
                     return {
-                        isDir: p[0] === "D",
-                        name: p[1] ?? "",
-                        path: p[2] ?? ""
+                        mtime: parseFloat(p[0]) || 0,
+                        isDir: p[1] === "D",
+                        name: p[2] ?? "",
+                        path: p[3] ?? ""
                     };
                 }).filter(e => e.name);
 

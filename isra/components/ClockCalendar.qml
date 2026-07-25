@@ -95,7 +95,7 @@ Item {
                         id: timeText
                         text: LocaleService.liveTime
                         color: Colors.md3.on_surface
-                        font.family: "Google Sans Display"
+                        font.family: Config.fontFamily
                         font.pixelSize: root.type.displayLarge
                         font.weight: Font.Light
                         font.features: ({
@@ -116,7 +116,7 @@ Item {
                             opacity: LocaleService.liveAmPm !== "" ? 1.0 : 0.0
                             text: LocaleService.liveAmPm !== "" ? LocaleService.liveAmPm.trim() : "am"
                             color: Colors.md3.on_surface_variant
-                            font.family: "Google Sans Display"
+                            font.family: Config.fontFamily
                             font.pixelSize: root.type.titleSmall
                             font.weight: Font.Light
                             height: timeText.height / 2
@@ -131,7 +131,7 @@ Item {
                         Text {
                             text: ":" + LocaleService.liveSecs
                             color: Colors.md3.primary
-                            font.family: "Google Sans Display"
+                            font.family: Config.fontFamily
                             font.pixelSize: root.type.titleSmall
                             font.weight: Font.Light
                             font.features: ({
