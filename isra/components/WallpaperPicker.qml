@@ -34,7 +34,7 @@ Item {
             const screen = root.panelWindow.screen;
             if (!screen)
                 return;
-            if (Hyprland.focusedMonitor?.name !== screen.name)
+            if (CompositorService.focusedMonitor?.name !== screen.name)
                 return;
             WallpaperService.toggleFor(root.panelWindow);
         }

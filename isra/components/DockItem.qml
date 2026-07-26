@@ -1,11 +1,11 @@
 pragma ComponentBehavior: Bound
 
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Widgets
 import QtQuick
 
 import qs.style
+import qs.services
 
 Item {
     id: root
@@ -22,13 +22,13 @@ Item {
 
     readonly property bool isActive: {
         for (let i = 0; i < toplevels.length; i++) {
-            if (toplevels[i] && toplevels[i].activated) return true;
+            if (toplevels[i] && toplevels[i].address === CompositorService.activeWindow.address) 
+                return true;
         }
         return false;
     }
 
     property int lastFocusIndex: 0
-
     property var desktopEntry: null
 
     function updateDesktopEntry(): void {
@@ -179,23 +179,23 @@ Item {
             if (mouse.button === Qt.LeftButton) {
                 if (root.isRunning) {
                     if (root.toplevels.length === 1) {
-                        root.toplevels[0].activate();
+                        CompositorService.focusWindow(root.toplevels[0].address);
                     } else {
                         root.lastFocusIndex = (root.lastFocusIndex + 1) % root.toplevels.length;
-                        root.toplevels[root.lastFocusIndex].activate();
+                        CompositorService.focusWindow(root.toplevels[root.lastFocusIndex].address);
                     }
                 } else {
                     if (root.desktopEntry) {
                         root.desktopEntry.execute();
                     } else {
-                        Hyprland.dispatch("exec " + root.appId);
+                        CompositorService.exec(root.appId);
                     }
                 }
             } else if (mouse.button === Qt.MiddleButton) {
                 if (root.desktopEntry) {
                     root.desktopEntry.execute();
                 } else {
-                    Hyprland.dispatch("exec " + root.appId);
+                    CompositorService.exec(root.appId);
                 }
             } else if (mouse.button === Qt.RightButton) {
                 root.dockRoot.togglePinned(root.appId);

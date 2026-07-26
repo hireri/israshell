@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import qs.services
 
 Scope {
@@ -54,17 +53,18 @@ Scope {
 
             mask: Region {}
 
-            property var monitor: Hyprland.monitorFor(screen)
+            property var monitor: CompositorService.monitorFor(screen)
+            property string monitorName: monitor.name
+
             property bool isFullscreen: {
-                if (!monitor)
+                if (monitorName === "")
                     return false;
 
-                let activeWs = Hyprland.workspaces.values.find(ws => ws.monitor && ws.monitor.name === monitor.name && ws.active);
-
+                const activeWs = CompositorService.workspaces.find(ws => ws.monitor === monitorName && ws.active);
                 if (!activeWs)
                     return false;
 
-                return activeWs.toplevels.values.some(top => top.wayland && top.wayland.fullscreen);
+                return CompositorService.windows.some(w => w.workspace === activeWs.id && w.fullscreen);
             }
 
             visible: !isFullscreen

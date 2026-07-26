@@ -13,9 +13,18 @@ Singleton {
     property string logo: "archlinux-logo"
     property string uptime: "unknown"
     property string kernel: "unknown"
-    property string session: "unknown"
     property string username: "unknown"
     property string hostname: "unknown"
+
+    readonly property string compositor: Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") ? "hyprland"
+        : Quickshell.env("NIRI_SOCKET") ? "niri"
+        : "unknown"
+
+    readonly property string session: {
+        const type = Quickshell.env("WAYLAND_DISPLAY") ? "Wayland" : Quickshell.env("DISPLAY") ? "X11" : "unknown";
+        const titled = compositor.charAt(0).toUpperCase() + compositor.slice(1);
+        return compositor !== "unknown" ? titled + " + " + type : type;
+    }
 
     property string cpu: "Unknown CPU"
     property string gpu: "Unknown GPU"
@@ -366,7 +375,6 @@ Singleton {
             quickshellProc.running = true;
             fileOsRelease.reload();
             fileUptime.reload();
-            fileSessionType.reload();
         }
     }
 
@@ -438,24 +446,6 @@ Singleton {
                 if (parts[0]) root.username = parts[0];
                 if (parts[1]) root.hostname = parts[1];
             }
-        }
-    }
-
-    FileView {
-        id: fileSessionType
-        path: "/proc/self/environ"
-        onTextChanged: {
-            const text = fileSessionType.text();
-            if (!text) return;
-            const vars = {};
-            text.split("\0").forEach(entry => {
-                const idx = entry.indexOf("=");
-                if (idx !== -1) vars[entry.slice(0, idx)] = entry.slice(idx + 1);
-            });
-
-            const compositor = vars["HYPRLAND_INSTANCE_SIGNATURE"] ? "Hyprland" : vars["SWAYSOCK"] ? "Sway" : vars["DISPLAY"] && !vars["WAYLAND_DISPLAY"] ? "X11" : vars["COMPOSITOR_NAME"] ?? "";
-            const type = vars["WAYLAND_DISPLAY"] ? "Wayland" : vars["DISPLAY"] ? "X11" : "unknown";
-            root.session = compositor ? compositor + " + " + type : type;
         }
     }
 

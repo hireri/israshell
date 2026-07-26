@@ -1,9 +1,9 @@
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Widgets
 import QtQuick
 
 import qs.style
+import qs.services
 
 Rectangle {
     id: root
@@ -28,13 +28,16 @@ Rectangle {
         }
     }
 
-    property var currentMonitor: Hyprland.monitorFor(panelWindow.modelData)
+    readonly property string currentMonitorName: panelWindow.modelData?.name ?? ""
+    property var currentMonitor: CompositorService.monitors.find(m => m.name === currentMonitorName)
 
     property int activeWorkspaceId: {
-        if (!currentMonitor)
-            return 1;
-        const ws = Hyprland.workspaces.values.find(w => w.active && w.monitor === currentMonitor);
-        return ws ? ws.id : 1;
+        if (currentMonitorName === "")
+            return -1;
+        const ws = CompositorService.workspaces.find(w => w.active && w.monitor === currentMonitorName);
+        if (ws)
+            return ws.id;
+        return root.currentMonitor?.activeWorkspaceId ?? 1;
     }
 
     property int activeIndex: Math.max(0, Math.min(activeWorkspaceId - 1, 9))
@@ -45,11 +48,11 @@ Rectangle {
         }
         const ids = [];
         for (let id = 1; id <= 10; id++) {
-            const wsObj = Hyprland.workspaces.values.find(w => w.id === id);
-            const hasWindows = Hyprland.toplevels.values.find(t => t.workspace && t.workspace.id === id) !== undefined;
+            const wsObj = CompositorService.workspaces.find(w => w.id === id);
+            const hasWindows = CompositorService.windows.find(w => w.workspace === id) !== undefined;
             const isActiveHere = root.activeWorkspaceId === id;
-            const isActiveOther = wsObj !== undefined && wsObj.active && wsObj.monitor !== root.currentMonitor;
-            const takenByMonitor = wsObj !== undefined && !!wsObj.monitor;
+            const isActiveOther = wsObj !== undefined && wsObj.active && wsObj.monitor !== root.currentMonitorName;
+            const takenByMonitor = wsObj !== undefined && wsObj.monitor !== "";
 
             if (hasWindows || takenByMonitor || isActiveHere || isActiveOther)
                 ids.push(id);
@@ -57,7 +60,8 @@ Rectangle {
         return ids;
     }
 
-    property int activeVisualIndex: Math.max(0, visibleIds.indexOf(activeWorkspaceId))
+    property int activeVisualIndex: Math.max(0, visibleIds.findIndex(id => Number(id) === Number(activeWorkspaceId)))
+    property bool hasActiveWorkspace: activeWorkspaceId > 0
 
     HoverHandler {
         id: rootHover
@@ -66,9 +70,9 @@ Rectangle {
     property bool isHovered: rootHover.hovered || mainMouseArea.containsMouse
 
     function getAppId(w) {
-        if (!w)
+        if (w === undefined || w.address === "")
             return "";
-        return w.wayland?.appId || w.lastIpcObject?.class || w.lastIpcObject?.initialClass || "";
+        return w.appId;
     }
 
     function getIconSource(appId) {
@@ -104,11 +108,11 @@ Rectangle {
         hoverEnabled: true
 
         onWheel: wheel => {
-            if (!root.currentMonitor)
+            if (root.currentMonitorName === "")
                 return;
             const currentId = root.activeWorkspaceId;
             const direction = wheel.angleDelta.y > 0 ? -1 : 1;
-            const otherMonitorWorkspaces = new Set(Hyprland.workspaces.values.filter(w => w.monitor && w.monitor !== root.currentMonitor).map(w => w.id));
+            const otherMonitorWorkspaces = new Set(CompositorService.workspaces.filter(w => w.monitor !== "" && w.monitor !== root.currentMonitorName).map(w => w.id));
 
             let target = currentId;
             let attempts = 0;
@@ -123,7 +127,7 @@ Rectangle {
             } while (otherMonitorWorkspaces.has(target) && target !== currentId)
 
             if (target !== currentId && !otherMonitorWorkspaces.has(target))
-                Hyprland.dispatch("hl.dsp.focus({ workspace = " + target + " })");
+                CompositorService.focusWorkspace(target, "");
         }
     }
 
@@ -139,6 +143,7 @@ Rectangle {
             height: 24
             radius: 12
             color: Colors.md3.primary
+            visible: root.hasActiveWorkspace
 
             x: root.activeVisualIndex * 32
             y: 0
@@ -162,17 +167,17 @@ Rectangle {
                     id: wsItem
                     property int wsId: index + 1
 
-                    property var wsObj: Hyprland.workspaces.values.find(w => w.id === wsId)
+                    property var wsObj: CompositorService.workspaces.find(w => w.id === wsId)
                     property bool isActiveHere: root.activeWorkspaceId === wsId
-                    property bool isActiveOther: wsObj !== undefined && wsObj.active && wsObj.monitor !== root.currentMonitor
-                    property bool takenByMonitor: wsObj !== undefined && !!wsObj.monitor
+                    property bool isActiveOther: wsObj !== undefined && wsObj.active && wsObj.monitor !== root.currentMonitorName
+                    property bool takenByMonitor: wsObj !== undefined && wsObj.monitor !== ""
 
-                    property var firstToplevel: Hyprland.toplevels.values.find(t => t.workspace && t.workspace.id === wsId)
-                    property bool hasWindows: firstToplevel !== undefined
+                    property var firstWindow: CompositorService.windows.find(w => w.workspace === wsId)
+                    property bool hasWindows: firstWindow !== undefined
 
                     property bool isVisible: !Config.workspaces.compact || hasWindows || takenByMonitor || isActiveHere || isActiveOther
 
-                    property string clientAppId: root.getAppId(firstToplevel)
+                    property string clientAppId: root.getAppId(firstWindow)
                     property string iconPath: root.getIconSource(clientAppId)
 
                     property bool showIcon: Config.workspaces.useIcons && hasWindows
@@ -342,7 +347,7 @@ Rectangle {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + wsItem.wsId + " })")
+                            onClicked: CompositorService.focusWorkspace(wsItem.wsId, "")
                         }
                     }
                 }

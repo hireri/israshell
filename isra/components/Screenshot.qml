@@ -122,7 +122,7 @@ Item {
     }
 
     function _openOverlay() {
-        if (!Hyprland.focusedMonitor)
+        if (!CompositorService.focusedMonitor)
             return;
         root.active = true;
         uiLoader.active = true;
@@ -159,14 +159,15 @@ Item {
                     const pad = root.windowPad;
                     const activeWsIds = [];
                     const fullscreenWsIds = [];
-                    for (const m of Hyprland.monitors.values) {
-                        const ws = m.activeWorkspace;
-                        if (ws) {
-                            activeWsIds.push(ws.id);
-                            if (ws.hasFullscreen)
-                                fullscreenWsIds.push(ws.id);
+
+                    for (const m of CompositorService.monitors) {
+                        if (m.activeWorkspaceId !== -1) {
+                            activeWsIds.push(m.activeWorkspaceId);
+                            if (m.activeWorkspaceHasFullscreen)
+                                fullscreenWsIds.push(m.activeWorkspaceId);
                         }
                     }
+
                     const rects = [];
                     for (const c of clients) {
                         if (!activeWsIds.includes(c.workspace.id))
@@ -332,7 +333,7 @@ Item {
                         property int cornerRadius: sessionRoot.dragging ? 10 : 22
 
                         Component.onCompleted: {
-                            if (Hyprland.focusedMonitor?.name === modelData.name)
+                            if (CompositorService.focusedMonitor?.name === modelData.name)
                                 sessionRoot.focusedScreen = modelData;
                         }
 

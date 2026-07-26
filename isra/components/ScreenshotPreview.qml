@@ -414,7 +414,7 @@ Item {
         active: outer.panelActive && !Config.notifications.showAllMonitors
         sourceComponent: Component {
             PreviewPanel {
-                targetScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? Quickshell.screens[0]
+                targetScreen: Quickshell.screens.find(s => s.name === CompositorService.focusedMonitor?.name) ?? Quickshell.screens[0]
                 outputDir: {
                     const p = outer.imagePath;
                     return p.substring(0, p.lastIndexOf("/"));

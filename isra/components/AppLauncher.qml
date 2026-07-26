@@ -7,6 +7,7 @@ import QtQuick
 import QtQuick.Effects
 import qs.components.launcher
 import qs.style
+import qs.services
 
 Scope {
     id: root
@@ -19,7 +20,7 @@ Scope {
     readonly property var _visual: visualLoader.item
 
     function _findFocusedScreen() {
-        const hm = Hyprland.focusedMonitor;
+        const hm = CompositorService.focusedMonitor;
         if (!hm)
             return Quickshell.screens[0] ?? null;
         for (const s of Quickshell.screens) {

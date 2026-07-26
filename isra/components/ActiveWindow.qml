@@ -1,16 +1,16 @@
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Widgets
 import QtQuick
 
 import qs.style
+import qs.services
 
 Rectangle {
     id: root
     readonly property int activeWidth: 220
     readonly property int horizontalPadding: 10
 
-    readonly property var activeWindow: Hyprland.activeToplevel
+    readonly property var activeWindow: CompositorService.activeWindow
 
     color: {
         if (Config.bar.transparentPills) {
@@ -56,9 +56,7 @@ Rectangle {
     readonly property string kaomoji: " > ⩊ < "
 
     function getAppId(w) {
-        if (!w)
-            return "";
-        return w.wayland?.appId || w.lastIpcObject?.class || w.lastIpcObject?.initialClass || "";
+        return w?.appId || "";
     }
 
     function getIconSource(appId) {
@@ -106,34 +104,6 @@ Rectangle {
     }
 
     onActiveWindowChanged: updateWindowInfo()
-
-    Connections {
-        target: activeWindow || null
-        ignoreUnknownSignals: true
-
-        function onTitleChanged() {
-            displayedTitle = activeWindow.title ?? "";
-            if (layerA)
-                textTitleA = displayedTitle;
-            else
-                textTitleB = displayedTitle;
-        }
-
-        function onWaylandChanged() {
-            const rawAppId = getAppId(activeWindow);
-            const newSource = getIconSource(rawAppId);
-
-            displayedAppId = rawAppId;
-
-            if (layerA) {
-                textAppIdA = rawAppId;
-                iconSourceA = newSource;
-            } else {
-                textAppIdB = rawAppId;
-                iconSourceB = newSource;
-            }
-        }
-    }
 
     Component.onCompleted: {
         const w = activeWindow;

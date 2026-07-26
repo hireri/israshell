@@ -90,7 +90,7 @@ Item {
         active: outer.keepActive && !Config.notifications.showAllMonitors
         sourceComponent: Component {
             PopupPanel {
-                targetScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? null
+                targetScreen: Quickshell.screens.find(s => s.name === CompositorService.focusedMonitor?.name) ?? null
             }
         }
     }
