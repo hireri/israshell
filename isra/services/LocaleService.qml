@@ -97,7 +97,7 @@ Singleton {
     Connections {
         target: Config
 
-        function onuseFahrenheitChanged() { root._fetchWeather(); }
+        function onUseFahrenheitChanged() { root._fetchWeather(); }
         function onHourFormatChanged() { root._updateClock(); }
         function onShowSecondsChanged() { root._updateClock(); }
         function onDateFormatChanged() { root._updateClock(); }
