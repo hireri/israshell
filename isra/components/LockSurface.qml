@@ -223,6 +223,7 @@ Item {
                         source: "file://" + Quickshell.env("HOME") + "/.face"
                         sourceSize: Qt.size(44, 44)
                         fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
                     }
                 }
 
@@ -373,7 +374,7 @@ Item {
         height: 64
         radius: height / 2
         color: Colors.md3.surface_container
-        implicitWidth: leftRow.implicitWidth + 24
+        implicitWidth: leftRow.implicitWidth + 20
 
         readonly property var player: MediaPlayerState.displayPlayer
         readonly property bool hasPlayer: player !== null && player !== undefined
@@ -395,12 +396,12 @@ Item {
             Item {
                 id: coverArt
                 Layout.alignment: Qt.AlignVCenter
-                width: 36
-                height: 36
+                width: 44
+                height: 44
 
                 ClippingRectangle {
                     anchors.fill: parent
-                    radius: 18
+                    radius: height / 2
                     color: Colors.md3.surface_container_highest
 
                     Loader {
@@ -412,7 +413,7 @@ Item {
 
                 ClippingRectangle {
                     anchors.fill: parent
-                    radius: 18
+                    radius: height / 2
                     visible: leftPill.hasPlayer && coverArtImg.status === Image.Ready
                     color: "transparent"
 

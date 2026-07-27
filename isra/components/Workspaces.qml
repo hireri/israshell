@@ -28,8 +28,14 @@ Rectangle {
         }
     }
 
+    readonly property bool isNiri: SystemInfo.compositor === "niri" || CompositorService.backendName === "niri"
     readonly property string currentMonitorName: panelWindow.modelData?.name ?? ""
     property var currentMonitor: CompositorService.monitors.find(m => m.name === currentMonitorName)
+
+    readonly property var niriWorkspaces: {
+        if (!isNiri) return [];
+        return CompositorService.workspaces.filter(w => w.monitor === currentMonitorName);
+    }
 
     property int activeWorkspaceId: {
         if (currentMonitorName === "")
@@ -43,6 +49,7 @@ Rectangle {
     property int activeIndex: Math.max(0, Math.min(activeWorkspaceId - 1, 9))
 
     property var visibleIds: {
+        if (isNiri) return [];
         if (!Config.workspaces.compact) {
             return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         }
@@ -60,8 +67,24 @@ Rectangle {
         return ids;
     }
 
-    property int activeVisualIndex: Math.max(0, visibleIds.findIndex(id => Number(id) === Number(activeWorkspaceId)))
-    property bool hasActiveWorkspace: activeWorkspaceId > 0
+    property int activeVisualIndex: {
+        if (isNiri) {
+            if (niriWorkspaces.length === 0) return 0;
+            const idx = niriWorkspaces.findIndex(w => w.id === activeWorkspaceId || w.active);
+            return Math.max(0, idx);
+        } else {
+            return Math.max(0, visibleIds.findIndex(id => Number(id) === Number(activeWorkspaceId)));
+        }
+    }
+
+    property bool hasActiveWorkspace: activeWorkspaceId > 0 || (isNiri && niriWorkspaces.length > 0)
+
+    readonly property int repeaterModel: {
+        if (isNiri) {
+            return Math.max(1, niriWorkspaces.length);
+        }
+        return 10;
+    }
 
     HoverHandler {
         id: rootHover
@@ -89,14 +112,18 @@ Rectangle {
         return "image://icon/" + appId + "?fallback=application-x-executable";
     }
 
-    function getWorkspaceLabel(id) {
+    function getWorkspaceLabel(wsItem) {
+        if (root.isNiri && wsItem.wsObj && wsItem.wsObj.name && isNaN(Number(wsItem.wsObj.name))) {
+            return wsItem.wsObj.name;
+        }
+        const id = wsItem.displayIndex;
         const style = Config.workspaces.style || 0;
         if (style === 1) {
             const roman = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
-            return roman[(id - 1) % 10] || "";
+            return roman[(id - 1) % 10] || id.toString();
         } else if (style === 2) {
             const kanji = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
-            return kanji[(id - 1) % 10] || "";
+            return kanji[(id - 1) % 10] || id.toString();
         }
         return id.toString();
     }
@@ -110,8 +137,27 @@ Rectangle {
         onWheel: wheel => {
             if (root.currentMonitorName === "")
                 return;
-            const currentId = root.activeWorkspaceId;
+
             const direction = wheel.angleDelta.y > 0 ? -1 : 1;
+
+            if (root.isNiri) {
+                const list = root.niriWorkspaces;
+                if (list.length === 0) return;
+                let currentIdx = list.findIndex(w => w.id === root.activeWorkspaceId || w.active);
+                if (currentIdx === -1) currentIdx = 0;
+                let targetIdx = Math.max(0, Math.min(list.length - 1, currentIdx + direction));
+                if (targetIdx !== currentIdx) {
+                    const targetWs = list[targetIdx];
+                    let ref = targetIdx + 1; 
+                    if (targetWs && targetWs.name && isNaN(Number(targetWs.name))) {
+                        ref = targetWs.name;
+                    }
+                    CompositorService.focusWorkspace(ref, root.currentMonitorName);
+                }
+                return;
+            }
+
+            const currentId = root.activeWorkspaceId;
             const otherMonitorWorkspaces = new Set(CompositorService.workspaces.filter(w => w.monitor !== "" && w.monitor !== root.currentMonitorName).map(w => w.id));
 
             let target = currentId;
@@ -161,27 +207,77 @@ Rectangle {
             spacing: 0
 
             Repeater {
-                model: 10
+                model: root.repeaterModel
 
                 Item {
                     id: wsItem
-                    property int wsId: index + 1
+                    property int itemIndex: index
+                    property int displayIndex: index + 1
 
-                    property var wsObj: CompositorService.workspaces.find(w => w.id === wsId)
-                    property bool isActiveHere: root.activeWorkspaceId === wsId
-                    property bool isActiveOther: wsObj !== undefined && wsObj.active && wsObj.monitor !== root.currentMonitorName
-                    property bool takenByMonitor: wsObj !== undefined && wsObj.monitor !== ""
+                    property var wsObj: {
+                        if (root.isNiri) {
+                            return root.niriWorkspaces[index] ?? null;
+                        }
+                        return CompositorService.workspaces.find(w => w.id === displayIndex);
+                    }
+
+                    property var wsId: {
+                        if (root.isNiri) {
+                            return wsObj ? wsObj.id : displayIndex;
+                        }
+                        return displayIndex;
+                    }
+
+                    property var wsRef: {
+                        if (root.isNiri) {
+                            if (wsObj && wsObj.name && isNaN(Number(wsObj.name))) {
+                                return wsObj.name;
+                            }
+                            return displayIndex;
+                        }
+                        return displayIndex;
+                    }
+
+                    property bool isActiveHere: {
+                        if (root.isNiri) {
+                            return wsObj ? (wsObj.id === root.activeWorkspaceId || wsObj.active) : (index === 0);
+                        }
+                        return root.activeWorkspaceId === wsId;
+                    }
+
+                    property bool isActiveOther: {
+                        if (root.isNiri) return false;
+                        return wsObj !== undefined && wsObj.active && wsObj.monitor !== root.currentMonitorName;
+                    }
+
+                    property bool takenByMonitor: {
+                        if (root.isNiri) return false;
+                        return wsObj !== undefined && wsObj.monitor !== "";
+                    }
 
                     property var firstWindow: CompositorService.windows.find(w => w.workspace === wsId)
                     property bool hasWindows: firstWindow !== undefined
 
-                    property bool isVisible: !Config.workspaces.compact || hasWindows || takenByMonitor || isActiveHere || isActiveOther
+                    property bool isVisible: {
+                        if (root.isNiri) return true;
+                        return !Config.workspaces.compact || hasWindows || takenByMonitor || isActiveHere || isActiveOther;
+                    }
 
                     property string clientAppId: root.getAppId(firstWindow)
                     property string iconPath: root.getIconSource(clientAppId)
 
                     property bool showIcon: Config.workspaces.useIcons && hasWindows
-                    property bool showNumber: !showIcon && (root.isHovered || isActiveHere || isActiveOther || hasWindows)
+
+                    property bool showNumber: {
+                        if (showIcon) return false;
+                        if (root.isNiri) return true;
+                        return root.isHovered || isActiveHere || isActiveOther || hasWindows;
+                    }
+
+                    property bool showDot: {
+                        if (root.isNiri) return false;
+                        return !showIcon && !root.isHovered && !isActiveHere && !isActiveOther && !hasWindows;
+                    }
 
                     width: isVisible ? 32 : 0
                     height: 24
@@ -229,10 +325,8 @@ Rectangle {
                                 radius: 3
                                 color: Colors.md3.outline_variant
 
-                                property bool showDot: !root.isHovered && !wsItem.isActiveHere && !wsItem.isActiveOther && !wsItem.hasWindows
-
-                                opacity: showDot ? 1 : 0
-                                scale: showDot ? 1 : 0.5
+                                opacity: wsItem.showDot ? 1 : 0
+                                scale: wsItem.showDot ? 1 : 0.5
 
                                 Behavior on opacity {
                                     NumberAnimation {
@@ -250,7 +344,7 @@ Rectangle {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: root.getWorkspaceLabel(wsItem.wsId)
+                                text: root.getWorkspaceLabel(wsItem)
 
                                 color: {
                                     if (wsItem.isActiveHere)
@@ -264,10 +358,8 @@ Rectangle {
                                 font.family: Config.fontFamily
                                 z: 2
 
-                                property bool showNumber: wsItem.showNumber
-
-                                opacity: showNumber ? 1 : 0
-                                scale: showNumber ? 1 : 0.5
+                                opacity: wsItem.showNumber ? 1 : 0
+                                scale: wsItem.showNumber ? 1 : 0.5
 
                                 Behavior on opacity {
                                     NumberAnimation {
@@ -330,15 +422,6 @@ Rectangle {
                                         sourceSize: Qt.size(24, 24)
                                     }
                                 }
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: wsItem.clientAppId !== "" ? wsItem.clientAppId.charAt(0).toUpperCase() : ""
-                                    color: wsItem.isActiveHere ? Colors.md3.on_primary : Colors.md3.on_surface
-                                    font.pixelSize: 12
-                                    font.bold: true
-                                    visible: appIcon.status === Image.Error || appIcon.status === Image.Null
-                                }
                             }
                         }
 
@@ -347,7 +430,13 @@ Rectangle {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: CompositorService.focusWorkspace(wsItem.wsId, "")
+                            onClicked: {
+                                if (root.isNiri) {
+                                    CompositorService.focusWorkspace(wsItem.wsRef, root.currentMonitorName);
+                                } else {
+                                    CompositorService.focusWorkspace(wsItem.wsId, "");
+                                }
+                            }
                         }
                     }
                 }

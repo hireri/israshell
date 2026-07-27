@@ -20,7 +20,7 @@ Item {
             Image {
                 id: lockWallImg
                 anchors.fill: parent
-                asynchronous: false
+                asynchronous: true
                 cache: true
                 source: WallpaperService.currentWall ? ("file://" + WallpaperService.currentWallPreview) : ""
                 fillMode: Image.PreserveAspectCrop

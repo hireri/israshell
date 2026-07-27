@@ -16,15 +16,25 @@ Scope {
     property var monitors: []
     property var windows: []
 
+    property var rawWindows: []
+
     function _windowShape(t): var {
         if (!t)
-            return { address: "", title: "", appId: "", workspace: -1, fullscreen: false };
+            return { address: "", title: "", appId: "", workspace: -1, fullscreen: false, x: 0, y: 0, w: 0, h: 0 };
+
+        const ipc = t.lastIpcObject;
+        const visible = !!ipc && ipc.mapped !== false && !ipc.hidden;
+
         return {
             address: t.address ?? "",
             title: t.title ?? "",
             appId: t.appId ?? t.wayland?.appId ?? "",
             workspace: t.workspace?.id ?? -1,
-            fullscreen: t.wayland?.fullscreen ?? false
+            fullscreen: t.wayland?.fullscreen ?? false,
+            x: visible ? (ipc.at?.[0] ?? 0) : 0,
+            y: visible ? (ipc.at?.[1] ?? 0) : 0,
+            w: visible ? (ipc.size?.[0] ?? 0) : 0,
+            h: visible ? (ipc.size?.[1] ?? 0) : 0
         };
     }
 
@@ -58,6 +68,9 @@ Scope {
         workspaces = Hyprland.workspaces.values.map(w => _workspaceShape(w));
         monitors = Hyprland.monitors.values.map(m => _monitorShape(m));
         windows = Hyprland.toplevels.values.map(t => _windowShape(t));
+        rawWindows = Hyprland.toplevels.values
+            .map(t => t.lastIpcObject)
+            .filter(ipc => !!ipc);
     }
 
     Component.onCompleted: {

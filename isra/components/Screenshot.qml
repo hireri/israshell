@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -20,6 +22,27 @@ Item {
     property string forcedAction: "smart"
     property string activeTool: "screenshot"
     property string _capturedPath: ""
+    property bool _closing: false
+
+    Timer {
+        id: teardownTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            uiLoader.active = false;
+            root._closing = false;
+            if (root.useGrimCapture)
+                root._cleanupGrimFiles();
+        }
+    }
+
+    function _closeOverlay() {
+        if (root._closing)
+            return;
+        root.active = false;
+        root._closing = true;
+        teardownTimer.restart();
+    }
 
     readonly property var pillTools: toolList.filter(t => t.id === "screenshot" || t.id === "record")
     readonly property var toolList: ([
@@ -121,13 +144,73 @@ Item {
         }
     }
 
+    readonly property bool useGrimCapture: SystemInfo.compositor === "niri"
+    property var _grimPaths: ({})
+
     function _openOverlay() {
+        if (root._closing || uiLoader.active)
+            return;
         if (!CompositorService.focusedMonitor)
             return;
+
+        const pad = root.windowPad;
+        const rects = [];
+        const rawRects = CompositorService.clientRects;
+
+        if (Array.isArray(rawRects)) {
+            for (let i = 0; i < rawRects.length; i++) {
+                const r = rawRects[i];
+                if (r && typeof r.x === "number") {
+                    rects.push({
+                        x: r.x - pad,
+                        y: r.y - pad,
+                        w: r.w + pad * 2,
+                        h: r.h + pad * 2
+                    });
+                }
+            }
+        }
+
+        root.clientRects = rects;
         root.active = true;
-        uiLoader.active = true;
-        clientFetchProc.running = true;
         ScreencapService.refresh();
+
+        uiLoader.active = true;
+
+        if (root.useGrimCapture) {
+            root._grimPaths = {};
+            for (let i = 0; i < Quickshell.screens.length; i++) {
+                const scr = Quickshell.screens[i];
+                grimCaptureComp.createObject(root, { screenName: scr.name });
+            }
+        }
+    }
+
+    Component {
+        id: grimCaptureComp
+        Process {
+            id: grimProc
+            required property string screenName
+            property string outPath: `/tmp/qs-screenshot-${screenName}-${Date.now()}.png`
+            running: true
+            command: ["bash", "-c", `grim -o '${screenName.replace(/'/g, "'\\''")}' '${outPath}'`]
+            onExited: (exitCode) => {
+                if (exitCode === 0) {
+                    root._grimPaths[screenName] = outPath;
+                    root._grimPaths = Object.assign({}, root._grimPaths);
+                } else {
+                    console.error("[Screenshot] grim capture failed for", screenName);
+                }
+                grimProc.destroy();
+            }
+        }
+    }
+
+    function _cleanupGrimFiles() {
+        const paths = Object.values(root._grimPaths);
+        if (paths.length > 0)
+            Quickshell.execDetached(["rm", "-f", ...paths]);
+        root._grimPaths = {};
     }
 
     function captureGlobal(gx, gy, gw, gh) {
@@ -140,56 +223,12 @@ Item {
             if (uiLoader.item)
                 uiLoader.item.capturing = true;
         } else {
-            root.active = false;
-            uiLoader.active = false;
+            root._closeOverlay();
         }
         captureDelay.start();
     }
 
     property var clientRects: []
-
-    Process {
-        id: clientFetchProc
-        command: ["hyprctl", "clients", "-j"]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const clients = JSON.parse(text);
-                    const pad = root.windowPad;
-                    const activeWsIds = [];
-                    const fullscreenWsIds = [];
-
-                    for (const m of CompositorService.monitors) {
-                        if (m.activeWorkspaceId !== -1) {
-                            activeWsIds.push(m.activeWorkspaceId);
-                            if (m.activeWorkspaceHasFullscreen)
-                                fullscreenWsIds.push(m.activeWorkspaceId);
-                        }
-                    }
-
-                    const rects = [];
-                    for (const c of clients) {
-                        if (!activeWsIds.includes(c.workspace.id))
-                            continue;
-                        if (fullscreenWsIds.includes(c.workspace.id))
-                            continue;
-                        if (!c.mapped || c.hidden)
-                            continue;
-                        rects.push({
-                            x: c.at[0] - pad,
-                            y: c.at[1] - pad,
-                            w: c.size[0] + pad * 2,
-                            h: c.size[1] + pad * 2
-                        });
-                    }
-                    root.clientRects = rects;
-                } catch (e) {
-                    console.error("clientFetchProc:", e);
-                }
-            }
-        }
-    }
 
     Process {
         id: captureProc
@@ -206,8 +245,7 @@ Item {
                 screenshotPreview.show(root._capturedPath);
                 root._capturedPath = "";
             }
-            root.active = false;
-            uiLoader.active = false;
+            root._closeOverlay();
         }
     }
 
@@ -340,15 +378,30 @@ Item {
                         Shortcut {
                             enabled: isFocused && !sessionRoot.capturing
                             sequence: "Escape"
-                            onActivated: {
-                                root.active = false;
-                                uiLoader.active = false;
-                            }
+                            onActivated: root._closeOverlay()
                         }
 
-                        ScreencopyView {
+                        Loader {
                             anchors.fill: parent
-                            captureSource: overlay.screen
+                            visible: root.activeTool !== "record"
+                            sourceComponent: root.useGrimCapture ? grimImageComp : screencopyViewComp
+
+                            Component {
+                                id: screencopyViewComp
+                                ScreencopyView {
+                                    captureSource: overlay.screen
+                                    live: false
+                                }
+                            }
+                            Component {
+                                id: grimImageComp
+                                Image {
+                                    source: root._grimPaths[overlay.screen.name] ? "file://" + root._grimPaths[overlay.screen.name] : ""
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: false
+                                    cache: false
+                                }
+                            }
                         }
 
                         Item {
@@ -1092,10 +1145,7 @@ Item {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                root.active = false;
-                                                uiLoader.active = false;
-                                            }
+                                            onClicked: root._closeOverlay()
                                         }
                                     }
                                 }

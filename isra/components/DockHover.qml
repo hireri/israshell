@@ -7,6 +7,7 @@ import QtQuick
 import QtQuick.Layouts
 
 import qs.style
+import qs.services
 
 PopupWindow {
     id: root
@@ -284,6 +285,19 @@ PopupWindow {
         return toplevelIds.get(tl);
     }
 
+    function getIconSource(appId: string): string {
+        if (!appId) return "image://icon/application-x-executable?fallback=application-x-executable";
+        if (appId.startsWith("steam_app_")) {
+            const steamId = appId.replace("steam_app_", "");
+            return "image://icon/steam_icon_" + steamId + "?fallback=steam";
+        }
+        const entry = DesktopEntries.heuristicLookup(appId);
+        if (entry && entry.icon) {
+            return "image://icon/" + entry.icon + "?fallback=application-x-executable";
+        }
+        return "image://icon/" + appId + "?fallback=application-x-executable";
+    }
+
     function syncWithModel(): void {
         syncCardModel();
     }
@@ -435,19 +449,46 @@ PopupWindow {
 
                     property bool isClosing: false
 
-                    readonly property bool contentReady: screencopyView.hasContent
+                    readonly property bool isHyprland: SystemInfo.compositor === "hyprland"
+                    
+                    readonly property bool contentReady: !isHyprland || screencopyView.hasContent || isClosing
 
                     width: implicitWidth
                     implicitWidth: 180
                     implicitHeight: 137
                     radius: 8
                     color: Qt.alpha(Colors.md3.background, 0.85)
-                    border.width: toplevel && toplevel.activated ? 2 : 1
-                    border.color: toplevel && toplevel.activated ? Colors.md3.primary : Qt.alpha(Colors.md3.outline, 0.15)
+                    border.width: (toplevel && (toplevel.activated || toplevel.is_focused || toplevel.focused)) ? 2 : 1
+                    border.color: (toplevel && (toplevel.activated || toplevel.is_focused || toplevel.focused)) ? Colors.md3.primary : Qt.alpha(Colors.md3.outline, 0.15)
                     clip: true
 
+                    function closeWindow(): void {
+                        previewCard.isClosing = true;
+                        if (previewCard.toplevel) {
+                            if (typeof previewCard.toplevel.close === "function") {
+                                previewCard.toplevel.close();
+                            } else if (previewCard.toplevel.address) {
+                                CompositorService.closeWindow(previewCard.toplevel.address);
+                            }
+                        }
+                        if (root.appToplevels.length <= 1) {
+                            root.hide();
+                        }
+                    }
+
+                    function activateWindow(): void {
+                        if (previewCard.toplevel) {
+                            if (typeof previewCard.toplevel.activate === "function") {
+                                previewCard.toplevel.activate();
+                            } else if (previewCard.toplevel.address) {
+                                CompositorService.focusWindow(previewCard.toplevel.address);
+                            }
+                        }
+                        root.hide();
+                    }
+
                     Connections {
-                        target: previewCard.toplevel ? previewCard.toplevel : null
+                        target: previewCard.toplevel && typeof previewCard.toplevel === "object" ? previewCard.toplevel : null
                         ignoreUnknownSignals: true
                         function onClosed() {
                             previewCard.isClosing = true;
@@ -456,8 +497,8 @@ PopupWindow {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: 4
-                        spacing: 3
+                        anchors.margins: 6
+                        spacing: 4
 
                         RowLayout {
                             id: titleRow
@@ -492,15 +533,7 @@ PopupWindow {
                                     id: closeMouse
                                     anchors.fill: parent
                                     hoverEnabled: true
-                                    onClicked: {
-                                        if (previewCard.toplevel) {
-                                            previewCard.isClosing = true;
-                                            previewCard.toplevel.close();
-                                        }
-                                        if (root.appToplevels.length <= 1) {
-                                            root.hide();
-                                        }
-                                    }
+                                    onClicked: previewCard.closeWindow()
                                 }
                             }
                         }
@@ -508,14 +541,48 @@ PopupWindow {
                         ClippingRectangle {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            radius: 4
-                            color: "transparent"
+                            radius: 6
+                            color: Qt.alpha(Colors.md3.surface_container_high, 0.4)
 
                             ScreencopyView {
                                 id: screencopyView
                                 anchors.fill: parent
-                                captureSource: (!previewCard.isClosing && previewCard.toplevel) ? previewCard.toplevel : null
-                                live: !previewCard.isClosing
+                                captureSource: (previewCard.isHyprland && !previewCard.isClosing && previewCard.toplevel) ? previewCard.toplevel : null
+                                live: previewCard.isHyprland && !previewCard.isClosing
+                                visible: previewCard.isHyprland && screencopyView.hasContent
+                            }
+
+                            Item {
+                                id: fallbackView
+                                anchors.fill: parent
+                                visible: !screencopyView.visible
+
+                                ColumnLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 6
+
+                                    IconImage {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        implicitWidth: 36
+                                        implicitHeight: 36
+                                        source: {
+                                            let tl = previewCard.toplevel;
+                                            let appId = tl ? (tl.appId ?? tl.app_id ?? tl.wayland?.appId ?? "") : "";
+                                            return root.getIconSource(appId);
+                                        }
+                                    }
+
+                                    Text {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        Layout.maximumWidth: 150
+                                        text: (previewCard.toplevel && previewCard.toplevel.title) ? previewCard.toplevel.title : "Window"
+                                        font.pixelSize: 11
+                                        font.family: (Config && Config.fontFamily) ? Config.fontFamily : "sans-serif"
+                                        color: Colors.md3.on_surface_variant
+                                        elide: Text.ElideRight
+                                        horizontalAlignment: Text.AlignHCenter
+                                    }
+                                }
                             }
 
                             MouseArea {
@@ -524,18 +591,9 @@ PopupWindow {
                                 acceptedButtons: Qt.LeftButton | Qt.MiddleButton
                                 onClicked: (mouse) => {
                                     if (mouse.button === Qt.MiddleButton) {
-                                        if (previewCard.toplevel) {
-                                            previewCard.isClosing = true;
-                                            previewCard.toplevel.close();
-                                        }
-                                        if (root.appToplevels.length <= 1) {
-                                            root.hide();
-                                        }
+                                        previewCard.closeWindow();
                                     } else if (mouse.button === Qt.LeftButton) {
-                                        if (previewCard.toplevel) {
-                                            previewCard.toplevel.activate();
-                                        }
-                                        root.hide();
+                                        previewCard.activateWindow();
                                     }
                                 }
                             }
