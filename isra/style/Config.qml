@@ -67,6 +67,7 @@ Singleton {
 
             spinningCover: true,
             playerMode: 0,
+            playerRing: false,
 
             tintTrayIcons: false,
             trayBlacklist: ["spotify", "blueman", "Network"],

@@ -353,6 +353,17 @@ PageBase {
             })
         }
 
+        SettingSwitch {
+            label: "Progress ring"
+            sublabel: "Circular progress indicator around the cover"
+            checked: Config.bar.playerRing
+            onToggled: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
+                    playerRing: v
+                })
+            })
+        }
+
         SettingSlider {
             isLast: true
             label: "Scroll speed"
