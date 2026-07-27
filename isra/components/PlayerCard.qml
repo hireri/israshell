@@ -84,12 +84,6 @@ Item {
         rescaleSize: 8
     }
 
-    Timer {
-        id: skipSyncTimer
-        interval: 380
-        onTriggered: root.snapToPosition()
-    }
-
     readonly property bool darkMode: typeof Config.darkMode !== "undefined" ? Config.darkMode : true
 
     readonly property color dominantColor: {
@@ -147,14 +141,6 @@ Item {
     property real _displayLength: 1
 
     NumberAnimation {
-        id: positionAnim
-        target: root
-        property: "progress"
-        to: 1
-        easing.type: Easing.Linear
-    }
-
-    NumberAnimation {
         id: trackChangeAnim
         target: root
         property: "progress"
@@ -163,17 +149,20 @@ Item {
         easing.type: Easing.OutCubic
     }
 
+    Timer {
+        id: skipSyncTimer
+        interval: 380
+        onTriggered: root.snapToPosition()
+    }
+
     function handleTrackChange() {
         _isResetting = false;
-        positionAnim.stop();
         trackChangeAnim.restart();
         skipSyncTimer.restart();
     }
 
     function snapToPosition() {
         _isResetting = false;
-        positionAnim.stop();
-        trackChangeAnim.stop();
         if (!root.player) {
             progress = 0;
             _displayLength = 1;
@@ -186,81 +175,32 @@ Item {
             return;
         }
         _displayLength = len;
-        progress = pos / len;
-        if (root.player.playbackState === MprisPlaybackState.Playing) {
-            positionAnim.duration = (1 - progress) * len * 1000;
-            positionAnim.start();
-        }
+        progress = Math.max(0, Math.min(pos / len, 1));
     }
 
     function resetToPosition() {
-        positionAnim.stop();
-        positionResetAnim.stop();
-        if (!root.player) {
-            snapToPosition();
-            return;
-        }
-        const pos = root.player.position ?? 0;
-        const len = root.player.length ?? 0;
-        if (root.player.playbackState !== MprisPlaybackState.Playing || len <= 0) {
-            currentPosition = pos;
-            return;
-        }
-        _isResetting = true;
-        const target = Math.min(pos + positionResetAnim.duration / 1000, len);
-        positionResetAnim.to = target;
-        positionResetAnim.start();
+        snapToPosition();
     }
 
     function resyncPosition() {
-        if (_isResetting || trackChangeAnim.running)
-            return;
-        if (!root.player) {
-            positionAnim.stop();
-            progress = 0;
-            return;
-        }
-        const pos = root.player.position ?? 0;
-        const len = root.player.length ?? 0;
-        const isPlaying = root.player.playbackState === MprisPlaybackState.Playing;
-        const drift = Math.abs((progress * len) - pos);
-
-        if (isPlaying && len > 0 && drift < 3.0) {
-            if (positionAnim.running && positionAnim.to === 1)
-                return;
-            positionAnim.duration = (1 - progress) * len * 1000;
-            positionAnim.start();
-            return;
-        }
-
-        positionAnim.stop();
-        if (len > 0) {
-            _displayLength = len;
-            progress = pos / len;
-        }
-        if (isPlaying && len > 0) {
-            positionAnim.duration = (1 - progress) * len * 1000;
-            positionAnim.start();
-        }
+        snapToPosition();
     }
 
     Timer {
-        id: snapResetTimer
-        interval: 80
-        onTriggered: {
-            root._snapReason = 2;
-            root.resyncPosition();
-            snapResetTimer.restart();
-        }
-    }
-
-    Timer {
-        id: positionPoller
-        running: root.visible && root.player !== null
-        interval: 5000
+        id: smoothPosTimer
+        interval: 16
         repeat: true
-        triggeredOnStart: true
-        onTriggered: root.resyncPosition()
+        running: root.visible && root.player !== null && root.player.playbackState === MprisPlaybackState.Playing && !trackChangeAnim.running && !root._isDragging
+        onTriggered: {
+            if (root.player) {
+                root.player.positionChanged();
+                const len = root.player.length ?? 0;
+                if (len > 0) {
+                    root._displayLength = len;
+                    root.progress = Math.max(0, Math.min(root.player.position / len, 1));
+                }
+            }
+        }
     }
 
     Connections {
@@ -269,24 +209,25 @@ Item {
         function onPlaybackStateChanged() {
             if (_isResetting || trackChangeAnim.running)
                 return;
-            positionAnim.stop();
-            if (!root.player)
-                return;
-            const len = root.player.length ?? 0;
-            const isPlaying = root.player.playbackState === MprisPlaybackState.Playing;
-            if (isPlaying && len > 0 && progress < 1) {
-                positionAnim.duration = (1 - progress) * len * 1000;
-                positionAnim.start();
-            }
+            root.snapToPosition();
         }
         function onTrackTitleChanged() {
             root.handleTrackChange();
         }
     }
 
-    function formatTime(secs) {
+    function formatTime(secs, totalSecs) {
         const s = Math.max(0, Math.floor(secs));
-        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+        const ref = totalSecs !== undefined ? Math.max(s, Math.floor(totalSecs)) : s;
+        const hrs = Math.floor(s / 3600);
+        const mins = Math.floor((s % 3600) / 60);
+        const secsRem = s % 60;
+        const hasHours = ref >= 3600;
+
+        if (hasHours) {
+            return hrs + ":" + String(mins).padStart(2, "0") + ":" + String(secsRem).padStart(2, "0");
+        }
+        return mins + ":" + String(secsRem).padStart(2, "0");
     }
 
     function getIconSource(player) {
@@ -602,7 +543,7 @@ CAVAEOF`]
                     right: parent.right
                     verticalCenter: parent.verticalCenter
                 }
-                text: root.formatTime(root.displayProgress * root._displayLength) + " / " + root.formatTime(root._displayLength)
+                text: root.formatTime(root.displayProgress * root._displayLength, root._displayLength) + " / " + root.formatTime(root._displayLength)
                 color: root.colOnSurfaceVariant
                 font.pixelSize: 11
                 font.family: Config.fontFamily
