@@ -27,10 +27,9 @@ Item {
         }
     }
 
-    GlobalShortcut {
-        name: "openWallpaperPicker"
-        description: "Toggle wallpaper picker"
-        onPressed: {
+    IpcHandler {
+        target: "wallpaperpicker"
+        function toggle(): void {
             const screen = root.panelWindow.screen;
             if (!screen)
                 return;

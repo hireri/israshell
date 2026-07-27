@@ -126,10 +126,11 @@ ShellRoot {
         }
     }
 
-    GlobalShortcut {
-        name: "openPowerMenu"
-        description: "Toggle power menu overlay"
-        onPressed: PowerMenuState.toggle()
+    IpcHandler {
+        target: "powermenu"
+        function toggle(): void {
+            PowerMenuState.toggle();
+        }
     }
 
     Loader {

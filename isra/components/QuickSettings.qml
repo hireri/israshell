@@ -39,10 +39,9 @@ Item {
             root._sidebarVisible = false
     }
 
-    GlobalShortcut {
-        name: "openQuickSettings"
-        description: "Toggle quick settings sidebar"
-        onPressed: {
+    IpcHandler {
+        target: "quicksettings"
+        function toggle(): void {
             const screen = root.panelWindow.screen;
             if (!screen)
                 return;
