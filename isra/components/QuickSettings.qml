@@ -23,6 +23,13 @@ Item {
 
     property bool isOpen: false
     property bool _sidebarVisible: false
+    property var registry: null
+
+    function toggleSelf(): void {
+        root.isOpen = !root.isOpen;
+        if (root.isOpen)
+            NotificationService.sendAllToPanel();
+    }
 
     onIsOpenChanged: {
         if (isOpen) {
@@ -39,19 +46,10 @@ Item {
             root._sidebarVisible = false
     }
 
-    IpcHandler {
-        target: "quicksettings"
-        function toggle(): void {
-            const screen = root.panelWindow.screen;
-            if (!screen)
-                return;
-            if (CompositorService.focusedMonitor?.name !== screen.name)
-                return;
-            root.isOpen = !root.isOpen;
-            if (root.isOpen)
-                NotificationService.sendAllToPanel();
-        }
-    }
+    Component.onCompleted: Qt.callLater(() => {
+        if (root.registry && root.panelWindow?.screen)
+            root.registry[root.panelWindow.screen.name] = root;
+    })
 
     Rectangle {
         id: button
@@ -229,11 +227,7 @@ Item {
         MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                root.isOpen = !root.isOpen;
-                if (root.isOpen)
-                    NotificationService.sendAllToPanel();
-            }
+            onClicked: root.toggleSelf()
         }
     }
 

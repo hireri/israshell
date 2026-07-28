@@ -18,6 +18,11 @@ Item {
 
     readonly property bool isOpen: WallpaperService.isOpen && WallpaperService.openWindow === root.panelWindow
     property bool _popupVisible: false
+    property var registry: null
+
+    function toggleSelf(): void {
+        WallpaperService.toggleFor(root.panelWindow);
+    }
 
     onIsOpenChanged: {
         if (isOpen) {
@@ -27,17 +32,10 @@ Item {
         }
     }
 
-    IpcHandler {
-        target: "wallpaperpicker"
-        function toggle(): void {
-            const screen = root.panelWindow.screen;
-            if (!screen)
-                return;
-            if (CompositorService.focusedMonitor?.name !== screen.name)
-                return;
-            WallpaperService.toggleFor(root.panelWindow);
-        }
-    }
+    Component.onCompleted: Qt.callLater(() => {
+        if (root.registry && root.panelWindow?.screen)
+            root.registry[root.panelWindow.screen.name] = root;
+    })
 
     Timer {
         id: closeTimer

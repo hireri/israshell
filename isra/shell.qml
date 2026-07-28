@@ -30,6 +30,15 @@ ShellRoot {
     AppLauncher {}
     Screenshot {}
 
+    property var wallpaperPanels: ({})
+    property var quickSettingsPanels: ({})
+
+    IpcHandlers {
+        settingsLoader: settingsLoader
+        wallpaperPanels: rootShell.wallpaperPanels
+        quickSettingsPanels: rootShell.quickSettingsPanels
+    }
+
     readonly property var _updater: Updater
 
     Loader {
@@ -47,91 +56,7 @@ ShellRoot {
         }
     }
 
-    IpcHandler {
-        target: "settings"
-        function open(page: string): void {
-            const map = {
-                "overview": 0,
-                "network": 1,
-                "bar": 2,
-                "clock": 3,
-                "display": 4,
-                "sound": 5,
-                "locale": 6,
-                "system": 7
-            };
-            settingsLoader.active = true;
-            settingsLoader.item.visible = true;
-            const p = map[page];
-            if (p !== undefined)
-                settingsLoader.item.currentPage = p;
-        }
-    }
-
-    IpcHandler {
-        target: "gamemode"
-        function toggle(): void {
-            GameModeService.toggle();
-        }
-    }
-
-    Logout {
-        LogoutButton {
-            command: "loginctl lock-session"
-            keybind: Qt.Key_L
-            text: "Lock"
-            icon: "󰌾"
-            containerColor: Colors.md3.primary_container
-            contentColor: Colors.md3.on_primary_container
-        }
-        LogoutButton {
-            command: "loginctl terminate-user $USER"
-            keybind: Qt.Key_E
-            text: "Logout"
-            icon: "󰗽"
-            containerColor: Colors.md3.primary_container
-            contentColor: Colors.md3.on_primary_container
-        }
-        LogoutButton {
-            command: "systemctl suspend | loginctl suspend"
-            keybind: Qt.Key_S
-            text: "Suspend"
-            icon: "󰒲"
-            containerColor: Colors.md3.primary_container
-            contentColor: Colors.md3.on_primary_container
-        }
-        LogoutButton {
-            command: "systemctl hibernate | loginctl hibernate"
-            keybind: Qt.Key_H
-            text: "Hibernate"
-            icon: "󰜗"
-            containerColor: Colors.md3.primary_container
-            contentColor: Colors.md3.on_primary_container
-        }
-        LogoutButton {
-            command: "systemctl poweroff | loginctl poweroff"
-            keybind: Qt.Key_P
-            text: "Shutdown"
-            icon: "󰐥"
-            containerColor: Colors.md3.primary
-            contentColor: Colors.md3.on_primary
-        }
-        LogoutButton {
-            command: "systemctl reboot | loginctl reboot"
-            keybind: Qt.Key_R
-            text: "Reboot"
-            icon: "󰑐"
-            containerColor: Colors.md3.primary
-            contentColor: Colors.md3.on_primary
-        }
-    }
-
-    IpcHandler {
-        target: "powermenu"
-        function toggle(): void {
-            PowerMenuState.toggle();
-        }
-    }
+    Logout {}
 
     Loader {
         active: Config.screenCorners
@@ -323,6 +248,7 @@ ShellRoot {
 
             WallpaperPicker {
                 panelWindow: window
+                registry: rootShell.wallpaperPanels
             }
 
             Component { id: workspacesComponent; Workspaces { panelWindow: window } }
@@ -330,7 +256,7 @@ ShellRoot {
             Component { id: clockComponent; BarClock { panelWindow: window } }
             Component { id: screencapComponent; ScreencapControls { panelWindow: window } }
             Component { id: trayComponent; TrayWidget { panelWindow: window } }
-            Component { id: quicksettingsComponent; QuickSettings { panelWindow: window } }
+            Component { id: quicksettingsComponent; QuickSettings { panelWindow: window; registry: rootShell.quickSettingsPanels } }
             Component { id: sysMonitorComponent; SysMonitor { panelWindow: window } }
 
             readonly property var barWidgetComponents: Object.assign({}, WidgetService.componentMap, {

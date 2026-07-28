@@ -7,11 +7,81 @@ import Quickshell.Widgets
 
 import qs.style
 import qs.services
+import qs.icons
 
 Variants {
     id: root
 
-    default property list<LogoutButton> buttons
+    component LogoutButton: QtObject {
+        id: button
+
+        required property string command
+        required property string text
+        required property string icon
+        property var keybind: null
+        property color containerColor: "transparent"
+        property color contentColor: "transparent"
+
+        readonly property var process: Process {
+            command: ["sh", "-c", button.command]
+        }
+
+        function exec() {
+            PowerMenuState.hide();
+            process.startDetached();
+        }
+    }
+
+    default property list<LogoutButton> buttons: [
+        LogoutButton {
+            command: "loginctl lock-session"
+            keybind: Qt.Key_L
+            text: "Lock"
+            icon: "lock"
+            containerColor: Colors.md3.primary_container
+            contentColor: Colors.md3.on_primary_container
+        },
+        LogoutButton {
+            command: "loginctl terminate-user $USER"
+            keybind: Qt.Key_E
+            text: "Logout"
+            icon: "logout"
+            containerColor: Colors.md3.primary_container
+            contentColor: Colors.md3.on_primary_container
+        },
+        LogoutButton {
+            command: "systemctl suspend | loginctl suspend"
+            keybind: Qt.Key_S
+            text: "Suspend"
+            icon: "dark-mode"
+            containerColor: Colors.md3.primary_container
+            contentColor: Colors.md3.on_primary_container
+        },
+        LogoutButton {
+            command: "systemctl hibernate | loginctl hibernate"
+            keybind: Qt.Key_H
+            text: "Hibernate"
+            icon: "ac-unit"
+            containerColor: Colors.md3.primary_container
+            contentColor: Colors.md3.on_primary_container
+        },
+        LogoutButton {
+            command: "systemctl poweroff | loginctl poweroff"
+            keybind: Qt.Key_P
+            text: "Shutdown"
+            icon: "shutdown"
+            containerColor: Colors.md3.primary
+            contentColor: Colors.md3.on_primary
+        },
+        LogoutButton {
+            command: "systemctl reboot | loginctl reboot"
+            keybind: Qt.Key_R
+            text: "Reboot"
+            icon: "reboot"
+            containerColor: Colors.md3.primary
+            contentColor: Colors.md3.on_primary
+        }
+    ]
     model: Quickshell.screens
 
     PanelWindow {
@@ -171,13 +241,12 @@ Variants {
                             }
                         }
 
-                        Text {
+                        MaterialIcon {
                             anchors.centerIn: parent
-                            text: modelData.icon
-                            font.pixelSize: 48
-                            font.family: Config.fontFamily
+                            name: modelData.icon
+                            iconSize: 48
+                            filled: true
                             color: modelData.contentColor
-                            renderType: Text.NativeRendering
                         }
 
                         MouseArea {
