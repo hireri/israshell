@@ -153,25 +153,6 @@ Item {
         if (!CompositorService.focusedMonitor)
             return;
 
-        const pad = root.windowPad;
-        const rects = [];
-        const rawRects = CompositorService.clientRects;
-
-        if (Array.isArray(rawRects)) {
-            for (let i = 0; i < rawRects.length; i++) {
-                const r = rawRects[i];
-                if (r && typeof r.x === "number") {
-                    rects.push({
-                        x: r.x - pad,
-                        y: r.y - pad,
-                        w: r.w + pad * 2,
-                        h: r.h + pad * 2
-                    });
-                }
-            }
-        }
-
-        root.clientRects = rects;
         root.active = true;
         ScreencapService.refresh();
 
@@ -228,7 +209,25 @@ Item {
         captureDelay.start();
     }
 
-    property var clientRects: []
+    readonly property var clientRects: {
+        const pad = root.windowPad;
+        const rawRects = CompositorService.clientRects;
+        const rects = [];
+        if (Array.isArray(rawRects)) {
+            for (let i = 0; i < rawRects.length; i++) {
+                const r = rawRects[i];
+                if (r && typeof r.x === "number") {
+                    rects.push({
+                        x: r.x - pad,
+                        y: r.y - pad,
+                        w: r.w + pad * 2,
+                        h: r.h + pad * 2
+                    });
+                }
+            }
+        }
+        return rects;
+    }
 
     Process {
         id: captureProc

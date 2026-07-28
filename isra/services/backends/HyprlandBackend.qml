@@ -89,12 +89,11 @@ Scope {
                 Hyprland.refreshWorkspaces();
                 Hyprland.refreshMonitors();
                 Hyprland.refreshToplevels();
-            } else if (["openwindow", "closewindow", "movewindow"].includes(event.name)) {
-                Hyprland.refreshToplevels();
             } else if (["workspace", "moveworkspace", "createworkspace", "destroyworkspace"].includes(event.name)) {
                 Hyprland.refreshWorkspaces();
             }
-            
+
+            Hyprland.refreshToplevels();
             Qt.callLater(_updateState);
         }
     }
