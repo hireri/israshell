@@ -9,6 +9,8 @@ Rectangle {
     id: root
     required property var panelWindow
 
+    readonly property bool isOpen: false
+
     color: {
         if (root.isOpen) {
             Colors.md3.secondary_container

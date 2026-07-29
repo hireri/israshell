@@ -8,6 +8,7 @@ Item {
     id: root
 
     required property bool isOpen
+    property real edgeMargin: 0
 
     signal calendarRequested
     signal settingsRequested
@@ -60,8 +61,8 @@ Item {
         y: {
             const open = _ready && root.isOpen;
             if (Config.bar.position === 0)
-                return open ? 8 : -(height + 8);
-            return open ? 0 : height + 8;
+                return open ? 0 : -(height + root.edgeMargin + 8);
+            return open ? 0 : height + root.edgeMargin + 8;
         }
         Behavior on y {
             NumberAnimation {

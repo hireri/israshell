@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
+import Quickshell.Wayland
 import qs.style
 import qs.icons
 import qs.services
@@ -17,11 +17,17 @@ Item {
     property bool isOpen: false
     property bool _calVisible: false
 
+    function close(): void {
+        isOpen = false;
+    }
+
     onIsOpenChanged: {
         if (isOpen) {
             _calVisible = true;
+            PanelService.opened(root, root.panelWindow.screen);
         } else {
             calCloseTimer.restart();
+            PanelService.closed(root);
         }
     }
 
@@ -152,56 +158,94 @@ Item {
         }
     }
 
-    HyprlandFocusGrab {
-        windows: [calLoader.item]
-        active: root.isOpen && calLoader.active
-        onCleared: root.isOpen = false
-    }
-
     LazyLoader {
         id: calLoader
         active: root._calVisible
 
-        PopupWindow {
-            id: popup
+        PanelWindow {
+            id: panel
             visible: root._calVisible
+            screen: root.panelWindow.screen
 
-            mask: Region {
-                item: root.isOpen ? calContent : null
+            anchors {
+                top: true
+                bottom: true
+                left: true
+                right: true
             }
 
-            anchor.window: root.panelWindow
+            exclusionMode: ExclusionMode.Ignore
 
-            anchor.edges: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Left
-            anchor.gravity: (Config.bar.position === 1 ? Edges.Top : Edges.Bottom) | Edges.Right
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            WlrLayershell.namespace: "quickshell-clock-overlay"
 
-            anchor.rect: {
-                pillTransform.transform;
-
-                const pillCenterLocal = root.width / 2;
-                const mappedPoint = root.mapToItem(root.panelWindow.contentItem, pillCenterLocal, 0);
-                
-                const popupX = Math.round(mappedPoint.x - (calContent.implicitWidth / 2));
-                
-                return Qt.rect(
-                    popupX, 
-                    0, 
-                    calContent.implicitWidth, 
-                    root.panelWindow.height
-                )
-            }
-
-            implicitWidth: calContent.implicitWidth
-            implicitHeight: calContent.implicitHeight + 8
             color: "transparent"
 
-            ClockCalendar {
-                id: calContent
+            Item {
+                id: keyHandler
                 anchors.fill: parent
-                isOpen: root.isOpen
-                
-                onCalendarRequested: root.isOpen = false
-                onSettingsRequested: root.isOpen = false
+                focus: true
+
+                Component.onCompleted: forceActiveFocus()
+
+                Keys.onEscapePressed: event => {
+                    event.accepted = true;
+                    root.isOpen = false;
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.isOpen = false
+            }
+
+            Item {
+                id: wrapper
+                width: calContent.implicitWidth
+                height: calContent.implicitHeight
+
+                readonly property real screenEdgeMargin: 12
+
+                anchors {
+                    top: Config.bar.position === 0 ? parent.top : undefined
+                    bottom: Config.bar.position === 1 ? parent.bottom : undefined
+                    topMargin: Config.bar.position === 0 ? root.panelWindow.implicitHeight + 8 : 0
+                    bottomMargin: Config.bar.position === 1 ? root.panelWindow.implicitHeight + 8 : 0
+                }
+
+                function _clamp(value, min, max) {
+                    return max >= min ? Math.max(min, Math.min(max, value)) : min;
+                }
+
+                function _screenWidth() {
+                    return (root.panelWindow.screen && root.panelWindow.screen.width > 0) ? root.panelWindow.screen.width : panel.width;
+                }
+
+                x: {
+                    pillTransform.transform;
+                    const pillCenterLocal = root.width / 2;
+                    const mappedPoint = root.mapToItem(root.panelWindow.contentItem, pillCenterLocal, 0);
+                    const idealX = mappedPoint.x - (calContent.implicitWidth / 2);
+
+                    const screenWidth = wrapper._screenWidth();
+                    return Math.round(wrapper._clamp(idealX, screenEdgeMargin, screenWidth - calContent.implicitWidth - screenEdgeMargin));
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {}
+                }
+
+                ClockCalendar {
+                    id: calContent
+                    anchors.fill: parent
+                    isOpen: root.isOpen
+                    edgeMargin: root.panelWindow.implicitHeight
+
+                    onCalendarRequested: root.isOpen = false
+                    onSettingsRequested: root.isOpen = false
+                }
             }
         }
     }

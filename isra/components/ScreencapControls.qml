@@ -13,6 +13,8 @@ Rectangle {
 
     readonly property bool wallpaperOpen: WallpaperService.isOpen && WallpaperService.openWindow === root.panelWindow
 
+    readonly property bool isOpen: false
+
     function getScript(path) {
         if (!path || path === "")
             return "";

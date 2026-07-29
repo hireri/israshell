@@ -60,7 +60,7 @@ PanelWindow {
     anchors.right: true
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     color: "transparent"
     visible: false
 
@@ -74,10 +74,24 @@ PanelWindow {
         card.height = 0;
         visible = true;
         wipeAnim.restart();
+        PanelService.opened(root, panelWindow.screen);
     }
 
     function close() {
+        if (!root.visible)
+            return;
         closeAnim.start();
+        PanelService.closed(root);
+    }
+
+    Item {
+        id: keyHandler
+        anchors.fill: parent
+        focus: true
+        Keys.onEscapePressed: event => {
+            event.accepted = true;
+            root.close();
+        }
     }
 
     MouseArea {

@@ -288,6 +288,11 @@ MouseArea {
             if (group.listRef.dragIndex < 0)
                 group.cardX = 0;
         }
+    }
+
+    Connections {
+        target: group.listRef
+        enabled: group.listRef !== null && group.listRef.anyHovered !== undefined
         function onAnyHoveredChanged() {
             if (!group.popup || !group.listRef)
                 return;

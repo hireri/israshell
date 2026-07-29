@@ -47,7 +47,7 @@ PanelWindow {
     anchors.right: true
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     color: "transparent"
     visible: false
 
@@ -90,13 +90,22 @@ PanelWindow {
             wipeAnim.restart();
         else
             _pendingOpen = true;
+
+        PanelService.opened(root, panelWindow.screen);
+    }
+
+    function close() {
+        closeAll();
     }
 
     function closeAll() {
+        if (!root.visible)
+            return;
         _pendingOpen = _pendingSubOpen = false;
         submenuOpen = false;
         activeSubmenu = null;
         closeAnim.start();
+        PanelService.closed(root);
     }
 
     function openSubmenu(entry) {
@@ -113,10 +122,21 @@ PanelWindow {
         activeSubmenu = null;
     }
 
+    Item {
+        id: keyHandler
+        anchors.fill: parent
+        focus: true
+        Keys.onEscapePressed: event => {
+            event.accepted = true;
+            root.closeAll();
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
         z: 0
         onClicked: root.closeAll()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
     }
 
     NumberAnimation {

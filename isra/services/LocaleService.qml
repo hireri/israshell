@@ -109,17 +109,6 @@ Singleton {
             root._maybeFetchAqi();
             root._fetchWeather();
         }
-
-        function onLatitudeChanged() {
-            root._coordsKnown = false;
-            root._maybeFetchAqi();
-            root._fetchWeather();
-        }
-        function onLongitudeChanged() {
-            root._coordsKnown = false;
-            root._maybeFetchAqi();
-            root._fetchWeather();
-        }
     }
 
     Connections {

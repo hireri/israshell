@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.style
+import qs.icons
 
 Item {
     id: root
@@ -44,19 +45,34 @@ Item {
     }
 
     readonly property var _icon: ({
-            "apps": "󰍉",
-            "clipboard": "󰅍",
-            "emoji": "󰱨",
-            "translate": "󰗊",
-            "math": "󰪚",
-            "color": "󰏘",
-            "kaomoji": "󰄛"
+            "apps": "search",
+            "clipboard": "assignment",
+            "translate": "translate",
+            "math": "calculate",
+            "color": "palette",
+            "kaomoji": "okonomiyaki",
+            "timestamp": "analog-clock",
+            "define": "menu-book",
+            "whois": "dns",
+            "password": "key",
+            "weather": "partly-cloudy-day"
         })
 
+    readonly property var _emojiIcons: ["sentiment-calm", "sentiment-content", "sentiment-dissatisfied", "smart-toy", "sentiment-excited", "sentiment-frustrated", "sentiment-neutral", "sentiment-sad", "sentiment-satisfied", "sentiment-stressed", "sentiment-very-satisfied", "sentiment-worried", "sentiment-sick", "sentiment-very-dissatisfied", "sentiment-extremely-dissatisfied"]
+
+    property string _emojiIconPick: _emojiIcons[Math.floor(Math.random() * _emojiIcons.length)]
+
+    onModeChanged: {
+        if (mode === "emoji")
+            _emojiIconPick = _emojiIcons[Math.floor(Math.random() * _emojiIcons.length)];
+    }
+
     readonly property string _activeIcon: {
-        if (mode === "apps" && (widgetType === "math" || widgetType === "color" || widgetType === "kaomoji"))
+        if (mode === "apps" && widgetType && _icon[widgetType])
             return _icon[widgetType];
-        return _icon[mode] ?? "󱗼";
+        if (mode === "emoji")
+            return _emojiIconPick;
+        return _icon[mode] ?? "search";
     }
 
     readonly property var _placeholder: ({
@@ -85,12 +101,13 @@ Item {
             radius: 21
             color: Colors.md3.primary
 
-            Text {
+            MaterialIcon {
                 anchors.centerIn: parent
-                text: root._activeIcon
+                name: root._activeIcon
                 color: Colors.md3.on_primary
-                font.pixelSize: 26
-                font.family: Config.fontFamily
+                filled: true
+                iconSize: 24
+                transitionType: "none"
             }
         }
 

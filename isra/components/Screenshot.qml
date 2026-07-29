@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Widgets
 import QtQuick.Shapes
@@ -24,6 +23,8 @@ Item {
     property string _capturedPath: ""
     property bool _closing: false
 
+    onActiveChanged: active ? PanelService.opened(root) : PanelService.closed(root)
+
     Timer {
         id: teardownTimer
         interval: 250
@@ -42,6 +43,11 @@ Item {
         root.active = false;
         root._closing = true;
         teardownTimer.restart();
+    }
+
+    function close() {
+        if (root.active)
+            root._closeOverlay();
     }
 
     readonly property var pillTools: toolList.filter(t => t.id === "screenshot" || t.id === "record")

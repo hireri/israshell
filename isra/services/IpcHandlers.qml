@@ -11,6 +11,14 @@ Item {
     required property var wallpaperPanels
     required property var quickSettingsPanels
 
+    function _resolvePanel(registry: var): var {
+        const monName = CompositorService.focusedMonitor?.name;
+        if (monName && registry[monName])
+            return registry[monName];
+        const fallbackName = Quickshell.screens[0]?.name;
+        return fallbackName ? (registry[fallbackName] ?? null) : null;
+    }
+
     IpcHandler {
         target: "settings"
         function open(page: string): void {
@@ -49,24 +57,22 @@ Item {
     IpcHandler {
         target: "wallpaperpicker"
         function toggle(): void {
-            const mon = CompositorService.focusedMonitor;
-            const panel = root.wallpaperPanels[mon?.name];
+            const panel = root._resolvePanel(root.wallpaperPanels);
             if (panel)
                 panel.toggleSelf();
             else
-                console.warn("[IpcHandlers] no wallpaperpicker registered for monitor", mon?.name);
+                console.warn("[IpcHandlers] no wallpaperpicker panel available");
         }
     }
 
     IpcHandler {
         target: "quicksettings"
         function toggle(): void {
-            const mon = CompositorService.focusedMonitor;
-            const panel = root.quickSettingsPanels[mon?.name];
+            const panel = root._resolvePanel(root.quickSettingsPanels);
             if (panel)
                 panel.toggleSelf();
             else
-                console.warn("[IpcHandlers] no quicksettings registered for monitor", mon?.name);
+                console.warn("[IpcHandlers] no quicksettings panel available");
         }
     }
 }

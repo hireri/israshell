@@ -8,7 +8,6 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Widgets
 import QtQuick
 import Qt5Compat.GraphicalEffects
@@ -20,6 +19,7 @@ import qs.services
 
 ShellRoot {
     id: rootShell
+
     LazyLoader {
         loading: LockscreenService.locked
         Lockscreen {}
@@ -27,6 +27,7 @@ ShellRoot {
 
     NotificationPopup {}
     VolumeOSD {}
+
     AppLauncher {}
     Screenshot {}
 
@@ -50,8 +51,9 @@ ShellRoot {
             target: settingsLoader.item
             enabled: settingsLoader.item !== null
             function onVisibleChanged() {
-                if (!settingsLoader.item.visible)
+                if (!settingsLoader.item.visible) {
                     settingsLoader.active = false;
+                }
             }
         }
     }
@@ -89,7 +91,7 @@ ShellRoot {
                 required property int index
                 implicitWidth: row.implicitWidth
                 implicitHeight: row.implicitHeight
-                readonly property bool isOpen: slotLoader.item && slotLoader.item.isOpen === true
+                readonly property bool isOpen: slotLoader.item && (slotLoader.item.isOpen === true || slotLoader.item.popupWindowVisible === true)
 
                 Row {
                     id: row
@@ -98,7 +100,7 @@ ShellRoot {
                     Loader {
                         id: slotLoader
                         sourceComponent: zone.registry[delegateRoot.modelData] || null
-                        
+
                         onStatusChanged: {
                             if (status === Loader.Error) {
                                 console.log("[BarZone Error] Failed loading component:", delegateRoot.modelData);
@@ -294,7 +296,7 @@ ShellRoot {
                 property var modelData: screenScope.modelData
                 screen: modelData
 
-                property bool isMenuOpen: (leftZone.anyMenuOpen || rightZone.anyMenuOpen || centerAutoZone.anyMenuOpen || centerBeforeZone.anyMenuOpen || centerAfterZone.anyMenuOpen || (centerAnchorLoader.item && centerAnchorLoader.item.isOpen === true)) || false
+                property bool isMenuOpen: (leftZone.anyMenuOpen || rightZone.anyMenuOpen || centerAutoZone.anyMenuOpen || centerBeforeZone.anyMenuOpen || centerAfterZone.anyMenuOpen || (centerAnchorLoader.item && centerAnchorLoader.item.isOpen === true) || (PanelService.current !== null && (PanelService.currentScreen === null || PanelService.currentScreen === modelData))) || false
 
                 property bool shouldHide: LockscreenService.lockAnimating || LockscreenService.locked
 
@@ -423,7 +425,7 @@ ShellRoot {
                         Rectangle {
                             id: barFadeGradient
                             anchors.fill: parent
-                            radius: parent.radius
+                            radius: barContainer.radius
 
                             readonly property bool blurActive: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && screenScope.barMode === 2))
                             readonly property real dimAlpha: Config.blurOpacity

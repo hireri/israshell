@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
 import Quickshell.Bluetooth
 import Quickshell.Widgets
 import QtQuick.Controls
@@ -31,11 +30,17 @@ Item {
             NotificationService.sendAllToPanel();
     }
 
+    function close(): void {
+        root.isOpen = false;
+    }
+
     onIsOpenChanged: {
         if (isOpen) {
             _sidebarVisible = true;
+            PanelService.opened(root, root.panelWindow?.screen);
         } else {
             closeTimer.restart();
+            PanelService.closed(root);
         }
     }
 
@@ -231,630 +236,652 @@ Item {
         }
     }
 
-    HyprlandFocusGrab {
-        windows: [sidebarLoader.item]
-        active: root.isOpen && sidebarLoader.active
-        onCleared: root.isOpen = false
-    }
-
     LazyLoader {
         id: sidebarLoader
         active: root._sidebarVisible
 
-        PopupWindow {
-            id: sidebar
-            anchor.window: root.panelWindow
-            anchor.rect.x: (root.panelWindow.screen?.width ?? 1920) - implicitWidth
-            anchor.rect.y: Config.bar.position === 1 
-                ? -(implicitHeight + (Config.bar.transparency === 2 ? 0 : 12)) 
-                : root.panelWindow.height + (Config.bar.transparency === 2 ? 0 : 12)
+        Variants {
+            id: sidebarVariants
+            model: Quickshell.screens
 
-            implicitWidth: 432
-            anchor.adjustment: PopupAdjustment.None
-            implicitHeight: sidebarCard.height
-            color: "transparent"
-            visible: root._sidebarVisible
+            PanelWindow {
+                id: sidebar
 
-            onVisibleChanged: {
-                if (visible)
-                    keyHandler.forceActiveFocus();
-            }
+                required property ShellScreen modelData
+                screen: modelData
 
-            Item {
-                id: keyHandler
-                anchors.fill: parent
-                Keys.onEscapePressed: event => {
-                    event.accepted = true;
-                    root.isOpen = false;
-                }
-            }
+                readonly property bool isOwnScreen: modelData === root.panelWindow?.screen
 
-            property bool _ready: false
-            Component.onCompleted: Qt.callLater(() => _ready = true)
-
-            property real slideX: (_ready && root.isOpen) ? 0 : 452
-
-            Behavior on slideX {
-                NumberAnimation {
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
-            }
-
-            Rectangle {
-                id: sidebarCard
-                anchors.top: parent.top
-                anchors.right: parent.right
-                anchors.rightMargin: 12
-                width: 420
-                height: mainLayout.implicitHeight + 28
-                radius: 18
-                color: Colors.md3.surface_container_low
-                border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
-                border.width: 1
-                clip: true
-
-                transform: Translate {
-                    x: sidebar.slideX
+                anchors {
+                    top: true
+                    bottom: true
+                    left: true
+                    right: true
                 }
 
-                ColumnLayout {
-                    id: mainLayout
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.margins: 14
-                    spacing: 12
+                color: "transparent"
+                visible: root._sidebarVisible
 
-                    RowLayout {
-                        id: userRow
-                        Layout.fillWidth: true
-                        Layout.topMargin: 4
-                        Layout.preferredHeight: 44
-                        spacing: 12
+                exclusionMode: ExclusionMode.Ignore
 
-                        RowLayout {
-                            spacing: 10
-                            Layout.fillWidth: true
+                WlrLayershell.layer: WlrLayer.Overlay
+                WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+                WlrLayershell.namespace: "quickshell-quicksettings"
 
-                            ClippingRectangle {
-                                implicitWidth: 36
-                                implicitHeight: 36
-                                radius: 18
-                                clip: true
-                                layer.enabled: true
-                                layer.smooth: true
-                                antialiasing: true
-                                visible: profileImage.status === Image.Ready
-                                color: "transparent"
+                Item {
+                    id: keyHandler
+                    anchors.fill: parent
+                    focus: true
+                    Keys.onEscapePressed: event => {
+                        event.accepted = true;
+                        root.isOpen = false;
+                    }
+                }
 
-                                Image {
-                                    id: profileImage
-                                    source: "file://" + Quickshell.env("HOME") + "/.face"
-                                    anchors.fill: parent
-                                    sourceSize: Qt.size(108, 108)
-                                    fillMode: Image.PreserveAspectCrop
-                                    antialiasing: true
-                                    smooth: true
-                                    mipmap: true
-                                }
-                            }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: root.isOpen = false
+                }
 
-                            Rectangle {
-                                implicitWidth: 36
-                                implicitHeight: 36
-                                radius: 18
-                                color: Colors.md3.primary_container
-                                visible: profileImage.status !== Image.Ready
+                property bool _ready: false
+                Component.onCompleted: Qt.callLater(() => _ready = true)
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: SystemInfo.username ? SystemInfo.username.charAt(0).toUpperCase() : "U"
-                                    color: Colors.md3.on_primary_container
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 14
-                                    font.weight: Font.Bold
-                                    renderType: Text.NativeRendering
-                                }
-                            }
+                property real slideX: (_ready && root.isOpen) ? 0 : 452
 
-                            Column {
-                                Layout.fillWidth: true
-                                spacing: 2
+                Behavior on slideX {
+                    NumberAnimation {
+                        duration: 300
+                        easing.type: Easing.OutCubic
+                    }
+                }
 
-                                Text {
-                                    width: parent.width
-                                    elide: Text.ElideRight
-                                    text: SystemInfo.username
-                                    color: Colors.md3.on_surface
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 14
-                                    font.weight: Font.DemiBold
-                                    renderType: Text.NativeRendering
-                                }
+                Rectangle {
+                    id: sidebarCard
+                    visible: sidebar.isOwnScreen
+                    width: 420
+                    height: mainLayout.implicitHeight + 28
+                    radius: 18
+                    color: Colors.md3.surface_container_low
+                    border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
+                    border.width: 1
+                    clip: true
 
-                                Text {
-                                    width: parent.width
-                                    elide: Text.ElideRight
-                                    text: SystemInfo.hostname + " · " + SystemInfo.uptime
-                                    color: Colors.md3.on_surface_variant
-                                    font.family: Config.fontFamily
-                                    font.pixelSize: 11
-                                    renderType: Text.NativeRendering
-                                }
-                            }
-                        }
-
-                        Row {
-                            spacing: 8
-                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-
-                            Rectangle {
-                                width: 36
-                                height: 36
-                                radius: 12
-                                color: reloadMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
-
-                                Behavior on color {
-                                    ColorAnimation { duration: 150 }
-                                }
-
-                                MaterialIcon {
-                                    name: "restart"
-                                    anchors.centerIn: parent
-                                    iconSize: 16
-                                    color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                                }
-
-                                MouseArea {
-                                    id: reloadMouse
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        root.isOpen = false;
-                                        Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -n -c isra"]);
-                                    }
-                                }
-                            }
-
-                            Rectangle {
-                                width: 36
-                                height: 36
-                                radius: 12
-                                color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
-
-                                Behavior on color {
-                                    ColorAnimation { duration: 150 }
-                                }
-
-                                MaterialIcon {
-                                    name: "settings"
-                                    anchors.centerIn: parent
-                                    iconSize: 16
-                                    color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                                }
-
-                                MouseArea {
-                                    id: editMouse
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        root.isOpen = false;
-                                        sysProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"];
-                                        sysProc.running = true;
-                                    }
-                                }
-                            }
-
-                            Rectangle {
-                                id: userRowRight
-                                width: 36
-                                height: 36
-                                radius: 12
-                                color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.error_container
-
-                                Behavior on color {
-                                    ColorAnimation { duration: 150 }
-                                }
-
-                                MaterialIcon {
-                                    name: "shutdown"
-                                    anchors.centerIn: parent
-                                    iconSize: 16
-                                    color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
-                                }
-
-                                MouseArea {
-                                    id: pwrMouse
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        root.isOpen = false;
-                                        PowerMenuState.toggle();
-                                    }
-                                }
-                            }
-                        }
+                    anchors {
+                        right: parent.right
+                        rightMargin: 12
+                        top: Config.bar.position === 0 ? parent.top : undefined
+                        bottom: Config.bar.position === 1 ? parent.bottom : undefined
+                        topMargin: Config.bar.position === 0 ? root.panelWindow.implicitHeight + 8 : 8
+                        bottomMargin: Config.bar.position === 1 ? root.panelWindow.implicitHeight + 8 : 8
                     }
 
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: qsCol.implicitHeight + 28
-                        color: Colors.md3.surface_container
-                        radius: 24
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: mouse => mouse.accepted = true
+                    }
 
-                        ColumnLayout {
-                            id: qsCol
-                            anchors.fill: parent
-                            anchors.margins: 14
-                            spacing: 12
-
-                            GridLayout {
-                                Layout.fillWidth: true
-                                columns: Config.verticalQSSliders ? 1 : 2
-                                columnSpacing: 8
-                                rowSpacing: 8
-
-                                QsSliderRow {
-                                    Layout.fillWidth: true
-                                    value: AudioService.volume
-                                    onMoved: val => AudioService.setVolume(val)
-                                    onMuteClicked: AudioService.toggleMute()
-                                    onRightClicked: {
-                                        root.isOpen = false;
-                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "sound"];
-                                        appletProc.running = true;
-                                    }
-                                    dimmed: AudioService.muted
-                                }
-
-                                QsSliderRow {
-                                    id: brightnessSlider
-                                    Layout.fillWidth: true
-                                    iconSet: "brightness"
-                                    value: BrightnessService.value
-                                    from: BrightnessService.from
-                                    to: BrightnessService.to
-                                    onMoved: val => BrightnessService.setBrightness(val)
-                                    onMuteClicked: BrightnessService.setBrightness(1.0)
-                                    onRightClicked: {
-                                        root.isOpen = false;
-                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
-                                        appletProc.running = true;
-                                    }
-                                    dimmed: false
-                                }
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-
-                                QsWideChip {
-                                    active: NetworkService.wifiEnabled || NetworkService.ethConnected
-                                    label: {
-                                        if (NetworkService.wifiEnabled) {
-                                            if (NetworkService.wifiConnecting)
-                                                return "Connecting...";
-                                            if (NetworkService.wifiConnected && NetworkService.wifiSsid !== "")
-                                                return NetworkService.wifiSsid;
-                                            return "Not Connected";
-                                        }
-                                        if (NetworkService.ethConnected)
-                                            return "Ethernet";
-                                        return "Wi-Fi Off";
-                                    }
-                                    sublabel: {
-                                        if (NetworkService.wifiConnected)
-                                            return NetworkService.wifiSignal + "% signal";
-                                        if (NetworkService.ethConnected && !NetworkService.wifiEnabled)
-                                            return "Wired";
-                                        return "";
-                                    }
-                                    onToggled: NetworkService.toggle()
-                                    onRightClicked: {
-                                        root.isOpen = false;
-                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
-                                        appletProc.running = true;
-                                    }
-
-                                    iconComponent: WifiIcon {
-                                        iconSize: 22
-                                        mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
-                                        strength: NetworkService.wifiSignal
-                                        secured: {
-                                            if (!NetworkService.activeNetwork) return false;
-                                            const sec = NetworkService.activeNetwork.security;
-                                            return sec !== "" && sec !== "--";
-                                        }
-                                    }
-                                }
-
-                                QsWideChip {
-                                    active: BluetoothService.enabled
-                                    
-                                    iconComponent: BluetoothIcon {
-                                        iconSize: 22
-                                        connected: BluetoothService.connectedDevices.length > 0
-                                        
-                                        enabled: BluetoothService.enabled
-                                        discovering: BluetoothService.discovering
-                                    }
-                      
-                                    label: {
-                                        if (!BluetoothService.enabled)
-                                            return "Bluetooth Off";
-                                        const dev = BluetoothService.firstConnected;
-                                        if (dev)
-                                            return dev.name;
-                                        if (BluetoothService.discovering)
-                                            return "Scanning...";
-                                        return "Bluetooth On";
-                                    }
-                                    
-                                    sublabel: {
-                                        const dev = BluetoothService.firstConnected;
-                                        if (dev && dev.battery > 0) {
-                                            let pct = Math.round(dev.battery * 100);
-                                            return BluetoothService.batteryIcon(pct) + " " + pct + "%";
-                                        }
-                                        
-                                        const n = BluetoothService.connectedCount;
-                                        if (n > 1)
-                                            return n + " devices";
-                                        return "";
-                                    }
-                                    
-                                    onToggled: BluetoothService.toggle()
-                                        
-                                    onRightClicked: {
-                                        root.isOpen = false;
-                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
-                                        appletProc.running = true;
-                                    }
-                                }
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-
-                                QsToggleChip {
-                                    active: CaffeineService.active
-                                    iconComponent: MaterialIcon {
-                                        name: "caffeine"
-                                        iconSize: 22
-                                        filled: CaffeineService.active
-                                        transitionType: "wipe-up"
-                                    }
-                                    onToggled: CaffeineService.toggle()
-                                }
-
-                                QsToggleChip {
-                                    active: NightLightService.active
-                                    iconComponent: MaterialIcon {
-                                        name: "nightlight"
-                                        iconSize: 22
-                                        filled: NightLightService.active
-                                    }
-                                    onToggled: NightLightService.toggle()
-                                    onRightClicked: {
-                                        root.isOpen = false;
-                                        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
-                                        appletProc.running = true;
-                                    }
-                                }
-
-                                QsPowerProfileChip {}
-                                QsGameModeChip {}
-                            }
-                        }
+                    transform: Translate {
+                        x: sidebar.slideX
                     }
 
                     ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignTop
-                        spacing: 0
+                        id: mainLayout
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.margins: 14
+                        spacing: 12
 
-                        Rectangle {
+                        RowLayout {
+                            id: userRow
                             Layout.fillWidth: true
+                            Layout.topMargin: 4
                             Layout.preferredHeight: 44
-                            color: Colors.md3.surface_container
-                            topRightRadius: 22
-                            topLeftRadius: 22
+                            spacing: 12
 
                             RowLayout {
-                                anchors.fill: parent
-                                anchors {
-                                    leftMargin: 8
-                                    rightMargin: 8
-                                    topMargin: 8
-                                    bottomMargin: 0
-                                }
-                                spacing: 4
+                                spacing: 10
+                                Layout.fillWidth: true
 
-                                Rectangle {
-                                    Layout.preferredWidth: 56
-                                    Layout.fillHeight: true
-                                    radius: 10
-                                    topLeftRadius: 18
-                                    color: dndMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                                ClippingRectangle {
+                                    implicitWidth: 36
+                                    implicitHeight: 36
+                                    radius: 18
+                                    clip: true
+                                    layer.enabled: true
+                                    layer.smooth: true
+                                    antialiasing: true
+                                    visible: profileImage.status === Image.Ready
+                                    color: "transparent"
 
-                                    Behavior on color {
-                                        ColorAnimation {
-                                            duration: 150
-                                        }
-                                    }
-
-                                    MaterialIcon {
-                                        name: "dnd"
-                                        anchors.centerIn: parent
-                                        iconSize: 16
-                                        color: Colors.md3.on_surface
-                                        filled: NotificationService.dnd
-                                        transitionType: "circle"
-                                    }
-
-                                    MouseArea {
-                                        id: dndMouse
+                                    Image {
+                                        id: profileImage
+                                        source: "file://" + Quickshell.env("HOME") + "/.face"
                                         anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        hoverEnabled: true
-                                        onClicked: NotificationService.dnd = !NotificationService.dnd
+                                        sourceSize: Qt.size(108, 108)
+                                        fillMode: Image.PreserveAspectCrop
+                                        antialiasing: true
+                                        smooth: true
+                                        mipmap: true
                                     }
                                 }
 
                                 Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    radius: 10
-                                    color: Colors.md3.surface_container_high
+                                    implicitWidth: 36
+                                    implicitHeight: 36
+                                    radius: 18
+                                    color: Colors.md3.primary_container
+                                    visible: profileImage.status !== Image.Ready
+
                                     Text {
                                         anchors.centerIn: parent
-                                        text: NotificationService.qsGroupModel.count === 0 ? "No notifications" : NotificationService.qsGroupModel.count + " notification" + (NotificationService.qsGroupModel.count === 1 ? "" : "s")
-                                        font.pixelSize: 13
+                                        text: SystemInfo.username ? SystemInfo.username.charAt(0).toUpperCase() : "U"
+                                        color: Colors.md3.on_primary_container
                                         font.family: Config.fontFamily
-                                        font.weight: Font.Medium
-                                        color: Colors.md3.on_surface
+                                        font.pixelSize: 14
+                                        font.weight: Font.Bold
                                         renderType: Text.NativeRendering
                                     }
                                 }
 
+                                Column {
+                                    Layout.fillWidth: true
+                                    spacing: 2
+
+                                    Text {
+                                        width: parent.width
+                                        elide: Text.ElideRight
+                                        text: SystemInfo.username
+                                        color: Colors.md3.on_surface
+                                        font.family: Config.fontFamily
+                                        font.pixelSize: 14
+                                        font.weight: Font.DemiBold
+                                        renderType: Text.NativeRendering
+                                    }
+
+                                    Text {
+                                        width: parent.width
+                                        elide: Text.ElideRight
+                                        text: SystemInfo.hostname + " · " + SystemInfo.uptime
+                                        color: Colors.md3.on_surface_variant
+                                        font.family: Config.fontFamily
+                                        font.pixelSize: 11
+                                        renderType: Text.NativeRendering
+                                    }
+                                }
+                            }
+
+                            Row {
+                                spacing: 8
+                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+
                                 Rectangle {
-                                    Layout.preferredWidth: 56
-                                    Layout.fillHeight: true
-                                    radius: 10
-                                    topRightRadius: 18
-                                    color: clearMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
-                                    opacity: NotificationService.qsGroupModel.count > 0 ? 1 : 0.3
+                                    width: 36
+                                    height: 36
+                                    radius: 12
+                                    color: reloadMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
 
                                     Behavior on color {
-                                        ColorAnimation {
-                                            duration: 150
-                                        }
+                                        ColorAnimation { duration: 150 }
                                     }
 
                                     MaterialIcon {
-                                        name: "clear-all"
+                                        name: "restart"
                                         anchors.centerIn: parent
                                         iconSize: 16
-                                        filled: NotificationService.qsGroupModel.count > 0
-                                        color: Colors.md3.on_surface
+                                        color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
                                     }
 
                                     MouseArea {
-                                        id: clearMouse
+                                        id: reloadMouse
                                         anchors.fill: parent
                                         cursorShape: Qt.PointingHandCursor
                                         hoverEnabled: true
-                                        enabled: NotificationService.qsGroupModel.count > 0
-                                        onClicked: NotificationService.dismissAll()
+                                        onClicked: {
+                                            root.isOpen = false;
+                                            Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -n -c isra"]);
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: 36
+                                    height: 36
+                                    radius: 12
+                                    color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+
+                                    Behavior on color {
+                                        ColorAnimation { duration: 150 }
+                                    }
+
+                                    MaterialIcon {
+                                        name: "settings"
+                                        anchors.centerIn: parent
+                                        iconSize: 16
+                                        color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+                                    }
+
+                                    MouseArea {
+                                        id: editMouse
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            root.isOpen = false;
+                                            sysProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"];
+                                            sysProc.running = true;
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    id: userRowRight
+                                    width: 36
+                                    height: 36
+                                    radius: 12
+                                    color: pwrMouse.containsMouse ? Colors.md3.error : Colors.md3.error_container
+
+                                    Behavior on color {
+                                        ColorAnimation { duration: 150 }
+                                    }
+
+                                    MaterialIcon {
+                                        name: "shutdown"
+                                        anchors.centerIn: parent
+                                        iconSize: 16
+                                        color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.error
+                                    }
+
+                                    MouseArea {
+                                        id: pwrMouse
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            root.isOpen = false;
+                                            PowerMenuState.toggle();
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        ClippingRectangle {
+                        Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: width * 1.2
-                            radius: 24
-                            topRightRadius: 0
-                            topLeftRadius: 0
+                            Layout.preferredHeight: qsCol.implicitHeight + 28
                             color: Colors.md3.surface_container
-                            clip: true
+                            radius: 24
 
-                            Column {
-                                id: caughtUpCol
-                                anchors.centerIn: parent
+                            ColumnLayout {
+                                id: qsCol
+                                anchors.fill: parent
+                                anchors.margins: 14
                                 spacing: 12
-                                readonly property bool isAllCaughtUp: NotificationService.qsGroupModel.count === 0
 
-                                opacity: isAllCaughtUp ? 1.0 : 0.0
-                                visible: opacity > 0
+                                GridLayout {
+                                    Layout.fillWidth: true
+                                    columns: Config.verticalQSSliders ? 1 : 2
+                                    columnSpacing: 8
+                                    rowSpacing: 8
 
-                                Behavior on opacity {
-                                    NumberAnimation {
-                                        duration: 200
-                                        easing.type: Easing.OutCubic
+                                    QsSliderRow {
+                                        Layout.fillWidth: true
+                                        value: AudioService.volume
+                                        onMoved: val => AudioService.setVolume(val)
+                                        onMuteClicked: AudioService.toggleMute()
+                                        onRightClicked: {
+                                            root.isOpen = false;
+                                            appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "sound"];
+                                            appletProc.running = true;
+                                        }
+                                        dimmed: AudioService.muted
+                                    }
+
+                                    QsSliderRow {
+                                        id: brightnessSlider
+                                        Layout.fillWidth: true
+                                        iconSet: "brightness"
+                                        value: BrightnessService.value
+                                        from: BrightnessService.from
+                                        to: BrightnessService.to
+                                        onMoved: val => BrightnessService.setBrightness(val)
+                                        onMuteClicked: BrightnessService.setBrightness(1.0)
+                                        onRightClicked: {
+                                            root.isOpen = false;
+                                            appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
+                                            appletProc.running = true;
+                                        }
+                                        dimmed: false
                                     }
                                 }
 
-                                transform: Translate {
-                                    y: caughtUpCol.isAllCaughtUp ? 0 : 25
-                                    Behavior on y {
-                                        NumberAnimation {
-                                            duration: 300
-                                            easing.type: Easing.OutCubic
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+
+                                    QsWideChip {
+                                        active: NetworkService.wifiEnabled || NetworkService.ethConnected
+                                        label: {
+                                            if (NetworkService.wifiEnabled) {
+                                                if (NetworkService.wifiConnecting)
+                                                    return "Connecting...";
+                                                if (NetworkService.wifiConnected && NetworkService.wifiSsid !== "")
+                                                    return NetworkService.wifiSsid;
+                                                return "Not Connected";
+                                            }
+                                            if (NetworkService.ethConnected)
+                                                return "Ethernet";
+                                            return "Wi-Fi Off";
+                                        }
+                                        sublabel: {
+                                            if (NetworkService.wifiConnected)
+                                                return NetworkService.wifiSignal + "% signal";
+                                            if (NetworkService.ethConnected && !NetworkService.wifiEnabled)
+                                                return "Wired";
+                                            return "";
+                                        }
+                                        onToggled: NetworkService.toggle()
+                                        onRightClicked: {
+                                            root.isOpen = false;
+                                            appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
+                                            appletProc.running = true;
+                                        }
+
+                                        iconComponent: WifiIcon {
+                                            iconSize: 22
+                                            mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
+                                            strength: NetworkService.wifiSignal
+                                            secured: {
+                                                if (!NetworkService.activeNetwork) return false;
+                                                const sec = NetworkService.activeNetwork.security;
+                                                return sec !== "" && sec !== "--";
+                                            }
+                                        }
+                                    }
+
+                                    QsWideChip {
+                                        active: BluetoothService.enabled
+                                        
+                                        iconComponent: BluetoothIcon {
+                                            iconSize: 22
+                                            connected: BluetoothService.connectedDevices.length > 0
+                                            
+                                            enabled: BluetoothService.enabled
+                                            discovering: BluetoothService.discovering
+                                        }
+                        
+                                        label: {
+                                            if (!BluetoothService.enabled)
+                                                return "Bluetooth Off";
+                                            const dev = BluetoothService.firstConnected;
+                                            if (dev)
+                                                return dev.name;
+                                            if (BluetoothService.discovering)
+                                                return "Scanning...";
+                                            return "Bluetooth On";
+                                        }
+                                        
+                                        sublabel: {
+                                            const dev = BluetoothService.firstConnected;
+                                            if (dev && dev.battery > 0) {
+                                                let pct = Math.round(dev.battery * 100);
+                                                return BluetoothService.batteryIcon(pct) + " " + pct + "%";
+                                            }
+                                            
+                                            const n = BluetoothService.connectedCount;
+                                            if (n > 1)
+                                                return n + " devices";
+                                            return "";
+                                        }
+                                        
+                                        onToggled: BluetoothService.toggle()
+                                            
+                                        onRightClicked: {
+                                            root.isOpen = false;
+                                            appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
+                                            appletProc.running = true;
                                         }
                                     }
                                 }
 
-                                Rectangle {
-                                    implicitWidth: 200
-                                    implicitHeight: 80
-                                    radius: 24
-                                    color: Colors.md3.primary_container
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
 
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "(˶˃ ᵕ ˂˶) .ᐟ.ᐟ"
-                                        font.pixelSize: 32
-                                        renderType: Text.NativeRendering
-                                        color: Colors.md3.on_primary_container
+                                    QsToggleChip {
+                                        active: CaffeineService.active
+                                        iconComponent: MaterialIcon {
+                                            name: "caffeine"
+                                            iconSize: 22
+                                            filled: CaffeineService.active
+                                            transitionType: "wipe-up"
+                                        }
+                                        onToggled: CaffeineService.toggle()
                                     }
-                                }
 
-                                Text {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: "All caught up . . !"
-                                    font.pixelSize: 16
-                                    renderType: Text.NativeRendering
-                                    font.family: Config.fontFamily
-                                    color: Colors.md3.on_surface_variant
-                                    opacity: 0.8
+                                    QsToggleChip {
+                                        active: NightLightService.active
+                                        iconComponent: MaterialIcon {
+                                            name: "nightlight"
+                                            iconSize: 22
+                                            filled: NightLightService.active
+                                        }
+                                        onToggled: NightLightService.toggle()
+                                        onRightClicked: {
+                                            root.isOpen = false;
+                                            appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
+                                            appletProc.running = true;
+                                        }
+                                    }
+
+                                    QsPowerProfileChip {}
+                                    QsGameModeChip {}
+                                }
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignTop
+                            spacing: 0
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 44
+                                color: Colors.md3.surface_container
+                                topRightRadius: 22
+                                topLeftRadius: 22
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors {
+                                        leftMargin: 8
+                                        rightMargin: 8
+                                        topMargin: 8
+                                        bottomMargin: 0
+                                    }
+                                    spacing: 4
+
+                                    Rectangle {
+                                        Layout.preferredWidth: 56
+                                        Layout.fillHeight: true
+                                        radius: 10
+                                        topLeftRadius: 18
+                                        color: dndMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+
+                                        Behavior on color {
+                                            ColorAnimation {
+                                                duration: 150
+                                            }
+                                        }
+
+                                        MaterialIcon {
+                                            name: "dnd"
+                                            anchors.centerIn: parent
+                                            iconSize: 16
+                                            color: Colors.md3.on_surface
+                                            filled: NotificationService.dnd
+                                            transitionType: "circle"
+                                        }
+
+                                        MouseArea {
+                                            id: dndMouse
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            hoverEnabled: true
+                                            onClicked: NotificationService.dnd = !NotificationService.dnd
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        radius: 10
+                                        color: Colors.md3.surface_container_high
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: NotificationService.qsGroupModel.count === 0 ? "No notifications" : NotificationService.qsGroupModel.count + " notification" + (NotificationService.qsGroupModel.count === 1 ? "" : "s")
+                                            font.pixelSize: 13
+                                            font.family: Config.fontFamily
+                                            font.weight: Font.Medium
+                                            color: Colors.md3.on_surface
+                                            renderType: Text.NativeRendering
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        Layout.preferredWidth: 56
+                                        Layout.fillHeight: true
+                                        radius: 10
+                                        topRightRadius: 18
+                                        color: clearMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                                        opacity: NotificationService.qsGroupModel.count > 0 ? 1 : 0.3
+
+                                        Behavior on color {
+                                            ColorAnimation {
+                                                duration: 150
+                                            }
+                                        }
+
+                                        MaterialIcon {
+                                            name: "clear-all"
+                                            anchors.centerIn: parent
+                                            iconSize: 16
+                                            filled: NotificationService.qsGroupModel.count > 0
+                                            color: Colors.md3.on_surface
+                                        }
+
+                                        MouseArea {
+                                            id: clearMouse
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            hoverEnabled: true
+                                            enabled: NotificationService.qsGroupModel.count > 0
+                                            onClicked: NotificationService.dismissAll()
+                                        }
+                                    }
                                 }
                             }
 
-                            Flickable {
-                                id: qsFlick
-                                anchors.fill: parent
-                                anchors.margins: 8
-                                contentHeight: notifCol.implicitHeight
-                                clip: false
-                                flickableDirection: Flickable.VerticalFlick
-                                flickDeceleration: 4000
-                                maximumFlickVelocity: 1200
-                                boundsBehavior: Flickable.DragAndOvershootBounds
-                                ScrollBar.vertical: ScrollBar {
-                                    policy: ScrollBar.AlwaysOff
-                                }
+                            ClippingRectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: width * 1.2
+                                radius: 24
+                                topRightRadius: 0
+                                topLeftRadius: 0
+                                color: Colors.md3.surface_container
+                                clip: true
 
                                 Column {
-                                    id: notifCol
-                                    width: qsFlick.width
-                                    spacing: 6
+                                    id: caughtUpCol
+                                    anchors.centerIn: parent
+                                    spacing: 12
+                                    readonly property bool isAllCaughtUp: NotificationService.qsGroupModel.count === 0
 
-                                    NotificationListView {
-                                        id: qsNotifList
-                                        width: parent.width
-                                        implicitHeight: contentHeight
-                                        height: contentHeight
-                                        model: NotificationService.qsGroupModel
+                                    opacity: isAllCaughtUp ? 1.0 : 0.0
+                                    visible: opacity > 0
 
-                                        delegate: NotificationGroup {
-                                            required property int index
-                                            readonly property var row: qsNotifList.model.get(index) ?? {}
-                                            appName: row.appName ?? ""
-                                            groupSummary: row.groupSummary ?? ""
-                                            groupIdx: index
-                                            listRef: qsNotifList
-                                            showAll: true
-                                            inPanel: true
-                                            popup: false
-                                            width: qsNotifList.width
+                                    Behavior on opacity {
+                                        NumberAnimation {
+                                            duration: 200
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
+
+                                    transform: Translate {
+                                        y: caughtUpCol.isAllCaughtUp ? 0 : 25
+                                        Behavior on y {
+                                            NumberAnimation {
+                                                duration: 300
+                                                easing.type: Easing.OutCubic
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        implicitWidth: 200
+                                        implicitHeight: 80
+                                        radius: 24
+                                        color: Colors.md3.primary_container
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "(˶˃ ᵕ ˂˶) .ᐟ.ᐟ"
+                                            font.pixelSize: 32
+                                            renderType: Text.NativeRendering
+                                            color: Colors.md3.on_primary_container
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "All caught up . . !"
+                                        font.pixelSize: 16
+                                        renderType: Text.NativeRendering
+                                        font.family: Config.fontFamily
+                                        color: Colors.md3.on_surface_variant
+                                        opacity: 0.8
+                                    }
+                                }
+
+                                Flickable {
+                                    id: qsFlick
+                                    anchors.fill: parent
+                                    anchors.margins: 8
+                                    contentHeight: notifCol.implicitHeight
+                                    clip: false
+                                    flickableDirection: Flickable.VerticalFlick
+                                    flickDeceleration: 4000
+                                    maximumFlickVelocity: 1200
+                                    boundsBehavior: Flickable.DragAndOvershootBounds
+                                    ScrollBar.vertical: ScrollBar {
+                                        policy: ScrollBar.AlwaysOff
+                                    }
+
+                                    Column {
+                                        id: notifCol
+                                        width: qsFlick.width
+                                        spacing: 6
+
+                                        NotificationListView {
+                                            id: qsNotifList
+                                            width: parent.width
+                                            implicitHeight: contentHeight
+                                            height: contentHeight
+                                            model: NotificationService.qsGroupModel
+
+                                            delegate: NotificationGroup {
+                                                required property int index
+                                                readonly property var row: qsNotifList.model.get(index) ?? {}
+                                                appName: row.appName ?? ""
+                                                groupSummary: row.groupSummary ?? ""
+                                                groupIdx: index
+                                                listRef: qsNotifList
+                                                showAll: true
+                                                inPanel: true
+                                                popup: false
+                                                width: qsNotifList.width
+                                            }
                                         }
                                     }
                                 }

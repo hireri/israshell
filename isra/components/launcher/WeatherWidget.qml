@@ -132,7 +132,7 @@ Item {
         const city = query.trim();
         if (city === "") return;
 
-        const currentSeq = ++_searchSeq;
+        const currentSeq = ++root._searchSeq;
 
         LocaleService.fetchWeatherForQuery(city, function (error, result) {
             if (currentSeq !== root._searchSeq) return;

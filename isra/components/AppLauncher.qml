@@ -1,7 +1,6 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Widgets
 import QtQuick
 import QtQuick.Effects
@@ -16,6 +15,8 @@ Scope {
     property bool _opening: false
     property bool _animating: false
     property var _targetScreen: null
+
+    onIsOpenChanged: isOpen ? PanelService.opened(root, root._targetScreen) : PanelService.closed(root)
 
     readonly property var _visual: visualLoader.item
 
@@ -645,13 +646,6 @@ Scope {
         }
     }
 
-    HyprlandFocusGrab {
-        id: focusGrab
-        active: root.isOpen && _visual !== null
-        windows: _visual ? [_visual.panel] : []
-        onCleared: root.close()
-    }
-
     Loader {
         id: visualLoader
         active: root.isOpen || root._animating
@@ -692,7 +686,7 @@ Scope {
                         visible: root.isOpen || root._animating
                         color: "transparent"
                         WlrLayershell.layer: WlrLayer.Overlay
-                        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+                        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
                         WlrLayershell.namespace: "quickshell-launcher-overlay"
                         exclusionMode: ExclusionMode.Ignore
                         anchors {
@@ -738,7 +732,9 @@ Scope {
                     Item {
                         id: _stack
                         anchors.horizontalCenter: parent.horizontalCenter
-                        y: Math.round(_panel.height * 0.3)
+
+                        readonly property real _restFraction: 0.3
+                        y: Math.round(_panel.height * _restFraction)
 
                         width: {
                             if (root.mode === "apps")
