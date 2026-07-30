@@ -21,11 +21,12 @@ FloatingWindow {
     readonly property int pageOverview: 0
     readonly property int pageNetwork: 1
     readonly property int pageBar: 2
-    readonly property int pageClock: 3
-    readonly property int pageDisplay: 4
-    readonly property int pageSound: 5
-    readonly property int pageLocale: 6
-    readonly property int pageSystem: 7
+    readonly property int pageBackground: 3
+    readonly property int pageClock: 4
+    readonly property int pageDisplay: 5
+    readonly property int pageSound: 6
+    readonly property int pageLocale: 7
+    readonly property int pageSystem: 8
 
     property int currentPage: pageOverview
     property bool sidebarCollapsed: false
@@ -160,6 +161,13 @@ FloatingWindow {
                             MaterialIcon { name: "customization"; transitionType: "wipe-up" }
                         }
                         SidebarItem {
+                            page: root.pageBackground
+                            label: "Background"
+                            sublabel: "Effects, wallpaper , widgets"
+                            onClicked: root.currentPage = page
+                            MaterialIcon { name: "panorama"; transitionType: "wipe-right" }
+                        }
+                        SidebarItem {
                             page: root.pageClock
                             label: "Desktop Clock"
                             sublabel: "Mode, colors"
@@ -169,7 +177,7 @@ FloatingWindow {
                         SidebarItem {
                             page: root.pageDisplay
                             label: "Visuals"
-                            sublabel: "Night light, blur, audio visualizer"
+                            sublabel: "Night light, blur"
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "monitor"; transitionType: "wipe-down" }
                         }
@@ -217,6 +225,7 @@ FloatingWindow {
             Component { id: overviewComp; OverviewPage {} }
             Component { id: networkComp; NetworkPage {} }
             Component { id: barComp; BarPage {} }
+            Component { id: backgroundComp; BackgroundPage {} }
             Component { id: clockComp; ClockPage {} }
             Component { id: displayComp; DisplayPage {} }
             Component { id: soundComp; SoundPage {} }
@@ -228,6 +237,7 @@ FloatingWindow {
                 case root.pageOverview: return overviewComp;
                 case root.pageNetwork: return networkComp;
                 case root.pageBar: return barComp;
+                case root.pageBackground: return backgroundComp;
                 case root.pageClock: return clockComp;
                 case root.pageDisplay: return displayComp;
                 case root.pageSound: return soundComp;
@@ -302,6 +312,7 @@ FloatingWindow {
             "overview": root.pageOverview,
             "network": root.pageNetwork,
             "bar": root.pageBar,
+            "background": root.pageBackground,
             "clock": root.pageClock,
             "display": root.pageDisplay,
             "sound": root.pageSound,
