@@ -6,11 +6,42 @@ import Quickshell.Widgets
 import qs.style
 import qs.services
 import qs.windows.components
+import qs.icons
 
 PageBase {
     id: pageRoot
     title: "System"
     subtitle: "About and script paths"
+
+    readonly property var dotMaterialShapes: ["clover4", "arrow", "pill", "softBurst", "diamond", "clamShell", "pentagon"]
+
+    Component {
+        id: dotShapeSquarePreview
+        Rectangle {
+            width: 14
+            height: 14
+            radius: 3
+            color: Colors.md3.on_surface_variant
+        }
+    }
+    Component {
+        id: dotShapeCirclePreview
+        Rectangle {
+            width: 14
+            height: 14
+            radius: 7
+            color: Colors.md3.on_surface_variant
+        }
+    }
+    Component {
+        id: dotShapeMaterialPreview
+        MaterialShape {
+            shapeSize: 14
+            color: Colors.md3.on_surface_variant
+            cycleInterval: 2000
+            shapes: pageRoot.dotMaterialShapes
+        }
+    }
 
     readonly property var systemFontsModel: {
         var families = Qt.fontFamilies();
@@ -267,11 +298,27 @@ PageBase {
             }
 
             SettingSwitch {
-                isLast: true
                 label: "Use awww"
                 sublabel: "Delegate wallpaper to awww instead of built in, WON'T SUPPORT VIDEOS"
                 checked: Config.useAwww
                 onToggled: v => Config.update({ useAwww: v })
+            }
+
+            SettingChips {
+                isLast: true
+                label: "Password dot shape"
+                sublabel: "Shape of the lockscreen input dots"
+                options: [
+                    { label: "", value: "roundedSquare", icon: dotShapeSquarePreview },
+                    { label: "", value: "circle", icon: dotShapeCirclePreview },
+                    { label: "", value: "material", icon: dotShapeMaterialPreview }
+                ]
+                currentValue: Config.lockscreen.dotShape
+                onSelected: v => Config.update({
+                    lockscreen: Object.assign({}, Config.lockscreen, {
+                        dotShape: v
+                    })
+                })
             }
         }
 

@@ -161,6 +161,9 @@ Singleton {
             speed: 10,
             sleepDelay: 1
         })
+    property var lockscreen: ({
+            dotShape: "roundedSquare"  // "roundedSquare" | "circle" | "material"
+        })
     property var clockPositions: ({})
     property var weyesPositions: ({})
     property bool checkUpdates: true
@@ -293,6 +296,9 @@ Singleton {
                 size: 32,
                 speed: 10,
                 sleepDelay: 1
+            },
+            lockscreen: {
+                dotShape: "roundedSquare"
             },
             useAwww: false,
             clockPositions: {},

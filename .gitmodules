@@ -1,0 +1,3 @@
+[submodule "isra/components/shapes"]
+	path = isra/components/shapes
+	url = https://github.com/end-4/rounded-polygon-qmljs.git

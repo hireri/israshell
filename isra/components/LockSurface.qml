@@ -71,6 +71,118 @@ Item {
         MaterialIcon { name: "shift-lock"; iconSize: 16; color: Colors.md3.on_surface_variant; filled: true }
     }
 
+    readonly property var dotMaterialShapes: ["clover4", "arrow", "pill", "softBurst", "diamond", "clamShell", "pentagon"]
+
+    Component {
+        id: dotSquareComp
+        Rectangle {
+            width: 16
+            height: 16
+            radius: 4
+            color: Colors.md3.on_surface
+        }
+    }
+    Component {
+        id: dotCircleComp
+        Rectangle {
+            width: 16
+            height: 16
+            radius: 8
+            color: Colors.md3.on_surface
+        }
+    }
+    Component {
+        id: dotMaterialComp
+        MaterialShape {
+            shapeSize: 16
+            color: Colors.md3.on_surface
+            random: true
+            shapes: root.dotMaterialShapes
+        }
+    }
+
+    component MarqueeLine: Item {
+        id: marqueeLine
+
+        property string label: ""
+        property int fontPixelSize: 13
+        property int fontWeight: Font.Normal
+        property color textColor: Colors.md3.on_surface
+
+        height: lineText.implicitHeight
+        clip: true
+
+        readonly property bool shouldScroll: lineText.implicitWidth > width
+        property real scrollPos: 0
+
+        onLabelChanged: {
+            if (shouldScroll)
+                marqueeAnim.restart();
+            else {
+                marqueeAnim.stop();
+                scrollPos = 0;
+            }
+        }
+
+        Component.onCompleted: {
+            if (shouldScroll)
+                marqueeAnim.restart();
+        }
+
+        NumberAnimation {
+            id: marqueeAnim
+            target: marqueeLine
+            property: "scrollPos"
+            from: 0
+            to: lineText.implicitWidth + 24
+            duration: (lineText.implicitWidth + 24) * 1000 / Config.carouselSpeed
+            loops: Animation.Infinite
+        }
+
+        Text {
+            id: lineText
+            anchors.verticalCenter: parent.verticalCenter
+            x: marqueeLine.shouldScroll ? -marqueeLine.scrollPos : (marqueeLine.width - implicitWidth) / 2
+            color: marqueeLine.textColor
+            font.pixelSize: marqueeLine.fontPixelSize
+            font.weight: marqueeLine.fontWeight
+            text: marqueeLine.label
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            x: lineText.x + lineText.implicitWidth + 24
+            visible: marqueeLine.shouldScroll
+            color: marqueeLine.textColor
+            font.pixelSize: marqueeLine.fontPixelSize
+            font.weight: marqueeLine.fontWeight
+            text: lineText.text
+        }
+
+        Rectangle {
+            anchors.left: parent.left
+            width: 14
+            height: parent.height
+            visible: marqueeLine.shouldScroll
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: Colors.md3.surface_container }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+        }
+        Rectangle {
+            anchors.right: parent.right
+            width: 14
+            height: parent.height
+            visible: marqueeLine.shouldScroll
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 1.0; color: Colors.md3.surface_container }
+            }
+        }
+    }
+
     readonly property var powerEntries: [
         {
             label: "Log Out",
@@ -113,8 +225,29 @@ Item {
 
         onTextChanged: {
             LockscreenService.currentText = text
-            while (passwordModel.count < text.length)  passwordModel.append({})
-            while (passwordModel.count > text.length)  passwordModel.remove(passwordModel.count - 1)
+
+            const oldLen = passwordModel.count
+            const newLen = text.length
+            if (newLen > oldLen) {
+                const insertCount = newLen - oldLen
+                const insertAt = Math.max(0, Math.min(oldLen, cursorPosition - insertCount))
+                for (let i = 0; i < insertCount; i++)
+                    passwordModel.insert(insertAt + i, {})
+            } else if (newLen < oldLen) {
+                const removeCount = oldLen - newLen
+                const removeAt = Math.max(0, Math.min(newLen, cursorPosition))
+                for (let i = 0; i < removeCount; i++)
+                    passwordModel.remove(removeAt)
+            }
+
+            textCursor.opacity = 1
+            cursorBlinkAnim.restart()
+        }
+
+        onCursorPositionChanged: {
+            dotListView.ensureCaretVisible()
+            textCursor.opacity = 1
+            cursorBlinkAnim.restart()
         }
 
         Keys.onReturnPressed: LockscreenService.tryUnlock()
@@ -269,25 +402,47 @@ Item {
                     boundsBehavior: Flickable.StopAtBounds
                     cacheBuffer: 0
 
+                    readonly property int dotW: 16
+                    readonly property int dotSpacing: 6
+
+                    function caretX(idx) {
+                        return idx <= 0 ? 0 : idx * (dotW + dotSpacing) - dotSpacing
+                    }
+
+                    function caretCenterX(idx) {
+                        return idx <= 0 ? 0 : idx * (dotW + dotSpacing) - dotSpacing / 2
+                    }
+
+                    function ensureCaretVisible() {
+                        const caret = caretX(hiddenPasswordInput.cursorPosition)
+                        let cx = contentX
+                        if (caret < cx) cx = caret
+                        else if (caret > cx + width) cx = caret - width
+                        contentX = Math.max(0, Math.min(cx, Math.max(0, contentWidth - width)))
+                    }
+
                     Behavior on contentX {
                         NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
 
-                    onContentWidthChanged: {
-                        contentX = contentWidth > width ? contentWidth - width : 0
-                    }
+                    onContentWidthChanged: ensureCaretVisible()
 
                     delegate: Item {
-                        width: 12
+                        width: 16
                         height: dotListView.height
 
-                        Rectangle {
+                        Loader {
                             id: dotVisual
                             anchors.centerIn: parent
-                            width: 12
-                            height: 12
-                            radius: 4
-                            color: Colors.md3.on_surface
+                            width: 16
+                            height: 16
+                            sourceComponent: {
+                                switch (Config.lockscreen.dotShape) {
+                                case "circle": return dotCircleComp;
+                                case "material": return dotMaterialComp;
+                                default: return dotSquareComp;
+                                }
+                            }
 
                             SequentialAnimation {
                                 running: LockscreenService.unlockInProgress
@@ -316,6 +471,39 @@ Item {
                     }
                     displaced: Transition {
                         NumberAnimation { properties: "x,y"; duration: 160; easing.type: Easing.OutCubic }
+                    }
+                }
+
+                Rectangle {
+                    id: textCursor
+                    width: 2
+                    height: 18
+                    radius: 1
+                    color: Colors.md3.on_surface
+                    visible: hiddenPasswordInput.activeFocus && !LockscreenService.unlockInProgress
+                    anchors.verticalCenter: dotListView.verticalCenter
+                    x: {
+                        const idx = hiddenPasswordInput.cursorPosition
+                        const center = dotListView.caretCenterX(idx) - dotListView.contentX
+                        const aligned = idx <= 0 ? center : center - textCursor.width / 2
+                        const minX = dotListView.x
+                        const maxX = dotListView.x + dotListView.width - textCursor.width
+                        return Math.max(minX, Math.min(maxX, dotListView.x + aligned))
+                    }
+
+                    Behavior on x {
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+
+                    SequentialAnimation {
+                        id: cursorBlinkAnim
+                        loops: Animation.Infinite
+                        running: textCursor.visible
+
+                        PauseAnimation { duration: 600 }
+                        NumberAnimation { target: textCursor; property: "opacity"; to: 0; duration: 300; easing.type: Easing.InOutQuad }
+                        PauseAnimation { duration: 300 }
+                        NumberAnimation { target: textCursor; property: "opacity"; to: 1; duration: 300; easing.type: Easing.InOutQuad }
                     }
                 }
             }
@@ -399,8 +587,185 @@ Item {
                 width: 44
                 height: 44
 
+                readonly property bool showRing: leftPill.hasPlayer && (Config.bar.playerRing ?? false)
+                property real coverMargin: showRing ? 4 : 0
+                property real ringStrokeWidth: showRing ? 2.6 : 0
+
+                Behavior on coverMargin {
+                    NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                }
+
+                Behavior on ringStrokeWidth {
+                    NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                }
+
+                property real displayProgress: 0
+                readonly property var displayPlayer: leftPill.player
+
+                function syncProgress() {
+                    if (trackResetAnim.running) return;
+                    const p = displayPlayer;
+                    if (!p || !p.length || p.length <= 0) {
+                        displayProgress = 0;
+                        return;
+                    }
+                    const target = Math.min(1.0, Math.max(0.0, p.position / p.length));
+                    if (target < displayProgress - 0.05) {
+                        animateResetTo(target);
+                    } else {
+                        displayProgress = target;
+                    }
+                }
+
+                function animateResetTo(targetVal) {
+                    trackResetAnim.stop();
+                    trackResetAnim.to = targetVal;
+                    trackResetAnim.start();
+                }
+
+                NumberAnimation {
+                    id: trackResetAnim
+                    target: coverArt
+                    property: "displayProgress"
+                    duration: 380
+                    easing.type: Easing.OutCubic
+                }
+
+                Connections {
+                    target: MediaPlayerState
+                    function onDisplayPlayerChanged() {
+                        coverArt.animateResetTo(0);
+                    }
+                }
+
+                Connections {
+                    target: leftPill.player ?? null
+                    function onTrackTitleChanged() {
+                        coverArt.animateResetTo(0);
+                    }
+                    function onPositionChanged() {
+                        coverArt.syncProgress();
+                    }
+                }
+
+                Timer {
+                    id: smoothPosTimer
+                    interval: 16
+                    repeat: true
+                    running: root.visible && coverArt.displayPlayer !== null && coverArt.displayPlayer.playbackState === MprisPlaybackState.Playing && !trackResetAnim.running
+                    onTriggered: {
+                        if (coverArt.displayPlayer) {
+                            coverArt.displayPlayer.positionChanged();
+                            coverArt.syncProgress();
+                        }
+                    }
+                }
+
+                Canvas {
+                    id: progressRing
+                    anchors.fill: parent
+                    antialiasing: true
+
+                    readonly property real progress: coverArt.displayProgress
+
+                    onProgressChanged: requestPaint()
+
+                    Connections {
+                        target: coverArt
+                        function onRingStrokeWidthChanged() {
+                            progressRing.requestPaint();
+                        }
+                    }
+
+                    onPaint: {
+                        const ctx = getContext("2d");
+                        ctx.reset();
+                        const strokeWidth = coverArt.ringStrokeWidth;
+                        if (strokeWidth <= 0.01) return;
+
+                        const centerX = width / 2;
+                        const centerY = height / 2;
+                        const radius = (Math.min(width, height) - strokeWidth) / 2;
+
+                        if (radius <= 0) return;
+
+                        const activeColor = Colors.md3.primary;
+                        const trackColor = Qt.alpha(Colors.md3.primary, 0.25);
+
+                        const topAngle = -Math.PI / 2;
+                        const fullGap = 10 * (Math.PI / 180);
+                        const halfFullGap = fullGap / 2;
+
+                        const p = Math.max(0, Math.min(1, progress));
+                        const pMin = 0.03;
+                        const minArcAngle = 0.04;
+
+                        const activeAlpha = Math.min(1.0, Math.max(0.0, p / pMin));
+                        const remainingAlpha = Math.min(1.0, Math.max(0.0, (1 - p) / pMin));
+
+                        let dynamicGap = fullGap;
+                        if (p < pMin) {
+                            dynamicGap = fullGap * (p / pMin);
+                        } else if (p > 1 - pMin) {
+                            dynamicGap = fullGap * ((1 - p) / pMin);
+                        }
+                        const halfDynamicGap = dynamicGap / 2;
+
+                        const progressAngle = p * 2 * Math.PI;
+
+                        if (activeAlpha > 0) {
+                            ctx.save();
+                            ctx.globalAlpha = activeAlpha;
+
+                            const activeStart = topAngle + halfFullGap;
+                            let activeEnd = topAngle + progressAngle - halfDynamicGap;
+
+                            if (p >= 0.995) {
+                                activeEnd = topAngle + 2 * Math.PI - halfFullGap;
+                            } else if (activeEnd - activeStart < minArcAngle) {
+                                activeEnd = activeStart + minArcAngle;
+                            }
+
+                            if (activeEnd > activeStart) {
+                                ctx.beginPath();
+                                ctx.arc(centerX, centerY, radius, activeStart, activeEnd);
+                                ctx.strokeStyle = activeColor;
+                                ctx.lineWidth = strokeWidth;
+                                ctx.lineCap = "round";
+                                ctx.stroke();
+                            }
+                            ctx.restore();
+                        }
+
+                        if (remainingAlpha > 0) {
+                            ctx.save();
+                            ctx.globalAlpha = remainingAlpha;
+
+                            let remainingStart = topAngle + progressAngle + halfDynamicGap;
+                            const remainingEnd = topAngle + 2 * Math.PI - halfFullGap;
+
+                            if (p <= 0.005) {
+                                remainingStart = topAngle + halfFullGap;
+                            } else if (remainingEnd - remainingStart < minArcAngle) {
+                                remainingStart = remainingEnd - minArcAngle;
+                            }
+
+                            if (remainingEnd > remainingStart) {
+                                ctx.beginPath();
+                                ctx.arc(centerX, centerY, radius, remainingStart, remainingEnd);
+                                ctx.strokeStyle = trackColor;
+                                ctx.lineWidth = strokeWidth;
+                                ctx.lineCap = "round";
+                                ctx.stroke();
+                            }
+                            ctx.restore();
+                        }
+                    }
+                }
+
                 ClippingRectangle {
                     anchors.fill: parent
+                    anchors.margins: coverArt.coverMargin
                     radius: height / 2
                     color: Colors.md3.surface_container_highest
 
@@ -413,6 +778,7 @@ Item {
 
                 ClippingRectangle {
                     anchors.fill: parent
+                    anchors.margins: coverArt.coverMargin
                     radius: height / 2
                     visible: leftPill.hasPlayer && coverArtImg.status === Image.Ready
                     color: "transparent"
@@ -451,82 +817,26 @@ Item {
                 }
             }
 
-            Item {
+            Column {
                 id: marqueeContainer
                 Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 112
-                height: 20
-                clip: true
+                width: 112
+                spacing: 2
 
-                readonly property string fullText: leftPill.hasPlayer
-                    ? (leftPill.player.trackTitle + "  •  " + leftPill.player.trackArtist)
-                    : "No media playing"
-                readonly property bool shouldScroll: marqueeText.implicitWidth > implicitWidth
-                property real scrollPos: 0
-
-                Component.onCompleted: {
-                    if (shouldScroll)
-                        marqueeAnim.restart();
+                MarqueeLine {
+                    width: parent.width
+                    label: leftPill.hasPlayer ? leftPill.player.trackTitle : "No media playing"
+                    fontPixelSize: 13
+                    fontWeight: Font.Medium
+                    textColor: Colors.md3.on_surface
                 }
 
-                NumberAnimation {
-                    id: marqueeAnim
-                    target: marqueeContainer
-                    property: "scrollPos"
-                    from: 0
-                    to: marqueeText.implicitWidth + 24
-                    duration: (marqueeText.implicitWidth + 24) * 1000 / Config.carouselSpeed
-                    loops: Animation.Infinite
-                }
-
-                Text {
-                    id: marqueeText
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: marqueeContainer.shouldScroll ? -marqueeContainer.scrollPos : (marqueeContainer.width - implicitWidth) / 2
-                    color: Colors.md3.on_surface
-                    font.pixelSize: 13
-                    text: marqueeContainer.fullText
-
-                    onTextChanged: {
-                        if (marqueeContainer.shouldScroll)
-                            marqueeAnim.restart();
-                        else {
-                            marqueeAnim.stop();
-                            marqueeContainer.scrollPos = 0;
-                        }
-                    }
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: marqueeText.x + marqueeText.implicitWidth + 24
-                    visible: marqueeContainer.shouldScroll
-                    color: Colors.md3.on_surface
-                    font.pixelSize: 13
-                    text: marqueeText.text
-                }
-
-                Rectangle {
-                    anchors.left: parent.left
-                    width: 14
-                    height: parent.height
-                    visible: marqueeContainer.shouldScroll
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop { position: 0.0; color: Colors.md3.surface_container }
-                        GradientStop { position: 1.0; color: "transparent" }
-                    }
-                }
-                Rectangle {
-                    anchors.right: parent.right
-                    width: 14
-                    height: parent.height
-                    visible: marqueeContainer.shouldScroll
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop { position: 0.0; color: "transparent" }
-                        GradientStop { position: 1.0; color: Colors.md3.surface_container }
-                    }
+                MarqueeLine {
+                    width: parent.width
+                    visible: leftPill.hasPlayer && !!leftPill.player.trackArtist
+                    label: leftPill.hasPlayer ? leftPill.player.trackArtist : ""
+                    fontPixelSize: 12
+                    textColor: Colors.md3.on_surface_variant
                 }
             }
 

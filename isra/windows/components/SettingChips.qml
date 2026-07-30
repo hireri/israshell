@@ -121,6 +121,7 @@ SettingRow {
                         Text {
                             id: chipLabel
                             anchors.verticalCenter: parent.verticalCenter
+                            visible: text.length > 0
                             text: chip.modelData.label
                             font.family: Config.fontFamily
                             font.pixelSize: 12
