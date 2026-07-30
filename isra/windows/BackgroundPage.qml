@@ -11,7 +11,7 @@ import Quickshell.Widgets
 
 PageBase {
     title: "Background"
-    subtitle: "Effects, wallpaper , widgets"
+    subtitle: "Effects, wallpaper, widgets"
 
     SectionCard {
         label: "Wallpaper"

@@ -164,7 +164,7 @@ FloatingWindow {
                         SidebarItem {
                             page: root.pageBackground
                             label: "Background"
-                            sublabel: "Effects, wallpaper , widgets"
+                            sublabel: "Effects, wallpaper, widgets"
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "panorama"; transitionType: "wipe-right" }
                         }
