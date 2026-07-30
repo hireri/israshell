@@ -49,7 +49,7 @@ Rectangle {
     property string displayedAppId: ""
     property string displayedTitle: ""
 
-    readonly property bool showFallback: !activeWindow
+    readonly property bool showFallback: !activeWindow || (!activeWindow.address && !activeWindow.appId)
     readonly property string fallbackAppId: "Desktop"
     readonly property string fallbackTitle: "Empty workspace"
 
@@ -78,6 +78,7 @@ Rectangle {
 
     function updateWindowInfo() {
         const w = activeWindow;
+        const empty = !w || (!w.address && !w.appId);
         const rawAppId = getAppId(w);
         const rawTitle = w ? (w.title ?? "") : "";
 
@@ -86,8 +87,8 @@ Rectangle {
         displayedAppId = rawAppId;
         displayedTitle = rawTitle;
 
-        const appIdText = w ? rawAppId : fallbackAppId;
-        const titleText = w ? rawTitle : fallbackTitle;
+        const appIdText = empty ? fallbackAppId : rawAppId;
+        const titleText = empty ? fallbackTitle : rawTitle;
 
         if (layerA) {
             iconSourceB = newSource;
@@ -107,14 +108,15 @@ Rectangle {
 
     Component.onCompleted: {
         const w = activeWindow;
+        const empty = !w || (!w.address && !w.appId);
         const rawAppId = getAppId(w);
         const rawTitle = w?.title ?? "";
 
         displayedAppId = rawAppId;
         displayedTitle = rawTitle;
         iconSourceA = getIconSource(rawAppId);
-        textAppIdA = w ? rawAppId : fallbackAppId;
-        textTitleA = w ? rawTitle : fallbackTitle;
+        textAppIdA = empty ? fallbackAppId : rawAppId;
+        textTitleA = empty ? fallbackTitle : rawTitle;
     }
 
     ParallelAnimation {

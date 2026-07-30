@@ -230,15 +230,15 @@ PageBase {
             }
             options: [
                 {
-                    label: "4",
+                    label: "6",
                     value: 0
                 },
                 {
-                    label: "IV",
+                    label: "VI",
                     value: 1
                 },
                 {
-                    label: "四",
+                    label: "六",
                     value: 2
                 }
             ]
