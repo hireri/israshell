@@ -6,8 +6,67 @@ OUTPUT_DIR="$HOME/Videos/Recordings"
 GIF_DIR="$HOME/Videos/Recordings/GIFs"
 THUMB="/tmp/screenrec-thumb.jpg"
 MAX_DURATION=300
+MAX_W=1920
+MAX_H=1080
 
 mkdir -p "$OUTPUT_DIR" "$GIF_DIR"
+
+detect_gpu_backend() {
+    if ffmpeg -hide_banner -encoders 2>/dev/null | grep -q 'h264_nvenc' \
+        && compgen -G "/dev/nvidia*" >/dev/null 2>&1; then
+        echo "nvenc"
+        return
+    fi
+
+    if ffmpeg -hide_banner -encoders 2>/dev/null | grep -q 'h264_vaapi'; then
+        for dev in /dev/dri/renderD*; do
+            [ -e "$dev" ] || continue
+            if command -v vainfo >/dev/null 2>&1; then
+                vainfo --display drm --device "$dev" >/dev/null 2>&1 || continue
+            fi
+            echo "vaapi:$dev"
+            return
+        done
+    fi
+
+    echo "cpu"
+}
+
+optimize_video() {
+    local input="$1"
+    local backend="$2"
+    local tmp="${input%.mp4}.optimizing.mp4"
+
+    case "$backend" in
+        nvenc)
+            ffmpeg -y -hwaccel cuda -hwaccel_output_format cuda -i "$input" \
+                -vf "scale_cuda=w=min(${MAX_W}\,iw):h=min(${MAX_H}\,ih):force_original_aspect_ratio=decrease" \
+                -c:v h264_nvenc -rc vbr -cq 23 -b:v 0 \
+                -c:a copy "$tmp" 2>/dev/null
+            ;;
+        vaapi:*)
+            local dev="${backend#vaapi:}"
+            ffmpeg -y -hwaccel vaapi -hwaccel_output_format vaapi -vaapi_device "$dev" -i "$input" \
+                -vf "scale_vaapi=w=min(${MAX_W}\,iw):h=min(${MAX_H}\,ih):force_original_aspect_ratio=decrease" \
+                -c:v h264_vaapi -qp 24 \
+                -c:a copy "$tmp" 2>/dev/null
+            ;;
+        cpu)
+            ffmpeg -y -i "$input" \
+                -vf "scale=w=min(${MAX_W}\,iw):h=min(${MAX_H}\,ih):force_original_aspect_ratio=decrease" \
+                -c:v libx264 -crf 20 -preset medium \
+                -c:a copy "$tmp" 2>/dev/null
+            ;;
+    esac
+
+    if [ $? -eq 0 ] && [ -s "$tmp" ]; then
+        mv "$tmp" "$input"
+    else
+        rm -f "$tmp"
+        notify-send -u critical "Video optimization failed" "Keeping original file" \
+            -a "Screen Recorder" -t 6000
+    fi
+}
 
 get_audio_device() {
     pactl list short sources 2>/dev/null \
@@ -37,8 +96,8 @@ convert_to_gif() {
             folder) xdg-open "$GIF_DIR" ;;
         esac
     else
-        notify-send "GIF conversion failed" "ffmpeg error" \
-            -i "dialog-error" -a "Screen Recorder" -t 6000
+        notify-send -u critical "GIF conversion failed" "ffmpeg error" \
+            -a "Screen Recorder" -t 6000
     fi
 }
 
@@ -60,6 +119,23 @@ stop_recording() {
         notify-send "Recording saved" "Saved to $OUTPUT_DIR" \
             -i "video-x-generic" -a "Screen Recorder" -t 8000
         exit 0
+    fi
+
+    read -r VIDW VIDH < <(ffprobe -v error -select_streams v:0 \
+        -show_entries stream=width,height \
+        -of csv=s=x:p=0 "$LATEST" 2>/dev/null | tr 'x' ' ')
+
+    if [ -n "$VIDW" ] && [ -n "$VIDH" ] \
+        && { [ "$VIDW" -gt "$MAX_W" ] || [ "$VIDH" -gt "$MAX_H" ]; } 2>/dev/null; then
+        BACKEND=$(detect_gpu_backend)
+        case "$BACKEND" in
+            nvenc)    BACKEND_LABEL="NVENC (NVIDIA)" ;;
+            vaapi:*)  BACKEND_LABEL="VAAPI (${BACKEND#vaapi:})" ;;
+            cpu)      BACKEND_LABEL="CPU (no GPU encoder found)" ;;
+        esac
+        notify-send "Processing recording…" "Downscaling to ${MAX_H}p using $BACKEND_LABEL" \
+            -i "video-x-generic" -a "Screen Recorder" -t 4000
+        optimize_video "$LATEST" "$BACKEND"
     fi
 
     DURATION=$(ffprobe -v error -select_streams v:0 \
@@ -109,7 +185,7 @@ else
         -w region -region "$GSR_GEOMETRY"
         -k h264
         -q high
-        -s 1920x1080
+        -s 0x0
         -f 60
         -ac aac
         -o "$FILEPATH"
