@@ -280,6 +280,216 @@ PageBase {
         }
 
         SectionCard {
+            label: "Presets"
+            Layout.fillWidth: true
+
+            SettingRow {
+                label: "Save preset"
+                sublabel: "Snapshot your config to ~/.config/israshell"
+
+                Rectangle {
+                    implicitHeight: 32
+                    implicitWidth: saveLbl.implicitWidth + 24
+                    radius: 16
+                    color: Colors.md3.primary
+                    opacity: ConfigPresetService.busy ? 0.6 : 1.0
+
+                    Text {
+                        id: saveLbl
+                        anchors.centerIn: parent
+                        text: ConfigPresetService.busy ? "Saving..." : "Save preset"
+                        font.family: Config.fontFamily
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                        color: Colors.md3.on_primary
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: !ConfigPresetService.busy
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: ConfigPresetService.savePreset()
+                    }
+                }
+            }
+
+            Text {
+                visible: ConfigPresetService.entries.length === 0
+                text: "No presets yet"
+                font.family: Config.fontFamily
+                font.pixelSize: 12
+                color: Colors.md3.outline
+                leftPadding: 18
+                bottomPadding: 12
+                topPadding: 4
+            }
+
+            Text {
+                visible: ConfigPresetService.statusMessage !== ""
+                text: ConfigPresetService.statusMessage
+                font.family: Config.fontFamily
+                font.pixelSize: 11
+                color: ConfigPresetService.statusIsError ? Colors.md3.error : Colors.md3.outline
+                leftPadding: 18
+                rightPadding: 18
+                bottomPadding: 8
+                wrapMode: Text.WordWrap
+                width: parent?.width ?? 0
+            }
+
+            Repeater {
+                id: presetRepeater
+                model: ConfigPresetService.entries
+
+                delegate: Item {
+                    id: presetRow
+                    required property var modelData
+                    required property int index
+
+                    implicitWidth: parent?.width ?? 0
+                    implicitHeight: 52
+
+                    RowLayout {
+                        anchors {
+                            fill: parent
+                            leftMargin: 18
+                            rightMargin: 14
+                        }
+                        spacing: 8
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: 2
+
+                            Text {
+                                text: presetRow.modelData.name
+                                font.family: Config.fontFamily
+                                font.pixelSize: 13
+                                color: Colors.md3.on_surface
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                text: "Created " + (ConfigPresetService.nowTick, ConfigPresetService.relativeTime(presetRow.modelData.mtime))
+                                font.family: Config.fontFamily
+                                font.pixelSize: 11
+                                color: Colors.md3.outline
+                            }
+                        }
+
+                        Row {
+                            spacing: 6
+                            Layout.alignment: Qt.AlignVCenter
+
+                            Rectangle {
+                                height: 28
+                                width: applyTxt.implicitWidth + 16
+                                radius: 14
+                                color: Colors.md3.surface_container_high
+
+                                Text {
+                                    id: applyTxt
+                                    anchors.centerIn: parent
+                                    text: "Apply"
+                                    font.family: Config.fontFamily
+                                    font.pixelSize: 11
+                                    font.weight: Font.Medium
+                                    color: Colors.md3.on_surface_variant
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: ConfigPresetService.applyPreset(presetRow.modelData.path)
+                                }
+                            }
+
+                            Rectangle {
+                                width: 28
+                                height: 28
+                                radius: 14
+                                color: Colors.md3.surface_container_high
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "×"
+                                    font.pixelSize: 15
+                                    color: Colors.md3.outline
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: ConfigPresetService.deletePreset(presetRow.modelData.path)
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        visible: presetRow.index < presetRepeater.count - 1
+                        anchors {
+                            bottom: parent.bottom
+                            left: parent.left
+                            leftMargin: 18
+                            right: parent.right
+                            rightMargin: 18
+                        }
+                        height: 1
+                        color: Colors.md3.outline_variant
+                        opacity: 0.5
+                    }
+                }
+            }
+
+            Item {
+                visible: ConfigPresetService.entries.length > 0
+                width: parent?.width ?? 0
+                height: 1
+
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 18
+                    anchors.right: parent.right
+                    anchors.rightMargin: 18
+                    height: 1
+                    color: Colors.md3.outline_variant
+                    opacity: 0.5
+                }
+            }
+
+            SettingRow {
+                label: "Regenerate config"
+                sublabel: "Reset every setting to its default, CANNOT be undone."
+
+                Rectangle {
+                    implicitHeight: 32
+                    implicitWidth: regenLbl.implicitWidth + 24
+                    radius: 16
+                    color: Colors.md3.error
+
+                    Text {
+                        id: regenLbl
+                        anchors.centerIn: parent
+                        text: "Regenerate"
+                        font.family: Config.fontFamily
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                        color: Colors.md3.on_error
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Config.resetToDefaults()
+                    }
+                }
+            }
+        }
+
+        SectionCard {
             label: "System Integration"
             Layout.fillWidth: true
 

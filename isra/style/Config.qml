@@ -401,6 +401,10 @@ Singleton {
         __apply(data);
     }
 
+    function resetToDefaults() {
+        update(__defaults());
+    }
+
     Timer {
         id: reloadDebouncer
         interval: 150

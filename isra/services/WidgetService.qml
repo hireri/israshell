@@ -19,10 +19,10 @@ Singleton {
 
     readonly property var definitions: [
         { id: "activeWindow",  label: "Active window",  defaultZone: "left",     component: activeWindowComp },
-        { id: "workspaces",    label: "Workspaces",     defaultZone: "center",   component: workspacesComp },
+        { id: "sysMonitor",    label: "System monitor", defaultZone: "left",    component: sysMonitorComp },
         { id: "media",         label: "Media player",   defaultZone: "center",   component: mediaComp },
+        { id: "workspaces",    label: "Workspaces",     defaultZone: "center",   component: workspacesComp },
         { id: "clock",         label: "Clock",          defaultZone: "center",   component: clockComp },
-        { id: "sysMonitor",    label: "System monitor", defaultZone: "right",    component: sysMonitorComp },
         { id: "screencap",     label: "Toolbar", defaultZone: "right",    component: screencapComp },
         { id: "tray",          label: "Tray",           defaultZone: "right",    component: trayComp },
         { id: "quicksettings", label: "Quick settings", defaultZone: "right",    component: quicksettingsComp },
