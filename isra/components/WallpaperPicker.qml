@@ -70,7 +70,15 @@ Item {
 
                 WlrLayershell.layer: WlrLayer.Overlay
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-                WlrLayershell.namespace: "quickshell-wallpaper-overlay"
+                WlrLayershell.namespace: "quickshell:wallpaperOverlay"
+
+                readonly property bool blurEnabled: Config.blurAllowed(popup.visible)
+                BackgroundEffect.blurRegion: blurEnabled ? panelBlurRegion : null
+
+                Region {
+                    id: panelBlurRegion
+                    item: panel
+                }
 
                 anchors {
                     top: true
@@ -151,7 +159,7 @@ Item {
                     width: 1100
                     height: 600
                     radius: 20
-                    color: Colors.md3.surface_container
+                    color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
                     border.width: 1
                     border.color: Colors.md3.outline_variant
 
@@ -159,25 +167,25 @@ Item {
                         horizontalCenter: parent.horizontalCenter
                         top: Config.bar.position === 0 ? parent.top : undefined
                         bottom: Config.bar.position === 1 ? parent.bottom : undefined
-                        topMargin: Config.bar.position === 0 ? root.panelWindow.implicitHeight + 8 : 8
-                        bottomMargin: Config.bar.position === 1 ? root.panelWindow.implicitHeight + 8 : 8
+                        topMargin: Config.bar.position === 0
+                            ? ((popup._ready && root.isOpen) ? root.panelWindow.implicitHeight + 8 : -panel.height)
+                            : 8
+                        bottomMargin: Config.bar.position === 1
+                            ? ((popup._ready && root.isOpen) ? root.panelWindow.implicitHeight + 8 : -panel.height)
+                            : 8
                     }
 
-                    property real slideY: (popup._ready && root.isOpen)
-                        ? 0
-                        : (Config.bar.position === 1
-                            ? (height + root.panelWindow.implicitHeight + 8)
-                            : -(height + root.panelWindow.implicitHeight + 8))
-
-                    Behavior on slideY {
+                    Behavior on anchors.topMargin {
                         NumberAnimation {
                             duration: 360
                             easing.type: Easing.OutExpo
                         }
                     }
-
-                    transform: Translate {
-                        y: panel.slideY
+                    Behavior on anchors.bottomMargin {
+                        NumberAnimation {
+                            duration: 360
+                            easing.type: Easing.OutExpo
+                        }
                     }
 
                     MouseArea {
@@ -359,7 +367,7 @@ Item {
                             topMargin: panel.outerPad
                         }
                         radius: panel.innerRadius
-                        color: Colors.md3.surface_container_lowest
+                        color: Qt.alpha(Colors.md3.surface_container_lowest, Config.blurOpacity)
                         clip: true
 
                         function navigateTo(path) {
@@ -919,7 +927,7 @@ Item {
                     topRightRadius: isActive || isRightmost ? height / 2 : innerRadius
                     bottomRightRadius: isActive || isRightmost ? height / 2 : innerRadius
                     
-                    color: isActive ? Colors.md3.primary : (chipMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                    color: isActive ? Colors.md3.primary : (chipMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
 
                     onWidthChanged: bar.relayout()
 
@@ -1140,7 +1148,7 @@ Item {
                     margins: panel.cardMargin
                 }
                 radius: 12
-                color: card.isCurrent ? Qt.alpha(Colors.md3.primary_container, 0.55) : (cardMA.containsMouse ? Colors.md3.surface_container : Colors.md3.surface_container_lowest)
+                color: card.isCurrent ? Qt.alpha(Colors.md3.primary_container, 0.55) : (cardMA.containsMouse ? Qt.alpha(Colors.md3.surface_container, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_lowest, Config.blurOpacity))
                 Behavior on color {
                     ColorAnimation {
                         duration: 80
@@ -1170,7 +1178,7 @@ Item {
                         width: 36
                         height: 36
                         radius: 10
-                        color: Colors.md3.surface_container_high
+                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
                         MaterialIcon {
                             anchors.centerIn: parent
@@ -1238,7 +1246,7 @@ Item {
                     Rectangle {
                         visible: wallImg.status !== Image.Ready
                         anchors.fill: parent
-                        color: Colors.md3.surface_container_highest
+                        color: Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity)
 
                         Loader {
                             anchors.centerIn: parent

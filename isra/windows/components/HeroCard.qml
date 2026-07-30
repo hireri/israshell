@@ -16,7 +16,7 @@ Rectangle {
 
     implicitHeight: 72
     radius: 18
-    color: root.cardColor
+    color: (Config.dim(root.cardColor))
 
     RowLayout {
         anchors {

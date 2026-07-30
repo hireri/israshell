@@ -21,7 +21,7 @@ Item {
         height: parent.height
         width: root.editing ? parent.width : (idleLabel.implicitWidth + 24)
         radius: height / 2
-        color: root.editing ? Colors.md3.surface_container_high : Colors.md3.surface_container
+        color: root.editing ? (Config.dim(Colors.md3.surface_container_high)) : (Config.dim(Colors.md3.surface_container))
         border.width: root.editing ? 1.5 : 1
         border.color: root.editing ? Colors.md3.primary : Colors.md3.outline_variant
 

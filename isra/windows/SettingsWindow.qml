@@ -16,7 +16,7 @@ FloatingWindow {
     implicitWidth: 960
     implicitHeight: 680
     title: "Settings"
-    color: Colors.md3.background
+    color: "transparent"
 
     readonly property int pageOverview: 0
     readonly property int pageNetwork: 1
@@ -50,9 +50,10 @@ FloatingWindow {
         spacing: 0
 
         Rectangle {
+            id: sidebarPane
             Layout.preferredWidth: root.sidebarCollapsed ? 72 : 248
             Layout.fillHeight: true
-            color: Colors.md3.surface_container_low
+            color: Config.dim(Colors.md3.surface_container_low)
             clip: true
 
             Behavior on Layout.preferredWidth {
@@ -217,9 +218,10 @@ FloatingWindow {
         }
 
         Rectangle {
+            id: contentPane
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: Colors.md3.surface
+            color: Config.dim(Colors.md3.surface)
             clip: true
 
             Component { id: overviewComp; OverviewPage {} }

@@ -50,7 +50,7 @@ PageBase {
                         bottomMargin: 4
                     }
                     radius: 14
-                    color: active ? Colors.md3.primary_container : Colors.md3.surface_container_high
+                    color: active ? Colors.md3.primary_container : (Config.dim(Colors.md3.surface_container_high))
                     Behavior on color {
                         ColorAnimation {
                             duration: 150
@@ -118,7 +118,7 @@ PageBase {
                     width: 38
                     height: 38
                     radius: AudioService.muted ? width / 2 : 12
-                    color: AudioService.muted ? Colors.md3.error_container : Colors.md3.surface_container_high
+                    color: AudioService.muted ? Colors.md3.error_container : (Config.dim(Colors.md3.surface_container_high))
                     Behavior on color {
                         ColorAnimation {
                             duration: 150
@@ -206,7 +206,7 @@ PageBase {
                         bottomMargin: 4
                     }
                     radius: 14
-                    color: active ? Colors.md3.primary_container : Colors.md3.surface_container_high
+                    color: active ? Colors.md3.primary_container : (Config.dim(Colors.md3.surface_container_high))
                     Behavior on color {
                         ColorAnimation {
                             duration: 150
@@ -274,7 +274,7 @@ PageBase {
                     width: 38
                     height: 38
                     radius: AudioService.sourceMuted ? width / 2 : 12
-                    color: AudioService.sourceMuted ? Colors.md3.error_container : Colors.md3.surface_container_high
+                    color: AudioService.sourceMuted ? Colors.md3.error_container : (Config.dim(Colors.md3.surface_container_high))
                     Behavior on color {
                         ColorAnimation {
                             duration: 150
@@ -433,7 +433,7 @@ PageBase {
                         height: 32
                         radius: 10
                         Layout.alignment: Qt.AlignVCenter
-                        color: streamMuted ? Colors.md3.error_container : Colors.md3.surface_container_high
+                        color: streamMuted ? Colors.md3.error_container : (Config.dim(Colors.md3.surface_container_high))
                         Behavior on color {
                             ColorAnimation {
                                 duration: 150

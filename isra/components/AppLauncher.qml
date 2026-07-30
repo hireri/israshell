@@ -687,7 +687,7 @@ Scope {
                         color: "transparent"
                         WlrLayershell.layer: WlrLayer.Overlay
                         WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-                        WlrLayershell.namespace: "quickshell-launcher-overlay"
+                        WlrLayershell.namespace: "quickshell:launcherOverlay"
                         exclusionMode: ExclusionMode.Ignore
                         anchors {
                             top: true
@@ -709,9 +709,19 @@ Scope {
                     color: "transparent"
                     WlrLayershell.layer: WlrLayer.Overlay
                     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-                    WlrLayershell.namespace: "quickshell-launcher"
+                    WlrLayershell.namespace: "quickshell:launcher"
                     exclusionMode: ExclusionMode.Ignore
                     screen: root._targetScreen ?? Quickshell.screens[0]
+
+                    readonly property bool blurEnabled: Config.blurAllowed(_panel.visible)
+                    BackgroundEffect.blurRegion: blurEnabled ? launcherBlurRegion : null
+
+                    Region {
+                        id: launcherBlurRegion
+                        Region { item: _launcherInput }
+                        Region { item: widgetCard }
+                        Region { item: listCard }
+                    }
                     anchors {
                         top: true
                         bottom: true
@@ -816,7 +826,7 @@ Scope {
                                 right: parent.right
                             }
                             radius: 20
-                            color: Colors.md3.surface_container
+                            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
                             clip: true
 
                             height: loaderRoot.widgetShown ? (widgetInner.implicitHeight + 32) : 0
@@ -1005,7 +1015,7 @@ Scope {
                                 right: parent.right
                             }
                             radius: 20
-                            color: Colors.md3.surface_container
+                            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
                             clip: true
 
                             border.width: 1

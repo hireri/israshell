@@ -494,7 +494,7 @@ Item {
         implicitWidth: pbLbl.implicitWidth + 22
         implicitHeight: 30
         radius: height / 2
-        color: pbMa.containsMouse ? (primary ? Colors.md3.primary : Colors.md3.secondary_container) : (primary ? Colors.md3.primary_container : Colors.md3.surface_container_high)
+        color: pbMa.containsMouse ? (primary ? Colors.md3.primary : Colors.md3.secondary_container) : (primary ? Colors.md3.primary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
         Behavior on color {
             ColorAnimation {
                 duration: 90
@@ -525,7 +525,7 @@ Item {
         implicitWidth: chipLbl.implicitWidth + 16
         height: 22
         radius: 11
-        color: accent ? Colors.md3.primary_container : Colors.md3.surface_container_high
+        color: accent ? Colors.md3.primary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
         Text {
             id: chipLbl
@@ -667,7 +667,7 @@ Item {
                 Layout.fillWidth: true
                 height: 80
                 radius: 14
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
                 ColumnLayout {
                     anchors {

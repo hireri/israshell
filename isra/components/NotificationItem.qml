@@ -82,7 +82,7 @@ Item {
             Layout.fillWidth: true
             visible: !item.collapsed && item._inlineImage !== ""
             radius: 12
-            color: Colors.md3.surface_container_lowest
+            color: (groupRef && groupRef.inPanel) ? Qt.alpha(Colors.md3.surface_container_lowest, Config.blurOpacity) : Colors.md3.surface_container_lowest
             clip: true
 
             Layout.preferredHeight: {

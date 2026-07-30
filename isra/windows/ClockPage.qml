@@ -161,7 +161,7 @@ PageBase {
         Layout.fillWidth: true
         implicitHeight: layoutInner.implicitHeight + 32
         radius: 20
-        color: Colors.md3.surface_container
+        color: (Config.dim(Colors.md3.surface_container))
 
         ColumnLayout {
             id: layoutInner
@@ -195,7 +195,7 @@ PageBase {
 
                     color: active
                         ? Colors.md3.primary
-                        : (verticalMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                        : (verticalMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
 
                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -259,7 +259,7 @@ PageBase {
 
                     color: active
                         ? Colors.md3.primary
-                        : (horizontalMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                        : (horizontalMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
 
                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -321,7 +321,7 @@ PageBase {
 
                     color: active
                         ? Colors.md3.primary
-                        : (wordMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                        : (wordMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
 
                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -386,7 +386,7 @@ PageBase {
 
                     color: active
                         ? Colors.md3.primary
-                        : (analogMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                        : (analogMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
 
                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -440,7 +440,7 @@ PageBase {
                 id: singlePreview
                 Layout.fillWidth: true
                 Layout.preferredHeight: 180
-                color: Colors.md3.surface_container_high
+                color: (Config.dim(Colors.md3.surface_container_high))
                 radius: 12
 
                 Image {

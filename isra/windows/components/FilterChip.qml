@@ -11,7 +11,7 @@ Rectangle {
     implicitHeight: 32
     implicitWidth: label_text.implicitWidth + 22 + (mouseArea.pressed && mouseArea.containsMouse ? 20 : 0)
     radius: height / 2
-    color: root.active ? Colors.md3.primary_container : Colors.md3.surface_container_high
+    color: root.active ? Colors.md3.primary_container : (Config.dim(Colors.md3.surface_container_high))
 
     Behavior on color {
         ColorAnimation { duration: 150; easing.type: Easing.OutCubic }

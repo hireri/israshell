@@ -249,7 +249,7 @@ Item {
             Rectangle {
                 width: weatherGrid.cellWidth
                 height: weatherGrid.cellHeight
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                 radius: root.shape.extraSmall
                 topLeftRadius: root.shape.medium
 
@@ -277,7 +277,7 @@ Item {
             Rectangle {
                 width: weatherGrid.cellWidth
                 height: weatherGrid.cellHeight
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                 radius: root.shape.extraSmall
 
                 Row {
@@ -304,7 +304,7 @@ Item {
             Rectangle {
                 width: weatherGrid.cellWidth
                 height: weatherGrid.cellHeight
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                 radius: root.shape.extraSmall
                 topRightRadius: root.shape.medium
 
@@ -332,7 +332,7 @@ Item {
             Rectangle {
                 width: weatherGrid.cellWidth
                 height: weatherGrid.cellHeight
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                 radius: root.shape.extraSmall
                 bottomLeftRadius: root.shape.medium
 
@@ -360,7 +360,7 @@ Item {
             Rectangle {
                 width: weatherGrid.cellWidth
                 height: weatherGrid.cellHeight
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                 radius: root.shape.extraSmall
 
                 Row {
@@ -387,7 +387,7 @@ Item {
             Rectangle {
                 width: weatherGrid.cellWidth
                 height: weatherGrid.cellHeight
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                 radius: root.shape.extraSmall
                 bottomRightRadius: root.shape.medium
 

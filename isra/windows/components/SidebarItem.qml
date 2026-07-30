@@ -21,7 +21,7 @@ Rectangle {
     implicitHeight: 54
     Layout.fillWidth: true
 
-    color: root.active ? Colors.md3.secondary_container : (hover.containsMouse ? Colors.md3.surface_container_high : Colors.md3.surface_container)
+    color: root.active ? Colors.md3.secondary_container : (hover.containsMouse ? (Config.dim(Colors.md3.surface_container_high)) : (Config.dim(Colors.md3.surface_container)))
 
     topLeftRadius: root.topRadius
     topRightRadius: root.topRadius

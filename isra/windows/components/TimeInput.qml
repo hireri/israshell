@@ -183,7 +183,7 @@ SettingRow {
         height: 18
         radius: 4
         z: 1
-        color: btnArea.containsMouse ? Colors.md3.surface_container_high : Colors.md3.surface_container
+        color: btnArea.containsMouse ? (Config.dim(Colors.md3.surface_container_high)) : (Config.dim(Colors.md3.surface_container))
         Behavior on color {
             ColorAnimation {
                 duration: 80

@@ -18,7 +18,7 @@ SettingRow {
         implicitHeight: 36
         anchors.verticalCenter: parent?.verticalCenter
         radius: 8
-        color: Colors.md3.surface_container
+        color: (Config.dim(Colors.md3.surface_container))
         border.width: field.activeFocus ? 1.5 : 1
         border.color: field.activeFocus ? Colors.md3.primary : Colors.md3.surface_variant
 

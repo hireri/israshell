@@ -15,9 +15,16 @@ Singleton {
     property string fontMonospace: "Roboto Mono"
     property bool screenCorners: true
     property bool blurEffects: false
-    property int blurRadius: 50
     property real blurOpacity: 0.65
-    
+
+    function dim(color) {
+        return blurEffects ? ColorUtils.withAlpha(color, blurOpacity) : color;
+    }
+
+    function blurAllowed(visible) {
+        return (visible === undefined ? true : visible) && blurEffects && !GameModeService.active;
+    }
+
     property bool showBarWeather: true
     property string timeFormat: ""
     property string dateFormat: ""
@@ -63,7 +70,7 @@ Singleton {
         return {
             mode: 0,                    // 0 = hugging, 1 = rect,   2 = floating
             position: 0,                // 0 = top,     1 = bottom
-            transparency: 0,            // 0 = solid,   1 = opaque, 2 = transparent
+            transparency: 1,            // 1 = tinted, 2 = full transparency
             transparentPills: false,
 
             showClock: true,
@@ -187,7 +194,6 @@ Singleton {
             fontMonospace: "Roboto Mono",
             screenCorners: true,
             blurEffects: false,
-            blurRadius: 50,
             blurOpacity: 0.65,
             
             showBarWeather: true,

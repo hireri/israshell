@@ -152,10 +152,6 @@ PageBase {
             sublabel: "Background opacity level"
             options: [
                 {
-                    label: "Off",
-                    value: 0
-                },
-                {
                     label: "Tinted",
                     value: 1
                 },

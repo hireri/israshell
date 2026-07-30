@@ -344,7 +344,7 @@ Item {
         implicitWidth: showBtn ? lbl.implicitWidth + 22 : 0
         implicitHeight: showBtn ? 30 : 0
         radius: height / 2
-        color: ma.containsMouse ? (primary ? Colors.md3.primary : Colors.md3.secondary_container) : (primary ? Colors.md3.primary_container : Colors.md3.surface_container_high)
+        color: ma.containsMouse ? (primary ? Colors.md3.primary : Colors.md3.secondary_container) : (primary ? Colors.md3.primary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
         Behavior on color {
             ColorAnimation {
                 duration: 90
@@ -429,7 +429,7 @@ Item {
                         return Qt.rgba(39 / 255, 80 / 255, 10 / 255, 1);
                     if (s.startsWith("client") || s.startsWith("server"))
                         return Colors.md3.secondary_container;
-                    return Colors.md3.surface_container_high;
+                    return Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity);
                 }
 
                 Text {

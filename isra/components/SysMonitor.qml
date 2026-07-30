@@ -25,9 +25,9 @@ Item {
 
     function pillColor() {
         if (Config.bar.transparentPills) {
-            return Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container;
+            return Qt.alpha(Colors.md3.secondary_container, 0);
         } else {
-            return Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high;
+            return Qt.alpha(Colors.md3.surface_container_high, 0.8);
         }
     }
 
@@ -221,7 +221,9 @@ Item {
 
     BarTooltip {
         id: tooltip
-        yOffset: 8
+        screen: root.panelWindow.screen
+        panelWindow: root.panelWindow
+        yOffset: 4
 
         Row {
             spacing: 20

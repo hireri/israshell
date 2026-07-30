@@ -87,7 +87,7 @@ Item {
             width: 120
             Layout.fillHeight: true
             radius: 14
-            color: root._valid ? root._color : Colors.md3.surface_container_high
+            color: root._valid ? root._color : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
             Text {
                 anchors.centerIn: parent
@@ -158,7 +158,7 @@ Item {
                             implicitWidth: cpLbl.implicitWidth + 16
                             height: 24
                             radius: 12
-                            color: cpHov.containsMouse ? Colors.md3.primary_container : Colors.md3.surface_container_high
+                            color: cpHov.containsMouse ? Colors.md3.primary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                             visible: root._valid
                             Behavior on color {
                                 ColorAnimation {

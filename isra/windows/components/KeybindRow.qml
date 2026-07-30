@@ -51,7 +51,7 @@ Item {
                     height: 24
                     width: keyText.implicitWidth + 16
                     radius: 4
-                    color: Colors.md3.surface_container_high
+                    color: (Config.dim(Colors.md3.surface_container_high))
                     border.width: 1
                     border.color: Colors.md3.surface_variant
 

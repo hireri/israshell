@@ -85,7 +85,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: Colors.md3.surface_container_high
+        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
         border.width: 1
         border.color: Colors.md3.outline_variant
 
@@ -122,7 +122,7 @@ Item {
             }
             height: 42
             radius: height / 2
-            color: Colors.md3.surface_container_low
+            color: Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
 
             RowLayout {
                 anchors {

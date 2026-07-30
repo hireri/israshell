@@ -35,7 +35,7 @@ PageBase {
                     id: previewClip
                     anchors.fill: parent
                     radius: 18
-                    color: Colors.md3.surface_container_high
+                    color: (Config.dim(Colors.md3.surface_container_high))
 
                     Image {
                         anchors.fill: parent
@@ -96,7 +96,7 @@ PageBase {
                             bottomLeftRadius: firstSelected ? 20 : 18
                             bottomRightRadius: lastSelected ? 20 : 18
 
-                            color: Colors.md3.surface_container_high
+                            color: (Config.dim(Colors.md3.surface_container_high))
 
                             Behavior on topLeftRadius { NumberAnimation { duration: 120 } }
                             Behavior on topRightRadius { NumberAnimation { duration: 120 } }
@@ -143,7 +143,7 @@ PageBase {
                                     width: targetWidth
                                     anchors.verticalCenter: parent.verticalCenter
 
-                                    color: pillColor === "transparent" ? Colors.md3.surface_container_highest : pillColor
+                                    color: pillColor === "transparent" ? (Config.dim(Colors.md3.surface_container_highest)) : pillColor
 
                                     topLeftRadius: (active || isFirst) ? 20 : 6
                                     bottomLeftRadius: (active || isFirst) ? 20 : 6
@@ -279,8 +279,8 @@ PageBase {
 
                             readonly property bool isSelected: WallpaperService.currentScheme === modelData
                             readonly property var preview: WallpaperService.schemePreviews[modelData] ?? null
-                            readonly property string primaryColor: preview ? preview.primary : Colors.md3.surface_container_highest
-                            readonly property string secondaryColor: preview ? preview.secondary : Colors.md3.surface_container_high
+                            readonly property string primaryColor: preview ? preview.primary : (Config.dim(Colors.md3.surface_container_highest))
+                            readonly property string secondaryColor: preview ? preview.secondary : (Config.dim(Colors.md3.surface_container_high))
                             readonly property string tertiaryColor: preview ? preview.tertiary : Colors.md3.surface_variant
 
                             opacity: WallpaperService.previewsLoading ? 0.5 : 1.0
@@ -293,7 +293,7 @@ PageBase {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 12
-                                color: isSelected ? (swatch.containsMouse ? Qt.lighter(Colors.md3.secondary_container, WallpaperService.isDark ? 1.12 : 0.88) : Colors.md3.secondary_container) : (swatch.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                                color: isSelected ? (swatch.containsMouse ? Qt.lighter(Colors.md3.secondary_container, WallpaperService.isDark ? 1.12 : 0.88) : Colors.md3.secondary_container) : (swatch.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
                                 Behavior on color {
                                     ColorAnimation {
                                         duration: 120
@@ -306,7 +306,7 @@ PageBase {
                                 width: Math.min(parent.width, parent.height) * 0.7
                                 height: width
                                 radius: width / 2
-                                color: Colors.md3.surface_container_high
+                                color: (Config.dim(Colors.md3.surface_container_high))
 
                                 Rectangle {
                                     anchors.top: parent.top
@@ -420,7 +420,7 @@ PageBase {
                 Layout.fillWidth: true
                 height: 34
                 radius: 8
-                color: konachanMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                color: konachanMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high))
                 Behavior on color {
                     ColorAnimation {
                         duration: 120
@@ -472,7 +472,7 @@ PageBase {
                 Layout.fillWidth: true
                 height: 34
                 radius: 8
-                color: wallhavenMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                color: wallhavenMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high))
                 Behavior on color {
                     ColorAnimation {
                         duration: 120
@@ -526,7 +526,7 @@ PageBase {
                 radius: 17
                 topLeftRadius: 8
                 bottomLeftRadius: 8
-                color: redditMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                color: redditMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high))
                 Behavior on color {
                     ColorAnimation {
                         duration: 120
@@ -613,16 +613,6 @@ PageBase {
                     blurEffects: v
                 })
             isLast: !blurSwitch.checked
-        }
-        SettingSlider {
-            label: "Blur radius"
-            sublabel: "Controls the softness of the blur"
-            from: 5
-            to: 80
-            value: Config.blurRadius
-            onMoved: v => Config.update({
-                    blurRadius: Math.round(v)
-                })
         }
 
         SettingSlider {

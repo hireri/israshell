@@ -18,9 +18,9 @@ ClippingRectangle {
         if (root.isOpen) {
             Colors.md3.secondary_container
         } else if (Config.bar.transparentPills) {
-            Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+            Qt.alpha(Colors.md3.secondary_container, 0)
         } else { 
-            Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+            Qt.alpha(Colors.md3.surface_container_high, 0.8)
         }
     }
 
@@ -437,57 +437,6 @@ ClippingRectangle {
                 renderType: Text.NativeRendering
                 text: marqueeText.text
             }
-
-            Rectangle {
-                anchors.left: parent.left
-                implicitWidth: 20
-                height: parent.height
-                visible: marqueeContainer.shouldScroll && (
-                    (Config.bar.transparentPills && Config.bar.transparency === 0) || 
-                    !(Config.bar.transparency > 0 || Config.bar.transparentPills)
-                )
-                gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop {
-                        position: 0.0
-                        color: root.isOpen ? Colors.md3.secondary_container : Config.bar.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 150
-                            }
-                        }
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: "transparent"
-                    }
-                }
-            }
-            Rectangle {
-                anchors.right: parent.right
-                implicitWidth: 20
-                height: parent.height
-                visible: marqueeContainer.shouldScroll && (
-                    (Config.bar.transparentPills && Config.bar.transparency === 0) || 
-                    !(Config.bar.transparency > 0 || Config.bar.transparentPills)
-                )
-                gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop {
-                        position: 0.0
-                        color: "transparent"
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: root.isOpen ? Colors.md3.secondary_container : Config.bar.transparentPills ? Colors.md3.surface_container : Colors.md3.surface_container_high
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 150
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -517,7 +466,7 @@ ClippingRectangle {
 
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "quickshell-media-overlay"
+            WlrLayershell.namespace: "quickshell:mediaOverlay"
 
             readonly property real popupWidth: 380
             readonly property real contentMargin: 16

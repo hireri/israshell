@@ -24,7 +24,7 @@ Column {
         id: card
         width: root.width
         height: cardColumn.implicitHeight
-        color: Colors.md3.surface_container
+        color: (Config.dim(Colors.md3.surface_container))
         radius: 18
 
         Column {

@@ -18,8 +18,8 @@ Rectangle {
         if (root.active)
             return Colors.md3.primary;
         if (mouseArea.containsMouse)
-            return Colors.md3.surface_container_highest;
-        return Colors.md3.surface_container_high;
+            return (Config.dim(Colors.md3.surface_container_highest));
+        return (Config.dim(Colors.md3.surface_container_high));
     }
 
     Behavior on color {

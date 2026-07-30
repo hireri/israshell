@@ -10,7 +10,6 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
 import QtQuick
-import Qt5Compat.GraphicalEffects
 
 import qs.components
 import qs.style
@@ -120,7 +119,7 @@ ShellRoot {
                             width: 4
                             height: 4
                             radius: 2
-                            color: Config.bar.transparency ? Qt.alpha(Colors.md3.outline, 0.85) : Colors.md3.outline
+                            color: Qt.alpha(Colors.md3.outline, 0.85)
                             opacity: Config.bar.transparentPills ? 1 : 0
                             Behavior on opacity {
                                 NumberAnimation { duration: 250 }
@@ -146,86 +145,17 @@ ShellRoot {
         height: radiusSize
         clip: true
 
-        readonly property bool useBlur: Config.blurEffects && !GameModeService.active && Config.bar.transparency === 1
-
-        Item {
-            id: cornerMaskSource
-            anchors.fill: parent
-            visible: false
-            Rectangle {
-                width: block.radiusSize * 4
-                height: block.radiusSize * 4
-                radius: block.radiusSize * 2
-                color: "transparent"
-
-                border.width: block.radiusSize
-                border.color: "black"
-
-                x: (block.type === 1) ? -block.radiusSize * 2 : -block.radiusSize
-                y: block.flipped ? -block.radiusSize * 2 : -block.radiusSize
-            }
-        }
-
-        Loader {
-            id: cornerBlurLoader
-            anchors.fill: parent
-            active: block.useBlur
-            sourceComponent: Item {
-                id: cornerContentContainer
-                anchors.fill: parent
-
-                layer.enabled: !GameModeService.active
-                layer.effect: OpacityMask {
-                    maskSource: cornerMaskSource
-                }
-
-                Image {
-                    id: cornerBlurSrc
-                    width: block.panelScreen ? block.panelScreen.width : 0
-                    height: block.panelScreen ? block.panelScreen.height : 0
-                    
-                    x: (block.type === 0) ? 0 : -( (block.panelScreen ? block.panelScreen.width : 0) - block.radiusSize )
-                    y: block.flipped 
-                        ? -( (block.panelScreen ? block.panelScreen.height : 0) - block.windowHeight - block.radiusSize )
-                        : -block.windowHeight
-                    
-                    source: (WallpaperService.currentWallPreview || WallpaperService.currentWall) 
-                        ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall)) 
-                        : ""
-                    fillMode: Image.PreserveAspectCrop
-                    visible: false
-                    asynchronous: true
-                    sourceSize.width: block.panelScreen ? block.panelScreen.width / 4 : 0
-                    sourceSize.height: block.panelScreen ? block.panelScreen.height / 4 : 0
-                    smooth: false
-                }
-
-                FastBlur {
-                    id: cornerBlurEffect
-                    x: cornerBlurSrc.x
-                    y: cornerBlurSrc.y
-                    width: cornerBlurSrc.width
-                    height: cornerBlurSrc.height
-                    source: cornerBlurSrc
-                    radius: Config.blurRadius
-                }
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: block.cornerColor
-                }
-            }
-        }
-
         Rectangle {
-            anchors.fill: parent
-            visible: !block.useBlur
-            color: GameModeService.active ? "transparent" : block.cornerColor
-            
-            layer.enabled: true
-            layer.effect: OpacityMask {
-                maskSource: cornerMaskSource
-            }
+            width: block.radiusSize * 4
+            height: block.radiusSize * 4
+            radius: block.radiusSize * 2
+            color: "transparent"
+
+            border.width: block.radiusSize
+            border.color: GameModeService.active ? "transparent" : block.cornerColor
+
+            x: (block.type === 1) ? -block.radiusSize * 2 : -block.radiusSize
+            y: block.flipped ? -block.radiusSize * 2 : -block.radiusSize
         }
     }
 
@@ -296,12 +226,20 @@ ShellRoot {
                 property var modelData: screenScope.modelData
                 screen: modelData
 
-                property bool isMenuOpen: (leftZone.anyMenuOpen || rightZone.anyMenuOpen || centerAutoZone.anyMenuOpen || centerBeforeZone.anyMenuOpen || centerAfterZone.anyMenuOpen || (centerAnchorLoader.item && centerAnchorLoader.item.isOpen === true) || (PanelService.current !== null && (PanelService.currentScreen === null || PanelService.currentScreen === modelData))) || false
+                property bool isMenuOpen: (leftZone.anyMenuOpen || rightZone.anyMenuOpen || centerAutoZone.anyMenuOpen || centerBeforeZone.anyMenuOpen || centerAfterZone.anyMenuOpen || (centerAnchorLoader.item && centerAnchorLoader.item.isOpen === true) || (PanelService.current !== null && PanelService.current.excludeFromBarOverlay !== true && (PanelService.currentScreen === null || PanelService.currentScreen === modelData))) || false
 
                 property bool shouldHide: LockscreenService.lockAnimating || LockscreenService.locked
 
                 WlrLayershell.namespace: "quickshell:bar"
                 WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
+
+                readonly property bool blurEnabled: Config.blurAllowed() && Config.bar.transparency === 1
+                BackgroundEffect.blurRegion: blurEnabled ? barBlurRegion : null
+
+                Region {
+                    id: barBlurRegion
+                    item: barContainer
+                }
 
                 anchors.top: Config.bar.position === 0
                 anchors.bottom: Config.bar.position === 1
@@ -331,7 +269,7 @@ ShellRoot {
                         }
                     }
 
-                    ClippingRectangle {
+                    Rectangle {
                         id: barContainer
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -345,127 +283,38 @@ ShellRoot {
                         topRightRadius: (screenScope.barMode === 3 && Config.bar.position === 1) ? height / 4 : radius
 
                         border.width: (screenScope.barMode === 2) ? 1 : 0
-                        border.color: Config.bar.transparency ? Qt.alpha(Colors.md3.outline_variant, 0.5) : Colors.md3.outline_variant
+                        border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
                         Behavior on border.color {
                             ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
                         }
-                        color: "transparent"
 
-                        Loader {
-                            id: barBlurLoader
-                            anchors.fill: parent
-                            active: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && screenScope.barMode === 2))
-                            
-                            sourceComponent: Item {
-                                id: barBlurContainer
-                                anchors.fill: parent
-                                clip: true
+                        readonly property real dimAlpha: Config.blurOpacity
 
-                                Item {
-                                    id: barMaskSource
-                                    anchors.fill: parent
-                                    visible: false
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        radius: barContainer.radius
-                                        color: "black"
-                                    }
-                                }
-
-                                layer.enabled: barContainer.radius > 0
-                                layer.effect: OpacityMask {
-                                    maskSource: barMaskSource
-                                }
-
-                                Item {
-                                    id: blurSource
-                                    anchors.fill: parent
-                                    clip: true
-                                    visible: false
-
-                                    Image {
-                                        id: barBlurSrc
-                                        width: screenScope.modelData ? screenScope.modelData.width : 0
-                                        height: screenScope.modelData ? screenScope.modelData.height : 0
-                                        
-                                        readonly property int screenHeight: screenScope.modelData ? screenScope.modelData.height : 0
-                                        readonly property int windowHeight: window.implicitHeight
-                                        readonly property bool isTop: Config.bar.position === 0
-                                        
-                                        readonly property int visualContentY: isTop 
-                                            ? (screenScope.barMode === 2 ? 10 : 0) 
-                                            : (screenHeight - windowHeight)
-                                            
-                                        readonly property int barContainerY: visualContentY + ((screenScope.barMode === 3 && isTop) ? -windowHeight : 0)
-                                        readonly property int barContainerX: (screenScope.barMode === 2) ? 12 : 0
-
-                                        x: -barContainerX
-                                        y: -barContainerY
-                                        
-                                        sourceSize.width: screenScope.modelData ? screenScope.modelData.width / 4 : 0
-                                        sourceSize.height: screenScope.modelData ? screenScope.modelData.height / 4 : 0
-
-                                        source: (WallpaperService.currentWallPreview || WallpaperService.currentWall) 
-                                            ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall)) 
-                                            : ""
-                                        fillMode: Image.PreserveAspectCrop
-                                        asynchronous: true
-                                    }
-                                }
-
-                                FastBlur {
-                                    id: barBlurEffect
-                                    anchors.fill: parent
-                                    source: blurSource
-                                    radius: Config.blurRadius
-                                }
-                            }
+                        function edgeFade(isTopStop) {
+                            if (Config.bar.transparency !== 2)
+                                return Qt.alpha(Colors.md3.surface_container, dimAlpha);
+                            if (screenScope.barMode !== 2)
+                                return Qt.alpha(Colors.md3.background, 0);
+                            const fadeAtTop = Config.bar.position === 0;
+                            return isTopStop === fadeAtTop ? Qt.alpha(Colors.md3.background, 0.5) : Qt.alpha(Colors.md3.background, 0);
                         }
+                        property color topColor: edgeFade(true)
+                        property color bottomColor: edgeFade(false)
 
-                        Rectangle {
-                            id: barFadeGradient
-                            anchors.fill: parent
-                            radius: barContainer.radius
-
-                            readonly property bool blurActive: Config.blurEffects && !GameModeService.active && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && screenScope.barMode === 2))
-                            readonly property real dimAlpha: Config.blurOpacity
-
-                            property color topColor: {
-                                const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, dimAlpha) : Colors.md3.surface_container;
-                                const fadeAtTop = Config.bar.position === 0;
-                                if (Config.bar.transparency === 2) {
-                                    if (!(screenScope.barMode === 2))
-                                        return Qt.alpha(Colors.md3.background, 0);
-                                    return fadeAtTop ? Qt.alpha(Colors.md3.background, 0.5) : Qt.alpha(Colors.md3.background, 0);
+                        gradient: Gradient {
+                            orientation: Gradient.Vertical
+                            GradientStop {
+                                position: 0.0
+                                color: barContainer.topColor
+                                Behavior on color {
+                                    ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
                                 }
-                                return solid;
                             }
-                            property color bottomColor: {
-                                const solid = Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, dimAlpha) : Colors.md3.surface_container;
-                                const fadeAtTop = Config.bar.position === 0;
-                                if (Config.bar.transparency === 2) {
-                                    if (!(screenScope.barMode === 2))
-                                        return Qt.alpha(Colors.md3.background, 0);
-                                    return fadeAtTop ? Qt.alpha(Colors.md3.background, 0) : Qt.alpha(Colors.md3.background, 0.5);
-                                }
-                                return solid;
-                            }
-
-                            gradient: Gradient {
-                                orientation: Gradient.Vertical
-                                GradientStop {
-                                    position: 0.0
-                                    color: barFadeGradient.topColor
-                                    Behavior on color {
-                                        ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
-                                    }
-                                }
-                                GradientStop {
-                                    position: 1.0
-                                    color: barFadeGradient.bottomColor
-                                    Behavior on color {
-                                        ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
-                                    }
+                            GradientStop {
+                                position: 1.0
+                                color: barContainer.bottomColor
+                                Behavior on color {
+                                    ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
                                 }
                             }
                         }
@@ -581,7 +430,16 @@ ShellRoot {
 
                 mask: Region {}
 
-                property string barColor: Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, Config.blurOpacity) : Colors.md3.surface_container
+                property string barColor: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+
+                readonly property bool blurEnabled: Config.blurAllowed(huggingWindow.visible)
+                BackgroundEffect.blurRegion: blurEnabled ? huggingBlurRegion : null
+
+                Region {
+                    id: huggingBlurRegion
+                    Region { item: leftCorner }
+                    Region { item: rightCorner }
+                }
 
                 Item {
                     anchors.left: parent.left
@@ -594,6 +452,7 @@ ShellRoot {
                     }
 
                     HuggingCornerBlock {
+                        id: leftCorner
                         type: 0
                         anchors.left: parent.left
                         anchors.top: parent.top
@@ -604,6 +463,7 @@ ShellRoot {
                     }
 
                     HuggingCornerBlock {
+                        id: rightCorner
                         type: 1
                         anchors.right: parent.right
                         anchors.top: parent.top

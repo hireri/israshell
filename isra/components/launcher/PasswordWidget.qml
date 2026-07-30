@@ -94,7 +94,7 @@ Item {
                 width: 32
                 height: 32
                 radius: 16
-                color: regMa.containsMouse ? Colors.md3.surface_container_high : "transparent"
+                color: regMa.containsMouse ? Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity) : "transparent"
                 
                 MaterialIcon {
                     anchors.centerIn: parent

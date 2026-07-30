@@ -62,9 +62,9 @@ Item {
             if (root.isOpen) {
                 Colors.md3.secondary_container
             } else if (Config.bar.transparentPills) {
-                Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
-            } else { 
-                Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+                Qt.alpha(Colors.md3.secondary_container, 0)
+            } else {
+                Qt.alpha(Colors.md3.surface_container_high, 0.8)
             }
         }
         radius: 18
@@ -176,7 +176,7 @@ Item {
                     width: 1
                     height: 14
                     color: root.isOpen | Config.bar.transparency === 2 ? Colors.md3.on_secondary_container : Colors.md3.outline_variant
-                    opacity: root.isOpen | Config.bar.transparency ? 0.3 : 0.7
+                    opacity: 0.3
 
                     Behavior on color {
                         ColorAnimation {
@@ -266,7 +266,15 @@ Item {
 
                 WlrLayershell.layer: WlrLayer.Overlay
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-                WlrLayershell.namespace: "quickshell-quicksettings"
+                WlrLayershell.namespace: "quickshell:quicksettings"
+
+                readonly property bool blurEnabled: Config.blurAllowed(sidebar.visible)
+                BackgroundEffect.blurRegion: blurEnabled ? sidebarBlurRegion : null
+
+                Region {
+                    id: sidebarBlurRegion
+                    item: sidebarCard
+                }
 
                 Item {
                     id: keyHandler
@@ -286,42 +294,36 @@ Item {
                 property bool _ready: false
                 Component.onCompleted: Qt.callLater(() => _ready = true)
 
-                property real slideX: (_ready && root.isOpen) ? 0 : 452
-
-                Behavior on slideX {
-                    NumberAnimation {
-                        duration: 300
-                        easing.type: Easing.OutCubic
-                    }
-                }
-
                 Rectangle {
                     id: sidebarCard
                     visible: sidebar.isOwnScreen
                     width: 420
                     height: mainLayout.implicitHeight + 28
                     radius: 18
-                    color: Colors.md3.surface_container_low
+                    color: Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
                     border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
                     border.width: 1
                     clip: true
 
                     anchors {
                         right: parent.right
-                        rightMargin: 12
+                        rightMargin: (sidebar._ready && root.isOpen) ? 12 : -440
                         top: Config.bar.position === 0 ? parent.top : undefined
                         bottom: Config.bar.position === 1 ? parent.bottom : undefined
                         topMargin: Config.bar.position === 0 ? root.panelWindow.implicitHeight + 8 : 8
                         bottomMargin: Config.bar.position === 1 ? root.panelWindow.implicitHeight + 8 : 8
                     }
 
+                    Behavior on anchors.rightMargin {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
                     MouseArea {
                         anchors.fill: parent
                         onClicked: mouse => mouse.accepted = true
-                    }
-
-                    transform: Translate {
-                        x: sidebar.slideX
                     }
 
                     ColumnLayout {
@@ -419,7 +421,7 @@ Item {
                                     width: 36
                                     height: 36
                                     radius: 12
-                                    color: reloadMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                                    color: reloadMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
                                     Behavior on color {
                                         ColorAnimation { duration: 150 }
@@ -448,7 +450,7 @@ Item {
                                     width: 36
                                     height: 36
                                     radius: 12
-                                    color: editMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                                    color: editMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
                                     Behavior on color {
                                         ColorAnimation { duration: 150 }
@@ -509,7 +511,7 @@ Item {
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredHeight: qsCol.implicitHeight + 28
-                            color: Colors.md3.surface_container
+                            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
                             radius: 24
 
                             ColumnLayout {
@@ -688,7 +690,7 @@ Item {
                             Rectangle {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 44
-                                color: Colors.md3.surface_container
+                                color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
                                 topRightRadius: 22
                                 topLeftRadius: 22
 
@@ -707,7 +709,7 @@ Item {
                                         Layout.fillHeight: true
                                         radius: 10
                                         topLeftRadius: 18
-                                        color: dndMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                                        color: dndMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
                                         Behavior on color {
                                             ColorAnimation {
@@ -737,7 +739,7 @@ Item {
                                         Layout.fillWidth: true
                                         Layout.fillHeight: true
                                         radius: 10
-                                        color: Colors.md3.surface_container_high
+                                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                                         Text {
                                             anchors.centerIn: parent
                                             text: NotificationService.qsGroupModel.count === 0 ? "No notifications" : NotificationService.qsGroupModel.count + " notification" + (NotificationService.qsGroupModel.count === 1 ? "" : "s")
@@ -754,7 +756,7 @@ Item {
                                         Layout.fillHeight: true
                                         radius: 10
                                         topRightRadius: 18
-                                        color: clearMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                                        color: clearMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                                         opacity: NotificationService.qsGroupModel.count > 0 ? 1 : 0.3
 
                                         Behavior on color {
@@ -789,7 +791,7 @@ Item {
                                 radius: 24
                                 topRightRadius: 0
                                 topLeftRadius: 0
-                                color: Colors.md3.surface_container
+                                color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
                                 clip: true
 
                                 Column {
@@ -923,7 +925,7 @@ Item {
         Layout.fillWidth: true
         Layout.preferredHeight: 64
         radius: active ? 24 : 32
-        color: (bodyMouse.containsMouse || iconMouse.containsMouse) ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+        color: (bodyMouse.containsMouse || iconMouse.containsMouse) ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
         Behavior on color { ColorAnimation { duration: 150 } }
         Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
@@ -938,7 +940,7 @@ Item {
                 Layout.preferredWidth: 48
                 Layout.preferredHeight: 48
                 radius: wideChip.active ? 16 : 24
-                color: wideChip.active ? Colors.md3.primary : Colors.md3.surface_container
+                color: wideChip.active ? Colors.md3.primary : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
 
                 Behavior on color { ColorAnimation { duration: 150 } }
                 Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
@@ -1024,8 +1026,8 @@ Item {
     component QsPowerProfileChip: Rectangle {
         id: ppChip
 
-        readonly property var profileColors: [Colors.md3.secondary_container, Colors.md3.surface_container_high, Colors.md3.primary]
-        readonly property var profileColorsHover: [Qt.lighter(Colors.md3.secondary_container, 1.12), Colors.md3.surface_container_highest, Colors.md3.primary]
+        readonly property var profileColors: [Colors.md3.secondary_container, Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity), Colors.md3.primary]
+        readonly property var profileColorsHover: [Qt.lighter(Colors.md3.secondary_container, 1.12), Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity), Colors.md3.primary]
         readonly property var profileTextColors: [Colors.md3.on_secondary_container, Colors.md3.on_surface_variant, Colors.md3.on_primary]
         readonly property int profileIndex: PowerProfileService.profileIndex
 
@@ -1070,8 +1072,8 @@ Item {
             if (GameModeService.active)
                 return Colors.md3.primary;
             if (gmMouse.containsMouse)
-                return Colors.md3.surface_container_highest;
-            return Colors.md3.surface_container_high;
+                return Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity);
+            return Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity);
         }
 
         Behavior on color {
@@ -1125,7 +1127,7 @@ Item {
         Layout.preferredHeight: 52
         radius: active ? 18 : 26
 
-        color: Colors.md3.surface_container_high
+        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
         Behavior on radius {
             NumberAnimation {
@@ -1143,7 +1145,7 @@ Item {
             State {
                 name: "HOVERED"
                 when: chip.hovered && !chip.active
-                PropertyChanges { target: chip; color: Colors.md3.surface_container_highest }
+                PropertyChanges { target: chip; color: Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) }
             }
         ]
 
@@ -1312,7 +1314,7 @@ Item {
             bottomLeftRadius: 8
             topLeftRadius: 8
             
-            color: Colors.md3.surface_container_high
+            color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
         }
 
         Text {

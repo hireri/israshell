@@ -313,8 +313,8 @@ Rectangle {
     readonly property int rightPad: 3
 
     color: Config.bar.transparentPills
-        ? (Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container)
-        : (Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high)
+        ? Qt.alpha(Colors.md3.secondary_container, 0)
+        : Qt.alpha(Colors.md3.surface_container_high, 0.8)
 
     Behavior on color {
         ColorAnimation { duration: 150 }

@@ -52,6 +52,7 @@ Item {
 
     implicitWidth: card.implicitWidth
     implicitHeight: card.implicitHeight
+    property alias cardItem: card
 
     Rectangle {
         id: card
@@ -74,7 +75,7 @@ Item {
         implicitWidth: 300
         implicitHeight: content.implicitHeight + 32
 
-        color: Colors.md3.surface_container_low
+        color: Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
         radius: root.shape.large
         border.width: 1
         border.color: Colors.md3.outline_variant
@@ -265,7 +266,7 @@ Item {
                     Rectangle {
                         width: weatherGrid.cellWidth
                         height: weatherGrid.cellHeight
-                        color: Colors.md3.surface_container_high
+                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                         radius: root.shape.extraSmall
                         topLeftRadius: root.shape.medium
 
@@ -298,7 +299,7 @@ Item {
                     Rectangle {
                         width: weatherGrid.cellWidth
                         height: weatherGrid.cellHeight
-                        color: Colors.md3.surface_container_high
+                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                         radius: root.shape.extraSmall
 
                         Row {
@@ -330,7 +331,7 @@ Item {
                     Rectangle {
                         width: weatherGrid.cellWidth
                         height: weatherGrid.cellHeight
-                        color: Colors.md3.surface_container_high
+                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                         radius: root.shape.extraSmall
                         topRightRadius: root.shape.medium
 
@@ -363,7 +364,7 @@ Item {
                     Rectangle {
                         width: weatherGrid.cellWidth
                         height: weatherGrid.cellHeight
-                        color: Colors.md3.surface_container_high
+                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                         radius: root.shape.extraSmall
                         bottomLeftRadius: root.shape.medium
 
@@ -396,7 +397,7 @@ Item {
                     Rectangle {
                         width: weatherGrid.cellWidth
                         height: weatherGrid.cellHeight
-                        color: Colors.md3.surface_container_high
+                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                         radius: root.shape.extraSmall
 
                         Row {
@@ -428,7 +429,7 @@ Item {
                     Rectangle {
                         width: weatherGrid.cellWidth
                         height: weatherGrid.cellHeight
-                        color: Colors.md3.surface_container_high
+                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                         radius: root.shape.extraSmall
                         bottomRightRadius: root.shape.medium
 
@@ -518,7 +519,7 @@ Item {
                     width: (parent.width - 8) / 2
                     height: 36
                     radius: root.shape.full
-                    color: Colors.md3.surface_container_high
+                    color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
                     Rectangle {
                         anchors.fill: parent

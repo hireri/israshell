@@ -16,7 +16,7 @@ Rectangle {
     property bool exiting: false
 
     radius: 16
-    color: Colors.md3.surface_container_high
+    color: (Config.dim(Colors.md3.surface_container_high))
 
     Behavior on implicitWidth {
         NumberAnimation { duration: 120; easing.type: Easing.OutCubic }

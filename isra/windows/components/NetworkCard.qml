@@ -21,7 +21,7 @@ Rectangle {
 
     implicitHeight: cardRow.implicitHeight + 28
     radius: 18
-    color: root.enabled ? root.tint : Colors.md3.surface_container
+    color: root.enabled ? root.tint : (Config.dim(Colors.md3.surface_container))
 
     Behavior on color {
         ColorAnimation {

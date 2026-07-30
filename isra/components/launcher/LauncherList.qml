@@ -259,7 +259,7 @@ Item {
                     rightMargin: 6
                 }
                 radius: 14
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                 opacity: (!del._selected && del._rowHovered) ? 1.0 : 0.0
                 Behavior on opacity {
                     NumberAnimation {
@@ -407,7 +407,7 @@ Item {
                                 return own !== "" ? own : Quickshell.iconPath(del.modelData.entry.icon ?? "", true);
                             }
 
-                            color: aHov.containsMouse ? (del._selected ? Colors.md3.surface_container_highest : Colors.md3.secondary_container) : del._selected ? Colors.md3.secondary_container : Colors.md3.surface_container
+                            color: aHov.containsMouse ? (del._selected ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Colors.md3.secondary_container) : del._selected ? Colors.md3.secondary_container : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
                             Behavior on color {
                                 ColorAnimation {
                                     duration: 80
@@ -517,7 +517,7 @@ Item {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 12
-                                color: Colors.md3.surface_container_high
+                                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                                 clip: true
                                 Image {
                                     anchors.fill: parent

@@ -38,7 +38,9 @@ Item {
 
     BarTooltip {
         id: tooltip
-        yOffset: 14
+        screen: root.panelWindow.screen
+        panelWindow: root.panelWindow
+        yOffset: 4
     }
 
     TrayMenuWindow {
@@ -57,9 +59,9 @@ Item {
             if (root.isOpen) {
                 Colors.md3.secondary_container
             } else if (Config.bar.transparentPills) {
-                Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+                Qt.alpha(Colors.md3.secondary_container, 0)
             } else { 
-                Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+                Qt.alpha(Colors.md3.surface_container_high, 0.8)
             }
         }   
 

@@ -338,7 +338,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     height: root.rowHeight
                     radius: 9
-                    color: rowRoot.isDragging ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
+                    color: rowRoot.isDragging ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high))
                     opacity: rowRoot.hidden ? 0.45 : 1.0
                     border.width: 0
                     border.color: Colors.md3.primary

@@ -1,13 +1,22 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import qs.style
 
-Window {
+PanelWindow {
     id: root
-    width: tooltipContent.implicitWidth + 1
-    height: tooltipContent.implicitHeight + 1
+
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
+    exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.namespace: "quickshell:tooltip"
     color: "transparent"
-    flags: Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowTransparentForInput
+    mask: Region {}
 
     property bool open: false
 
@@ -33,6 +42,7 @@ Window {
     }
 
     property string tipTitle: ""
+    property var panelWindow: null
 
     default property alias content: contentHolder.data
     readonly property bool hasCustomContent: contentHolder.children.length > 0
@@ -40,19 +50,41 @@ Window {
     property point targetPos: Qt.point(0, 0)
     property int yOffset: 8
     property int padding: 10
+    property real edgeMargin: 12
 
-    x: targetPos.x - (width / 2)
-    y: Config.bar.position === 1 ? targetPos.y - height - yOffset : targetPos.y + yOffset
+    readonly property bool blurEnabled: Config.blurAllowed(root.visible)
+    BackgroundEffect.blurRegion: blurEnabled ? tooltipBlurRegion : null
+
+    Region {
+        id: tooltipBlurRegion
+        x: tooltipContent.x
+        y: tooltipContent.y
+        width: tooltipContent.width
+        height: tooltipContent.height
+        radius: tooltipContent.radius
+    }
 
     Rectangle {
         id: tooltipContent
-        opacity: 0
-        scale: 0.9
+
+        readonly property real barHeight: root.panelWindow ? root.panelWindow.implicitHeight : 0
+
         implicitWidth: (root.hasCustomContent ? contentHolder.implicitWidth : tooltipText.implicitWidth) + root.padding * 2
         implicitHeight: (root.hasCustomContent ? contentHolder.implicitHeight : tooltipText.implicitHeight) + root.padding * 2
         width: implicitWidth
         height: implicitHeight
-        color: Colors.md3.surface_container_high
+
+        y: Config.bar.position === 1
+            ? (root.height - barHeight - height - root.yOffset)
+            : (barHeight + root.yOffset)
+
+        x: {
+            const raw = (root.targetPos.x - (root.screen ? root.screen.x : 0)) - (width / 2);
+            return Math.round(Math.max(root.edgeMargin, Math.min(raw, root.width - width - root.edgeMargin)));
+        }
+        opacity: 0
+        scale: 0.9
+        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
         radius: 8
         border.width: 1
         border.color: Qt.alpha(Colors.md3.outline, 0.5)

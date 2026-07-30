@@ -110,16 +110,6 @@ PageBase {
                 })
             isLast: !blurSwitch.checked
         }
-        SettingSlider {
-            label: "Blur radius"
-            sublabel: "Controls the softness of the blur"
-            from: 5
-            to: 80
-            value: Config.blurRadius
-            onMoved: v => Config.update({
-                    blurRadius: Math.round(v)
-                })
-        }
 
         SettingSlider {
             label: "Bar & Blur dimming"

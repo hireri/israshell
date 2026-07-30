@@ -93,7 +93,7 @@ PageBase {
         Layout.fillWidth: true
         implicitHeight: layoutInner.implicitHeight + 32
         radius: 20
-        color: Colors.md3.surface_container
+        color: (Config.dim(Colors.md3.surface_container))
 
         ColumnLayout {
             id: layoutInner
@@ -127,7 +127,7 @@ PageBase {
 
                     color: active
                         ? Colors.md3.primary
-                        : (curveMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                        : (curveMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
 
                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -192,7 +192,7 @@ PageBase {
 
                     color: active
                         ? Colors.md3.primary
-                        : (barsMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                        : (barsMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
 
                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -258,7 +258,7 @@ PageBase {
 
                     color: active
                         ? Colors.md3.primary
-                        : (blocksMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
+                        : (blocksMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
 
                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -313,7 +313,7 @@ PageBase {
                 id: singlePreview
                 Layout.fillWidth: true
                 Layout.preferredHeight: 180
-                color: Colors.md3.surface_container_high
+                color: (Config.dim(Colors.md3.surface_container_high))
                 radius: 12
 
                 Image {

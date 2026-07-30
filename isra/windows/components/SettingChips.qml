@@ -62,7 +62,7 @@ SettingRow {
                     height: 30
                     width: targetWidth
 
-                    color: active ? Colors.md3.primary : Colors.md3.surface_container_high
+                    color: active ? Colors.md3.primary : (Config.dim(Colors.md3.surface_container_high))
 
                     topLeftRadius: (active || isFirst) ? root.fullRadius : root.smallRadius
                     bottomLeftRadius: (active || isFirst) ? root.fullRadius : root.smallRadius

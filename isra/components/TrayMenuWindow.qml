@@ -3,7 +3,6 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Wayland
 import qs.style
-import Qt5Compat.GraphicalEffects
 import qs.services
 
 PanelWindow {
@@ -46,8 +45,19 @@ PanelWindow {
     anchors.left: true
     anchors.right: true
     exclusionMode: ExclusionMode.Ignore
+
     WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.namespace: "quickshell:traymenu"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+
+    readonly property bool blurEnabled: Config.blurAllowed(root.visible)
+    BackgroundEffect.blurRegion: blurEnabled ? cardBlurRegion : null
+
+    Region {
+        id: cardBlurRegion
+        item: card
+    }
+
     color: "transparent"
     visible: false
 
@@ -197,58 +207,11 @@ PanelWindow {
             }
         }
 
-        color: Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container, 0.92) : Colors.md3.surface_container
+        color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
         radius: root.cardR
         border.width: 1
-        border.color: Config.bar.transparency ? Qt.alpha(Colors.md3.on_surface, 0.3) : Colors.md3.outline_variant
+        border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
         clip: true
-        layer.enabled: true
-
-        Loader {
-            id: cardBlurLoader
-            anchors.fill: parent
-            active: root.visible && Config.blurEffects && !GameModeService.active && Config.bar.transparency > 0
-            
-            sourceComponent: Item {
-                id: cardBlurContainer
-                anchors.fill: parent
-                Item {
-                    id: blurSource
-                    anchors.fill: parent
-                    clip: true
-                    visible: false
-
-                    Image {
-                        id: cardBlurSrc
-                        x: -card.x
-                        y: -card.y
-                        width: root.screen ? root.screen.width : 0
-                        height: root.screen ? root.screen.height : 0
-                        
-                        sourceSize.width: root.screen ? root.screen.width / 4 : 0
-                        sourceSize.height: root.screen ? root.screen.height / 4 : 0
-
-                        source: (WallpaperService.currentWallPreview || WallpaperService.currentWall) 
-                            ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall)) 
-                            : ""
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                    }
-                }
-
-                FastBlur {
-                    id: cardBlurEffect
-                    anchors.fill: parent
-                    source: blurSource
-                    radius: Config.blurRadius
-                }
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-                }
-            }
-        }
 
         property real slideX: root.submenuOpen ? -root.cardW : 0
         Behavior on slideX {
@@ -315,6 +278,7 @@ PanelWindow {
                     text: "󰅁"
                     color: Colors.md3.on_surface_variant
                     font.pixelSize: 15
+                    renderType: Text.NativeRendering
                 }
                 Text {
                     anchors {
@@ -329,6 +293,7 @@ PanelWindow {
                     font.pixelSize: 12
                     font.weight: Font.Medium
                     elide: Text.ElideRight
+                    renderType: Text.NativeRendering
                 }
                 MouseArea {
                     anchors.fill: parent

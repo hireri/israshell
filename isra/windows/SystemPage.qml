@@ -387,7 +387,7 @@ PageBase {
                                 height: 28
                                 width: applyTxt.implicitWidth + 16
                                 radius: 14
-                                color: Colors.md3.surface_container_high
+                                color: (Config.dim(Colors.md3.surface_container_high))
 
                                 Text {
                                     id: applyTxt
@@ -410,7 +410,7 @@ PageBase {
                                 width: 28
                                 height: 28
                                 radius: 14
-                                color: Colors.md3.surface_container_high
+                                color: (Config.dim(Colors.md3.surface_container_high))
 
                                 Text {
                                     anchors.centerIn: parent
@@ -633,7 +633,7 @@ PageBase {
         Layout.fillWidth: true
         implicitHeight: 72
         radius: 12
-        color: Colors.md3.surface_container
+        color: (Config.dim(Colors.md3.surface_container))
 
         ColumnLayout {
             anchors.fill: parent

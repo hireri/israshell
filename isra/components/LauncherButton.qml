@@ -21,9 +21,9 @@ Item {
         radius: width / 2
         color: {
             if (Config.bar.transparentPills) {
-                Config.bar.transparency ? Qt.alpha(Colors.md3.secondary_container, 0) : Colors.md3.surface_container
+                Qt.alpha(Colors.md3.secondary_container, 0)
             } else {
-                Config.bar.transparency ? Qt.alpha(Colors.md3.surface_container_high, 0.8) : Colors.md3.surface_container_high
+                Qt.alpha(Colors.md3.surface_container_high, 0.8)
             }
         }
 

@@ -44,7 +44,7 @@ Item {
             bottomRightRadius: 8
             bottomLeftRadius: 8
 
-            color: Colors.md3.surface_container_high
+            color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
             Text {
                 id: statusText
@@ -114,10 +114,10 @@ Item {
 
         color: {
             if (!pill.enabled)
-                return Colors.md3.surface_container_high;
+                return Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity);
             if (ma.containsMouse)
-                return Colors.md3.surface_container_highest;
-            return Colors.md3.surface_container_high;
+                return Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity);
+            return Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity);
         }
         opacity: pill.enabled ? 1.0 : 0.4
 

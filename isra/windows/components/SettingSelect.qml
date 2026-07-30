@@ -210,7 +210,7 @@ SettingRow {
 
         background: Rectangle {
             radius: 8
-            color: Colors.md3.surface_container_high
+            color: (Config.dim(Colors.md3.surface_container_high))
             border.width: (textField.activeFocus || popupMenu.visible) ? 2 : 1
             border.color: (textField.activeFocus || popupMenu.visible) ? Colors.md3.primary : Colors.md3.surface_variant
             Behavior on border.color {
@@ -418,10 +418,10 @@ SettingRow {
                         }
 
                         background: Rectangle {
-                            color: delegateItem.isSelected 
-                                ? Colors.md3.secondary_container 
-                                : (delegateItem.isActive 
-                                    ? Colors.md3.surface_container_highest 
+                            color: delegateItem.isSelected
+                                ? Colors.md3.secondary_container
+                                : (delegateItem.isActive
+                                    ? Colors.md3.surface_container_highest
                                     : Colors.md3.surface_container_high)
                             Behavior on color {
                                 ColorAnimation { duration: 100 }

@@ -131,7 +131,7 @@ Item {
         implicitWidth: lbl.implicitWidth + 22
         implicitHeight: 30
         radius: height / 2
-        color: ma.containsMouse ? (primary ? Colors.md3.primary : Colors.md3.secondary_container) : (primary ? Colors.md3.primary_container : Colors.md3.surface_container_high)
+        color: ma.containsMouse ? (primary ? Colors.md3.primary : Colors.md3.secondary_container) : (primary ? Colors.md3.primary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
         Behavior on color {
             ColorAnimation {
                 duration: 90
@@ -172,7 +172,7 @@ Item {
                 implicitWidth: srcLbl.implicitWidth + 16
                 height: 24
                 radius: 12
-                color: Colors.md3.surface_container_high
+                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
                 Text {
                     id: srcLbl

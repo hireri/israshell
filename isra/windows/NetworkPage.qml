@@ -212,7 +212,7 @@ PageBase {
                     height: 24
                     width: scanTxt.implicitWidth + 14
                     radius: 12
-                    color: Colors.md3.surface_container_high
+                    color: (Config.dim(Colors.md3.surface_container_high))
                     visible: !NetworkService.scanning
 
                     Text {
@@ -339,7 +339,7 @@ PageBase {
                             width: 28
                             height: 28
                             radius: 14
-                            color: Colors.md3.surface_container_high
+                            color: (Config.dim(Colors.md3.surface_container_high))
                             visible: modelData.known
 
                             Text {
@@ -362,7 +362,7 @@ PageBase {
                             width: 28
                             height: 28
                             radius: 14
-                            color: Colors.md3.surface_container_high
+                            color: (Config.dim(Colors.md3.surface_container_high))
                             visible: modelData.known && !modelData.active
 
                             Text {
@@ -387,7 +387,7 @@ PageBase {
                             height: 28
                             width: connTxt.implicitWidth + 16
                             radius: 14
-                            color: modelData.active ? Colors.md3.surface_container_high : Colors.md3.secondary_container
+                            color: modelData.active ? (Config.dim(Colors.md3.surface_container_high)) : Colors.md3.secondary_container
 
                             Text {
                                 id: connTxt
@@ -481,7 +481,7 @@ PageBase {
                     height: 24
                     width: btScanTxt.implicitWidth + 14
                     radius: 12
-                    color: Colors.md3.surface_container_high
+                    color: (Config.dim(Colors.md3.surface_container_high))
                     visible: !BluetoothService.discovering
 
                     Text {
@@ -505,7 +505,7 @@ PageBase {
                     height: 24
                     width: btStopTxt.implicitWidth + 14
                     radius: 12
-                    color: Colors.md3.surface_container_high
+                    color: (Config.dim(Colors.md3.surface_container_high))
                     visible: BluetoothService.discovering
 
                     Text {
@@ -606,7 +606,7 @@ PageBase {
                             radius: 14
                             bottomRightRadius: 6
                             topRightRadius: 6
-                            color: modelData.connected ? Colors.md3.surface_container_high : Colors.md3.secondary_container
+                            color: modelData.connected ? (Config.dim(Colors.md3.surface_container_high)) : Colors.md3.secondary_container
                             opacity: busy ? 0.6 : 1.0
 
                             Text {
@@ -638,7 +638,7 @@ PageBase {
                             radius: 14
                             bottomLeftRadius: 6
                             topLeftRadius: 6
-                            color: Colors.md3.surface_container_high
+                            color: (Config.dim(Colors.md3.surface_container_high))
 
                             Text {
                                 anchors.centerIn: parent

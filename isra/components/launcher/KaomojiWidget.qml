@@ -181,7 +181,7 @@ Item {
                     implicitWidth: catLbl.implicitWidth + 18
                     implicitHeight: 26
                     radius: height / 2
-                    color: catMa.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_high
+                    color: catMa.containsMouse ? Colors.md3.secondary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                     border.width: catMa.containsMouse ? 0 : 1
                     border.color: Colors.md3.outline_variant
                     scale: catMa.pressed ? 0.95 : 1.0
@@ -236,7 +236,7 @@ Item {
             width: Math.max(64, faceLbl.implicitWidth + 18)
             height: root._tileHeight
             radius: 12
-            color: tile._copied ? Colors.md3.primary_container : (tileMa.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_high)
+            color: tile._copied ? Colors.md3.primary_container : (tileMa.containsMouse ? Colors.md3.secondary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
             scale: tileMa.pressed ? 0.94 : 1.0
 
             Behavior on color {
