@@ -43,7 +43,7 @@ Item {
     }
     Component {
         id: restartIconComp
-        MaterialIcon { name: "restart"; iconSize: 18 }
+        MaterialIcon { name: "reboot"; iconSize: 18 }
     }
     Component {
         id: powerIconComp
