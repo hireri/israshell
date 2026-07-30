@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# apply-wallpaper.sh <wall-path> <mode> [scheme] [source-color-index] [--awww]
+# apply-wallpaper.sh <wall-path> <mode> [scheme] [source-color-index] [--awww] [--transition <type>] [--duration <ms>]
 #   mode: dark | light
+#   transition type: crossfade | wipe | circle | random
 
 set -euo pipefail
 
 USE_AWWW="false"
+TRANSITION_TYPE="crossfade"
+TRANSITION_DURATION_MS="550"
 ARGS=()
-for arg in "$@"; do
-    case "$arg" in
-        --awww|-awww) USE_AWWW="true" ;;
-        *) ARGS+=("$arg") ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --awww|-awww) USE_AWWW="true"; shift ;;
+        --transition) TRANSITION_TYPE="${2:-crossfade}"; shift 2 ;;
+        --duration) TRANSITION_DURATION_MS="${2:-550}"; shift 2 ;;
+        *) ARGS+=("$1"); shift ;;
     esac
 done
 set -- "${ARGS[@]}"
@@ -108,10 +113,22 @@ manage_awww_daemon() {
     local target="$HYPR_DIR/current_wall_prev"
     is_video "$WALL" || target="$HYPR_DIR/current_wall"
 
+    local awww_type awww_extra=()
+    case "$TRANSITION_TYPE" in
+        wipe)    awww_type="wipe"; awww_extra=(--transition-angle 0) ;;
+        circle)  awww_type="grow"; awww_extra=(--transition-pos center) ;;
+        random)  awww_type="random" ;;
+        crossfade|*) awww_type="fade" ;;
+    esac
+
+    local duration_sec
+    duration_sec=$(awk -v ms="$TRANSITION_DURATION_MS" 'BEGIN{printf "%.2f", ms/1000}')
+
     awww img \
-        --transition-type     grow \
-        --transition-fps      60   \
-        --transition-duration 1    \
+        --transition-type     "$awww_type" \
+        --transition-fps      60 \
+        --transition-duration "$duration_sec" \
+        "${awww_extra[@]}" \
         "$target"
 }
 

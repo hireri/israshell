@@ -297,13 +297,6 @@ PageBase {
                 onToggled: v => Config.update({ useHyprlock: v })
             }
 
-            SettingSwitch {
-                label: "Use awww"
-                sublabel: "Delegate wallpaper to awww instead of built in, WON'T SUPPORT VIDEOS"
-                checked: Config.useAwww
-                onToggled: v => Config.update({ useAwww: v })
-            }
-
             SettingChips {
                 isLast: true
                 label: "Password dot shape"
@@ -318,6 +311,47 @@ PageBase {
                     lockscreen: Object.assign({}, Config.lockscreen, {
                         dotShape: v
                     })
+                })
+            }
+        }
+
+        SectionCard {
+            label: "Wallpaper"
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                label: "Use awww"
+                sublabel: "Delegate wallpaper to awww instead of built in, WON'T SUPPORT VIDEOS"
+                checked: Config.useAwww
+                onToggled: v => Config.update({ useAwww: v })
+            }
+
+            SettingSelect {
+                label: "Wallpaper transition"
+                sublabel: "Effect used when switching wallpapers"
+                options: [
+                    { label: "Crossfade", value: "crossfade" },
+                    { label: "Directional wipe", value: "wipe" },
+                    { label: "Circle reveal", value: "circle" },
+                    { label: "Random", value: "random" }
+                ]
+                currentValue: Config.background.transitionType
+                onSelected: v => Config.update({
+                    background: Object.assign({}, Config.background, { transitionType: v })
+                })
+            }
+
+            SettingSlider {
+                isLast: true
+                label: "Transition duration"
+                sublabel: "How long the wallpaper transition takes"
+                from: 150
+                to: 2000
+                stepSize: 50
+                unit: "ms"
+                value: Config.background.transitionDuration
+                onMoved: v => Config.update({
+                    background: Object.assign({}, Config.background, { transitionDuration: Math.round(v) })
                 })
             }
         }

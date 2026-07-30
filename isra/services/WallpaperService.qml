@@ -521,6 +521,8 @@ Singleton {
             ];
             if (Config.useAwww) {
                 cmd.push("--awww");
+                cmd.push("--transition", Config.background.transitionType);
+                cmd.push("--duration", String(Config.background.transitionDuration));
             }
             return cmd;
         }

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import QtMultimedia
 import Qt5Compat.GraphicalEffects
 import Quickshell
@@ -74,6 +75,7 @@ PanelWindow {
             anchors.fill: parent
 
             property int frontSlot: 0
+            property string activeTransitionType: "crossfade"
             readonly property Item wallpaperVisual: (frontSlot === 0 ? slotA : slotB).wallpaperVisual
 
             function _swapTo(path) {
@@ -83,6 +85,9 @@ PanelWindow {
                 const back = frontSlot === 0 ? slotB : slotA;
                 if (front.path === path)
                     return;
+                wallpaperContainer.activeTransitionType = Config.background.transitionType === "random"
+                    ? ["crossfade", "wipe", "circle"][Math.floor(Math.random() * 3)]
+                    : Config.background.transitionType;
                 back.path = path;
                 back.readyToShow(() => {
                     wallpaperContainer.frontSlot = wallpaperContainer.frontSlot === 0 ? 1 : 0;
@@ -105,12 +110,14 @@ PanelWindow {
                 anchors.fill: parent
                 isFront: wallpaperContainer.frontSlot === 0
                 pause: root.shouldPause
+                transitionType: wallpaperContainer.activeTransitionType
             }
             WallpaperSlot {
                 id: slotB
                 anchors.fill: parent
                 isFront: wallpaperContainer.frontSlot === 1
                 pause: root.shouldPause
+                transitionType: wallpaperContainer.activeTransitionType
             }
         }
     }
@@ -120,6 +127,7 @@ PanelWindow {
         property string path: ""
         property bool isFront: false
         property bool pause: false
+        property string transitionType: "crossfade"
 
         readonly property bool isVideo: path
             ? /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(path)
@@ -131,6 +139,14 @@ PanelWindow {
         readonly property Item wallpaperVisual: frozenFrame.visible ? frozenFrame : liveVisual
 
         readonly property bool shouldPlay: isVideo && isFront && !pause && !videoTornDown
+
+        readonly property int transitionDuration: Config.background.transitionDuration ?? 550
+        readonly property real _diagonal: Math.sqrt(width * width + height * height)
+
+        property real _progress: isFront ? 1 : 0
+        Behavior on _progress {
+            NumberAnimation { duration: slot.transitionDuration; easing.type: Easing.OutCubic }
+        }
 
         function readyToShow(cb) {
             if (slot.isVideo || slot.videoTornDown) {
@@ -151,16 +167,9 @@ PanelWindow {
             img.statusChanged.connect(handler);
         }
 
-        opacity: isFront ? 1 : 0
-        scale: isFront ? 1 : 0.94
+        opacity: transitionType === "crossfade" ? _progress : 1
+        scale: transitionType === "crossfade" ? (0.94 + 0.06 * _progress) : 1
         z: isFront ? 1 : 0
-
-        Behavior on opacity {
-            NumberAnimation { duration: 550; easing.type: Easing.OutCubic }
-        }
-        Behavior on scale {
-            NumberAnimation { duration: 550; easing.type: Easing.OutCubic }
-        }
 
         onPathChanged: frozenFrame.visible = false
         onVideoTornDownChanged: {
@@ -169,83 +178,132 @@ PanelWindow {
             }
         }
 
-        AnimatedImage {
-            id: img
+        Item {
+            id: content
             anchors.fill: parent
-            visible: !slot.isVideo
-            asynchronous: true
-            source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
-            fillMode: Image.PreserveAspectCrop
-            sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1080
-            playing: slot.isFront && !slot.pause
-        }
 
-        Loader {
-            id: videoLoader
-            anchors.fill: parent
-            asynchronous: false
-            active: slot.isVideo && !slot.videoTornDown
+            layer.enabled: slot.isFront && slot.transitionType !== "crossfade"
+                && slot._progress < 1
+            layer.samples: 4
+            layer.smooth: true
+            layer.effect: MultiEffect {
+                maskEnabled: true
+                maskSource: slot.transitionType === "circle" ? circleMask : wipeMask
+            }
 
-            sourceComponent: Component {
-                Item {
-                    id: videoRoot
-                    anchors.fill: parent
-                    readonly property alias videoOutput: vo
-                    property bool ready: false
+            AnimatedImage {
+                id: img
+                anchors.fill: parent
+                visible: !slot.isVideo
+                asynchronous: true
+                source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
+                fillMode: Image.PreserveAspectCrop
+                sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1080
+                playing: slot.isFront && !slot.pause
+            }
 
-                    MediaPlayer {
-                        id: player
-                        source: slot.path ? ("file://" + slot.path) : ""
-                        videoOutput: vo
-                        loops: MediaPlayer.Infinite
-                        onSourceChanged: videoRoot.ready = false
-                        onMediaStatusChanged: {
-                            if (mediaStatus === MediaPlayer.Loaded || mediaStatus === MediaPlayer.Buffered) {
-                                videoRoot.ready = true;
+            Loader {
+                id: videoLoader
+                anchors.fill: parent
+                asynchronous: false
+                active: slot.isVideo && !slot.videoTornDown
+
+                sourceComponent: Component {
+                    Item {
+                        id: videoRoot
+                        anchors.fill: parent
+                        readonly property alias videoOutput: vo
+                        property bool ready: false
+
+                        MediaPlayer {
+                            id: player
+                            source: slot.path ? ("file://" + slot.path) : ""
+                            videoOutput: vo
+                            loops: MediaPlayer.Infinite
+                            onSourceChanged: videoRoot.ready = false
+                            onMediaStatusChanged: {
+                                if (mediaStatus === MediaPlayer.Loaded || mediaStatus === MediaPlayer.Buffered) {
+                                    videoRoot.ready = true;
+                                }
                             }
                         }
-                    }
 
-                    VideoOutput {
-                        id: vo
-                        anchors.fill: parent
-                        visible: !frozenFrame.visible
-                        fillMode: VideoOutput.PreserveAspectCrop
-                    }
-
-                    Component.onCompleted: {
-                        if (slot.shouldPlay) {
-                            frozenFrame.visible = false;
-                            player.play();
-                        } else {
-                            player.pause();
+                        VideoOutput {
+                            id: vo
+                            anchors.fill: parent
+                            visible: !frozenFrame.visible
+                            fillMode: VideoOutput.PreserveAspectCrop
                         }
-                    }
 
-                    Connections {
-                        target: slot
-                        function onShouldPlayChanged() {
+                        Component.onCompleted: {
                             if (slot.shouldPlay) {
                                 frozenFrame.visible = false;
                                 player.play();
                             } else {
-                                frozenFrame.scheduleUpdate();
-                                frozenFrame.visible = true;
                                 player.pause();
+                            }
+                        }
+
+                        Connections {
+                            target: slot
+                            function onShouldPlayChanged() {
+                                if (slot.shouldPlay) {
+                                    frozenFrame.visible = false;
+                                    player.play();
+                                } else {
+                                    frozenFrame.scheduleUpdate();
+                                    frozenFrame.visible = true;
+                                    player.pause();
+                                }
                             }
                         }
                     }
                 }
             }
+
+            ShaderEffectSource {
+                id: frozenFrame
+                anchors.fill: parent
+                sourceItem: videoLoader.item ? videoLoader.item.videoOutput : null
+                live: false
+                hideSource: false
+                visible: false
+            }
         }
 
-        ShaderEffectSource {
-            id: frozenFrame
-            anchors.fill: parent
-            sourceItem: videoLoader.item ? videoLoader.item.videoOutput : null
-            live: false
-            hideSource: false
+        Item {
+            id: wipeMask
+            width: slot.width
+            height: slot.height
             visible: false
+            layer.enabled: true
+            layer.samples: 4
+            layer.smooth: true
+
+            Rectangle {
+                anchors.right: parent.right
+                width: parent.width * slot._progress
+                height: parent.height
+                color: "black"
+            }
+        }
+
+        Item {
+            id: circleMask
+            width: slot.width
+            height: slot.height
+            visible: false
+            layer.enabled: true
+            layer.samples: 4
+            layer.smooth: true
+
+            Rectangle {
+                width: slot._diagonal * slot._progress
+                height: width
+                radius: width / 2
+                anchors.centerIn: parent
+                color: "black"
+            }
         }
     }
 

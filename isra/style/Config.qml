@@ -23,6 +23,10 @@ Singleton {
     property string dateFormat: ""
     property string cityName: ""
 
+    property var background: ({
+            transitionType: "crossfade", // "crossfade" | "wipe" | "circle" | "random"
+            transitionDuration: 550      // ms; converted to seconds for awww
+        })
     property var cava: ({
             enabled: false,
             bars: 30,
@@ -191,6 +195,10 @@ Singleton {
             dateFormat: "",
             cityName: "",
 
+            background: {
+                transitionType: "crossfade",
+                transitionDuration: 550
+            },
             cava: {
                 enabled: false,
                 bars: 30,
