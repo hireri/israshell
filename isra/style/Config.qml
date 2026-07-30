@@ -155,6 +155,12 @@ Singleton {
             tinted: false,
             mirror: true
         })
+    property var neko: ({
+            enabled: false,
+            size: 32,
+            speed: 10,
+            sleepDelay: 1
+        })
     property var clockPositions: ({})
     property var weyesPositions: ({})
     property bool checkUpdates: true
@@ -281,6 +287,12 @@ Singleton {
                 height: 120,
                 tinted: false,
                 mirror: true
+            },
+            neko: {
+                enabled: false,
+                size: 32,
+                speed: 10,
+                sleepDelay: 1
             },
             useAwww: false,
             clockPositions: {},

@@ -724,7 +724,9 @@ PageBase {
 
         SettingSwitch {
             label: "Enable"
-            sublabel: "Show wayland-weyes 👀"
+            sublabel: CompositorService.hasCapability("cursorPosition") ? "Show wayland-weyes 👀" : "Requires Hyprland (cursor position isn't available on " + CompositorService.backendName + ")"
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
             checked: Config.weyes.enabled
             onToggled: v => Config.update({
                     weyes: Object.assign({}, Config.weyes, {
@@ -736,6 +738,8 @@ PageBase {
         SettingSwitch {
             label: "Mirror layout"
             sublabel: "Synchronize coords and size across all screens"
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
             checked: Config.weyes.mirror
             onToggled: v => Config.update({
                     weyes: Object.assign({}, Config.weyes, {
@@ -747,10 +751,81 @@ PageBase {
         SettingSwitch {
             label: "Tinted"
             sublabel: "Match colors to the system theme"
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
             checked: Config.weyes.tinted
             onToggled: v => Config.update({
                     weyes: Object.assign({}, Config.weyes, {
                         tinted: v
+                    })
+                })
+            isLast: true
+        }
+    }
+
+    SectionCard {
+        label: "Neko"
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: "Enable"
+            sublabel: CompositorService.hasCapability("cursorPosition") ? "A cursor-chasing cat on your desktop" : "Requires Hyprland (cursor position isn't available on " + CompositorService.backendName + ")"
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.neko.enabled
+            onToggled: v => Config.update({
+                    neko: Object.assign({}, Config.neko, {
+                        enabled: v
+                    })
+                })
+        }
+
+        SettingSlider {
+            label: "Size"
+            sublabel: "Rendered size of the sprite"
+            from: 32
+            to: 160
+            stepSize: 4
+            unit: "px"
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
+            value: Config.neko.size
+            onMoved: v => Config.update({
+                    neko: Object.assign({}, Config.neko, {
+                        size: Math.round(v)
+                    })
+                })
+        }
+
+        SettingSlider {
+            label: "Speed"
+            sublabel: "How fast it chases the cursor"
+            from: 4
+            to: 30
+            stepSize: 1
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
+            value: Config.neko.speed
+            onMoved: v => Config.update({
+                    neko: Object.assign({}, Config.neko, {
+                        speed: Math.round(v)
+                    })
+                })
+        }
+
+        SettingSlider {
+            label: "Sleep delay"
+            sublabel: "Idle time before it falls asleep"
+            from: 1
+            to: 60
+            stepSize: 1
+            unit: "s"
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
+            value: Config.neko.sleepDelay
+            onMoved: v => Config.update({
+                    neko: Object.assign({}, Config.neko, {
+                        sleepDelay: Math.round(v)
                     })
                 })
             isLast: true

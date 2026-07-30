@@ -317,9 +317,18 @@ PanelWindow {
 
     Loader {
         id: weyesLoader
-        active: Config.weyes.enabled
+        active: Config.weyes.enabled && CompositorService.hasCapability("cursorPosition")
 
         sourceComponent: Weyes {
+            modelData: root.modelData
+        }
+    }
+
+    Loader {
+        id: nekoLoader
+        active: Config.neko.enabled && CompositorService.hasCapability("cursorPosition")
+
+        sourceComponent: Neko {
             modelData: root.modelData
         }
     }

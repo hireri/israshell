@@ -8,7 +8,7 @@ import QtQuick
 Scope {
     id: root
 
-    readonly property var capabilities: ["groups", "pseudotile", "dpms", "tags"]
+    readonly property var capabilities: ["groups", "pseudotile", "dpms", "tags", "cursorPosition"]
 
     property var activeWindow: _windowShape(null)
     property var focusedMonitor: _monitorShape(null)
