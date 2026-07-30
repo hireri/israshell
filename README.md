@@ -73,7 +73,7 @@ hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("qs -c isra ipc call settings open ov
 
 # open settings into a page
 # $ qs -c isra ipc call settings open network
-# overview | network | bar | clock | display | sound | locale | system
+# overview | network | bar | background | clock | display | sound | locale | system
 
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs -c isra ipc call screenshot activate"))
 
