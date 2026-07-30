@@ -1,5 +1,7 @@
 import Quickshell
+import Quickshell.Widgets
 import Quickshell.Services.SystemTray
+import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Effects
 
@@ -92,25 +94,22 @@ Item {
                     height: 20
                     anchors.verticalCenter: parent.verticalCenter
 
-                    Image {
+                    IconImage {
                         id: img
-                        source: {
-                            let icon = cell.modelData?.icon ?? "";
-                            return icon.length > 0 ? icon : "";
-                        }
+                        source: cell.modelData?.icon ?? ""
                         anchors.fill: parent
-                        sourceSize: Qt.size(20, 20)
-                        fillMode: Image.PreserveAspectFit
-                        visible: source.length > 0 && !Config.bar.tintTrayIcons
+                        implicitSize: Qt.size(64, 64)
+                        visible: !Config.bar.tintTrayIcons
                     }
 
                     Loader {
                         active: Config.bar.tintTrayIcons
                         anchors.fill: img
-                        sourceComponent: MultiEffect {
+                        sourceComponent: Colorize {
                             source: img
-                            colorization: 1
-                            colorizationColor: Colors.md3.on_surface
+                            hue: Qt.color(Colors.md3.on_surface).hslHue
+                            saturation: Qt.color(Colors.md3.on_surface).hslSaturation
+                            lightness: 0.0
                         }
                     }
 
