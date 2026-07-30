@@ -191,7 +191,7 @@ PanelWindow {
         restoreMode: Binding.RestoreNone
     }
 
-    ClippingRectangle {
+    Rectangle {
         id: card
         property bool _wiping: false
 
@@ -211,7 +211,6 @@ PanelWindow {
         radius: root.cardR
         border.width: 1
         border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
-        clip: true
 
         property real slideX: root.submenuOpen ? -root.cardW : 0
         Behavior on slideX {
