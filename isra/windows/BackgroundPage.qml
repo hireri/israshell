@@ -699,6 +699,20 @@ PageBase {
                 })
         }
 
+        SettingSwitch {
+            label: "Sit above windows"
+            sublabel: "Render on top of windows instead of on the wallpaper"
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.neko.onTop
+            onToggled: v => Config.update({
+                    neko: Object.assign({}, Config.neko, {
+                        onTop: v
+                    })
+                })
+            isLast: true
+        }
+
         SettingSlider {
             label: "Size"
             sublabel: "Rendered size of the sprite"
@@ -747,7 +761,6 @@ PageBase {
                         sleepDelay: Math.round(v)
                     })
                 })
-            isLast: true
         }
     }
 }

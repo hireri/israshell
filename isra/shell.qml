@@ -178,6 +178,15 @@ ShellRoot {
                 modelData: screenScope.modelData
             }
 
+            Loader {
+                active: Config.neko.enabled && Config.neko.onTop
+                    && !(LockscreenService.locked || LockscreenService.lockAnimating || LockscreenService.lockVisualActive || LockscreenService.unlockAnimating)
+                    && CompositorService.hasCapability("cursorPosition")
+                sourceComponent: NekoOverlay {
+                    modelData: screenScope.modelData
+                }
+            }
+
             WallpaperPicker {
                 panelWindow: window
                 registry: rootShell.wallpaperPanels

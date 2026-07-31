@@ -382,9 +382,11 @@ PanelWindow {
         }
     }
 
+    readonly property bool nekoForceBehind: LockscreenService.locked || LockscreenService.lockAnimating || LockscreenService.lockVisualActive || LockscreenService.unlockAnimating
+
     Loader {
         id: nekoLoader
-        active: Config.neko.enabled && CompositorService.hasCapability("cursorPosition")
+        active: Config.neko.enabled && (!Config.neko.onTop || root.nekoForceBehind) && CompositorService.hasCapability("cursorPosition")
 
         sourceComponent: Neko {
             modelData: root.modelData
