@@ -207,6 +207,8 @@ PanelWindow {
             }
         }
 
+        clip: true
+
         color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
         radius: root.cardR
         border.width: 1
