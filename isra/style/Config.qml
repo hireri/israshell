@@ -170,7 +170,6 @@ Singleton {
             enabled: false,
             size: 32,
             speed: 10,
-            sleepDelay: 1,
             onTop: false
         })
     property var lockscreen: ({
@@ -310,7 +309,6 @@ Singleton {
                 enabled: false,
                 size: 32,
                 speed: 10,
-                sleepDelay: 1,
                 onTop: false
             },
             lockscreen: {

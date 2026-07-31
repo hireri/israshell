@@ -710,7 +710,6 @@ PageBase {
                         onTop: v
                     })
                 })
-            isLast: true
         }
 
         SettingSlider {
@@ -744,23 +743,7 @@ PageBase {
                         speed: Math.round(v)
                     })
                 })
-        }
-
-        SettingSlider {
-            label: "Sleep delay"
-            sublabel: "Idle time before it falls asleep"
-            from: 1
-            to: 60
-            stepSize: 1
-            unit: "s"
-            enabled: CompositorService.hasCapability("cursorPosition")
-            opacity: enabled ? 1.0 : 0.4
-            value: Config.neko.sleepDelay
-            onMoved: v => Config.update({
-                    neko: Object.assign({}, Config.neko, {
-                        sleepDelay: Math.round(v)
-                    })
-                })
+            isLast: true
         }
     }
 }

@@ -85,7 +85,7 @@ Singleton {
         const b = root._bounds();
         const edge = Config.neko.size;
 
-        if (root.idleTime > Config.neko.sleepDelay * 10 && Math.floor(Math.random() * 200) === 0 && root.idleAnimation === "") {
+        if (root.idleTime > 10 && Math.floor(Math.random() * 200) === 0 && root.idleAnimation === "") {
             const available = ["sleeping", "scratchSelf"];
             if (root.x < b.minX + edge)
                 available.push("scratchWallW");

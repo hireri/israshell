@@ -12,7 +12,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
 
-    WlrLayershell.namespace: "quickshell:neko-overlay"
+    WlrLayershell.namespace: "quickshell:nekoOverlay"
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     anchors { top: true; bottom: true; left: true; right: true }
