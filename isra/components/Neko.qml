@@ -20,7 +20,7 @@ Item {
 
     Image {
         anchors.fill: parent
-        source: "file://" + Quickshell.shellDir + "/sprites/oneko.gif"
+        source: "file://" + Quickshell.shellDir + "/sprites/" + Config.neko.sprite + ".gif"
         smooth: false
         mipmap: false
         fillMode: Image.Stretch

@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Io
 import qs.style
 import qs.services
@@ -12,6 +13,24 @@ import Quickshell.Widgets
 PageBase {
     title: "Background"
     subtitle: "Effects, wallpaper, widgets"
+
+    function titleCase(str) {
+        return str.split(/[-_ ]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    }
+
+    Component {
+        id: spritePreviewIcon
+        Image {
+            property var modelData: null
+            width: 32
+            height: 32
+            smooth: false
+            mipmap: false
+            fillMode: Image.Stretch
+            source: modelData ? ("file://" + Quickshell.shellDir + "/sprites/" + modelData.value + ".gif") : ""
+            sourceClipRect: Qt.rect(3 * 32, 3 * 32, 32, 32)
+        }
+    }
 
     SectionCard {
         label: "Wallpaper"
@@ -708,6 +727,24 @@ PageBase {
             onToggled: v => Config.update({
                     neko: Object.assign({}, Config.neko, {
                         onTop: v
+                    })
+                })
+        }
+
+        SettingSelect {
+            label: "Sprite"
+            sublabel: "Appearance of the cat"
+            enabled: CompositorService.hasCapability("cursorPosition")
+            opacity: enabled ? 1.0 : 0.4
+            options: NekoService.spriteNames.map(name => ({
+                label: titleCase(name),
+                value: name,
+                icon: spritePreviewIcon
+            }))
+            currentValue: Config.neko.sprite
+            onSelected: v => Config.update({
+                    neko: Object.assign({}, Config.neko, {
+                        sprite: v
                     })
                 })
         }

@@ -170,7 +170,8 @@ Singleton {
             enabled: false,
             size: 32,
             speed: 10,
-            onTop: false
+            onTop: false,
+            sprite: "oneko"
         })
     property var lockscreen: ({
             dotShape: "roundedSquare"  // "roundedSquare" | "circle" | "material"
@@ -309,7 +310,8 @@ Singleton {
                 enabled: false,
                 size: 32,
                 speed: 10,
-                onTop: false
+                onTop: false,
+                sprite: "oneko"
             },
             lockscreen: {
                 dotShape: "roundedSquare"

@@ -25,6 +25,9 @@ SettingRow {
         property int activeIndex: -1
         property string selectedLabel: ""
 
+        readonly property var selectedOption: root.options.find(function(o) { return o.value === root.currentValue; }) ?? null
+        readonly property bool hasIcons: root.options.some(function(o) { return o.icon !== undefined && o.icon !== null; })
+
         property int optimalWidth: 140
 
         TextMetrics {
@@ -35,29 +38,30 @@ SettingRow {
 
         function updateOptimalWidth() {
             var minWidth = 140;
-            var maxLimit = 260;
-            
+            var maxLimit = hasIcons ? 300 : 260;
+
             if (!root.options || root.options.length === 0) {
                 optimalWidth = minWidth;
                 return;
             }
-            
+
+            var iconAllowance = hasIcons ? 44 : 0;
             var calculatedWidth = minWidth;
             for (var i = 0; i < root.options.length; ++i) {
                 var label = root.options[i].label;
-                
+
                 if (label.length >= 25) {
                     optimalWidth = maxLimit;
                     return;
                 }
-                
+
                 textMetrics.text = label;
-                var itemWidth = textMetrics.width + 46;
+                var itemWidth = textMetrics.width + 46 + iconAllowance;
                 if (itemWidth > calculatedWidth) {
                     calculatedWidth = itemWidth;
                 }
             }
-            
+
             optimalWidth = Math.min(calculatedWidth, maxLimit);
         }
 
@@ -146,9 +150,23 @@ SettingRow {
                       .replace(/'/g, "&#39;");
         }
 
+        Loader {
+            id: selectedIconLoader
+            z: 1
+            active: combo.selectedOption !== null && combo.selectedOption.icon !== undefined && combo.selectedOption.icon !== null
+            sourceComponent: active ? combo.selectedOption.icon : null
+            anchors.left: parent.left
+            anchors.leftMargin: 6
+            anchors.verticalCenter: parent.verticalCenter
+            onLoaded: {
+                if (item && item.hasOwnProperty("modelData"))
+                    item.modelData = Qt.binding(function() { return combo.selectedOption; });
+            }
+        }
+
         contentItem: TextField {
             id: textField
-            leftPadding: 12
+            leftPadding: selectedIconLoader.active ? (selectedIconLoader.width + selectedIconLoader.anchors.leftMargin + 8) : 12
             rightPadding: 30
             text: combo.selectedLabel
             font.family: Config.fontFamily
@@ -390,6 +408,21 @@ SettingRow {
                         contentItem: Item {
                             anchors.fill: parent
 
+                            readonly property bool hasIcon: delegateItem.modelData.icon !== undefined && delegateItem.modelData.icon !== null
+
+                            Loader {
+                                id: optionIconLoader
+                                active: parent.hasIcon
+                                sourceComponent: active ? delegateItem.modelData.icon : null
+                                anchors.left: parent.left
+                                anchors.leftMargin: 6
+                                anchors.verticalCenter: parent.verticalCenter
+                                onLoaded: {
+                                    if (item && item.hasOwnProperty("modelData"))
+                                        item.modelData = delegateItem.modelData;
+                                }
+                            }
+
                             Text {
                                 id: labelText
                                 text: combo.highlightMatch(delegateItem.modelData.label, textField.text)
@@ -398,8 +431,8 @@ SettingRow {
                                 font.pixelSize: 12
                                 color: delegateItem.isSelected ? Colors.md3.on_secondary_container : Colors.md3.on_surface
                                 elide: Text.ElideRight
-                                anchors.left: parent.left
-                                anchors.leftMargin: 12
+                                anchors.left: parent.hasIcon ? optionIconLoader.right : parent.left
+                                anchors.leftMargin: parent.hasIcon ? 6 : 12
                                 anchors.right: checkIcon.visible ? checkIcon.left : parent.right
                                 anchors.rightMargin: 12
                                 anchors.verticalCenter: parent.verticalCenter

@@ -24,6 +24,8 @@ Singleton {
 
     property bool _seeded: false
 
+    property var spriteNames: []
+
     readonly property var spriteSets: ({
             idle: [[3, 3]],
             alert: [[7, 3]],
@@ -184,9 +186,25 @@ Singleton {
         }
     }
 
+    function _refreshSpriteNames() {
+        spriteListProc.running = false;
+        spriteListProc.running = true;
+    }
+
+    Process {
+        id: spriteListProc
+        command: ["bash", "-c", "find " + JSON.stringify(Quickshell.shellDir + "/sprites") + " -maxdepth 1 -type f -iname '*.gif' -printf '%f\\n' | sort"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.spriteNames = text.trim().split("\n").filter(l => l.trim()).map(f => f.replace(/\.gif$/i, ""));
+            }
+        }
+    }
+
     Component.onCompleted: {
         if (enabled)
             CursorService.acquire();
+        root._refreshSpriteNames();
     }
 
     Timer {
