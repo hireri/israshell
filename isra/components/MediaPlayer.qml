@@ -7,6 +7,7 @@ import Quickshell.Widgets
 import Quickshell.Services.Mpris
 import qs.style
 import qs.services
+import qs.icons
 
 ClippingRectangle {
     id: root
@@ -327,12 +328,11 @@ ClippingRectangle {
                 anchors.margins: pillCover.coverMargin
                 radius: 30
                 color: Colors.md3.surface_container_highest
-                Text {
+                MaterialIcon {
                     anchors.centerIn: parent
-                    text: "󰝚"
+                    name: "music-note"
                     color: Colors.md3.on_surface_variant
-                    font.pixelSize: 10
-                    font.family: Config.fontFamily
+                    iconSize: 14
                 }
             }
 
@@ -853,11 +853,10 @@ ClippingRectangle {
                                                 }
                                             }
 
-                                            Text {
+                                            MaterialIcon {
                                                 anchors.centerIn: parent
-                                                font.family: Config.fontFamily
-                                                font.pixelSize: 15
-                                                text: "󰝚"
+                                                iconSize: 16
+                                                name: "music-note"
                                                 visible: !appIcon.visible
                                                 color: isCurrent ? cardStack.frontCard.colOnPrimary : cardStack.frontCard.colOnPrimaryContainer
                                                 opacity: isCurrent ? 1.0 : 0.5
