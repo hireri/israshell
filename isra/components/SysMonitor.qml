@@ -137,7 +137,18 @@ Item {
                 property bool available: metricContent.liveAvailable
                 property color pieColor: available ? metricContent.resolvedColor : Qt.alpha(Colors.md3.on_surface, 0.35)
 
-                onValueChanged: requestPaint()
+                readonly property bool smoothEnabled: Config.sysMonitor?.smooth ?? false
+                property real animatedValue: value
+
+                Behavior on animatedValue {
+                    enabled: pieCanvas.smoothEnabled
+                    NumberAnimation {
+                        duration: 400
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                onAnimatedValueChanged: requestPaint()
                 onScaleMaxChanged: requestPaint()
                 onAvailableChanged: requestPaint()
                 onPieColorChanged: requestPaint()
@@ -161,7 +172,7 @@ Item {
                     ctx.fillStyle = Qt.alpha(pieColor, 0.5);
                     ctx.fill();
 
-                    var frac = Math.max(0, Math.min(scaleMax, value)) / scaleMax;
+                    var frac = Math.max(0, Math.min(scaleMax, animatedValue)) / scaleMax;
                     if (frac > 0) {
                         var start = -Math.PI / 2;
                         var end = start + frac * Math.PI * 2;
@@ -204,6 +215,14 @@ Item {
                 height: parent.height
                 radius: parent.radius
                 color: metricContent.liveAvailable ? metricContent.resolvedColor : Qt.alpha(Colors.md3.on_surface, 0.35)
+
+                Behavior on width {
+                    enabled: Config.sysMonitor?.smooth ?? false
+                    NumberAnimation {
+                        duration: 400
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
         }
 

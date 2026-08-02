@@ -679,7 +679,7 @@ Scope {
                 readonly property bool widgetShown: activeWidget !== null && activeWidget.hasResult
 
                 Variants {
-                    model: Quickshell.screens
+                    model: Quickshell.screens.filter(s => s !== root._targetScreen)
                     PanelWindow {
                         required property var modelData
                         screen: modelData

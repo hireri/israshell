@@ -220,7 +220,10 @@ ShellRoot {
                            blacklist.includes("cts") &&
                            blacklist.includes("ocr") &&
                            blacklist.includes("songrec") &&
-                           blacklist.includes("record");
+                           blacklist.includes("record") &&
+                           blacklist.includes("localsend") &&
+                           blacklist.includes("wallpaper") &&
+                           blacklist.includes("colorpicker");
                 }
 
                 return false;

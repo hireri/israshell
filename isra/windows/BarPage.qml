@@ -652,10 +652,10 @@ PageBase {
                         key: "ocr",
                         label: "OCR"
                     },
-                    {
+                    ...(CompositorService.backendName === "hyprland" ? [{
                         key: "colorpicker",
                         label: "Color Picker"
-                    },
+                    }] : []),
                     {
                         key: "songrec",
                         label: "Recognize Music"
@@ -663,6 +663,10 @@ PageBase {
                     {
                         key: "wallpaper",
                         label: "Wallpaper Picker"
+                    },
+                    {
+                        key: "localsend",
+                        label: "LocalSend"
                     }
                 ]
 

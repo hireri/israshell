@@ -162,97 +162,108 @@ Item {
         id: calLoader
         active: root._calVisible
 
-        PanelWindow {
-            id: panel
-            visible: root._calVisible
-            screen: root.panelWindow.screen
+        Variants {
+            id: calVariants
+            model: Quickshell.screens
 
-            anchors {
-                top: true
-                bottom: true
-                left: true
-                right: true
-            }
+            PanelWindow {
+                id: panel
 
-            exclusionMode: ExclusionMode.Ignore
+                required property ShellScreen modelData
+                screen: modelData
 
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "quickshell:clockOverlay"
+                readonly property bool isOwnScreen: modelData === root.panelWindow?.screen
 
-            readonly property bool blurEnabled: Config.blurAllowed(panel.visible)
-            BackgroundEffect.blurRegion: blurEnabled ? clockBlurRegion : null
-
-            Region {
-                id: clockBlurRegion
-                item: calContent.cardItem
-            }
-
-            color: "transparent"
-
-            Item {
-                id: keyHandler
-                anchors.fill: parent
-                focus: true
-
-                Component.onCompleted: forceActiveFocus()
-
-                Keys.onEscapePressed: event => {
-                    event.accepted = true;
-                    root.isOpen = false;
-                }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: root.isOpen = false
-            }
-
-            Item {
-                id: wrapper
-                width: calContent.implicitWidth
-                height: calContent.implicitHeight
-
-                readonly property real screenEdgeMargin: 12
+                visible: root._calVisible
 
                 anchors {
-                    top: Config.bar.position === 0 ? parent.top : undefined
-                    bottom: Config.bar.position === 1 ? parent.bottom : undefined
-                    topMargin: Config.bar.position === 0 ? root.panelWindow.implicitHeight + 8 : 0
-                    bottomMargin: Config.bar.position === 1 ? root.panelWindow.implicitHeight + 8 : 0
+                    top: true
+                    bottom: true
+                    left: true
+                    right: true
                 }
 
-                function _clamp(value, min, max) {
-                    return max >= min ? Math.max(min, Math.min(max, value)) : min;
+                exclusionMode: ExclusionMode.Ignore
+
+                WlrLayershell.layer: WlrLayer.Overlay
+                WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+                WlrLayershell.namespace: "quickshell:clockOverlay"
+
+                readonly property bool blurEnabled: panel.isOwnScreen && Config.blurAllowed(panel.visible)
+                BackgroundEffect.blurRegion: blurEnabled ? clockBlurRegion : null
+
+                Region {
+                    id: clockBlurRegion
+                    item: calContent.cardItem
                 }
 
-                function _screenWidth() {
-                    return (root.panelWindow.screen && root.panelWindow.screen.width > 0) ? root.panelWindow.screen.width : panel.width;
-                }
+                color: "transparent"
 
-                x: {
-                    pillTransform.transform;
-                    const pillCenterLocal = root.width / 2;
-                    const mappedPoint = root.mapToItem(root.panelWindow.contentItem, pillCenterLocal, 0);
-                    const idealX = mappedPoint.x - (calContent.implicitWidth / 2);
+                Item {
+                    id: keyHandler
+                    anchors.fill: parent
+                    focus: true
 
-                    const screenWidth = wrapper._screenWidth();
-                    return Math.round(wrapper._clamp(idealX, screenEdgeMargin, screenWidth - calContent.implicitWidth - screenEdgeMargin));
+                    Component.onCompleted: forceActiveFocus()
+
+                    Keys.onEscapePressed: event => {
+                        event.accepted = true;
+                        root.isOpen = false;
+                    }
                 }
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: {}
+                    onClicked: root.isOpen = false
                 }
 
-                ClockCalendar {
-                    id: calContent
-                    anchors.fill: parent
-                    isOpen: root.isOpen
-                    edgeMargin: root.panelWindow.implicitHeight
+                Item {
+                    id: wrapper
+                    visible: panel.isOwnScreen
+                    width: calContent.implicitWidth
+                    height: calContent.implicitHeight
 
-                    onCalendarRequested: root.isOpen = false
-                    onSettingsRequested: root.isOpen = false
+                    readonly property real screenEdgeMargin: 12
+
+                    anchors {
+                        top: Config.bar.position === 0 ? parent.top : undefined
+                        bottom: Config.bar.position === 1 ? parent.bottom : undefined
+                        topMargin: Config.bar.position === 0 ? root.panelWindow.implicitHeight + 8 : 0
+                        bottomMargin: Config.bar.position === 1 ? root.panelWindow.implicitHeight + 8 : 0
+                    }
+
+                    function _clamp(value, min, max) {
+                        return max >= min ? Math.max(min, Math.min(max, value)) : min;
+                    }
+
+                    function _screenWidth() {
+                        return (root.panelWindow.screen && root.panelWindow.screen.width > 0) ? root.panelWindow.screen.width : panel.width;
+                    }
+
+                    x: {
+                        pillTransform.transform;
+                        const pillCenterLocal = root.width / 2;
+                        const mappedPoint = root.mapToItem(root.panelWindow.contentItem, pillCenterLocal, 0);
+                        const idealX = mappedPoint.x - (calContent.implicitWidth / 2);
+
+                        const screenWidth = wrapper._screenWidth();
+                        return Math.round(wrapper._clamp(idealX, screenEdgeMargin, screenWidth - calContent.implicitWidth - screenEdgeMargin));
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {}
+                    }
+
+                    ClockCalendar {
+                        id: calContent
+                        anchors.fill: parent
+                        isOpen: root.isOpen
+                        edgeMargin: root.panelWindow.implicitHeight
+
+                        onCalendarRequested: root.isOpen = false
+                        onSettingsRequested: root.isOpen = false
+                    }
                 }
             }
         }

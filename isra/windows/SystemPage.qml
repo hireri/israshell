@@ -526,6 +526,73 @@ PageBase {
         }
 
         SectionCard {
+            label: "LocalSend"
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                readonly property bool manageLocally: Config.localsend.host === "127.0.0.1" || Config.localsend.host === "localhost"
+                label: "Enable"
+                sublabel: LocalSendService.reachable ? "Connected to " + Config.localsend.host + ":" + Config.localsend.port : (manageLocally ? "Starts a local LocalSend server on this device" : (Config.localsend.enabled ? "Server not reachable" : "Server not reachable — start it on " + Config.localsend.host + " first"))
+                checked: Config.localsend.enabled
+                enabled: manageLocally || LocalSendService.reachable || Config.localsend.enabled
+                onToggled: v => Config.update({
+                        localsend: Object.assign({}, Config.localsend, {
+                            enabled: v
+                        })
+                    })
+            }
+
+            SettingInput {
+                label: "Device name"
+                sublabel: "How this device appears to others"
+                value: Config.localsend.alias ?? ""
+                fieldWidth: 160
+                onCommitted: v => LocalSendService.setAlias(v)
+            }
+
+            SettingInput {
+                label: "Host"
+                sublabel: "127.0.0.1 runs our own server locally; any other address is treated as remote"
+                value: Config.localsend.host
+                fieldWidth: 160
+                onCommitted: v => Config.update({
+                        localsend: Object.assign({}, Config.localsend, {
+                            host: v
+                        })
+                    })
+            }
+
+            SettingInput {
+                label: "Port"
+                sublabel: "LocalSend protocol + control API port"
+                value: String(Config.localsend.port)
+                fieldWidth: 100
+                onCommitted: v => {
+                    const port = parseInt(v, 10);
+                    if (!isNaN(port) && port > 0 && port < 65536) {
+                        Config.update({
+                            localsend: Object.assign({}, Config.localsend, {
+                                port: port
+                            })
+                        });
+                    }
+                }
+            }
+
+            SettingSwitch {
+                isLast: true
+                label: "Notify on receive"
+                sublabel: "Show a desktop notification for incoming transfers"
+                checked: Config.localsend.notifyOnReceive
+                onToggled: v => Config.update({
+                        localsend: Object.assign({}, Config.localsend, {
+                            notifyOnReceive: v
+                        })
+                    })
+            }
+        }
+
+        SectionCard {
             label: "Fonts"
             Layout.fillWidth: true
 

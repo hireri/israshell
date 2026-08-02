@@ -3,9 +3,13 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.style
+import qs.services
 
 Singleton {
     id: root
+
+    readonly property bool _isHyprland: CompositorService.backendName === "hyprland"
+    readonly property string _binary: root._isHyprland ? "hyprsunset" : "wlsunset"
 
     property bool active: false
     property int currentTemp: Config.nightLight.dayTemp
@@ -13,6 +17,7 @@ Singleton {
     property bool _manualOverride: false
     property bool _lastIsNight: false
     property bool _initialCheckDone: false
+    property int _pendingWlsunsetTemp: Config.nightLight.dayTemp
 
     Component.onCompleted: pollProc.running = true
 
@@ -31,10 +36,10 @@ Singleton {
 
     Process {
         id: pollProc
-        command: ["hyprctl", "hyprsunset", "temperature"]
+        command: root._isHyprland ? ["hyprctl", "hyprsunset", "temperature"] : ["pgrep", "-a", "-x", "wlsunset"]
         stdout: SplitParser {
             onRead: data => {
-                const temp = parseInt(data.trim(), 10);
+                const temp = root._isHyprland ? parseInt(data.trim(), 10) : root._parseWlsunsetTemp(data);
                 if (!isNaN(temp)) {
                     root.currentTemp = temp;
 
@@ -73,15 +78,19 @@ Singleton {
 
     Process {
         id: checkProc
-        command: ["pgrep", "-x", "hyprsunset"]
+        command: ["pgrep", "-x", root._binary]
         running: false
         stdout: SplitParser {
             onRead: data => {}
         }
         onExited: code => {
             if (code !== 0) {
-                Quickshell.execDetached(["hyprsunset"]);
-                restartApplyTimer.start();
+                if (root._isHyprland) {
+                    Quickshell.execDetached(["hyprsunset"]);
+                    restartApplyTimer.start();
+                } else {
+                    _applyTemp(root.active ? Config.nightLight.nightTemp : Config.nightLight.dayTemp);
+                }
             }
         }
     }
@@ -91,6 +100,13 @@ Singleton {
         interval: 400
         repeat: false
         onTriggered: _applyTemp(root.active ? Config.nightLight.nightTemp : Config.nightLight.dayTemp)
+    }
+
+    Timer {
+        id: wlsunsetRestartTimer
+        interval: 200
+        repeat: false
+        onTriggered: Quickshell.execDetached(["wlsunset", "-t", String(root._pendingWlsunsetTemp), "-T", String(root._pendingWlsunsetTemp)])
     }
 
     Timer {
@@ -152,7 +168,18 @@ Singleton {
     }
 
     function _applyTemp(temp) {
-        Quickshell.execDetached(["hyprctl", "hyprsunset", "temperature", String(temp)]);
+        if (root._isHyprland) {
+            Quickshell.execDetached(["hyprctl", "hyprsunset", "temperature", String(temp)]);
+        } else {
+            root._pendingWlsunsetTemp = temp;
+            Quickshell.execDetached(["pkill", "-x", "wlsunset"]);
+            wlsunsetRestartTimer.restart();
+        }
+    }
+
+    function _parseWlsunsetTemp(line) {
+        const match = line.match(/-t\s+(\d+)/);
+        return match ? parseInt(match[1], 10) : NaN;
     }
 
     function _timeToMinutes(timeStr) {

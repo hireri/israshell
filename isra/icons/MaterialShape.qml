@@ -59,8 +59,13 @@ ShapeCanvas {
         return keys.map(k => root._catalog[k]).filter(g => g !== undefined);
     }
 
+    property var _lastGetter: null
+
     function _pick() {
-        return root._pool[Math.floor(Math.random() * root._pool.length)]();
+        const candidates = (root._pool.length > 1 && root._lastGetter) ? root._pool.filter(g => g !== root._lastGetter) : root._pool;
+        const getter = candidates[Math.floor(Math.random() * candidates.length)];
+        root._lastGetter = getter;
+        return getter();
     }
 
     roundedPolygon: {

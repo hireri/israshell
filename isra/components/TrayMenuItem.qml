@@ -47,7 +47,7 @@ Item {
             anchors {
                 fill: parent
                 leftMargin: 6
-                rightMargin: 8
+                rightMargin: 6
                 topMargin: 2
                 bottomMargin: 2
             }

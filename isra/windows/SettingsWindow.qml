@@ -202,7 +202,7 @@ FloatingWindow {
                             label: "Locale"
                             sublabel: "Time, date, units"
                             onClicked: root.currentPage = page
-                            MaterialIcon { name: "locale" }
+                            MaterialIcon { name: "language" }
                         }
 
                         SidebarItem {

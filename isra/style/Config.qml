@@ -108,6 +108,14 @@ Singleton {
             showAllMonitors: false,
             popupPosition: 0
         })
+    property var localsend: ({
+            enabled: false,
+            host: "127.0.0.1",
+            port: 53317,
+            notifyOnReceive: true,
+            deviceType: "desktop",
+            alias: ""
+        })
     property bool weekMonday: true
     property bool useFahrenheit: false
     property bool verticalQSSliders: false
@@ -247,6 +255,14 @@ Singleton {
                 popupTimeout: 5,
                 showAllMonitors: false,
                 popupPosition: 0
+            },
+            localsend: {
+                enabled: false,
+                host: "127.0.0.1",
+                port: 53317,
+                notifyOnReceive: true,
+                deviceType: "desktop",
+                alias: ""
             },
             weekMonday: true,
             useFahrenheit: false,

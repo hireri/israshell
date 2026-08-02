@@ -32,8 +32,8 @@ PanelWindow {
         menu: root.activeSubmenu
     }
 
-    readonly property real mainH: mainCol.implicitHeight + pad * 2 + 2
-    readonly property real subH: subCol.implicitHeight + pad * 2 + 2
+    readonly property real mainH: mainCol.implicitHeight + pad * 2
+    readonly property real subH: subCol.implicitHeight + pad * 2
     readonly property real cardH: submenuOpen ? subH : mainH
 
     property real cardX: 0
@@ -259,7 +259,7 @@ PanelWindow {
                         topMargin: 2
                         bottomMargin: 2
                         leftMargin: 6
-                        rightMargin: 8
+                        rightMargin: 6
                     }
                     radius: 12
                     color: Colors.md3.on_surface

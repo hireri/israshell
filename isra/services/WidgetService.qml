@@ -54,18 +54,24 @@ Singleton {
     }
 
     function reconcile(barConfig) {
-        const known = new Set([
-            ...barConfig.left,
-            ...barConfig.center.items,
-            ...barConfig.right,
-            ...barConfig.disabled
-        ]);
+        const valid = new Set(allIds);
+        const left = barConfig.left.filter(id => valid.has(id));
+        const center = barConfig.center.items.filter(id => valid.has(id));
+        const right = barConfig.right.filter(id => valid.has(id));
+        const disabled = barConfig.disabled.filter(id => valid.has(id));
+
+        const known = new Set([...left, ...center, ...right, ...disabled]);
         const missing = allIds.filter(id => !known.has(id));
-        if (missing.length === 0)
+
+        const dropped = (barConfig.left.length + barConfig.center.items.length + barConfig.right.length + barConfig.disabled.length) !== (left.length + center.length + right.length + disabled.length);
+        if (missing.length === 0 && !dropped)
             return barConfig;
 
         return Object.assign({}, barConfig, {
-            disabled: [...barConfig.disabled, ...missing]
+            left: left,
+            center: Object.assign({}, barConfig.center, { items: center }),
+            right: right,
+            disabled: [...disabled, ...missing]
         });
     }
 }

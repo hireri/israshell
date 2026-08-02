@@ -2,8 +2,7 @@
 # All entries are checked via `yay -Q`
 # Core shell & compositor
 quickshell
-hyprland
-hyprsunset
+wlsunset
 # Theme & color
 matugen
 # Media
@@ -38,9 +37,9 @@ libnotify
 jq
 file
 nvtop
+python
 # AI / audio features
 songrec
-python
 python-numpy
 python-pillow
 python-scipy
