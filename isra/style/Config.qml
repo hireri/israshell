@@ -132,6 +132,7 @@ Singleton {
     property bool desktopClock: true
     property var screencap: ({
             blacklist: ["cts", "ocr"],
+            order: ["wallpaper", "screenshot", "cts", "ocr", "colorpicker", "localsend", "songrec", "record"],
             screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
             recordPath: "~/.config/hypr/scripts/record.sh",
             ctsPath: "~/.config/quickshell/isra/scripts/cts.sh",
@@ -281,6 +282,7 @@ Singleton {
             desktopClock: true,
             screencap: {
                 blacklist: ["cts", "ocr"],
+                order: ["wallpaper", "screenshot", "cts", "ocr", "colorpicker", "localsend", "songrec", "record"],
                 screenshotPath: "~/.config/quickshell/isra/scripts/screenshot.sh",
                 recordPath: "~/.config/quickshell/isra/scripts/record.sh",
                 ctsPath: "~/.config/quickshell/isra/scripts/cts.sh",

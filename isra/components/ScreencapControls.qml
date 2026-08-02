@@ -27,6 +27,29 @@ Rectangle {
         return !Config.screencap.blacklist.includes(name);
     }
 
+    function componentFor(type) {
+        switch (type) {
+        case "wallpaper":
+            return wallpaperComp;
+        case "screenshot":
+            return screenshotComp;
+        case "cts":
+            return ctsComp;
+        case "ocr":
+            return ocrComp;
+        case "colorpicker":
+            return colorpickerComp;
+        case "localsend":
+            return localsendComp;
+        case "songrec":
+            return songrecComp;
+        case "record":
+            return recordComp;
+        default:
+            return null;
+        }
+    }
+
     color: {
         if (root.isOpen) {
             Colors.md3.secondary_container
@@ -45,7 +68,10 @@ Rectangle {
 
     radius: 20
     implicitHeight: 32
-    implicitWidth: rowLayout.width
+    implicitWidth: screencapList.contentWidth + leftPad + rightPad
+
+    readonly property int leftPad: 3
+    readonly property int rightPad: 3
 
     Process {
         id: recordScript
@@ -80,15 +106,237 @@ Rectangle {
         yOffset: 4
     }
 
-    Row {
+    Item {
         id: rowLayout
-        anchors.centerIn: parent
-        spacing: 4
-        leftPadding: 3
-        rightPadding: 3
+        anchors.left: parent.left
+        anchors.leftMargin: root.leftPad
+        anchors.verticalCenter: parent.verticalCenter
+        width: screencapList.contentWidth
+        height: 32
 
+        readonly property Item rowContainer: screencapList.contentItem
+
+        property string draggingType: ""
+        property int dragSourceIndex: -1
+        property real dragX: 0
+        property real dragClickOffset: 0
+        property bool isReleasing: false
+
+        function commitOrder() {
+            const newOrder = [];
+            for (let i = 0; i < orderModel.count; i++)
+                newOrder.push(orderModel.get(i).type);
+            for (const t of Config.screencap.order)
+                if (!newOrder.includes(t))
+                    newOrder.push(t);
+            Config.update({
+                screencap: Object.assign({}, Config.screencap, {
+                    order: newOrder
+                })
+            });
+        }
+
+        function rebuildModel() {
+            if (rowLayout.draggingType !== "")
+                return;
+            const active = Config.screencap.order.filter(t => root.isEnabled(t) && root.componentFor(t));
+            if (active.length === orderModel.count) {
+                let same = true;
+                for (let i = 0; i < active.length; i++) {
+                    if (orderModel.get(i).type !== active[i]) {
+                        same = false;
+                        break;
+                    }
+                }
+                if (same)
+                    return;
+            }
+            orderModel.clear();
+            for (const t of active)
+                orderModel.append({
+                    type: t
+                });
+        }
+
+        function beginDrag(type, startX) {
+            releaseTimer.stop();
+            isReleasing = false;
+
+            dragSourceIndex = -1;
+            for (let i = 0; i < orderModel.count; i++) {
+                if (orderModel.get(i).type === type) {
+                    dragSourceIndex = i;
+                    break;
+                }
+            }
+            if (dragSourceIndex === -1)
+                return;
+
+            const item = screencapList.itemAtIndex(dragSourceIndex);
+            dragClickOffset = startX - (item ? item.x : 0);
+            dragX = startX;
+            draggingType = type;
+        }
+
+        function updateDrag(type, sceneX) {
+            if (draggingType !== type || isReleasing)
+                return;
+
+            const draggedItem = screencapList.itemAtIndex(dragSourceIndex);
+            const draggedWidth = draggedItem ? draggedItem.width : 32;
+            const maxX = Math.max(0, screencapList.contentWidth - draggedWidth);
+            const clampedX = Math.max(0, Math.min(maxX, sceneX - dragClickOffset));
+            dragX = clampedX + dragClickOffset;
+
+            const pointerX = Math.max(0, Math.min(screencapList.contentWidth, sceneX));
+
+            let targetIdx = dragSourceIndex;
+            if (dragSourceIndex < orderModel.count - 1) {
+                const rightItem = screencapList.itemAtIndex(dragSourceIndex + 1);
+                if (rightItem && pointerX > rightItem.x + rightItem.width / 2)
+                    targetIdx = dragSourceIndex + 1;
+            }
+            if (targetIdx === dragSourceIndex && dragSourceIndex > 0) {
+                const leftItem = screencapList.itemAtIndex(dragSourceIndex - 1);
+                if (leftItem && pointerX < leftItem.x + leftItem.width / 2)
+                    targetIdx = dragSourceIndex - 1;
+            }
+            if (targetIdx !== dragSourceIndex) {
+                orderModel.move(dragSourceIndex, targetIdx, 1);
+                dragSourceIndex = targetIdx;
+            }
+        }
+
+        function endDrag() {
+            const type = draggingType;
+            if (type !== "") {
+                isReleasing = true;
+                rowLayout.commitOrder();
+                releaseTimer.start();
+            } else {
+                draggingType = "";
+                dragSourceIndex = -1;
+                isReleasing = false;
+            }
+        }
+
+        Timer {
+            id: releaseTimer
+            interval: 220
+            repeat: false
+            onTriggered: {
+                rowLayout.draggingType = "";
+                rowLayout.dragSourceIndex = -1;
+                rowLayout.isReleasing = false;
+            }
+        }
+
+        ListModel {
+            id: orderModel
+        }
+
+        Component.onCompleted: rebuildModel()
+
+        Connections {
+            target: Config
+            function onScreencapChanged() {
+                rowLayout.rebuildModel();
+            }
+        }
+
+        ListView {
+            id: screencapList
+            anchors.fill: parent
+            orientation: ListView.Horizontal
+            interactive: false
+            spacing: 4
+            clip: false
+            width: contentWidth
+            model: orderModel
+
+            move: Transition {
+                NumberAnimation {
+                    properties: "x,y"
+                    duration: 0
+                }
+            }
+            displaced: Transition {
+                NumberAnimation {
+                    properties: "x,y"
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
+            moveDisplaced: Transition {
+                NumberAnimation {
+                    properties: "x,y"
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            delegate: Item {
+                id: delegateRoot
+                required property string type
+                required property int index
+
+                readonly property bool isDraggingSelf: rowLayout.draggingType === delegateRoot.type
+
+                width: loader.item ? loader.item.width : 0
+                height: 32
+                z: isDraggingSelf ? 10 : 0
+                scale: isDraggingSelf && !rowLayout.isReleasing ? 1.05 : 1.0
+
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Loader {
+                    id: loader
+                    x: delegateRoot.isDraggingSelf && !rowLayout.isReleasing ? (rowLayout.dragX - rowLayout.dragClickOffset) - delegateRoot.x : 0
+                    sourceComponent: root.componentFor(delegateRoot.type)
+
+                    Behavior on x {
+                        enabled: !delegateRoot.isDraggingSelf || rowLayout.isReleasing
+                        NumberAnimation {
+                            duration: 220
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+
+                DragHandler {
+                    id: dragHandler
+                    target: null
+                    yAxis.enabled: false
+                    dragThreshold: 8
+
+                    onActiveChanged: {
+                        if (dragHandler.active) {
+                            const scenePos = delegateRoot.mapToItem(rowLayout.rowContainer, dragHandler.centroid.position.x, 0);
+                            rowLayout.beginDrag(delegateRoot.type, scenePos.x);
+                        } else {
+                            rowLayout.endDrag();
+                        }
+                    }
+
+                    onCentroidChanged: {
+                        if (!dragHandler.active)
+                            return;
+                        const scenePos = delegateRoot.mapToItem(rowLayout.rowContainer, dragHandler.centroid.position.x, 0);
+                        rowLayout.updateDrag(delegateRoot.type, scenePos.x);
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: wallpaperComp
         Item {
-            visible: isEnabled("wallpaper")
             width: 32
             height: 32
 
@@ -112,9 +360,11 @@ Rectangle {
                 }
             }
         }
+    }
 
+    Component {
+        id: screenshotComp
         ToolButton {
-            visible: isEnabled("screenshot")
             tooltip: "Screenshot"
             onClicked: screenshotScript.startDetached()
             MaterialIcon {
@@ -124,9 +374,11 @@ Rectangle {
                 color: Colors.md3.on_surface
             }
         }
+    }
 
+    Component {
+        id: ctsComp
         ToolButton {
-            visible: isEnabled("cts")
             tooltip: "Circle to Search"
             onClicked: ctsScript.startDetached()
             MaterialIcon {
@@ -136,9 +388,11 @@ Rectangle {
                 color: Colors.md3.on_surface
             }
         }
+    }
 
+    Component {
+        id: ocrComp
         ToolButton {
-            visible: isEnabled("ocr")
             tooltip: "OCR Text"
             onClicked: ocrScript.startDetached()
             MaterialIcon {
@@ -148,9 +402,11 @@ Rectangle {
                 color: Colors.md3.on_surface
             }
         }
+    }
 
+    Component {
+        id: colorpickerComp
         ToolButton {
-            visible: isEnabled("colorpicker")
             tooltip: "Color Picker"
             onClicked: colorPickerScript.startDetached()
             MaterialIcon {
@@ -161,10 +417,12 @@ Rectangle {
                 transitionType: "none"
             }
         }
+    }
 
+    Component {
+        id: localsendComp
         Item {
             id: lsItem
-            visible: isEnabled("localsend")
             width: lsBg.width
             height: 32
 
@@ -417,9 +675,11 @@ Rectangle {
                 }
             }
         }
+    }
 
+    Component {
+        id: songrecComp
         Item {
-            visible: isEnabled("songrec")
             width: songrecBg.width
             height: 32
 
@@ -483,9 +743,11 @@ Rectangle {
                 onExited: tooltipWindow.open = false
             }
         }
+    }
 
+    Component {
+        id: recordComp
         Item {
-            visible: isEnabled("record")
             height: 32
             width: recordBg.width
 
