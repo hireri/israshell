@@ -40,6 +40,15 @@ Singleton {
         setProc.running = true
     }
 
+    function setProfile(index) {
+        if (index < 0 || index >= profiles.length || index === profileIndex)
+            return
+        profileIndex = index
+        setProc.command = ["powerprofilesctl", "set", profiles[profileIndex]]
+        setProc.running = false
+        setProc.running = true
+    }
+
     function refresh() {
         getProc.running = false
         getProc.running = true

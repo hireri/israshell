@@ -95,6 +95,10 @@ Singleton {
     }
 
     property var bar: __barDefaults()
+    function __qsTilesDefaults() {
+        return QsTileService.defaultLayout();
+    }
+    property var quickSettingsTiles: __qsTilesDefaults()
     property var nightLight: ({
             scheduleEnabled: true,
             autoDarkMode: false,
@@ -243,6 +247,7 @@ Singleton {
                 unifiedPill: false
             },
             bar: __barDefaults(),
+            quickSettingsTiles: __qsTilesDefaults(),
             nightLight: {
                 scheduleEnabled: true,
                 autoDarkMode: false,
@@ -383,6 +388,8 @@ Singleton {
         }
         if (result.bar)
             result.bar = WidgetService.reconcile(result.bar);
+        if (result.quickSettingsTiles)
+            result.quickSettingsTiles = QsTileService.reconcile(result.quickSettingsTiles);
         return result;
     }
 
