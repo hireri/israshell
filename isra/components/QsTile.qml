@@ -245,11 +245,11 @@ Item {
         opacity: root._tileHovered ? 1 : 0
         width: 7
         height: 16
-        radius: 3.5
+        radius: width / 2
         color: Colors.md3.primary
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        anchors.rightMargin: -width / 2
+        anchors.rightMargin: -2.5
         z: 11
 
         Behavior on opacity { NumberAnimation { duration: 120 } }
