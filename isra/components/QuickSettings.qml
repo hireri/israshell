@@ -23,6 +23,7 @@ Item {
     property bool isOpen: false
     property bool editMode: false
     property bool _sidebarVisible: false
+    property bool _instantHidden: false
 
     property bool _editVisual: false
     onEditModeChanged: editFadeTimer.restart()
@@ -44,8 +45,14 @@ Item {
         root.isOpen = false;
     }
 
+    function closeInstantly(): void {
+        root._instantHidden = true;
+        root.isOpen = false;
+    }
+
     onIsOpenChanged: {
         if (isOpen) {
+            _instantHidden = false;
             _sidebarVisible = true;
             PanelService.opened(root, root.panelWindow?.screen);
         } else {
@@ -58,8 +65,10 @@ Item {
     Timer {
         id: closeTimer
         interval: 310
-        onTriggered: if (!root.isOpen)
-            root._sidebarVisible = false
+        onTriggered: if (!root.isOpen) {
+            root._sidebarVisible = false;
+            root._instantHidden = false;
+        }
     }
 
     Component.onCompleted: Qt.callLater(() => {
@@ -276,16 +285,19 @@ Item {
                 exclusionMode: ExclusionMode.Ignore
 
                 WlrLayershell.layer: WlrLayer.Overlay
-                WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+                WlrLayershell.keyboardFocus: root._instantHidden ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
                 WlrLayershell.namespace: "quickshell:quicksettings"
 
-                readonly property bool blurEnabled: Config.blurAllowed(sidebar.visible)
+                readonly property bool blurEnabled: Config.blurAllowed(sidebar.visible) && !root._instantHidden
                 BackgroundEffect.blurRegion: blurEnabled ? sidebarBlurRegion : null
 
                 Region {
                     id: sidebarBlurRegion
                     item: sidebarCard
                 }
+
+                Region { id: emptyInputRegion }
+                mask: root._instantHidden ? emptyInputRegion : null
 
                 Item {
                     id: keyHandler
@@ -307,7 +319,7 @@ Item {
 
                 Rectangle {
                     id: sidebarCard
-                    visible: sidebar.isOwnScreen
+                    visible: sidebar.isOwnScreen && !root._instantHidden
                     width: 420
                     height: 786
                     radius: 18

@@ -53,7 +53,7 @@ Item {
     }
     Behavior on width {
         enabled: root.layoutReady && !root.isResizing
-        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
     }
 
     property real _liveX: targetX
@@ -160,6 +160,25 @@ Item {
     }
 
     readonly property bool _tileHovered: bodyMouse.containsMouse || resizeMouse.containsMouse || isDragging || isResizing
+
+    Item {
+        anchors.fill: parent
+        z: 100
+
+        PointHandler {
+            id: pressPointHandler
+            target: null
+            enabled: !root.editMode
+            acceptedButtons: Qt.LeftButton
+        }
+    }
+
+    readonly property bool pressExpanded: {
+        if (root.editMode || !pressPointHandler.active)
+            return false;
+        const p = pressPointHandler.point.position;
+        return p.x >= 0 && p.x <= root.width && p.y >= 0 && p.y <= root.height;
+    }
 
     MouseArea {
         id: bodyMouse

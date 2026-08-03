@@ -26,6 +26,7 @@ Item {
     property int _draggingIndex: -1
     property int _resizingIndex: -1
     property int _resizingPreviewSize: 0
+    property int _pressExpandIndex: -1
 
     ListModel { id: tileModel }
 
@@ -98,12 +99,68 @@ Item {
             targets.push({
                 x: x * (root._unitWidth + root.gap),
                 y: y,
-                width: units * root._unitWidth + (units - 1) * root.gap
+                width: units * root._unitWidth + (units - 1) * root.gap,
+                row: y
             });
 
             x += units;
         }
+
+        root._applyPressExpand(targets, overrideIndex);
+
         return { targets: targets, totalHeight: y + root.rowHeight };
+    }
+
+    function _applyPressExpand(targets, overrideIndex) {
+        const pIndex = root._pressExpandIndex;
+        if (pIndex < 0 || pIndex >= targets.length || pIndex === overrideIndex)
+            return;
+        if (root._draggingIndex !== -1 || root._resizingIndex !== -1)
+            return;
+
+        const rowY = targets[pIndex].row;
+        const rowIndices = [];
+        for (let i = 0; i < targets.length; i++)
+            if (targets[i].row === rowY)
+                rowIndices.push(i);
+
+        if (rowIndices.length <= 1)
+            return;
+
+        const unit = root._unitWidth + root.gap;
+        const minWidth = unit * 0.4;
+        const expandAmount = Math.min(root._unitWidth * 0.5, 14);
+
+        const others = rowIndices.filter(i => i !== pIndex);
+        const available = others.reduce((s, i) => s + Math.max(0, targets[i].width - minWidth), 0);
+        const actualExpand = Math.min(expandAmount, available);
+
+        if (actualExpand <= 0)
+            return;
+
+        const totalOtherWidth = others.reduce((s, i) => s + targets[i].width, 0);
+        for (const i of others) {
+            const share = targets[i].width / totalOtherWidth;
+            const shrink = Math.min(actualExpand * share, targets[i].width - minWidth);
+            targets[i].width -= shrink;
+        }
+        targets[pIndex].width += actualExpand;
+
+        let cx = null;
+        for (const i of rowIndices) {
+            if (cx === null)
+                cx = targets[i].x;
+            targets[i].x = cx;
+            cx += targets[i].width + root.gap;
+        }
+    }
+
+    function _setPressExpand(index, active) {
+        const newIndex = active ? index : (root._pressExpandIndex === index ? -1 : root._pressExpandIndex);
+        if (newIndex === root._pressExpandIndex)
+            return;
+        root._pressExpandIndex = newIndex;
+        root._layout();
     }
 
     function _layout() {
@@ -247,6 +304,7 @@ Item {
             onBodyDragEnded: root._endReposition(index)
             onResizePreview: previewSize => root._previewResize(index, previewSize)
             onResizeCommitted: finalSize => root._commitResize(index, finalSize)
+            onPressExpandedChanged: root._setPressExpand(index, tileItem.pressExpanded)
 
             Component.onCompleted: root._layout()
         }

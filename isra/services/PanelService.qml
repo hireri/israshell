@@ -24,10 +24,14 @@ Singleton {
         }
     }
 
-    function closeAll(): void {
+    function closeAll(instant): void {
         const prev = root.current;
         root.current = null;
-        if (prev)
+        if (!prev)
+            return;
+        if (instant && prev.closeInstantly)
+            prev.closeInstantly();
+        else
             prev.close();
     }
 }

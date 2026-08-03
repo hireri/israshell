@@ -12,6 +12,23 @@ Singleton {
 
     readonly property var sizeSteps: [25, 50, 75, 100]
 
+    function openSettings(page: string): void {
+        PanelService.closeAll();
+        appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", page];
+        appletProc.running = true;
+    }
+
+    function runScreencap(verb: string): void {
+        PanelService.closeAll(true);
+        captureProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", verb];
+        captureProc.running = true;
+    }
+
+    function runColorPicker(): void {
+        PanelService.closeAll(true);
+        colorPickerProc.running = true;
+    }
+
     Component {
         id: wifiCompactComp
         CompactToggleTile {
@@ -27,10 +44,7 @@ Singleton {
             }
             active: NetworkService.wifiEnabled || NetworkService.ethConnected
             onToggled: NetworkService.toggle()
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("network")
         }
     }
 
@@ -69,10 +83,7 @@ Singleton {
                 }
             }
             onToggled: NetworkService.toggle()
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("network")
         }
     }
 
@@ -87,10 +98,7 @@ Singleton {
             }
             active: BluetoothService.enabled
             onToggled: BluetoothService.toggle()
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("network")
         }
     }
 
@@ -127,10 +135,7 @@ Singleton {
                 return "";
             }
             onToggled: BluetoothService.toggle()
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "network"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("network")
         }
     }
 
@@ -173,10 +178,7 @@ Singleton {
                 filled: NightLightService.active
             }
             onToggled: NightLightService.toggle()
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("display")
         }
     }
 
@@ -192,10 +194,7 @@ Singleton {
                 filled: NightLightService.active
             }
             onToggled: NightLightService.toggle()
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("display")
         }
     }
 
@@ -214,10 +213,7 @@ Singleton {
                 iconSize: 22
             }
             onToggled: LocalSendService.setEnabled(!Config.localsend.enabled)
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "system"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("system")
         }
     }
 
@@ -242,10 +238,7 @@ Singleton {
                 iconSize: 22
             }
             onToggled: LocalSendService.setEnabled(!Config.localsend.enabled)
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "system"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("system")
         }
     }
 
@@ -257,10 +250,7 @@ Singleton {
                 name: "screenshot"
                 iconSize: 22
             }
-            onToggled: {
-                screenshotProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", "activate"];
-                screenshotProc.running = true;
-            }
+            onToggled: root.runScreencap("activate")
         }
     }
 
@@ -273,10 +263,7 @@ Singleton {
                 name: "screenshot"
                 iconSize: 22
             }
-            onToggled: {
-                screenshotProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", "activate"];
-                screenshotProc.running = true;
-            }
+            onToggled: root.runScreencap("activate")
         }
     }
 
@@ -289,7 +276,7 @@ Singleton {
                 iconSize: 22
                 transitionType: "none"
             }
-            onToggled: colorPickerProc.running = true
+            onToggled: root.runColorPicker()
         }
     }
 
@@ -303,7 +290,7 @@ Singleton {
                 iconSize: 22
                 transitionType: "none"
             }
-            onToggled: colorPickerProc.running = true
+            onToggled: root.runColorPicker()
         }
     }
 
@@ -315,10 +302,7 @@ Singleton {
                 name: "image-search"
                 iconSize: 22
             }
-            onToggled: {
-                ctsProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", "cts"];
-                ctsProc.running = true;
-            }
+            onToggled: root.runScreencap("cts")
         }
     }
 
@@ -331,10 +315,7 @@ Singleton {
                 name: "image-search"
                 iconSize: 22
             }
-            onToggled: {
-                ctsProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", "cts"];
-                ctsProc.running = true;
-            }
+            onToggled: root.runScreencap("cts")
         }
     }
 
@@ -346,10 +327,7 @@ Singleton {
                 name: "ocr"
                 iconSize: 22
             }
-            onToggled: {
-                ocrProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", "ocr"];
-                ocrProc.running = true;
-            }
+            onToggled: root.runScreencap("ocr")
         }
     }
 
@@ -362,10 +340,7 @@ Singleton {
                 name: "ocr"
                 iconSize: 22
             }
-            onToggled: {
-                ocrProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", "ocr"];
-                ocrProc.running = true;
-            }
+            onToggled: root.runScreencap("ocr")
         }
     }
 
@@ -373,10 +348,7 @@ Singleton {
         id: recordCompactComp
         RecordCompactTile {
             active: ScreencapService.isRecording
-            onToggled: {
-                recordProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", "record"];
-                recordProc.running = true;
-            }
+            onToggled: root.runScreencap("record")
         }
     }
 
@@ -390,10 +362,7 @@ Singleton {
                 iconSize: 22
                 transitionType: "none"
             }
-            onToggled: {
-                recordProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", "record"];
-                recordProc.running = true;
-            }
+            onToggled: root.runScreencap("record")
         }
     }
 
@@ -408,10 +377,7 @@ Singleton {
                 transitionType: "none"
             }
             onToggled: WallpaperService.isDark = !WallpaperService.isDark
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("display")
         }
     }
 
@@ -426,10 +392,7 @@ Singleton {
                 filled: WallpaperService.isDark
             }
             onToggled: WallpaperService.isDark = !WallpaperService.isDark
-            onRightClicked: {
-                appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "display"];
-                appletProc.running = true;
-            }
+            onRightClicked: root.openSettings("display")
         }
     }
 
@@ -463,11 +426,8 @@ Singleton {
     }
 
     Process { id: appletProc }
-    Process { id: screenshotProc }
-    Process { id: recordProc }
+    Process { id: captureProc }
     Process { id: colorPickerProc; command: ["hyprpicker", "--autocopy"] }
-    Process { id: ctsProc }
-    Process { id: ocrProc }
 
     readonly property var definitions: [
         { id: "wifi",         label: "Wi-Fi",          compactComponent: wifiCompactComp,         wideComponent: wifiWideComp },
@@ -488,9 +448,6 @@ Singleton {
 
     readonly property var allIds: definitions.map(d => d.id)
 
-    // Tiles added after the original six ship disabled by default — users
-    // opt in via the removed tray rather than having their layout grow
-    // unannounced every time a new tile is introduced.
     readonly property var defaultDisabledIds: ["localsend", "screenshot", "record", "colorPicker", "cts", "ocr", "darkTheme", "mediaMini"]
 
     readonly property var compactComponentMap: {
