@@ -563,17 +563,6 @@ PageBase {
         label: "Tray"
         Layout.fillWidth: true
 
-        SettingSwitch {
-            label: "Icon tint"
-            sublabel: "Colorize tray icons with primary color"
-            checked: Config.bar.tintTrayIcons
-            onToggled: v => Config.update({
-                bar: Object.assign({}, Config.bar, {
-                    tintTrayIcons: v
-                })
-            })
-        }
-
         SettingRow {
             isLast: true
             label: "Blacklist"

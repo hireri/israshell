@@ -101,11 +101,11 @@ Item {
                         source: cell.modelData?.icon ?? ""
                         anchors.fill: parent
                         implicitSize: Qt.size(64, 64)
-                        visible: !Config.bar.tintTrayIcons
+                        visible: !Config.tintIcons
                     }
 
                     Loader {
-                        active: Config.bar.tintTrayIcons
+                        active: Config.tintIcons
                         anchors.fill: img
                         sourceComponent: Colorize {
                             source: img

@@ -596,7 +596,16 @@ PageBase {
             onToggled: v => Config.update({
                     screenCorners: v
                 })
+        }
+
+        SettingSwitch {
             isLast: true
+            label: "Icon tint"
+            sublabel: "Colorize tray, dock and workspace icons with the theme color"
+            checked: Config.tintIcons
+            onToggled: v => Config.update({
+                tintIcons: v
+            })
         }
     }
 

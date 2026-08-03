@@ -26,12 +26,13 @@ Item {
                 "overview": 0,
                 "network": 1,
                 "bar": 2,
-                "background": 3,
-                "clock": 4,
-                "display": 5,
-                "sound": 6,
-                "locale": 7,
-                "system": 8
+                "floatingdock": 3,
+                "background": 4,
+                "clock": 5,
+                "display": 6,
+                "sound": 7,
+                "locale": 8,
+                "system": 9
             };
             root.settingsLoader.active = true;
             root.settingsLoader.item.visible = true;

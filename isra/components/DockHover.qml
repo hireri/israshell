@@ -26,19 +26,46 @@ PopupWindow {
         }
     }
 
-    readonly property bool barOnTop: (Config && Config.bar) ? Config.bar.position === 0 : false
+    property int dockEdge: (Config && Config.bar && Config.bar.position === 0) ? 0 : 1
+    readonly property bool sideEdge: dockEdge === 2 || dockEdge === 3
+    readonly property bool barOnTop: dockEdge === 0
     readonly property int gap: 8
 
+    property bool anchorToItem: false
+
+    readonly property real contentHeight: 137 + 14
+    readonly property real maxContentWidth: 868
+
+    readonly property int itemEdges: {
+        switch (dockEdge) {
+        case 0: return Edges.Bottom;
+        case 2: return Edges.Right;
+        case 3: return Edges.Left;
+        default: return Edges.Top;
+        }
+    }
+
     visible: false
-    implicitWidth: 900
-    implicitHeight: 260
+    implicitWidth: {
+        if (!anchorToItem) return 900;
+        return sideEdge ? (cappedContentWidth + gap) : (dockRoot.width + cappedContentWidth + gap * 2);
+    }
+    implicitHeight: {
+        if (!anchorToItem) return 260;
+        return sideEdge ? (dockRoot.height + contentHeight + gap * 2) : (contentHeight + gap);
+    }
     color: "transparent"
 
-    anchor.window: dockRoot.QsWindow.window
+    anchor.window: anchorToItem ? null : dockRoot.QsWindow.window
+    anchor.item: anchorToItem ? dockRoot : null
     anchor.rect: {
+        if (anchorToItem)
+            return Qt.rect(0, 0, dockRoot.width, dockRoot.height);
+
         let win = dockRoot.QsWindow.window;
         if (!win || !win.contentItem) return Qt.rect(0, 0, implicitWidth, implicitHeight);
         let topLeft = dockRoot.mapToItem(win.contentItem, 0, 0);
+
         return Qt.rect(
             topLeft.x - implicitWidth / 2 + dockRoot.width / 2,
             topLeft.y + (barOnTop ? dockRoot.height + gap : -gap - implicitHeight),
@@ -46,7 +73,14 @@ PopupWindow {
             implicitHeight
         );
     }
-    anchor.edges: Edges.Top | Edges.Left
+    anchor.edges: anchorToItem ? itemEdges : (Edges.Top | Edges.Left)
+
+    Binding {
+        target: root.anchor
+        property: "gravity"
+        value: root.itemEdges
+        when: root.anchorToItem
+    }
 
     property bool animateIn: false
     property bool containsMouse: popupHover.hovered
@@ -103,7 +137,24 @@ PopupWindow {
         hideTimer.restart();
     }
 
-    property var pendingButton: null
+    property Item pendingButton: null
+
+    function forget(button: Item): void {
+        if (pendingButton === button)
+            pendingButton = null;
+        if (nextTargetButton === button)
+            nextTargetButton = null;
+        if (targetButton === button) {
+            openTimer.stop();
+            hideTimer.stop();
+            switchTimer.stop();
+            closeTimer.stop();
+            targetButton = null;
+            targetKey = "";
+            animateIn = false;
+            visible = false;
+        }
+    }
 
     Timer {
         id: openTimer
@@ -242,12 +293,16 @@ PopupWindow {
         }
     }
 
+    readonly property int cardCount: Math.max(cardModel.count, appToplevels ? appToplevels.length : 0)
+
     readonly property real targetWidth: {
-        let count = cardModel.count;
+        let count = cardCount;
         return count > 0 ? Math.max(0, count * 180 + (count - 1) * 10) : 0;
     }
 
-    readonly property real cappedContentWidth: Math.min(targetWidth + 14, root.implicitWidth - 32)
+    readonly property real cappedContentWidth: anchorToItem
+        ? Math.min(targetWidth + 14, maxContentWidth)
+        : Math.min(targetWidth + 14, root.implicitWidth - 32)
 
     readonly property real targetX: {
         if (!targetButton) return 0;
@@ -262,6 +317,26 @@ PopupWindow {
         let minX = 8;
         let maxX = Math.max(minX, root.implicitWidth - 8 - cappedContentWidth);
         return Math.max(minX, Math.min(maxX, rawX));
+    }
+
+    readonly property real trackX: {
+        if (!anchorToItem || sideEdge || !targetButton) return 0;
+        const centre = targetButton.mapToItem(dockRoot, targetButton.width / 2, 0).x;
+        const surfaceLeftInDock = (dockRoot.width - implicitWidth) / 2;
+        const raw = centre - surfaceLeftInDock - cappedContentWidth / 2;
+        const minX = 8;
+        const maxX = Math.max(minX, implicitWidth - 8 - cappedContentWidth);
+        return Math.max(minX, Math.min(maxX, raw));
+    }
+
+    readonly property real trackY: {
+        if (!anchorToItem || !sideEdge || !targetButton) return 0;
+        const centre = targetButton.mapToItem(dockRoot, 0, targetButton.height / 2).y;
+        const surfaceTopInDock = (dockRoot.height - implicitHeight) / 2;
+        const raw = centre - surfaceTopInDock - contentHeight / 2;
+        const minY = 8;
+        const maxY = Math.max(minY, implicitHeight - 8 - contentHeight);
+        return Math.max(minY, Math.min(maxY, raw));
     }
 
     readonly property bool allCardsReady: {
@@ -358,8 +433,14 @@ PopupWindow {
         width: root.cappedContentWidth
         height: implicitHeight
 
-        x: root.targetX
-        y: root.barOnTop ? 0 : (root.implicitHeight - implicitHeight)
+        x: {
+            if (!root.anchorToItem) return root.targetX;
+            return root.sideEdge ? (root.dockEdge === 2 ? root.gap : 0) : root.trackX;
+        }
+        y: {
+            if (!root.anchorToItem) return root.barOnTop ? 0 : (root.implicitHeight - implicitHeight);
+            return root.sideEdge ? root.trackY : (root.dockEdge === 0 ? root.gap : 0);
+        }
 
         Behavior on width {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
@@ -370,9 +451,18 @@ PopupWindow {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
 
+        Behavior on y {
+            enabled: root.visible && root.animateIn && root.sideEdge
+            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        }
+
         opacity: root.animateIn ? root.contentOpacity : 0
         scale: root.animateIn ? 1 : 0.92
-        transformOrigin: root.barOnTop ? Item.Top : Item.Bottom
+        transformOrigin: {
+            if (root.sideEdge)
+                return root.dockEdge === 2 ? Item.Left : Item.Right;
+            return root.barOnTop ? Item.Top : Item.Bottom;
+        }
 
         Behavior on opacity {
             NumberAnimation { duration: 140; easing.type: Easing.OutCubic }

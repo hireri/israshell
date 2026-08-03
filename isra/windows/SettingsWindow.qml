@@ -21,12 +21,13 @@ FloatingWindow {
     readonly property int pageOverview: 0
     readonly property int pageNetwork: 1
     readonly property int pageBar: 2
-    readonly property int pageBackground: 3
-    readonly property int pageClock: 4
-    readonly property int pageDisplay: 5
-    readonly property int pageSound: 6
-    readonly property int pageLocale: 7
-    readonly property int pageSystem: 8
+    readonly property int pageFloatingDock: 3
+    readonly property int pageBackground: 4
+    readonly property int pageClock: 5
+    readonly property int pageDisplay: 6
+    readonly property int pageSound: 7
+    readonly property int pageLocale: 8
+    readonly property int pageSystem: 9
 
     property int currentPage: pageOverview
     property bool sidebarCollapsed: false
@@ -162,6 +163,13 @@ FloatingWindow {
                             MaterialIcon { name: "customization"; transitionType: "wipe-up" }
                         }
                         SidebarItem {
+                            page: root.pageFloatingDock
+                            label: "Dock"
+                            sublabel: "Position, hiding, icon size"
+                            onClicked: root.currentPage = page
+                            MaterialIcon { name: "call-to-action"; transitionType: "circle" }
+                        }
+                        SidebarItem {
                             page: root.pageBackground
                             label: "Background"
                             sublabel: "Effects, wallpaper, widgets"
@@ -233,6 +241,7 @@ FloatingWindow {
             Component { id: soundComp; SoundPage {} }
             Component { id: localeComp; LocalePage {} }
             Component { id: systemComp; SystemPage {} }
+            Component { id: floatingDockComp; DockPage {} }
 
             function componentForPage(page) {
                 switch (page) {
@@ -245,6 +254,7 @@ FloatingWindow {
                 case root.pageSound: return soundComp;
                 case root.pageLocale: return localeComp;
                 case root.pageSystem: return systemComp;
+                case root.pageFloatingDock: return floatingDockComp;
                 default: return overviewComp;
                 }
             }
@@ -319,7 +329,8 @@ FloatingWindow {
             "display": root.pageDisplay,
             "sound": root.pageSound,
             "locale": root.pageLocale,
-            "system": root.pageSystem
+            "system": root.pageSystem,
+            "floatingdock": root.pageFloatingDock
         };
         const p = map[page];
         if (p !== undefined)

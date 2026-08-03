@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import Quickshell
 import Quickshell.Widgets
+import Qt5Compat.GraphicalEffects
 import QtQuick
 
 import qs.style
@@ -14,6 +15,11 @@ Item {
     required property Item dockRoot
     required property DockHover hoverPopup
 
+    readonly property bool isVertical: dockRoot.orientation === 1
+
+    readonly property int glyphSize: dockRoot.itemGlyphSize ?? 18
+    readonly property int cellSize: dockRoot.itemCellSize ?? 28
+
     readonly property string appId: modelData ? (modelData.appId ?? "") : ""
     readonly property var toplevels: modelData ? (modelData.toplevels ?? []) : []
     readonly property bool isRunning: toplevels.length > 0
@@ -22,10 +28,25 @@ Item {
 
     readonly property bool isActive: {
         for (let i = 0; i < toplevels.length; i++) {
-            if (toplevels[i] && toplevels[i].address === CompositorService.activeWindow.address) 
+            const tl = toplevels[i];
+            if (!tl)
+                continue;
+            if (tl.activated === true)
+                return true;
+            if (tl.address !== undefined && CompositorService.activeWindow
+                && tl.address === CompositorService.activeWindow.address)
                 return true;
         }
         return false;
+    }
+
+    function focusToplevel(tl: var): void {
+        if (!tl)
+            return;
+        if (typeof tl.activate === "function")
+            tl.activate();
+        else if (tl.address !== undefined)
+            CompositorService.focusWindow(tl.address);
     }
 
     property int lastFocusIndex: 0
@@ -52,13 +73,18 @@ Item {
         updateDesktopEntry();
     }
 
+    Component.onDestruction: {
+        if (root.hoverPopup)
+            root.hoverPopup.forget(root);
+    }
+
     readonly property string iconPath: {
         let name = desktopEntry ? desktopEntry.icon : root.appId;
         return Quickshell.iconPath(name, "application-x-executable");
     }
 
     property bool dragging: false
-    property real dragStartMouseX: 0
+    property real dragStartPos: 0
 
     onDraggingChanged: {
         if (dragging) {
@@ -66,8 +92,8 @@ Item {
         }
     }
 
-    implicitWidth: 28
-    implicitHeight: 28
+    implicitWidth: cellSize
+    implicitHeight: cellSize
     width: implicitWidth
     height: implicitHeight
     z: dragging ? 100 : 0
@@ -93,14 +119,27 @@ Item {
         IconImage {
             id: appIcon
             anchors.centerIn: parent
-            implicitSize: 18
+            implicitSize: root.glyphSize
             source: root.iconPath
             asynchronous: true
+            visible: !Config.tintIcons
 
             scale: mouseArea.containsMouse && !root.dragging ? 1.12 : 1.0
 
             Behavior on scale {
                 NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+        }
+
+        Loader {
+            active: Config.tintIcons
+            anchors.fill: appIcon
+            scale: appIcon.scale
+            sourceComponent: Colorize {
+                source: appIcon
+                hue: Qt.color(Colors.md3.on_surface).hslHue
+                saturation: Qt.color(Colors.md3.on_surface).hslSaturation
+                lightness: 0.0
             }
         }
 
@@ -140,27 +179,31 @@ Item {
         property bool passedThreshold: false
         property bool suppressNextClick: false
 
+        function scenePointOf(mouse): point {
+            return root.mapToItem(root.dockRoot.rowContainer, mouse.x, mouse.y);
+        }
+
         onPressed: mouse => {
-            pressLocalX = mouse.x;
             passedThreshold = false;
-            
-            let scenePos = root.mapToItem(root.dockRoot.rowContainer, mouse.x, 0);
-            root.dragStartMouseX = scenePos.x;
+            let p = scenePointOf(mouse);
+            root.dragStartPos = root.isVertical ? p.y : p.x;
         }
 
         onPositionChanged: mouse => {
             if (!root.isPinned || !pressed) return;
 
-            let scenePos = root.mapToItem(root.dockRoot.rowContainer, mouse.x, 0);
+            let p = scenePointOf(mouse);
+            let scenePos = root.isVertical ? p.y : p.x;
 
             if (!passedThreshold) {
-                if (Math.abs(scenePos.x - root.dragStartMouseX) < dragThreshold) return;
+                if (Math.abs(scenePos - root.dragStartPos) < dragThreshold) return;
                 passedThreshold = true;
                 root.dragging = true;
-                root.dockRoot.beginDrag(root.itemKey, scenePos.x);
+                root.dockRoot.beginDrag(root.itemKey, scenePos);
             }
 
-            root.dockRoot.updateDrag(root.itemKey, scenePos.x);
+            root.dockRoot.updateDrag(root.itemKey, scenePos);
+            if (root.dockRoot.updateDragPoint) root.dockRoot.updateDragPoint(p);
         }
 
         onReleased: {
@@ -179,10 +222,10 @@ Item {
             if (mouse.button === Qt.LeftButton) {
                 if (root.isRunning) {
                     if (root.toplevels.length === 1) {
-                        CompositorService.focusWindow(root.toplevels[0].address);
+                        root.focusToplevel(root.toplevels[0]);
                     } else {
                         root.lastFocusIndex = (root.lastFocusIndex + 1) % root.toplevels.length;
-                        CompositorService.focusWindow(root.toplevels[root.lastFocusIndex].address);
+                        root.focusToplevel(root.toplevels[root.lastFocusIndex]);
                     }
                 } else {
                     if (root.desktopEntry) {

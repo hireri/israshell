@@ -192,6 +192,11 @@ ShellRoot {
                 registry: rootShell.wallpaperPanels
             }
 
+            Loader {
+                active: Config.floatingDock.enabled
+                sourceComponent: FloatingDock { modelData: screenScope.modelData }
+            }
+
             Component { id: workspacesComponent; Workspaces { panelWindow: window } }
             Component { id: mediaComponent; MediaPlayer { panelScreen: screenScope.modelData } }
             Component { id: clockComponent; BarClock { panelWindow: window } }
@@ -229,6 +234,8 @@ ShellRoot {
                 return false;
             }
 
+            readonly property int barExclusiveZone: ((barMode === 2) ? 56 : Config.bar.transparency === 2 & !GameModeService.active ? 34 : 44)
+
             readonly property var visibleBarLeft: Config.bar.left.filter(id => !isWidgetDisabled(id))
             readonly property var visibleBarRight: Config.bar.right.filter(id => !isWidgetDisabled(id))
             readonly property var visibleBarCenterItems: Config.bar.center.items.filter(id => !isWidgetDisabled(id))
@@ -260,7 +267,7 @@ ShellRoot {
 
                 implicitHeight: ((screenScope.barMode === 2) ? 56 : 44)
                 color: "transparent"
-                exclusiveZone: ((screenScope.barMode === 2) ? 56 : Config.bar.transparency === 2 & !GameModeService.active ? 34 : 44)
+                exclusionMode: ExclusionMode.Ignore
                 visible: true
 
                 Item {
@@ -415,6 +422,27 @@ ShellRoot {
                         }
                     }
                 }
+            }
+
+            PanelWindow {
+                id: barSpacer
+                screen: screenScope.modelData
+
+                WlrLayershell.namespace: "quickshell:barSpacer"
+                WlrLayershell.layer: WlrLayer.Bottom
+
+                anchors.top: Config.bar.position === 0
+                anchors.bottom: Config.bar.position === 1
+                anchors.left: true
+                anchors.right: true
+
+                implicitHeight: screenScope.barExclusiveZone
+                exclusionMode: ExclusionMode.Normal
+                exclusiveZone: screenScope.barExclusiveZone
+
+                color: "transparent"
+                mask: Region {}
+                visible: true
             }
 
             PanelWindow {

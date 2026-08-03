@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Widgets
+import Qt5Compat.GraphicalEffects
 import QtQuick
 
 import qs.style
@@ -422,6 +423,18 @@ Rectangle {
                                         asynchronous: true
                                         cache: true
                                         sourceSize: Qt.size(24, 24)
+                                        visible: !Config.tintIcons
+                                    }
+
+                                    Loader {
+                                        active: Config.tintIcons
+                                        anchors.fill: appIcon
+                                        sourceComponent: Colorize {
+                                            source: appIcon
+                                            hue: Qt.color(Colors.md3.on_surface).hslHue
+                                            saturation: Qt.color(Colors.md3.on_surface).hslSaturation
+                                            lightness: 0.0
+                                        }
                                     }
                                 }
                             }

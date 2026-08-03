@@ -10,14 +10,17 @@ import qs.services
 Item {
     id: root
 
+    property int cellSize: 32
+    property int glyphSize: 18
+
     implicitWidth: pill.implicitWidth
     implicitHeight: pill.implicitHeight
 
     Rectangle {
         id: pill
         anchors.fill: parent
-        implicitWidth: 32
-        implicitHeight: 32
+        implicitWidth: root.cellSize
+        implicitHeight: root.cellSize
         radius: width / 2
         color: {
             if (Config.bar.transparentPills) {
@@ -34,7 +37,7 @@ Item {
         IconImage {
             id: icon
             anchors.centerIn: parent
-            implicitSize: 18
+            implicitSize: root.glyphSize
             source: Quickshell.iconPath(SystemInfo.logo, "distributor-logo-linux")
             visible: false
             asynchronous: true

@@ -14,6 +14,7 @@ Singleton {
     property string fontFamily: "Inter"
     property string fontMonospace: "Roboto Mono"
     property bool screenCorners: true
+    property bool tintIcons: false
     property bool blurEffects: false
     property real blurOpacity: 0.65
 
@@ -80,7 +81,6 @@ Singleton {
             playerMode: 0,
             playerRing: false,
 
-            tintTrayIcons: false,
             trayBlacklist: ["spotify", "blueman", "Network"],
 
             left: layout.left,
@@ -95,6 +95,34 @@ Singleton {
     }
 
     property var bar: __barDefaults()
+    function __floatingDockDefaults() {
+        return {
+            enabled: false,
+            edge: 1,              // 0 = top, 1 = bottom, 2 = left, 3 = right
+            smartHide: false,
+            exclusiveZone: false,
+            showLauncher: true,
+            showTrash: false,
+            iconSize: 32
+        };
+    }
+    property var floatingDock: __floatingDockDefaults()
+
+    function __barDockEdgeConflict() {
+        if (!floatingDock.enabled) return false;
+        if (floatingDock.edge === 0 && bar.position === 0) return true;
+        if (floatingDock.edge === 1 && bar.position === 1) return true;
+        return false;
+    }
+
+    function __resolveBarDockConflict() {
+        if (!__barDockEdgeConflict()) return;
+        configRoot.update({ bar: Object.assign({}, bar, { position: bar.position === 0 ? 1 : 0 }) });
+    }
+
+    onBarChanged: Qt.callLater(__resolveBarDockConflict)
+    onFloatingDockChanged: Qt.callLater(__resolveBarDockConflict)
+
     function __qsTilesDefaults() {
         return QsTileService.defaultLayout();
     }
@@ -207,6 +235,7 @@ Singleton {
             fontFamily: "Inter",
             fontMonospace: "Roboto Mono",
             screenCorners: true,
+            tintIcons: false,
             blurEffects: false,
             blurOpacity: 0.65,
             
@@ -248,6 +277,7 @@ Singleton {
                 unifiedPill: false
             },
             bar: __barDefaults(),
+            floatingDock: __floatingDockDefaults(),
             quickSettingsTiles: __qsTilesDefaults(),
             nightLight: {
                 scheduleEnabled: true,
@@ -388,6 +418,10 @@ Singleton {
         for (const key in defs) {
             result[key] = __deepMergeObj(defs[key], data[key]);
         }
+
+        if (data.tintIcons === undefined && data.bar && data.bar.tintTrayIcons !== undefined)
+            result.tintIcons = data.bar.tintTrayIcons;
+
         if (result.bar)
             result.bar = WidgetService.reconcile(result.bar);
         if (result.quickSettingsTiles)
