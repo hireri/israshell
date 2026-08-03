@@ -18,6 +18,7 @@ Item {
     readonly property color surfaceColor: Colors.md3.surface_container
 
     property bool active: false
+    readonly property bool suppressNotificationPopups: true
     readonly property bool excludeFromBarOverlay: true
     property string forcedAction: "smart"
     property string activeTool: "screenshot"

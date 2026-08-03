@@ -21,6 +21,7 @@ Item {
     height: button.height
 
     property bool isOpen: false
+    readonly property bool suppressNotificationPopups: true
     property bool editMode: false
     property bool _sidebarVisible: false
     property bool _instantHidden: false

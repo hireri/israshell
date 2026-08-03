@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Services.Notifications
+import qs.services
 
 Item {
     id: root
@@ -19,6 +20,8 @@ Item {
     readonly property ListModel popupGroupModel: ListModel {}
     readonly property ListModel qsGroupModel: ListModel {}
     readonly property var history: []
+
+    readonly property bool suppressPopups: PanelService.current?.suppressNotificationPopups ?? false
 
     Item {
         id: popupCleanupTimer
@@ -97,7 +100,7 @@ Item {
             root.version++;
 
             const isCritical = notification.urgency?.toString() === "2";
-            if (!root.dnd || isCritical)
+            if ((!root.dnd || isCritical) && !root.suppressPopups)
                 root._ensurePopupGroup(appName, groupSummary, gKey);
             root._ensureQsGroup(appName, groupSummary, gKey);
 
