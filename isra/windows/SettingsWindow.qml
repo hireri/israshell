@@ -20,12 +20,15 @@ FloatingWindow {
 
     readonly property int pageOverview: 0
     readonly property int pageNetwork: 1
+    
     readonly property int pageBar: 2
     readonly property int pageFloatingDock: 3
     readonly property int pageBackground: 4
     readonly property int pageClock: 5
+    
     readonly property int pageDisplay: 6
     readonly property int pageSound: 7
+    
     readonly property int pageLocale: 8
     readonly property int pageSystem: 9
 
@@ -183,16 +186,25 @@ FloatingWindow {
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "analog-clock"; transitionType: "circle" }
                         }
+                    }
+
+                    SidebarGroup {
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: 8
+                        currentPage: root.currentPage
+                        collapsed: root.sidebarCollapsed
+                        onNavigate: p => root.currentPage = p
+
                         SidebarItem {
                             page: root.pageDisplay
-                            label: "Visuals"
+                            label: "Visuals & Display"
                             sublabel: "Night light, blur"
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "monitor"; transitionType: "wipe-down" }
                         }
                         SidebarItem {
                             page: root.pageSound
-                            label: "Sound & Notifications"
+                            label: "Sound & Audio"
                             sublabel: "Audio, popups"
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "notifications"; transitionType: "wipe-up" }
@@ -212,7 +224,6 @@ FloatingWindow {
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "language" }
                         }
-
                         SidebarItem {
                             page: root.pageSystem
                             label: "System"
@@ -248,13 +259,13 @@ FloatingWindow {
                 case root.pageOverview: return overviewComp;
                 case root.pageNetwork: return networkComp;
                 case root.pageBar: return barComp;
+                case root.pageFloatingDock: return floatingDockComp;
                 case root.pageBackground: return backgroundComp;
                 case root.pageClock: return clockComp;
                 case root.pageDisplay: return displayComp;
                 case root.pageSound: return soundComp;
                 case root.pageLocale: return localeComp;
                 case root.pageSystem: return systemComp;
-                case root.pageFloatingDock: return floatingDockComp;
                 default: return overviewComp;
                 }
             }
@@ -324,13 +335,13 @@ FloatingWindow {
             "overview": root.pageOverview,
             "network": root.pageNetwork,
             "bar": root.pageBar,
+            "floatingdock": root.pageFloatingDock,
             "background": root.pageBackground,
             "clock": root.pageClock,
             "display": root.pageDisplay,
             "sound": root.pageSound,
             "locale": root.pageLocale,
-            "system": root.pageSystem,
-            "floatingdock": root.pageFloatingDock
+            "system": root.pageSystem
         };
         const p = map[page];
         if (p !== undefined)
