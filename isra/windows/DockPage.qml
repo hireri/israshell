@@ -70,7 +70,7 @@ PageBase {
         SettingSwitch {
             isLast: true
             label: "Trash bin"
-            sublabel: "Drag an app onto it to unpin or close it"
+            sublabel: "Drag files onto it to throw them in the trash"
             checked: Config.floatingDock.showTrash
             onToggled: v => Config.update({
                 floatingDock: Object.assign({}, Config.floatingDock, { showTrash: v })
