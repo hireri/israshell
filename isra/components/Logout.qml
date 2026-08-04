@@ -104,6 +104,14 @@ Variants {
             bottom: true
         }
 
+        readonly property bool blurEnabled: Config.blurAllowed(visible)
+        BackgroundEffect.blurRegion: blurEnabled ? logoutBlurRegion : null
+
+        Region {
+            id: logoutBlurRegion
+            item: scrim
+        }
+
         onVisibleChanged: {
             if (visible && !PowerMenuState.visible) {
                 scrim.opacity = 0;
