@@ -203,7 +203,6 @@ Item {
             }
 
             root.dockRoot.updateDrag(root.itemKey, scenePos);
-            if (root.dockRoot.updateDragPoint) root.dockRoot.updateDragPoint(p);
         }
 
         onReleased: {

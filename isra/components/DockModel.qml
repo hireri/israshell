@@ -147,7 +147,6 @@ Item {
     property int dragSourceIndex: -1
     property bool isReleasing: false
     property var dragPreviewOrder: []
-    property bool trashHovered: false
 
     readonly property int dragTargetIndex: {
         if (draggingKey === "" || dragSourceIndex === -1) return -1;
@@ -171,7 +170,6 @@ Item {
         dragSourceIndex = sourceIndex;
         dragClickOffset = clickOffset;
         dragPos = startPos;
-        trashHovered = false;
     }
 
     function updateDrag(key: string, scenePos: real): void {
@@ -197,36 +195,16 @@ Item {
         }
     }
 
-    function unpinOrClose(key: string): void {
-        let appId = appIdOfKey(key);
-        if (!appId) return;
-
-        if (isKeyPinned(key)) {
-            togglePinned(appId);
-        } else {
-            for (const tl of activeToplevels) {
-                if (tl && matchesAppId(tl.appId, appId) && typeof tl.close === "function") {
-                    tl.close();
-                }
-            }
-        }
-    }
-
     function endDrag(): void {
         let key = draggingKey;
 
         if (key !== "") {
             isReleasing = true;
 
-            if (trashHovered) {
-                unpinOrClose(key);
-                trashHovered = false;
-            } else {
-                dragPos = (dragSourceIndex * itemStride) + dragClickOffset;
-                if (dragSourceIndex !== -1) {
-                    let reordered = dragPreviewOrder.slice();
-                    Config.update({ pinnedApps: reordered });
-                }
+            dragPos = (dragSourceIndex * itemStride) + dragClickOffset;
+            if (dragSourceIndex !== -1) {
+                let reordered = dragPreviewOrder.slice();
+                Config.update({ pinnedApps: reordered });
             }
             releaseTimer.start();
         } else {

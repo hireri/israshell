@@ -16,9 +16,8 @@ Item {
     readonly property int cellSize: dockRoot.itemCellSize ?? 28
     readonly property int glyphSize: dockRoot.itemGlyphSize ?? 18
 
-    readonly property bool appHovering: dockRoot.dockModel.trashHovered
     property bool fileHovering: false
-    readonly property bool highlighted: appHovering || fileHovering
+    readonly property bool highlighted: fileHovering
 
     property bool full: false
     property bool busy: false
@@ -27,11 +26,6 @@ Item {
     implicitHeight: cellSize
     width: implicitWidth
     height: implicitHeight
-
-    function containsScenePoint(scenePoint: point): bool {
-        let local = root.mapFromItem(root.dockRoot.rowContainer, scenePoint.x, scenePoint.y);
-        return local.x >= -6 && local.y >= -6 && local.x <= root.width + 6 && local.y <= root.height + 6;
-    }
 
     function urlToPath(url: string): string {
         if (!url.startsWith("file://")) return "";

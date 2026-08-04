@@ -126,10 +126,6 @@ PanelWindow {
     function beginDrag(key: string, pos: real): void { dockModelImpl.beginDrag(key, pos); }
     function updateDrag(key: string, pos: real): void { dockModelImpl.updateDrag(key, pos); }
     function endDrag(): void { dockModelImpl.endDrag(); }
-    function updateDragPoint(p: point): void {
-        if (!Config.floatingDock.showTrash || !trashLoader.item) return;
-        dockModelImpl.trashHovered = trashLoader.item.containsScenePoint(p);
-    }
 
     readonly property Item rowContainer: itemsView.contentItem
 
