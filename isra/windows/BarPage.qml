@@ -249,6 +249,16 @@ PageBase {
                 })
             })
         }
+        SettingSwitch {
+            label: "Always show numbers"
+            sublabel: "Stop hiding numbers while not hovering"
+            checked: Config.workspaces.alwaysShowNumbers
+            onToggled: v => Config.update({
+                workspaces: Object.assign({}, Config.workspaces, {
+                    alwaysShowNumbers: v
+                })
+            })
+        }
     }
 
     SectionCard {

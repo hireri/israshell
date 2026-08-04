@@ -272,12 +272,14 @@ Rectangle {
                     property bool showIcon: Config.workspaces.useIcons && hasWindows
 
                     property bool showNumber: {
+                        if (Config.workspaces.alwaysShowNumbers) return true;
                         if (showIcon) return false;
                         if (root.isNiri) return true;
                         return root.isHovered || isActiveHere || isActiveOther || hasWindows;
                     }
 
                     property bool showDot: {
+                        if (Config.workspaces.alwaysShowNumbers) return false;
                         if (root.isNiri) return false;
                         return !showIcon && !root.isHovered && !isActiveHere && !isActiveOther && !hasWindows;
                     }

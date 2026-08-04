@@ -56,6 +56,7 @@ Singleton {
     property var workspaces: ({
         compact: false,
         useIcons: true,
+        alwaysShowNumbers: false,
         style: 0
     })
     property var sysMonitor: ({
@@ -271,6 +272,7 @@ Singleton {
             workspaces: {
                 compact: false,
                 useIcons: true,
+                alwaysShowNumbers: false,
                 style: 0
             },
             sysMonitor: {
