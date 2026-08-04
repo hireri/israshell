@@ -17,10 +17,11 @@ Item {
     readonly property bool canPrev: player?.canGoPrevious ?? false
     readonly property bool canNext: player?.canGoNext ?? false
 
+    readonly property bool _pillHovered: pillMa.containsMouse
+        || artMa.containsMouse
+        || prevBtn.hovered
+        || nextBtn.hovered
     property bool _showVolume: false
-
-    readonly property color bgColor: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-    readonly property real bgRadius: 24
 
     anchors.fill: parent
 
@@ -30,27 +31,44 @@ Item {
         onTriggered: root._showVolume = false
     }
 
+    function _adjustVolume(wheel) {
+        if (!root.player || root.forceOff)
+            return;
+        root.player.volume = Math.max(0, Math.min(1, root.player.volume + (wheel.angleDelta.y > 0 ? 0.05 : -0.05)));
+        root._showVolume = true;
+        volumeHideTimer.restart();
+    }
+
+    MouseArea {
+        id: pillMa
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        onWheel: wheel => root._adjustVolume(wheel)
+    }
+
     component TransportButton: Item {
         id: btn
         required property string iconName
         required property bool iconFilled
         required property bool canUse
-        required property bool innerOnRight
+        required property bool isOuterEdge
+        readonly property bool hovered: btnMa.containsMouse
         signal activated
 
-        Layout.preferredWidth: 24
+        Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.alignment: Qt.AlignVCenter
         opacity: (btn.canUse && !root.forceOff) ? 1 : 0.35
 
         Rectangle {
             anchors.fill: parent
-            readonly property real outerRadius: width / 2
+            readonly property real outerRadius: 18
             readonly property real innerRadius: 6
-            topLeftRadius: btn.innerOnRight ? outerRadius : innerRadius
-            bottomLeftRadius: btn.innerOnRight ? outerRadius : innerRadius
-            topRightRadius: btn.innerOnRight ? innerRadius : outerRadius
-            bottomRightRadius: btn.innerOnRight ? innerRadius : outerRadius
+            topLeftRadius: innerRadius
+            bottomLeftRadius: innerRadius
+            topRightRadius: btn.isOuterEdge ? outerRadius : innerRadius
+            bottomRightRadius: btn.isOuterEdge ? outerRadius : innerRadius
             color: btnMa.containsMouse
                 ? Colors.md3.surface_container_highest
                 : Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity)
@@ -80,19 +98,13 @@ Item {
         anchors.margins: 8
         spacing: 4
 
-        TransportButton {
-            iconName: "next-prev"
-            iconFilled: false
-            canUse: root.canPrev
-            innerOnRight: true
-            onActivated: root.player?.previous()
-        }
-
         ClippingRectangle {
             id: artBox
-            Layout.fillWidth: true
+            Layout.preferredWidth: height * 1.2
             Layout.fillHeight: true
             radius: 6
+            topLeftRadius: 18
+            bottomLeftRadius: 18
             color: root.hasArt ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
 
             MediaArtCrossfade {
@@ -113,7 +125,7 @@ Item {
                 anchors.fill: parent
                 visible: root.hasArt
                 color: Qt.alpha("black", 0.35)
-                opacity: (artMa.containsMouse && !root.forceOff) ? 1 : 0
+                opacity: (root._pillHovered && !root.forceOff) ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
             }
 
@@ -123,7 +135,7 @@ Item {
                 width: 40
                 height: 40
                 color: "transparent"
-                opacity: (artMa.containsMouse && !!root.player && !root.forceOff && !root._showVolume) ? 1 : 0
+                opacity: (root._pillHovered && !!root.player && !root.forceOff && !root._showVolume) ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
                 MaterialIcon {
@@ -153,22 +165,27 @@ Item {
                 hoverEnabled: true
                 enabled: !!root.player && !root.forceOff
                 cursorShape: Qt.PointingHandCursor
+                propagateComposedEvents: true
                 onClicked: root.player?.togglePlaying()
-                onWheel: wheel => {
-                    if (!root.player)
-                        return;
-                    root.player.volume = Math.max(0, Math.min(1, root.player.volume + (wheel.angleDelta.y > 0 ? 0.05 : -0.05)));
-                    root._showVolume = true;
-                    volumeHideTimer.restart();
-                }
+                onWheel: wheel => wheel.accepted = false
             }
         }
 
         TransportButton {
+            id: prevBtn
+            iconName: "next-prev"
+            iconFilled: false
+            canUse: root.canPrev
+            isOuterEdge: false
+            onActivated: root.player?.previous()
+        }
+
+        TransportButton {
+            id: nextBtn
             iconName: "next-prev"
             iconFilled: true
             canUse: root.canNext
-            innerOnRight: false
+            isOuterEdge: true
             onActivated: root.player?.next()
         }
     }
