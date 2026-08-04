@@ -149,7 +149,6 @@ Item {
 
             Text {
                 anchors.centerIn: parent
-                visible: root._showVolume
                 text: Math.round((root.player?.volume ?? 0) * 100) + "%"
                 font.pixelSize: 15
                 font.weight: Font.Medium
@@ -157,6 +156,8 @@ Item {
                 font.features: ({ "tnum": 1 })
                 color: "white"
                 renderType: Text.NativeRendering
+                opacity: (root._showVolume && root._pillHovered) ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
             }
 
             MouseArea {

@@ -44,25 +44,28 @@ Item {
 
     MaterialIcon {
         anchors.centerIn: parent
-        visible: !root.hasArt && !root._showVolume
+        visible: !root.hasArt
         name: "music-note"
         iconSize: 22
         color: root.player ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+        opacity: root._showVolume ? 0 : 1
+        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
     }
 
     MaterialIcon {
         anchors.centerIn: parent
-        visible: root.hasArt && !root._showVolume
+        visible: root.hasArt
         name: "play-pause"
         iconSize: 20
         filled: root.isPlaying
         color: "white"
         transitionType: "wipe-right"
+        opacity: root._showVolume ? 0 : 1
+        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
     }
 
     Text {
         anchors.centerIn: parent
-        visible: root._showVolume
         text: Math.round((root.player?.volume ?? 0) * 100) + "%"
         font.pixelSize: 13
         font.weight: Font.Medium
@@ -70,6 +73,8 @@ Item {
         font.features: ({ "tnum": 1 })
         color: root.hasArt ? "white" : Colors.md3.on_surface
         renderType: Text.NativeRendering
+        opacity: root._showVolume ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
     }
 
     MouseArea {
