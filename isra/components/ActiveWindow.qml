@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Widgets
+import Qt5Compat.GraphicalEffects
 import QtQuick
 
 import qs.style
@@ -7,7 +8,7 @@ import qs.services
 
 Rectangle {
     id: root
-    readonly property int activeWidth: 220
+    readonly property int maxActiveWidth: 220
     readonly property int horizontalPadding: 10
 
     readonly property var activeWindow: CompositorService.activeWindow
@@ -22,7 +23,10 @@ Rectangle {
     radius: 16
     height: 32
 
-    width: activeWidth
+    readonly property real naturalContentWidth: horizontalPadding * 2 + iconContainer.width + contentRow.spacing
+        + Math.max(appIdTextA.implicitWidth, titleTextA.implicitWidth, appIdTextB.implicitWidth, titleTextB.implicitWidth)
+
+    width: Math.min(maxActiveWidth, naturalContentWidth)
     implicitWidth: width
 
     Behavior on width {
@@ -188,6 +192,7 @@ Rectangle {
                 opacity: 1
                 sourceSize: Qt.size(22, 22)
                 fillMode: Image.PreserveAspectCrop
+                visible: !Config.tintIcons
             }
 
             Image {
@@ -197,6 +202,31 @@ Rectangle {
                 opacity: 0
                 sourceSize: Qt.size(22, 22)
                 fillMode: Image.PreserveAspectCrop
+                visible: !Config.tintIcons
+            }
+
+            Loader {
+                active: Config.tintIcons
+                anchors.fill: iconA
+                opacity: iconA.opacity
+                sourceComponent: Colorize {
+                    source: iconA
+                    hue: Qt.color(Colors.md3.on_surface).hslHue
+                    saturation: Qt.color(Colors.md3.on_surface).hslSaturation
+                    lightness: 0.0
+                }
+            }
+
+            Loader {
+                active: Config.tintIcons
+                anchors.fill: iconB
+                opacity: iconB.opacity
+                sourceComponent: Colorize {
+                    source: iconB
+                    hue: Qt.color(Colors.md3.on_surface).hslHue
+                    saturation: Qt.color(Colors.md3.on_surface).hslSaturation
+                    lightness: 0.0
+                }
             }
         }
 
