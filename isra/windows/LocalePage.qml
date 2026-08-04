@@ -18,8 +18,6 @@ PageBase {
 
         SettingChips {
             label: "Hour format"
-            enabled: Config.timeFormat === ""
-            opacity: Config.timeFormat === "" ? 1 : 0.6
             options: [
                 {
                     label: "12h",

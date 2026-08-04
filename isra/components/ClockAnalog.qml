@@ -113,7 +113,11 @@ Item {
                 id: innerHours
                 anchors.horizontalCenter: parent.horizontalCenter
                 color: root.subColor
-                text: Qt.formatTime(root.currentTime, root.is12h ? "hh" : "hh")
+                text: {
+                    const h = root.currentTime.getHours()
+                    const disp = root.is12h ? (h % 12 || 12) : h
+                    return String(disp).padStart(2, '0')
+                }
 
                 font.family:        root.clockFont
                 font.pixelSize:     root.analogSize * 0.28
