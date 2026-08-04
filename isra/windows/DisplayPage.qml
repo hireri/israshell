@@ -108,12 +108,11 @@ PageBase {
             onToggled: v => Config.update({
                     blurEffects: v
                 })
-            isLast: !blurSwitch.checked
         }
 
         SettingSlider {
-            label: "Bar & Blur dimming"
-            sublabel: "Overlay opacity of the blurred panels"
+            label: "Panel opacity"
+            sublabel: "Overlay opacity of panels and menus"
             from: 0.1
             to: 1.0
             stepSize: 0.05

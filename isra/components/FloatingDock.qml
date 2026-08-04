@@ -341,8 +341,9 @@ PanelWindow {
                             property real extent: 0
 
                             property bool suppressInitialAnim: _instant
+                            property bool suppressSizeAnim: false
                             Behavior on extent {
-                                enabled: !delegateRoot.suppressInitialAnim
+                                enabled: !delegateRoot.suppressInitialAnim && !delegateRoot.suppressSizeAnim
                                 NumberAnimation {
                                     duration: dockModelImpl.exitDuration
                                     easing.type: Easing.BezierSpline
@@ -358,6 +359,15 @@ PanelWindow {
                                     Qt.callLater(() => suppressInitialAnim = false);
                                 } else {
                                     Qt.callLater(applyExtent);
+                                }
+                            }
+
+                            Connections {
+                                target: dockRoot
+                                function onItemCellSizeChanged() {
+                                    delegateRoot.suppressSizeAnim = true;
+                                    delegateRoot.extent = delegateRoot.targetExtent;
+                                    Qt.callLater(() => delegateRoot.suppressSizeAnim = false);
                                 }
                             }
 

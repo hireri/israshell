@@ -19,7 +19,7 @@ Singleton {
     property real blurOpacity: 0.65
 
     function dim(color) {
-        return blurEffects ? ColorUtils.withAlpha(color, blurOpacity) : color;
+        return ColorUtils.withAlpha(color, blurOpacity);
     }
 
     function blurAllowed(visible) {
@@ -115,13 +115,18 @@ Singleton {
         return false;
     }
 
-    function __resolveBarDockConflict() {
+    function __resolveBarMovedConflict() {
+        if (!__barDockEdgeConflict()) return;
+        configRoot.update({ floatingDock: Object.assign({}, floatingDock, { edge: floatingDock.edge === 0 ? 1 : 0 }) });
+    }
+
+    function __resolveDockMovedConflict() {
         if (!__barDockEdgeConflict()) return;
         configRoot.update({ bar: Object.assign({}, bar, { position: bar.position === 0 ? 1 : 0 }) });
     }
 
-    onBarChanged: Qt.callLater(__resolveBarDockConflict)
-    onFloatingDockChanged: Qt.callLater(__resolveBarDockConflict)
+    onBarChanged: Qt.callLater(__resolveBarMovedConflict)
+    onFloatingDockChanged: Qt.callLater(__resolveDockMovedConflict)
 
     function __qsTilesDefaults() {
         return QsTileService.defaultLayout();
@@ -462,10 +467,10 @@ Singleton {
             }
         }
 
-        _selfWrite = true;
-        fileView.setText(JSON.stringify(data, null, 4));
-
         __apply(data);
+
+        _selfWrite = true;
+        writeDebouncer.restart();
     }
 
     function resetToDefaults() {
@@ -476,6 +481,12 @@ Singleton {
         id: reloadDebouncer
         interval: 150
         onTriggered: fileView.reload()
+    }
+
+    Timer {
+        id: writeDebouncer
+        interval: 150
+        onTriggered: configRoot.__write()
     }
 
     FileView {
