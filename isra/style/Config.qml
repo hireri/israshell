@@ -16,7 +16,7 @@ Singleton {
     property bool screenCorners: true
     property bool tintIcons: false
     property bool blurEffects: false
-    property real blurOpacity: 0.65
+    property real blurOpacity: 1
 
     function dim(color) {
         return ColorUtils.withAlpha(color, blurOpacity);
@@ -242,7 +242,7 @@ Singleton {
             screenCorners: true,
             tintIcons: false,
             blurEffects: false,
-            blurOpacity: 0.65,
+            blurOpacity: 1,
             
             showBarWeather: true,
             timeFormat: "",
