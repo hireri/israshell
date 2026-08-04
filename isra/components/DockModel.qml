@@ -19,6 +19,18 @@ Item {
 
     readonly property var pinnedApps: (Config && Config.pinnedApps) ? Config.pinnedApps : []
 
+    readonly property string keyPrefix: "app:"
+    function keyFor(appId: string): string { return keyPrefix + appId; }
+    function appIdOfKey(key: string): string {
+        return key.startsWith(keyPrefix) ? key.slice(keyPrefix.length) : "";
+    }
+    function isKeyPinned(key: string): bool {
+        let appId = appIdOfKey(key);
+        return appId !== "" && pinnedApps.indexOf(appId) !== -1;
+    }
+
+    signal pinRequested()
+
     function togglePinned(appId: string): void {
         let pins = pinnedApps.slice();
         let idx = pins.indexOf(appId);
@@ -27,6 +39,7 @@ Item {
         } else {
             pins.push(appId);
         }
+        pinRequested();
         Config.update({ pinnedApps: pins });
     }
 
@@ -92,7 +105,7 @@ Item {
                 isPinned: true,
                 isSeparator: false,
                 toplevels: matchedWindows,
-                key: "pinned:" + pinId
+                key: keyFor(pinId)
             });
         }
 
@@ -113,7 +126,7 @@ Item {
                     isPinned: false,
                     isSeparator: false,
                     toplevels: [tl],
-                    key: "running:" + appId
+                    key: keyFor(appId)
                 };
                 unpinnedGroups.push(group);
                 mappedToplevels.add(tl);
@@ -150,7 +163,7 @@ Item {
         isReleasing = false;
 
         let previewOrder = pinnedApps.slice();
-        let sourceIndex = previewOrder.indexOf(key.startsWith("pinned:") ? key.slice("pinned:".length) : "");
+        let sourceIndex = previewOrder.indexOf(appIdOfKey(key));
         let clickOffset = sourceIndex !== -1 ? startPos - (sourceIndex * itemStride) : 0;
 
         draggingKey = key;
@@ -165,7 +178,7 @@ Item {
         if (draggingKey !== key || isReleasing) return;
         dragPos = scenePos;
 
-        let draggedAppId = key.startsWith("pinned:") ? key.slice("pinned:".length) : "";
+        let draggedAppId = appIdOfKey(key);
         if (!draggedAppId) return;
 
         let fromIdx = dragPreviewOrder.indexOf(draggedAppId);
@@ -185,10 +198,12 @@ Item {
     }
 
     function unpinOrClose(key: string): void {
-        if (key.startsWith("pinned:")) {
-            togglePinned(key.slice("pinned:".length));
-        } else if (key.startsWith("running:")) {
-            let appId = key.slice("running:".length);
+        let appId = appIdOfKey(key);
+        if (!appId) return;
+
+        if (isKeyPinned(key)) {
+            togglePinned(appId);
+        } else {
             for (const tl of activeToplevels) {
                 if (tl && matchesAppId(tl.appId, appId) && typeof tl.close === "function") {
                     tl.close();
@@ -240,7 +255,7 @@ Item {
 
         let result = [];
         for (let i = 0; i < dragPreviewOrder.length; i++) {
-            let entry = byKey["pinned:" + dragPreviewOrder[i]];
+            let entry = byKey[keyFor(dragPreviewOrder[i])];
             if (entry) result.push(entry);
         }
         for (let i = 0; i < dockModel.length; i++) {

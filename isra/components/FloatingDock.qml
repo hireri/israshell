@@ -310,9 +310,12 @@ PanelWindow {
                         clip: false
                         model: dockModelImpl.viewModel
 
-                        moveDisplaced: Transition {
+                        readonly property Transition slideTransition: Transition {
                             NumberAnimation { properties: "x,y"; duration: 220; easing.type: Easing.OutCubic }
                         }
+
+                        move: dockRoot.draggingKey === "" ? slideTransition : null
+                        moveDisplaced: slideTransition
 
                         delegate: Item {
                             id: delegateRoot
@@ -476,6 +479,7 @@ PanelWindow {
     DockHover {
         id: hoverPopup
         dockRoot: pill
+        dockModel: dockModelImpl
         dockEdge: dockRoot.edge
         anchorToItem: true
     }

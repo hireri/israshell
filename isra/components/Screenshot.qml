@@ -371,6 +371,7 @@ Item {
                         exclusionMode: ExclusionMode.Ignore
                         WlrLayershell.layer: WlrLayer.Overlay
                         WlrLayershell.keyboardFocus: isFocused && !sessionRoot.capturing ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+                        WlrLayershell.namespace: "quickshell:screenshot"
 
                         readonly property bool isFocused: sessionRoot.focusedScreen === modelData
                         property real monX: modelData.x

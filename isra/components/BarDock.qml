@@ -97,9 +97,12 @@ Rectangle {
             model: dockModelImpl.viewModel
             cacheBuffer: 0
 
-            moveDisplaced: Transition {
+            readonly property Transition slideTransition: Transition {
                 NumberAnimation { properties: "x,y"; duration: 220; easing.type: Easing.OutCubic }
             }
+
+            move: dockRoot.draggingKey === "" ? slideTransition : null
+            moveDisplaced: slideTransition
 
             delegate: Item {
                 id: delegateRoot
@@ -234,5 +237,6 @@ Rectangle {
     DockHover {
         id: hoverPopup
         dockRoot: dockRoot
+        dockModel: dockModelImpl
     }
 }

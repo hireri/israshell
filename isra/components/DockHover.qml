@@ -13,9 +13,63 @@ PopupWindow {
     id: root
 
     required property Item dockRoot
+    property DockModel dockModel: null
 
     property Item targetButton: null
     property string targetKey: ""
+
+    property real latchedDockWidth: 0
+    property real latchedDockHeight: 0
+    property real latchedCentreX: 0
+    property real latchedCentreY: 0
+    property real latchedWindowCentreX: 0
+    property real latchedDockWindowX: 0
+    property real latchedDockWindowY: 0
+
+    function relayout(): void {
+        if (!dockRoot) return;
+
+        latchedDockWidth = dockRoot.width;
+        latchedDockHeight = dockRoot.height;
+
+        const win = dockRoot.QsWindow.window;
+        if (win && win.contentItem) {
+            const dockTopLeft = dockRoot.mapToItem(win.contentItem, 0, 0);
+            latchedDockWindowX = dockTopLeft.x;
+            latchedDockWindowY = dockTopLeft.y;
+        }
+
+        if (!targetButton) return;
+
+        latchedCentreX = targetButton.mapToItem(dockRoot, targetButton.width / 2, 0).x;
+        latchedCentreY = targetButton.mapToItem(dockRoot, 0, targetButton.height / 2).y;
+        if (win && win.contentItem)
+            latchedWindowCentreX = targetButton.mapToItem(win.contentItem, targetButton.width / 2, 0).x;
+    }
+
+    onTargetButtonChanged: relayout()
+    onVisibleChanged: if (visible) relayout()
+
+    Timer {
+        id: pinTrackTimer
+        interval: 16
+        repeat: true
+        property int ticksLeft: 0
+        onTriggered: {
+            root.relayout();
+            ticksLeft--;
+            if (ticksLeft <= 0) stop();
+        }
+    }
+
+    Connections {
+        target: root.dockModel
+        function onPinRequested(): void {
+            root.relayout();
+            pinTrackTimer.ticksLeft = 18;
+            pinTrackTimer.restart();
+        }
+    }
 
     property var appToplevels: targetButton ? targetButton.toplevels : []
 
@@ -48,11 +102,11 @@ PopupWindow {
     visible: false
     implicitWidth: {
         if (!anchorToItem) return 900;
-        return sideEdge ? (cappedContentWidth + gap) : (dockRoot.width + cappedContentWidth + gap * 2);
+        return sideEdge ? (cappedContentWidth + gap) : (latchedDockWidth + cappedContentWidth + gap * 2);
     }
     implicitHeight: {
         if (!anchorToItem) return 260;
-        return sideEdge ? (dockRoot.height + contentHeight + gap * 2) : (contentHeight + gap);
+        return sideEdge ? (latchedDockHeight + contentHeight + gap * 2) : (contentHeight + gap);
     }
     color: "transparent"
 
@@ -60,15 +114,11 @@ PopupWindow {
     anchor.item: anchorToItem ? dockRoot : null
     anchor.rect: {
         if (anchorToItem)
-            return Qt.rect(0, 0, dockRoot.width, dockRoot.height);
-
-        let win = dockRoot.QsWindow.window;
-        if (!win || !win.contentItem) return Qt.rect(0, 0, implicitWidth, implicitHeight);
-        let topLeft = dockRoot.mapToItem(win.contentItem, 0, 0);
+            return Qt.rect(0, 0, latchedDockWidth, latchedDockHeight);
 
         return Qt.rect(
-            topLeft.x - implicitWidth / 2 + dockRoot.width / 2,
-            topLeft.y + (barOnTop ? dockRoot.height + gap : -gap - implicitHeight),
+            latchedDockWindowX - implicitWidth / 2 + latchedDockWidth / 2,
+            latchedDockWindowY + (barOnTop ? latchedDockHeight + gap : -gap - implicitHeight),
             implicitWidth,
             implicitHeight
         );
@@ -306,13 +356,7 @@ PopupWindow {
 
     readonly property real targetX: {
         if (!targetButton) return 0;
-        let win = dockRoot.QsWindow.window;
-        if (!win || !win.contentItem) return 0;
-        let buttonCenterInWindow = targetButton.width / 2;
-        let buttonCenterInGlobal = targetButton.mapToItem(win.contentItem, buttonCenterInWindow, 0).x;
-        let surfaceLeftInWindow = anchor.rect.x;
-        
-        let rawX = buttonCenterInGlobal - surfaceLeftInWindow - cappedContentWidth / 2;
+        let rawX = latchedWindowCentreX - anchor.rect.x - cappedContentWidth / 2;
 
         let minX = 8;
         let maxX = Math.max(minX, root.implicitWidth - 8 - cappedContentWidth);
@@ -321,9 +365,8 @@ PopupWindow {
 
     readonly property real trackX: {
         if (!anchorToItem || sideEdge || !targetButton) return 0;
-        const centre = targetButton.mapToItem(dockRoot, targetButton.width / 2, 0).x;
-        const surfaceLeftInDock = (dockRoot.width - implicitWidth) / 2;
-        const raw = centre - surfaceLeftInDock - cappedContentWidth / 2;
+        const surfaceLeftInDock = (latchedDockWidth - implicitWidth) / 2;
+        const raw = latchedCentreX - surfaceLeftInDock - cappedContentWidth / 2;
         const minX = 8;
         const maxX = Math.max(minX, implicitWidth - 8 - cappedContentWidth);
         return Math.max(minX, Math.min(maxX, raw));
@@ -331,9 +374,8 @@ PopupWindow {
 
     readonly property real trackY: {
         if (!anchorToItem || !sideEdge || !targetButton) return 0;
-        const centre = targetButton.mapToItem(dockRoot, 0, targetButton.height / 2).y;
-        const surfaceTopInDock = (dockRoot.height - implicitHeight) / 2;
-        const raw = centre - surfaceTopInDock - contentHeight / 2;
+        const surfaceTopInDock = (latchedDockHeight - implicitHeight) / 2;
+        const raw = latchedCentreY - surfaceTopInDock - contentHeight / 2;
         const minY = 8;
         const maxY = Math.max(minY, implicitHeight - 8 - contentHeight);
         return Math.max(minY, Math.min(maxY, raw));
