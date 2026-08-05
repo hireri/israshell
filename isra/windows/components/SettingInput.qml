@@ -10,10 +10,13 @@ SettingRow {
     property bool password: false
     property int fieldWidth: 180
     property bool isLast: false
+    property alias fieldContainer: fieldRect
+    property alias fieldItem: field
 
     signal committed(string value)
 
     Rectangle {
+        id: fieldRect
         implicitWidth: root.fieldWidth
         implicitHeight: 36
         anchors.verticalCenter: parent?.verticalCenter

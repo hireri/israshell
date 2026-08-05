@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -623,6 +625,18 @@ PageBase {
                         });
                     }
                 }
+            }
+        }
+
+        SectionCard {
+            label: "API Keys"
+            Layout.fillWidth: true
+
+            SecretInput {
+                isLast: true
+                label: "Wolfram|Alpha"
+                sublabel: "Key for the Wolfram launcher widget"
+                secretKey: "wolfram"
             }
         }
 

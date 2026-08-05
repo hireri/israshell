@@ -55,7 +55,8 @@ Item {
             "define": "menu-book",
             "whois": "dns",
             "password": "key",
-            "weather": "partly-cloudy-day"
+            "weather": "partly-cloudy-day",
+            "wolfram": "function"
         })
 
     readonly property var _emojiIcons: ["sentiment-calm", "sentiment-content", "sentiment-dissatisfied", "smart-toy", "sentiment-excited", "sentiment-frustrated", "sentiment-neutral", "sentiment-sad", "sentiment-satisfied", "sentiment-stressed", "sentiment-very-satisfied", "sentiment-worried", "sentiment-sick", "sentiment-very-dissatisfied", "sentiment-extremely-dissatisfied"]

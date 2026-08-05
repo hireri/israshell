@@ -579,7 +579,7 @@ Item {
 
             Text {
                 visible: root._loading || root._result === ""
-                text: root._loading ? "calculating..." : "—"
+                text: root._loading ? "calculating..." : "..."
                 color: Colors.md3.on_surface_variant
                 font.pixelSize: root._loading ? 14 : 32
                 font.weight: Font.Light

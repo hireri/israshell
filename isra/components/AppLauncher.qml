@@ -88,6 +88,9 @@ Scope {
         if (/^kao(?:moji)?(?:\s|$)/i.test(q))
             return "kaomoji";
 
+        if (/^(?:w|wolfram)\s+\S+/i.test(q))
+            return "wolfram";
+
         if (/^[+-]?[\d.,]+\s*°?\s*[a-zA-Z][a-zA-Z\/]{0,19}\s+(?:to|in)\s+°?\s*[a-zA-Z][a-zA-Z\/]{0,19}$/i.test(q))
             return "math";
         if (/\d/.test(q) && /[+\-*\/^%]/.test(q))
@@ -117,6 +120,9 @@ Scope {
         const weatherM = /^(?:weather|temp)(?:\s+(.*))?$/i.exec(q);
         if (weatherM)
             return (weatherM[1] || "").trim();
+        const wolframM = /^(?:w|wolfram)\s+(.+)$/i.exec(q);
+        if (wolframM)
+            return wolframM[1].trim();
         return q;
     }
 
@@ -672,6 +678,7 @@ Scope {
                         case "kaomoji":   return kaomojiWidget;
                         case "password":  return passwordWidget;
                         case "weather":   return weatherWidget;
+                        case "wolfram":   return wolframWidget;
                         default:          return null;
                     }
                 }
@@ -747,8 +754,19 @@ Scope {
                         y: Math.round(_panel.height * _restFraction)
 
                         width: {
-                            if (root.mode === "apps")
-                                return root.widgetType === "kaomoji" ? 480 : 420;
+                            if (root.mode === "apps") {
+                                if (root.widgetType === "kaomoji")
+                                    return 480;
+                                if (root.widgetType === "wolfram") {
+                                    const len = activeWidget?.answerLength ?? 0;
+                                    if (len > 140)
+                                        return 640;
+                                    if (len > 45)
+                                        return 520;
+                                    return 420;
+                                }
+                                return 420;
+                            }
                             if (root.mode === "emoji")
                                 return 480;
                             return 520;
@@ -998,6 +1016,17 @@ Scope {
                                     anchors { top: parent.top; left: parent.left; right: parent.right }
                                     visible: root.widgetType === "weather"
                                     query: root.widgetQuery
+                                    onCopyResult: text => {
+                                        copyProc.command = ["wl-copy", text];
+                                        copyProc.running = true;
+                                    }
+                                }
+
+                                WolframWidget {
+                                    id: wolframWidget
+                                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                                    visible: root.widgetType === "wolfram"
+                                    question: root.widgetQuery
                                     onCopyResult: text => {
                                         copyProc.command = ["wl-copy", text];
                                         copyProc.running = true;
