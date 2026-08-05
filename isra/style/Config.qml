@@ -13,6 +13,8 @@ Singleton {
     property int carouselSpeed: 30
     property string fontFamily: "Inter"
     property string fontMonospace: "Roboto Mono"
+    property string language: "en_US"
+    property string translationTone: "formal"
     property bool screenCorners: true
     property bool tintIcons: false
     property bool blurEffects: false
@@ -240,6 +242,8 @@ Singleton {
             carouselSpeed: 30,
             fontFamily: "Inter",
             fontMonospace: "Roboto Mono",
+            language: "en_US",
+            translationTone: "formal",
             screenCorners: true,
             tintIcons: false,
             blurEffects: false,

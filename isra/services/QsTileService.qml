@@ -56,20 +56,20 @@ Singleton {
             label: {
                 if (NetworkService.wifiEnabled) {
                     if (NetworkService.wifiConnecting)
-                        return "Connecting...";
+                        return Localization.t("networkPage.connecting");
                     if (NetworkService.wifiConnected && NetworkService.wifiSsid !== "")
                         return NetworkService.wifiSsid;
-                    return "Not Connected";
+                    return Localization.t("networkPage.not_connected");
                 }
                 if (NetworkService.ethConnected)
-                    return "Ethernet";
-                return "Wi-Fi Off";
+                    return Localization.t("networkPage.ethernet");
+                return Localization.t("qsTileService.wifi_off");
             }
             sublabel: {
                 if (NetworkService.wifiConnected)
-                    return NetworkService.wifiSignal + "% signal";
+                    return Localization.t("qsTileService.signal_percent").arg(NetworkService.wifiSignal);
                 if (NetworkService.ethConnected && !NetworkService.wifiEnabled)
-                    return "Wired";
+                    return Localization.t("qsTileService.wired");
                 return "";
             }
             iconComponent: WifiIcon {
@@ -115,13 +115,13 @@ Singleton {
             }
             label: {
                 if (!BluetoothService.enabled)
-                    return "Bluetooth Off";
+                    return Localization.t("qsTileService.bluetooth_off");
                 const dev = BluetoothService.firstConnected;
                 if (dev)
                     return dev.name;
                 if (BluetoothService.discovering)
-                    return "Scanning...";
-                return "Bluetooth On";
+                    return Localization.t("networkPage.scanning");
+                return Localization.t("qsTileService.bluetooth_on");
             }
             sublabel: {
                 const dev = BluetoothService.firstConnected;
@@ -157,7 +157,7 @@ Singleton {
         id: caffeineWideComp
         SimpleIconLabelTile {
             active: CaffeineService.active
-            label: "Caffeine"
+            label: Localization.t("qsTileService.caffeine")
             iconComponent: MaterialIcon {
                 name: "caffeine"
                 iconSize: 22
@@ -187,7 +187,7 @@ Singleton {
         NightLightWideTile {
             offSecondary: true
             active: NightLightService.active
-            label: "Night Light"
+            label: Localization.t("qsTileService.night_light")
             iconComponent: MaterialIcon {
                 name: "nightlight"
                 iconSize: 22
@@ -221,17 +221,17 @@ Singleton {
         id: localsendWideComp
         WideActionTile {
             active: Config.localsend.enabled
-            label: "LocalSend"
+            label: Localization.t("qsTileService.localsend")
             sublabel: {
                 if (!Config.localsend.enabled)
                     return "";
                 if (!LocalSendService.reachable)
-                    return "Starting...";
+                    return Localization.t("qsTileService.starting");
                 if (LocalSendService.transferring)
-                    return "Transferring...";
+                    return Localization.t("qsTileService.transferring");
                 if (LocalSendService.devices.length > 0)
-                    return LocalSendService.devices.length + " nearby";
-                return "Ready";
+                    return Localization.t("qsTileService.nearby_count").arg(LocalSendService.devices.length);
+                return Localization.t("qsTileService.ready");
             }
             iconComponent: MaterialIcon {
                 name: "wifi-tethering"
@@ -258,7 +258,7 @@ Singleton {
         id: screenshotWideComp
         SimpleIconLabelTile {
             active: false
-            label: "Screenshot"
+            label: Localization.t("qsTileService.screenshot")
             iconComponent: MaterialIcon {
                 name: "screenshot"
                 iconSize: 22
@@ -284,7 +284,7 @@ Singleton {
         id: colorPickerWideComp
         SimpleIconLabelTile {
             active: false
-            label: "Color Picker"
+            label: Localization.t("qsTileService.color_picker")
             iconComponent: MaterialIcon {
                 name: "colorize"
                 iconSize: 22
@@ -310,7 +310,7 @@ Singleton {
         id: ctsWideComp
         SimpleIconLabelTile {
             active: false
-            label: "Circle to Search"
+            label: Localization.t("qsTileService.circle_to_search")
             iconComponent: MaterialIcon {
                 name: "image-search"
                 iconSize: 22
@@ -335,7 +335,7 @@ Singleton {
         id: ocrWideComp
         SimpleIconLabelTile {
             active: false
-            label: "OCR Text"
+            label: Localization.t("qsTileService.ocr_text")
             iconComponent: MaterialIcon {
                 name: "ocr"
                 iconSize: 22
@@ -356,7 +356,7 @@ Singleton {
         id: recordWideComp
         RecordWideTile {
             active: ScreencapService.isRecording
-            label: "Record"
+            label: Localization.t("qsTileService.record")
             iconComponent: MaterialIcon {
                 name: "record"
                 iconSize: 22
@@ -385,7 +385,7 @@ Singleton {
         id: darkThemeWideComp
         DarkThemeWideTile {
             active: WallpaperService.isDark
-            label: "Dark Theme"
+            label: Localization.t("qsTileService.dark_theme")
             iconComponent: MaterialIcon {
                 name: "contrast"
                 iconSize: 22
@@ -414,7 +414,7 @@ Singleton {
         id: gameModeWideComp
         SimpleIconLabelTile {
             active: GameModeService.active
-            label: "Game Mode"
+            label: Localization.t("qsTileService.game_mode")
             iconComponent: MaterialIcon {
                 name: "game-mode"
                 iconSize: 22
@@ -430,20 +430,20 @@ Singleton {
     Process { id: colorPickerProc; command: ["hyprpicker", "--autocopy"] }
 
     readonly property var definitions: [
-        { id: "wifi",         label: "Wi-Fi",          compactComponent: wifiCompactComp,         wideComponent: wifiWideComp },
-        { id: "bluetooth",    label: "Bluetooth",      compactComponent: bluetoothCompactComp,    wideComponent: bluetoothWideComp },
-        { id: "caffeine",     label: "Caffeine",       compactComponent: caffeineCompactComp,      wideComponent: caffeineWideComp },
-        { id: "nightlight",   label: "Night Light",    compactComponent: nightlightCompactComp,    wideComponent: nightlightWideComp },
-        { id: "powerProfile", label: "Power Profile",  compactComponent: powerProfileCompactComp,  wideComponent: powerProfileWideComp },
-        { id: "gameMode",     label: "Game Mode",      compactComponent: gameModeCompactComp,      wideComponent: gameModeWideComp },
-        { id: "localsend",    label: "LocalSend",      compactComponent: localsendCompactComp,     wideComponent: localsendWideComp },
-        { id: "screenshot",   label: "Screenshot",     compactComponent: screenshotCompactComp,    wideComponent: screenshotWideComp },
-        { id: "record",       label: "Record",         compactComponent: recordCompactComp,        wideComponent: recordWideComp },
-        { id: "colorPicker",  label: "Color Picker",   compactComponent: colorPickerCompactComp,   wideComponent: colorPickerWideComp },
-        { id: "cts",          label: "Circle to Search", compactComponent: ctsCompactComp,         wideComponent: ctsWideComp },
-        { id: "ocr",          label: "OCR Text",       compactComponent: ocrCompactComp,           wideComponent: ocrWideComp },
-        { id: "darkTheme",    label: "Dark Theme",     compactComponent: darkThemeCompactComp,     wideComponent: darkThemeWideComp },
-        { id: "mediaMini",    label: "Media Player",   compactComponent: mediaMiniCompactComp,     wideComponent: mediaMiniWideComp }
+        { id: "wifi",         label: Localization.t("qsTileService.wifi"),          compactComponent: wifiCompactComp,         wideComponent: wifiWideComp },
+        { id: "bluetooth",    label: Localization.t("qsTileService.bluetooth"),     compactComponent: bluetoothCompactComp,    wideComponent: bluetoothWideComp },
+        { id: "caffeine",     label: Localization.t("qsTileService.caffeine"),      compactComponent: caffeineCompactComp,      wideComponent: caffeineWideComp },
+        { id: "nightlight",   label: Localization.t("qsTileService.night_light"),   compactComponent: nightlightCompactComp,    wideComponent: nightlightWideComp },
+        { id: "powerProfile", label: Localization.t("qsTileService.power_profile"), compactComponent: powerProfileCompactComp,  wideComponent: powerProfileWideComp },
+        { id: "gameMode",     label: Localization.t("qsTileService.game_mode"),     compactComponent: gameModeCompactComp,      wideComponent: gameModeWideComp },
+        { id: "localsend",    label: Localization.t("qsTileService.localsend"),     compactComponent: localsendCompactComp,     wideComponent: localsendWideComp },
+        { id: "screenshot",   label: Localization.t("qsTileService.screenshot"),    compactComponent: screenshotCompactComp,    wideComponent: screenshotWideComp },
+        { id: "record",       label: Localization.t("qsTileService.record"),        compactComponent: recordCompactComp,        wideComponent: recordWideComp },
+        { id: "colorPicker",  label: Localization.t("qsTileService.color_picker"),  compactComponent: colorPickerCompactComp,   wideComponent: colorPickerWideComp },
+        { id: "cts",          label: Localization.t("qsTileService.circle_to_search"), compactComponent: ctsCompactComp,        wideComponent: ctsWideComp },
+        { id: "ocr",          label: Localization.t("qsTileService.ocr_text"),      compactComponent: ocrCompactComp,           wideComponent: ocrWideComp },
+        { id: "darkTheme",    label: Localization.t("qsTileService.dark_theme"),    compactComponent: darkThemeCompactComp,     wideComponent: darkThemeWideComp },
+        { id: "mediaMini",    label: Localization.t("qsTileService.media_player"),  compactComponent: mediaMiniCompactComp,     wideComponent: mediaMiniWideComp }
     ]
 
     readonly property var allIds: definitions.map(d => d.id)

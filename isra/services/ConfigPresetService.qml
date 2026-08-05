@@ -25,14 +25,14 @@ Singleton {
     function relativeTime(epochSeconds) {
         const diff = Math.max(0, Date.now() / 1000 - epochSeconds);
         if (diff < 60)
-            return "just now";
+            return Localization.t("configPresetService.just_now");
         if (diff < 3600)
-            return Math.floor(diff / 60) + "m ago";
+            return Localization.t("configPresetService.minutes_ago").arg(Math.floor(diff / 60));
         if (diff < 86400)
-            return Math.floor(diff / 3600) + "h ago";
+            return Localization.t("configPresetService.hours_ago").arg(Math.floor(diff / 3600));
         if (diff < 2592000)
-            return Math.floor(diff / 86400) + "d ago";
-        return Math.floor(diff / 2592000) + "mo ago";
+            return Localization.t("configPresetService.days_ago").arg(Math.floor(diff / 86400));
+        return Localization.t("configPresetService.months_ago").arg(Math.floor(diff / 2592000));
     }
 
     function refresh() {
@@ -72,7 +72,7 @@ Singleton {
             if (code === 0) {
                 root.refresh();
             } else {
-                root.statusMessage = "Save failed (exit " + code + ")";
+                root.statusMessage = Localization.t("configPresetService.save_failed_exit").arg(code);
                 root.statusIsError = true;
             }
         }
@@ -122,13 +122,13 @@ Singleton {
                 const parsed = JSON.parse(readFileView.text());
                 Config.update(parsed);
             } catch (e) {
-                root.statusMessage = "Apply failed: could not parse preset";
+                root.statusMessage = Localization.t("configPresetService.apply_failed_could_not_parse");
                 root.statusIsError = true;
                 console.log("[ConfigPresetService] apply parse error:", e);
             }
         }
         onLoadFailed: error => {
-            root.statusMessage = "Could not read preset file";
+            root.statusMessage = Localization.t("configPresetService.could_not_read_preset_file");
             root.statusIsError = true;
             console.log("[ConfigPresetService] apply load error:", error);
         }

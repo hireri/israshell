@@ -9,8 +9,8 @@ import qs.services
 import qs.windows.components
 
 PageBase {
-    title: "Bar"
-    subtitle: "Layout, media and tray"
+    title: Localization.t("settingsWindow.bar")
+    subtitle: Localization.t("barPage.layout_media_and_tray")
 
     Component {
         id: huggingIconComp
@@ -77,21 +77,21 @@ PageBase {
     }
 
     SectionCard {
-        label: "Layout"
+        label: Localization.t("backgroundPage.layout")
         Layout.fillWidth: true
 
         SettingChips {
-            label: "Bar mode"
+            label: Localization.t("barPage.bar_mode")
             sublabel: {
                 switch (currentValue) {
                 case 0:
-                    return "Hugging screen edge";
+                    return Localization.t("barPage.hugging_screen_edge");
                 case 1:
-                    return "Attached to screen edge";
+                    return Localization.t("barPage.attached_to_screen_edge");
                 case 2:
-                    return "Floating, detached";
+                    return Localization.t("barPage.floating_detached");
                 case 3:
-                    return "Chromebook corners";
+                    return Localization.t("barPage.chromebook_corners");
                 default:
                     return "";
                 }
@@ -126,15 +126,15 @@ PageBase {
             })
         }
         SettingChips {
-            label: "Position"
+            label: Localization.t("backgroundPage.position")
             options: [
                 {
-                    label: "Top",
+                    label: Localization.t("backgroundPage.top"),
                     value: 0,
                     icon: arrowUpwardComp
                 },
                 {
-                    label: "Bottom",
+                    label: Localization.t("backgroundPage.bottom"),
                     value: 1,
                     icon: arrowDownwardComp
                 }
@@ -148,15 +148,15 @@ PageBase {
         }
 
         SettingChips {
-            label: "Transparency"
-            sublabel: "Background opacity level"
+            label: Localization.t("barPage.transparency")
+            sublabel: Localization.t("barPage.background_opacity_level")
             options: [
                 {
-                    label: "Tinted",
+                    label: Localization.t("backgroundPage.tinted"),
                     value: 1
                 },
                 {
-                    label: "Full",
+                    label: Localization.t("barPage.full"),
                     value: 2
                 }
             ]
@@ -169,8 +169,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Transparent pills"
-            sublabel: "Remove pills background"
+            label: Localization.t("barPage.transparent_pills")
+            sublabel: Localization.t("barPage.remove_pills_background")
             checked: Config.bar.transparentPills
             onToggled: v => Config.update({
                 bar: Object.assign({}, Config.bar, {
@@ -180,20 +180,20 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Stacked sliders"
-            sublabel: "Volume and brightness sliders arranged vertically"
+            label: Localization.t("barPage.stacked_sliders")
+            sublabel: Localization.t("barPage.volume_and_brightness_sliders_arranged")
             checked: Config.verticalQSSliders
             onToggled: v => Config.update({ verticalQSSliders: v })
         }
     }
 
     SectionCard {
-        label: "Workspaces"
+        label: Localization.t("widgetService.workspaces")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Compact workspaces"
-            sublabel: "Shrink workspaces to hide empty ones"
+            label: Localization.t("barPage.compact_workspaces")
+            sublabel: Localization.t("barPage.shrink_workspaces_to_hide_empty")
             checked: Config.workspaces.compact
             onToggled: v => Config.update({
                 workspaces: Object.assign({}, Config.workspaces, {
@@ -203,8 +203,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Use icons"
-            sublabel: "Show application icons for workspaces with active windows"
+            label: Localization.t("barPage.use_icons")
+            sublabel: Localization.t("barPage.show_application_icons_for_workspaces")
             checked: Config.workspaces.useIcons
             onToggled: v => Config.update({
                 workspaces: Object.assign({}, Config.workspaces, {
@@ -215,15 +215,15 @@ PageBase {
 
         SettingChips {
             isLast: true
-            label: "Workspace style"
+            label: Localization.t("barPage.workspace_style")
             sublabel: {
                 switch (currentValue) {
                 case 0:
-                    return "Numbers (1, 2, 3)";
+                    return Localization.t("barPage.numbers_123");
                 case 1:
-                    return "Roman numerals (I, II, III)";
+                    return Localization.t("barPage.roman_numerals");
                 case 2:
-                    return "Kanji (一, 二, 三)";
+                    return Localization.t("barPage.kanji_numerals");
                 default:
                     return "";
                 }
@@ -234,7 +234,7 @@ PageBase {
                     value: 0
                 },
                 {
-                    label: "VI",
+                    label: Localization.t("barPage.vi"),
                     value: 1
                 },
                 {
@@ -250,8 +250,8 @@ PageBase {
             })
         }
         SettingSwitch {
-            label: "Always show numbers"
-            sublabel: "Stop hiding numbers while not hovering"
+            label: Localization.t("barPage.always_show_numbers")
+            sublabel: Localization.t("barPage.stop_hiding_numbers_while_not")
             checked: Config.workspaces.alwaysShowNumbers
             onToggled: v => Config.update({
                 workspaces: Object.assign({}, Config.workspaces, {
@@ -262,19 +262,19 @@ PageBase {
     }
 
     SectionCard {
-        label: "Widget order"
+        label: Localization.t("barPage.widget_order")
         Layout.fillWidth: true
 
         SettingChips {
-            label: "Center layout mode"
-            sublabel: currentValue === "auto" ? "Automatically fills center space" : "Pins space around a selected anchor widget"
+            label: Localization.t("barPage.center_layout_mode")
+            sublabel: currentValue === "auto" ? Localization.t("barPage.automatically_fills_center_space") : Localization.t("barPage.pins_space_around_a_selected")
             options: [
                 {
-                    label: "Auto",
+                    label: Localization.t("barPage.auto"),
                     value: "auto"
                 },
                 {
-                    label: "Anchor",
+                    label: Localization.t("barPage.anchor"),
                     value: "anchor"
                 }
             ]
@@ -306,36 +306,36 @@ PageBase {
     }
 
     SectionCard {
-        label: "Media player"
+        label: Localization.t("widgetService.media_player")
         Layout.fillWidth: true
 
         SettingChips {
-            label: "Player mode"
+            label: Localization.t("barPage.player_mode")
             sublabel: {
                 switch (currentValue) {
                 case 0:
-                    return "Cover and title";
+                    return Localization.t("barPage.cover_and_title");
                 case 1:
-                    return "Cover only";
+                    return Localization.t("barPage.cover_only");
                 case 2:
-                    return "Title only";
+                    return Localization.t("barPage.title_only");
                 default:
                     return "";
                 }
             }
             options: [
                 {
-                    label: "Both",
+                    label: Localization.t("barPage.both"),
                     value: 0,
                     icon: queueMusicIconComp
                 },
                 {
-                    label: "Cover",
+                    label: Localization.t("barPage.cover"),
                     value: 1,
                     icon: albumIconComp
                 },
                 {
-                    label: "Title",
+                    label: Localization.t("barPage.title"),
                     value: 2,
                     icon: menuIconComp
                 }
@@ -349,8 +349,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Spinning cover"
-            sublabel: "Rotate album art while playing"
+            label: Localization.t("barPage.spinning_cover")
+            sublabel: Localization.t("barPage.rotate_album_art_while_playing")
             checked: Config.bar.spinningCover
             onToggled: v => Config.update({
                 bar: Object.assign({}, Config.bar, {
@@ -360,8 +360,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Progress ring"
-            sublabel: "Circular progress indicator around the cover"
+            label: Localization.t("barPage.progress_ring")
+            sublabel: Localization.t("barPage.circular_progress_indicator_around_the")
             checked: Config.bar.playerRing
             onToggled: v => Config.update({
                 bar: Object.assign({}, Config.bar, {
@@ -372,8 +372,8 @@ PageBase {
 
         SettingSlider {
             isLast: true
-            label: "Scroll speed"
-            sublabel: "Media title carousel"
+            label: Localization.t("barPage.scroll_speed")
+            sublabel: Localization.t("barPage.media_title_carousel")
             from: 10
             to: 100
             stepSize: 5
@@ -388,31 +388,31 @@ PageBase {
     }
 
     SectionCard {
-        label: "OSD"
+        label: Localization.t("barPage.osd")
         Layout.fillWidth: true
 
         SettingChips {
             isLast: true
-            label: "Position"
+            label: Localization.t("backgroundPage.position")
             options: [
                 {
-                    label: "Center",
+                    label: Localization.t("backgroundPage.center"),
                     value: 0
                 },
                 {
-                    label: "Top",
+                    label: Localization.t("backgroundPage.top"),
                     value: 1
                 },
                 {
-                    label: "Bottom",
+                    label: Localization.t("backgroundPage.bottom"),
                     value: 3
                 },
                 {
-                    label: "Left",
+                    label: Localization.t("barPage.left"),
                     value: 4
                 },
                 {
-                    label: "Right",
+                    label: Localization.t("barPage.right"),
                     value: 2
                 }
             ]
@@ -424,32 +424,32 @@ PageBase {
     }
 
     SectionCard {
-        label: "System monitor"
+        label: Localization.t("widgetService.system_monitor")
         Layout.fillWidth: true
 
         SettingChips {
-            label: "Style"
+            label: Localization.t("barPage.style")
             sublabel: {
                 switch (currentValue) {
                 case 1:
-                    return "Circular pie charts";
+                    return Localization.t("barPage.circular_pie_charts");
                 case 2:
-                    return "Horizontal progress bars";
+                    return Localization.t("barPage.horizontal_progress_bars");
                 default:
-                    return "Minimal icons with text";
+                    return Localization.t("barPage.minimal_icons_with_text");
                 }
             }
             options: [
                 {
-                    label: "Icons",
+                    label: Localization.t("barPage.icons"),
                     value: 0
                 },
                 {
-                    label: "Pie",
+                    label: Localization.t("barPage.pie"),
                     value: 1
                 },
                 {
-                    label: "Bar",
+                    label: Localization.t("settingsWindow.bar"),
                     value: 2
                 }
             ]
@@ -462,8 +462,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Unified pill"
-            sublabel: "Group all metrics into a single container background"
+            label: Localization.t("barPage.unified_pill")
+            sublabel: Localization.t("barPage.group_all_metrics_into_a")
             checked: Config.sysMonitor?.unifiedPill ?? false
             onToggled: v => Config.update({
                 sysMonitor: Object.assign({}, Config.sysMonitor, {
@@ -473,7 +473,7 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Show percentages"
+            label: Localization.t("barPage.show_percentages")
             sublabel: (Config.sysMonitor?.style ?? 0) === 0 ? "Always enabled for standard icon style" : "Display numerical values next to indicators"
             enabled: (Config.sysMonitor?.style ?? 0) !== 0
             opacity: Config.sysMonitor?.style == 0 ? 0.6 : 1
@@ -487,8 +487,8 @@ PageBase {
 
         SettingSwitch {
             isLast: true
-            label: "Colored metrics"
-            sublabel: "Use distinct colors for each metric instead of the primary color"
+            label: Localization.t("barPage.colored_metrics")
+            sublabel: Localization.t("barPage.use_distinct_colors_for_each")
             checked: Config.sysMonitor?.colored ?? true
             onToggled: v => Config.update({
                 sysMonitor: Object.assign({}, Config.sysMonitor, {
@@ -498,8 +498,8 @@ PageBase {
         }
         SettingRow {
             isLast: true
-            label: "Glance metrics"
-            sublabel: "Toggle individual metrics on the bar"
+            label: Localization.t("barPage.glance_metrics")
+            sublabel: Localization.t("barPage.toggle_individual_metrics_on_the")
 
             Behavior on opacity {
                 NumberAnimation {
@@ -514,23 +514,23 @@ PageBase {
                 readonly property var actions: [
                     {
                         key: "cpu",
-                        label: "CPU"
+                        label: Localization.t("sysMonitor.cpu")
                     },
                     {
                         key: "ram",
-                        label: "RAM"
+                        label: Localization.t("sysMonitor.ram")
                     },
                     {
                         key: "gpu",
-                        label: "GPU"
+                        label: Localization.t("sysMonitor.gpu")
                     },
                     {
                         key: "temp",
-                        label: "Temperature"
+                        label: Localization.t("barPage.temperature")
                     },
                     {
                         key: "swap",
-                        label: "Swap"
+                        label: Localization.t("sysMonitor.swap")
                     }
                 ]
 
@@ -558,8 +558,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Smooth graphs"
-            sublabel: "Scrolls the performance graphs smoothly, instead of snapping on update"
+            label: Localization.t("barPage.smooth_graphs")
+            sublabel: Localization.t("barPage.scrolls_the_performance_graphs_smoothly")
             checked: (Config.sysMonitor?.style ?? 0) === 0 ? true : (Config.sysMonitor?.smooth ?? true)
             onToggled: v => Config.update({
                 sysMonitor: Object.assign({}, Config.sysMonitor, {
@@ -570,13 +570,13 @@ PageBase {
     }
 
     SectionCard {
-        label: "Tray"
+        label: Localization.t("widgetService.tray")
         Layout.fillWidth: true
 
         SettingRow {
             isLast: true
-            label: "Blacklist"
-            sublabel: "Hidden from tray"
+            label: Localization.t("barPage.blacklist")
+            sublabel: Localization.t("barPage.hidden_from_tray")
 
             Flow {
                 width: 220
@@ -600,7 +600,7 @@ PageBase {
                 }
 
                 ChipAdd {
-                    placeholder: "App name..."
+                    placeholder: Localization.t("barPage.app_name")
                     onConfirmed: v => {
                         if (!Config.bar.trayBlacklist.includes(v)) {
                             Config.update({
@@ -616,13 +616,13 @@ PageBase {
     }
 
     SectionCard {
-        label: "Toolbar"
+        label: Localization.t("widgetService.toolbar")
         Layout.fillWidth: true
 
         SettingRow {
             isLast: true
-            label: "Actions"
-            sublabel: "Toggle individual toolbar actions"
+            label: Localization.t("barPage.actions")
+            sublabel: Localization.t("barPage.toggle_individual_toolbar_actions")
 
             Behavior on opacity {
                 NumberAnimation {
@@ -637,35 +637,35 @@ PageBase {
                 readonly property var actions: [
                     {
                         key: "screenshot",
-                        label: "Screenshot"
+                        label: Localization.t("qsTileService.screenshot")
                     },
                     {
                         key: "record",
-                        label: "Record"
+                        label: Localization.t("qsTileService.record")
                     },
                     {
                         key: "cts",
-                        label: "Circle To Search"
+                        label: Localization.t("barPage.circle_to_search")
                     },
                     {
                         key: "ocr",
-                        label: "OCR"
+                        label: Localization.t("barPage.ocr")
                     },
                     ...(CompositorService.backendName === "hyprland" ? [{
                         key: "colorpicker",
-                        label: "Color Picker"
+                        label: Localization.t("qsTileService.color_picker")
                     }] : []),
                     {
                         key: "songrec",
-                        label: "Recognize Music"
+                        label: Localization.t("barPage.recognize_music")
                     },
                     {
                         key: "wallpaper",
-                        label: "Wallpaper Picker"
+                        label: Localization.t("barPage.wallpaper_picker")
                     },
                     {
                         key: "localsend",
-                        label: "LocalSend"
+                        label: Localization.t("qsTileService.localsend")
                     }
                 ]
 

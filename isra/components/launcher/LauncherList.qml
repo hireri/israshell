@@ -140,10 +140,10 @@ Item {
     }
 
     readonly property var _emptyText: ({
-            "apps": "No apps found.",
-            "clipboard": "Nothing here.",
-            "emoji": "No emoji found.",
-            "translate": "No apps found."
+            "apps": Localization.t("launcher.no_apps_found"),
+            "clipboard": Localization.t("launcher.nothing_here"),
+            "emoji": Localization.t("launcher.no_emoji_found"),
+            "translate": Localization.t("launcher.no_apps_found")
         })
 
     ListView {
@@ -656,7 +656,7 @@ Item {
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: root._emptyText[root.mode] ?? "No results."
+                    text: root._emptyText[root.mode] ?? Localization.t("launcher.no_results")
                     color: Colors.md3.on_surface_variant
                     font.pixelSize: 13
                     font.family: Config.fontFamily

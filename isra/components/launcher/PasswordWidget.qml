@@ -66,7 +66,7 @@ Item {
             spacing: 2
 
             Text {
-                text: (root._pin ? "PIN" : "PASSWORD") + "  ·  " + root._length + " chars"
+                text: Localization.t("passwordWidget.type_chars_count").arg(root._pin ? Localization.t("passwordWidget.pin") : Localization.t("passwordWidget.password")).arg(root._length)
                 color: Colors.md3.primary
                 font.pixelSize: 10
                 font.family: Config.fontFamily
@@ -121,7 +121,7 @@ Item {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "Copy"
+                    text: Localization.t("passwordWidget.copy")
                     color: copyMa.containsMouse ? Colors.md3.on_primary : Colors.md3.on_primary_container
                     font.pixelSize: 12
                     font.family: Config.fontFamily

@@ -441,7 +441,7 @@ Item {
 
                                     Text {
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        text: WallpaperService.loading ? "Loading..." : (panel.searchQuery !== "" ? "No results" : "No wallpapers found")
+                                        text: WallpaperService.loading ? Localization.t("wallpaperPicker.loading") : (panel.searchQuery !== "" ? Localization.t("wallpaperPicker.no_results") : Localization.t("wallpaperPicker.no_wallpapers_found"))
                                         color: Colors.md3.on_surface_variant
                                         font.pixelSize: 16
                                         font.family: Config.fontFamily
@@ -616,7 +616,7 @@ Item {
 
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: "Search..."
+                                        text: Localization.t("wallpaperPicker.search")
                                         font.pixelSize: 13
                                         font.family: Config.fontFamily
                                         renderType: Text.NativeRendering

@@ -36,12 +36,12 @@ PanelWindow {
 
     readonly property var entries: [        
         {
-            text: "Mission Center",
+            text: Localization.t("barMenu.mission_center"),
             icon: missionCenterIconComp,
             action: () => Quickshell.execDetached(["missioncenter"])
         },
         {
-            text: "Settings",
+            text: Localization.t("settingsWindow.settings"),
             icon: settingsIconComp,
             action: () => Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "settings", "open", "bar"])
         }

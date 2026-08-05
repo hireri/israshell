@@ -13,8 +13,8 @@ import qs.windows.components
 
 PageBase {
     id: page
-    title: "Network"
-    subtitle: "Wi-Fi and Bluetooth"
+    title: Localization.t("settingsWindow.connectivity")
+    subtitle: Localization.t("networkPage.wi_fi_and_bluetooth")
 
     onVisibleChanged: if (visible)
         NetworkService.refresh()
@@ -156,8 +156,8 @@ PageBase {
         tint: Colors.md3.tertiary_container
         onTint: Colors.md3.on_tertiary_container
         iconComponent: ethIconComp
-        title: "Ethernet"
-        subtitle: NetworkService.ethConnected ? "Connected" : "Not connected"
+        title: Localization.t("networkPage.ethernet")
+        subtitle: NetworkService.ethConnected ? Localization.t("networkPage.connected") : Localization.t("networkPage.not_connected")
         hasSwitch: NetworkService.ethAvailable
         switchChecked: NetworkService.ethConnected
         onSwitchToggled: NetworkService.toggleEthernet()
@@ -170,8 +170,8 @@ PageBase {
         tint: Colors.md3.primary_container
         onTint: Colors.md3.on_primary_container
         iconComponent: wifiIconComp
-        title: NetworkService.wifiConnected ? NetworkService.wifiSsid : "Wi-Fi"
-        subtitle: NetworkService.wifiConnecting ? "Connecting..." : NetworkService.wifiConnected ? "Strength: " + NetworkService.wifiSignal + "%" : NetworkService.wifiEnabled ? "Not connected" : "Off"
+        title: NetworkService.wifiConnected ? NetworkService.wifiSsid : Localization.t("qsTileService.wifi")
+        subtitle: NetworkService.wifiConnecting ? Localization.t("networkPage.connecting") : NetworkService.wifiConnected ? Localization.t("networkPage.strength_percent").arg(NetworkService.wifiSignal) : NetworkService.wifiEnabled ? Localization.t("networkPage.not_connected") : Localization.t("networkPage.off")
         hasSwitch: true
         switchChecked: NetworkService.wifiEnabled
         onSwitchToggled: NetworkService.toggle()
@@ -201,7 +201,7 @@ PageBase {
                 spacing: 8
 
                 Text {
-                    text: "Available networks"
+                    text: Localization.t("networkPage.available_networks")
                     font.family: Config.fontFamily
                     font.pixelSize: 11
                     color: Colors.md3.outline
@@ -218,7 +218,7 @@ PageBase {
                     Text {
                         id: scanTxt
                         anchors.centerIn: parent
-                        text: "Scan"
+                        text: Localization.t("networkPage.scan")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
@@ -233,7 +233,7 @@ PageBase {
                 }
 
                 Text {
-                    text: "Scanning..."
+                    text: Localization.t("networkPage.scanning")
                     font.family: Config.fontFamily
                     font.pixelSize: 11
                     color: Colors.md3.outline
@@ -318,7 +318,7 @@ PageBase {
                         }
 
                         Text {
-                            text: modelData.active ? "Connected" : modelData.known ? "Saved · " + modelData.strength + "%" : modelData.strength + "%"
+                            text: modelData.active ? Localization.t("networkPage.connected") : modelData.known ? Localization.t("networkPage.saved_percent").arg(modelData.strength) : modelData.strength + "%"
                             font.family: Config.fontFamily
                             font.pixelSize: 11
                             color: modelData.active ? Colors.md3.primary : Colors.md3.outline
@@ -392,7 +392,7 @@ PageBase {
                             Text {
                                 id: connTxt
                                 anchors.centerIn: parent
-                                text: modelData.active ? "Disconnect" : "Connect"
+                                text: modelData.active ? Localization.t("networkPage.disconnect") : Localization.t("networkPage.connect")
                                 font.family: Config.fontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -439,8 +439,8 @@ PageBase {
         tint: Colors.md3.secondary_container
         onTint: Colors.md3.on_secondary_container
         iconComponent: btCardIcon()
-        title: BluetoothService.firstConnected?.name ?? "Bluetooth"
-        subtitle: !BluetoothService.enabled ? "Off" : BluetoothService.connectedDevices.length > 0 ? (BluetoothService.firstConnected?.batteryAvailable ? "Connected · " + BluetoothService.batteryIcon(Math.round(BluetoothService.firstConnected.battery * 100)) + " " + Math.round(BluetoothService.firstConnected.battery * 100) + "%" : "Connected") : "No devices connected"
+        title: BluetoothService.firstConnected?.name ?? Localization.t("qsTileService.bluetooth")
+        subtitle: !BluetoothService.enabled ? Localization.t("networkPage.off") : BluetoothService.connectedDevices.length > 0 ? (BluetoothService.firstConnected?.batteryAvailable ? Localization.t("networkPage.connected_battery").arg(BluetoothService.batteryIcon(Math.round(BluetoothService.firstConnected.battery * 100))).arg(Math.round(BluetoothService.firstConnected.battery * 100)) : Localization.t("networkPage.connected")) : Localization.t("networkPage.no_devices_connected")
         hasSwitch: true
         switchChecked: BluetoothService.enabled
         onSwitchToggled: BluetoothService.toggle()
@@ -470,7 +470,7 @@ PageBase {
                 spacing: 8
 
                 Text {
-                    text: "Paired devices"
+                    text: Localization.t("networkPage.paired_devices")
                     font.family: Config.fontFamily
                     font.pixelSize: 11
                     color: Colors.md3.outline
@@ -487,7 +487,7 @@ PageBase {
                     Text {
                         id: btScanTxt
                         anchors.centerIn: parent
-                        text: "Scan"
+                        text: Localization.t("networkPage.scan")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
@@ -511,7 +511,7 @@ PageBase {
                     Text {
                         id: btStopTxt
                         anchors.centerIn: parent
-                        text: "Scanning..."
+                        text: Localization.t("networkPage.scanning")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
@@ -587,7 +587,7 @@ PageBase {
                         }
 
                         Text {
-                            text: modelData.connected ? (modelData.batteryAvailable ? "Connected · " + BluetoothService.batteryIcon(Math.round(modelData.battery * 100)) + " " + Math.round(modelData.battery * 100) + "%" : "Connected") : "Paired"
+                            text: modelData.connected ? (modelData.batteryAvailable ? Localization.t("networkPage.connected_battery").arg(BluetoothService.batteryIcon(Math.round(modelData.battery * 100))).arg(Math.round(modelData.battery * 100)) : Localization.t("networkPage.connected")) : Localization.t("networkPage.paired")
                             font.family: Config.fontFamily
                             font.pixelSize: 11
                             color: modelData.connected ? Colors.md3.primary : Colors.md3.outline
@@ -612,7 +612,7 @@ PageBase {
                             Text {
                                 id: btConnTxt
                                 anchors.centerIn: parent
-                                text: modelData.state === BluetoothDeviceState.Connecting ? "Connecting..." : modelData.state === BluetoothDeviceState.Disconnecting ? "Disconnecting..." : modelData.connected ? "Disconnect" : "Connect"
+                                text: modelData.state === BluetoothDeviceState.Connecting ? Localization.t("networkPage.connecting") : modelData.state === BluetoothDeviceState.Disconnecting ? Localization.t("networkPage.disconnecting") : modelData.connected ? Localization.t("networkPage.disconnect") : Localization.t("networkPage.connect")
                                 font.family: Config.fontFamily
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -674,7 +674,7 @@ PageBase {
     }
 
     SectionCard {
-        label: "Available devices"
+        label: Localization.t("networkPage.available_devices")
         Layout.fillWidth: true
         visible: BluetoothService.enabled && BluetoothService.newDevices.length > 0
 
@@ -743,7 +743,7 @@ PageBase {
                         Text {
                             id: pairTxt
                             anchors.centerIn: parent
-                            text: modelData.pairing ? "Pairing..." : "Pair"
+                            text: modelData.pairing ? Localization.t("networkPage.pairing") : Localization.t("networkPage.pair")
                             font.family: Config.fontFamily
                             font.pixelSize: 11
                             font.weight: Font.Medium

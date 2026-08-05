@@ -64,7 +64,7 @@ Item {
 
     Labs.FileDialog {
         id: filePicker
-        title: "Choose files to send"
+        title: Localization.t("localSendPopover.choose_files_to_send")
         fileMode: Labs.FileDialog.OpenFiles
         onAccepted: {
             LocalSendService.attachFilesFromUrls(filePicker.files);
@@ -198,7 +198,7 @@ Item {
 
                                 Text {
                                     Layout.fillWidth: true
-                                    text: "LocalSend"
+                                    text: Localization.t("qsTileService.localsend")
                                     font.family: Config.fontFamily
                                     font.pixelSize: 15
                                     font.weight: Font.Medium
@@ -264,7 +264,7 @@ Item {
                                                 spacing: 1
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: LocalSendService.pendingIncoming?.from ?? "A device"
+                                                    text: LocalSendService.pendingIncoming?.from ?? Localization.t("localSend.a_device")
                                                     font.family: Config.fontFamily
                                                     font.pixelSize: 13
                                                     font.weight: Font.Medium
@@ -303,7 +303,7 @@ Item {
                                                     Layout.fillWidth: true
                                                     Text {
                                                         Layout.fillWidth: true
-                                                        text: modelData.fileName ?? modelData.name ?? "file"
+                                                        text: modelData.fileName ?? modelData.name ?? Localization.t("localSend.file")
                                                         font.family: Config.fontFamily
                                                         font.pixelSize: 11
                                                         opacity: 0.85
@@ -322,7 +322,7 @@ Item {
 
                                             Text {
                                                 visible: incomingFilesCol.allFiles.length > incomingFilesCol.maxShown
-                                                text: "+ " + root.plural(incomingFilesCol.allFiles.length - incomingFilesCol.maxShown, "more file")
+                                                text: (incomingFilesCol.allFiles.length - incomingFilesCol.maxShown) === 1 ? Localization.t("localSend.one_more_file") : Localization.t("localSend.more_files_count").arg(incomingFilesCol.allFiles.length - incomingFilesCol.maxShown)
                                                 font.family: Config.fontFamily
                                                 font.pixelSize: 11
                                                 opacity: 0.7
@@ -337,12 +337,12 @@ Item {
                                             Item { Layout.fillWidth: true }
 
                                             LsTextButton {
-                                                text: "decline"
+                                                text: Localization.t("localSendPopover.decline")
                                                 textColor: Colors.md3.on_tertiary_container
                                                 onClicked: LocalSendService.confirmReceive(LocalSendService.pendingIncoming?.sessionId ?? "", false)
                                             }
                                             LsFilledButton {
-                                                text: "accept"
+                                                text: Localization.t("localSendPopover.accept")
                                                 bg: Colors.md3.tertiary
                                                 fg: Colors.md3.on_tertiary
                                                 onClicked: LocalSendService.confirmReceive(LocalSendService.pendingIncoming?.sessionId ?? "", true)
@@ -383,7 +383,7 @@ Item {
                                             spacing: 1
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: LocalSendService.resultTitle(LocalSendService.lastResult) || "Transfer failed"
+                                                text: LocalSendService.resultTitle(LocalSendService.lastResult) || Localization.t("localSend.transfer_failed")
                                                 font.family: Config.fontFamily
                                                 font.pixelSize: 13
                                                 font.weight: Font.Medium
@@ -407,13 +407,13 @@ Item {
                                         spacing: 8
                                         Item { Layout.fillWidth: true }
                                         LsTextButton {
-                                            text: "dismiss"
+                                            text: Localization.t("localSendPopover.dismiss")
                                             textColor: Colors.md3.on_error_container
                                             onClicked: LocalSendService.dismissResult()
                                         }
                                         LsFilledButton {
                                             visible: LocalSendService.canRetry
-                                            text: "retry"
+                                            text: Localization.t("localSendPopover.retry")
                                             icon: "restart"
                                             bg: Colors.md3.error
                                             fg: "#690005"
@@ -531,7 +531,7 @@ Item {
                                             spacing: 1
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: LocalSendService.activeTransfer?.fileName ?? (sendCol.receiving ? "Receiving…" : "Sending…")
+                                                text: LocalSendService.activeTransfer?.fileName ?? (sendCol.receiving ? Localization.t("localSend.receiving") : Localization.t("localSend.sending"))
                                                 font.family: Config.fontFamily
                                                 font.pixelSize: 13
                                                 font.weight: Font.Medium
@@ -750,12 +750,12 @@ Item {
                                         spacing: 8
                                         Item { Layout.fillWidth: true }
                                         LsTextButton {
-                                            text: "cancel"
+                                            text: Localization.t("localSendPopover.cancel")
                                             textColor: Colors.md3.on_tertiary_container
                                             onClicked: LocalSendService.cancelPinRequest()
                                         }
                                         LsFilledButton {
-                                            text: "send"
+                                            text: Localization.t("localSendPopover.send")
                                             bg: Colors.md3.tertiary
                                             fg: Colors.md3.on_tertiary
                                             onClicked: LocalSendService.submitPin(pinField.text)
@@ -778,7 +778,11 @@ Item {
 
                                     Text {
                                         Layout.fillWidth: true
-                                        text: root.attached.length > 0 ? "attached · " + root.plural(root.attached.length, "file") + " · " + root.humanSize(root.attached.reduce((a, f) => a + (f.size ?? 0), 0)) : "attached"
+                                        text: root.attached.length > 0
+                                            ? Localization.t("localSend.attached_summary")
+                                                .arg(root.attached.length === 1 ? Localization.t("localSend.one_file") : Localization.t("localSend.files_count").arg(root.attached.length))
+                                                .arg(root.humanSize(root.attached.reduce((a, f) => a + (f.size ?? 0), 0)))
+                                            : Localization.t("localSend.attached")
                                         font.family: Config.fontFamily
                                         font.pixelSize: 11
                                         font.weight: Font.Medium
@@ -809,7 +813,7 @@ Item {
                                     }
 
                                     LsTextButton {
-                                        text: root.attached.length > 0 ? "clear" : "choose files"
+                                        text: root.attached.length > 0 ? Localization.t("localSendPopover.clear") : Localization.t("localSendPopover.choose_files")
                                         textColor: Colors.md3.primary
                                         onClicked: {
                                             if (root.attached.length > 0) {
@@ -838,7 +842,7 @@ Item {
                                     Text {
                                         anchors.centerIn: parent
                                         horizontalAlignment: Text.AlignHCenter
-                                        text: "Drop files here or click to choose"
+                                        text: Localization.t("localSendPopover.drop_files_here_or_click")
                                         font.family: Config.fontFamily
                                         font.pixelSize: 12
                                         color: Colors.md3.on_surface_variant
@@ -915,7 +919,7 @@ Item {
                                 }
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
-                                    text: "LocalSend is off"
+                                    text: Localization.t("localSendPopover.localsend_is_off")
                                     font.family: Config.fontFamily
                                     font.pixelSize: 13
                                     color: Colors.md3.on_surface
@@ -925,7 +929,7 @@ Item {
                                     Layout.leftMargin: 30
                                     Layout.rightMargin: 30
                                     horizontalAlignment: Text.AlignHCenter
-                                    text: "Flip the switch above to start the server and become visible to nearby devices."
+                                    text: Localization.t("localSendPopover.flip_the_switch_above_to")
                                     font.family: Config.fontFamily
                                     font.pixelSize: 11
                                     color: Colors.md3.on_surface_variant
@@ -951,7 +955,7 @@ Item {
                                         color: LocalSendService.reachable ? Colors.md3.primary : Colors.md3.outline
                                     }
                                     Text {
-                                        text: "Nearby devices (" + root.devices.length + ")"
+                                        text: Localization.t("localSend.nearby_devices_count").arg(root.devices.length)
                                         font.family: Config.fontFamily
                                         font.pixelSize: 11
                                         font.weight: Font.Medium
@@ -959,7 +963,7 @@ Item {
                                     }
                                     Item { Layout.fillWidth: true }
                                     Text {
-                                        text: (Config.localsend.alias ?? "").trim() || LocalSendService.localAlias || "this device"
+                                        text: (Config.localsend.alias ?? "").trim() || LocalSendService.localAlias || Localization.t("localSend.this_device")
                                         font.family: Config.fontFamily
                                         font.pixelSize: 11
                                         font.weight: Font.Medium
@@ -1026,7 +1030,7 @@ Item {
                                     }
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
-                                        text: "No devices nearby"
+                                        text: Localization.t("localSendPopover.no_devices_nearby")
                                         font.family: Config.fontFamily
                                         font.pixelSize: 13
                                         color: Colors.md3.on_surface
@@ -1036,7 +1040,7 @@ Item {
                                         Layout.leftMargin: 30
                                         Layout.rightMargin: 30
                                         horizontalAlignment: Text.AlignHCenter
-                                        text: !LocalSendService.reachable ? "The LocalSend server isn't running yet." : (!LocalSendService.multicastOk ? "Multicast is unavailable on this network, so nearby devices can't be discovered automatically." : "Make sure LocalSend is open on the other device and both are on the same network.")
+                                        text: !LocalSendService.reachable ? Localization.t("localSend.server_not_running_yet") : (!LocalSendService.multicastOk ? Localization.t("localSend.multicast_unavailable") : Localization.t("localSend.make_sure_open_on_other_device"))
                                         font.family: Config.fontFamily
                                         font.pixelSize: 11
                                         color: Colors.md3.on_surface_variant
@@ -1054,14 +1058,14 @@ Item {
 
                                     Text {
                                         Layout.fillWidth: true
-                                        text: LocalSendService.localIp ? LocalSendService.localIp + ":" + Config.localsend.port : "finding address…"
+                                        text: LocalSendService.localIp ? LocalSendService.localIp + ":" + Config.localsend.port : Localization.t("localSend.finding_address")
                                         font.family: Config.fontMonospace
                                         font.pixelSize: 10
                                         color: Colors.md3.on_surface_variant
                                         elide: Text.ElideRight
                                     }
                                     LsTextButton {
-                                        text: "scan"
+                                        text: Localization.t("localSendPopover.scan")
                                         icon: "restart"
                                         textColor: Colors.md3.primary
                                         onClicked: LocalSendService.scanNow()
@@ -1372,7 +1376,7 @@ Item {
                     elide: Text.ElideRight
                 }
                 Text {
-                    text: (devRow.deviceType || "unknown") + (devRow.deviceMeta ? " · " + devRow.deviceMeta : "")
+                    text: (devRow.deviceType || Localization.t("localSend.unknown")) + (devRow.deviceMeta ? " · " + devRow.deviceMeta : "")
                     font.family: Config.fontFamily
                     font.pixelSize: 11
                     color: devRow.armed && devMa.containsMouse ? Qt.alpha(Colors.md3.on_secondary_container, 0.75) : Colors.md3.on_surface_variant

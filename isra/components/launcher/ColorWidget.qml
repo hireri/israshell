@@ -108,15 +108,15 @@ Item {
             Repeater {
                 model: [
                     {
-                        label: "hex",
+                        label: Localization.t("colorWidget.hex"),
                         value: root._hex
                     },
                     {
-                        label: "rgb",
+                        label: Localization.t("colorWidget.rgb"),
                         value: root._rgb
                     },
                     {
-                        label: "hsl",
+                        label: Localization.t("colorWidget.hsl"),
                         value: root._hsl
                     }
                 ]
@@ -169,7 +169,7 @@ Item {
                             Text {
                                 id: cpLbl
                                 anchors.centerIn: parent
-                                text: "copy"
+                                text: Localization.t("colorWidget.copy")
                                 color: cpHov.containsMouse ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant
                                 font.pixelSize: 11
                                 font.family: Config.fontFamily

@@ -13,8 +13,8 @@ import qs.icons
 
 PageBase {
     id: pageRoot
-    title: "Desktop Clock"
-    subtitle: "Layout, style and sizing"
+    title: Localization.t("settingsWindow.desktop_clock")
+    subtitle: Localization.t("clockPage.layout_style_and_sizing")
 
     readonly property var systemFontsModel: {
         var families = Qt.fontFamilies();
@@ -137,18 +137,18 @@ PageBase {
 
     HeroCard {
         Layout.fillWidth: true
-        title: "Desktop clock"
+        title: Localization.t("overviewPage.desktop_clock")
         subtitle: {
-            if (!Config.desktopClock) return "Hidden";
-            
+            if (!Config.desktopClock) return Localization.t("clockPage.hidden");
+
             var layoutNames = {
-                "vertical": "Vertical style",
-                "horizontal": "Horizontal style",
-                "word": "Word clock",
-                "analog": "Analog face"
+                "vertical": Localization.t("clockPage.vertical_style"),
+                "horizontal": Localization.t("clockPage.horizontal_style"),
+                "word": Localization.t("clockPage.word_clock"),
+                "analog": Localization.t("clockPage.analog_face")
             };
-            var layout = layoutNames[Config.clock.layout] ?? "Standard";
-            return "Visible • " + layout;
+            var layout = layoutNames[Config.clock.layout] ?? Localization.t("clockPage.standard");
+            return Localization.t("clockPage.visible_layout").arg(layout);
         }
         iconBg: Colors.md3.tertiary_container
         cardColor: Colors.md3.surface_container
@@ -225,7 +225,7 @@ PageBase {
 
                         Text {
                             Layout.fillWidth: true
-                            text: "Vertical"
+                            text: Localization.t("clockPage.vertical")
                             font.family: Config.fontFamily
                             font.pixelSize: 12
                             font.weight: Font.Medium
@@ -287,7 +287,7 @@ PageBase {
 
                         Text {
                             Layout.fillWidth: true
-                            text: "Horizontal"
+                            text: Localization.t("clockPage.horizontal")
                             font.family: Config.fontFamily
                             font.pixelSize: 12
                             font.weight: Font.Medium
@@ -349,7 +349,7 @@ PageBase {
 
                         Text {
                             Layout.fillWidth: true
-                            text: "Word"
+                            text: Localization.t("clockPage.word")
                             font.family: Config.fontFamily
                             font.pixelSize: 12
                             font.weight: Font.Medium
@@ -416,7 +416,7 @@ PageBase {
 
                         Text {
                             Layout.fillWidth: true
-                            text: "Analog"
+                            text: Localization.t("clockPage.analog")
                             font.family: Config.fontFamily
                             font.pixelSize: 12
                             font.weight: Font.Medium
@@ -519,7 +519,7 @@ PageBase {
                     spacing: 6
 
                     Text {
-                        text: "Main color"
+                        text: Localization.t("backgroundPage.main_color")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
@@ -571,7 +571,7 @@ PageBase {
                     spacing: 6
 
                     Text {
-                        text: Config.clock.layout === "analog" ? "Seconds hand color" : "Accent color"
+                        text: Config.clock.layout === "analog" ? Localization.t("clockPage.seconds_hand_color") : Localization.t("backgroundPage.accent_color")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
@@ -624,22 +624,22 @@ PageBase {
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Show date"
-            sublabel: "Include date information below the time"
+            label: Localization.t("clockPage.show_date")
+            sublabel: Localization.t("clockPage.include_date_information_below_the")
             checked: Config.clock.showDate ?? false
             onToggled: v => updateClock({ showDate: v })
         }
 
         SettingSwitch {
-            label: Config.clock.layout === "analog" ? "Show seconds hand" : "Show seconds"
-            sublabel: Config.clock.layout === "analog" ? "Adds a sweeping seconds hand to the face" : "Displays ticking seconds"
+            label: Config.clock.layout === "analog" ? Localization.t("clockPage.show_seconds_hand") : Localization.t("clockPage.show_seconds")
+            sublabel: Config.clock.layout === "analog" ? Localization.t("clockPage.adds_a_sweeping_seconds_hand") : Localization.t("clockPage.displays_ticking_seconds")
             checked: Config.clock.showSeconds ?? false
             onToggled: v => updateClock({ showSeconds: v })
         }
 
         SettingSwitch {
-            label: "Show digital clock"
-            sublabel: "Render digital time inside the analog clock face"
+            label: Localization.t("clockPage.show_digital_clock")
+            sublabel: Localization.t("clockPage.render_digital_time_inside_the")
             enabled: Config.clock.layout === "analog"
             opacity: enabled ? 1.0 : 0.4
             checked: Config.clock.showDigitalInside ?? false
@@ -647,8 +647,8 @@ PageBase {
             Behavior on opacity { NumberAnimation { duration: 150 } }
         }
         SettingSlider{
-            label: "Outline width"
-            sublabel: "Colored outline around the clock face"
+            label: Localization.t("clockPage.outline_width")
+            sublabel: Localization.t("clockPage.colored_outline_around_the_clock")
             isLast: true
             enabled: Config.clock.layout === "analog"
             from: 0
@@ -664,8 +664,8 @@ PageBase {
     SectionCard {
         Layout.fillWidth: true
         SettingSwitch {
-            label: "Manual positioning"
-            sublabel: "Drag the clock freely instead of auto-placing it"
+            label: Localization.t("clockPage.manual_positioning")
+            sublabel: Localization.t("clockPage.drag_the_clock_freely_instead")
             isLast: true
             checked: Config.clock.manualPos ?? false
             onToggled: v => updateClock({ manualPos: v })
@@ -676,21 +676,21 @@ PageBase {
         Layout.fillWidth: true
 
         SettingChips {
-            label: "Content alignment"
-            sublabel: "Flow layout of the time and date elements"
+            label: Localization.t("clockPage.content_alignment")
+            sublabel: Localization.t("clockPage.flow_layout_of_the_time")
             options: [
-                { value: "auto",   label: "Auto",   icon: alignAutoComp },
-                { value: "left",   label: "Left",   icon: alignLeftComp },
-                { value: "center", label: "Center", icon: alignCenterComp },
-                { value: "right",  label: "Right",  icon: alignRightComp }
+                { value: "auto",   label: Localization.t("barPage.auto"),   icon: alignAutoComp },
+                { value: "left",   label: Localization.t("barPage.left"),   icon: alignLeftComp },
+                { value: "center", label: Localization.t("backgroundPage.center"), icon: alignCenterComp },
+                { value: "right",  label: Localization.t("barPage.right"),  icon: alignRightComp }
             ]
             currentValue: Config.clock.align ?? "auto"
             onSelected: (val) => updateClock({ align: val })
         }
 
         SettingSelect {
-            label: "Font family"
-            sublabel: "Leave empty to use the shell font"
+            label: Localization.t("clockPage.font_family")
+            sublabel: Localization.t("clockPage.leave_empty_to_use_the")
             options: pageRoot.systemFontsModel
             currentValue: Config.clock.fontFamily
             onSelected: v => {
@@ -702,7 +702,7 @@ PageBase {
             }
         }
         SettingSlider {
-            label: "Weight"
+            label: Localization.t("clockPage.weight")
             from: 100
             to: 900
             stepSize: 10
@@ -710,8 +710,8 @@ PageBase {
             onMoved: v => updateClock({ hourWeight: v })
         }
         SettingSlider {
-            label: "Sub weight"
-            sublabel: "Minutes, seconds, date"
+            label: Localization.t("clockPage.sub_weight")
+            sublabel: Localization.t("clockPage.minutes_seconds_date")
             from: 100
             to: 900
             stepSize: 10
@@ -719,8 +719,8 @@ PageBase {
             onMoved: v => updateClock({ minuteWeight: v })
         }
         SettingSlider {
-            label: "Width"
-            sublabel: "Condensed ← normal → expanded"
+            label: Localization.t("clockPage.width")
+            sublabel: Localization.t("clockPage.condensed_normal_expanded")
             from: 25
             to: 150
             stepSize: 1
@@ -728,8 +728,8 @@ PageBase {
             onMoved: v => updateClock({ fontWidth: v })
         }
         SettingSlider {
-            label: "Roundness"
-            sublabel: "Corner radius of letterforms (ROND axis)"
+            label: Localization.t("clockPage.roundness")
+            sublabel: Localization.t("clockPage.corner_radius_of_letterforms_rond")
             isLast: true
             from: 0
             to: 100
@@ -744,7 +744,7 @@ PageBase {
         visible: Config.clock.layout === "vertical" || Config.clock.layout === "horizontal"
 
         SettingSlider {
-            label: "Hour size"
+            label: Localization.t("clockPage.hour_size")
             from: 40
             to: 200
             stepSize: 1
@@ -752,7 +752,7 @@ PageBase {
             onMoved: v => updateClock({ hourSize: v })
         }
         SettingSlider {
-            label: "Minute size"
+            label: Localization.t("clockPage.minute_size")
             from: 40
             to: 200
             stepSize: 1
@@ -760,7 +760,7 @@ PageBase {
             onMoved: v => updateClock({ minuteSize: v })
         }
         SettingSlider {
-            label: "Time spacing"
+            label: Localization.t("clockPage.time_spacing")
             from: -100
             to: 40
             stepSize: 1
@@ -768,7 +768,7 @@ PageBase {
             onMoved: v => updateClock({ timeSpacing: v })
         }
         SettingSlider {
-            label: "Date spacing"
+            label: Localization.t("clockPage.date_spacing")
             visible: Config.clock.showDate
             from: -60
             to: 40
@@ -777,7 +777,7 @@ PageBase {
             onMoved: v => updateClock({ dateSpacing: v })
         }
         SettingSlider {
-            label: "Date size"
+            label: Localization.t("clockPage.date_size")
             visible: Config.clock.showDate
             isLast: true
             from: 10
@@ -793,7 +793,7 @@ PageBase {
         visible: Config.clock.layout === "word"
 
         SettingSlider {
-            label: "Word size"
+            label: Localization.t("clockPage.word_size")
             from: 20
             to: 120
             stepSize: 1
@@ -801,7 +801,7 @@ PageBase {
             onMoved: v => updateClock({ hourSize: v })
         }
         SettingSlider {
-            label: "Line spacing"
+            label: Localization.t("clockPage.line_spacing")
             from: -40
             to: 40
             stepSize: 1
@@ -809,7 +809,7 @@ PageBase {
             onMoved: v => updateClock({ wordSpacing: v })
         }
         SettingSlider {
-            label: "Date spacing"
+            label: Localization.t("clockPage.date_spacing")
             visible: Config.clock.showDate
             from: -60
             to: 40
@@ -818,7 +818,7 @@ PageBase {
             onMoved: v => updateClock({ dateSpacing: v })
         }
         SettingSlider {
-            label: "Date size"
+            label: Localization.t("clockPage.date_size")
             visible: Config.clock.showDate
             isLast: true
             from: 10
@@ -834,7 +834,7 @@ PageBase {
         visible: Config.clock.layout === "analog"
 
         SettingSlider {
-            label: "Clock size"
+            label: Localization.t("clockPage.clock_size")
             from: 80
             to: 500
             stepSize: 4
@@ -842,8 +842,8 @@ PageBase {
             onMoved: v => updateClock({ analogSize: v })
         }
         SettingSlider {
-            label: "Face wobble"
-            sublabel: "Number of lobes on the clock face edge"
+            label: Localization.t("clockPage.face_wobble")
+            sublabel: Localization.t("clockPage.number_of_lobes_on_the")
             from: 2
             to: 20
             stepSize: 1
@@ -851,8 +851,8 @@ PageBase {
             onMoved: v => updateClock({ ringSides: v })
         }
         SettingSlider {
-            label: "Wobble depth"
-            sublabel: "How far the edge undulates in and out"
+            label: Localization.t("clockPage.wobble_depth")
+            sublabel: Localization.t("clockPage.how_far_the_edge_undulates")
             from: 0
             to: 30
             stepSize: 1
@@ -860,7 +860,7 @@ PageBase {
             onMoved: v => updateClock({ ringAmplitude: v })
         }
         SettingSlider {
-            label: "Date spacing"
+            label: Localization.t("clockPage.date_spacing")
             visible: Config.clock.showDate
             from: -60
             to: 40
@@ -869,7 +869,7 @@ PageBase {
             onMoved: v => updateClock({ dateSpacing: v })
         }
         SettingSlider {
-            label: "Date size"
+            label: Localization.t("clockPage.date_size")
             visible: Config.clock.showDate
             isLast: true
             from: 10
@@ -884,7 +884,7 @@ PageBase {
         Layout.fillWidth: true
 
         SettingSlider {
-            label: "Shadow blur"
+            label: Localization.t("clockPage.shadow_blur")
             from: 0
             to: 64
             stepSize: 1
@@ -892,7 +892,7 @@ PageBase {
             onMoved: v => updateClock({ shadowBlur: v })
         }
         SettingSlider {
-            label: "Shadow X"
+            label: Localization.t("clockPage.shadow_x")
             from: -40
             to: 40
             stepSize: 1
@@ -900,7 +900,7 @@ PageBase {
             onMoved: v => updateClock({ shadowX: v })
         }
         SettingSlider {
-            label: "Shadow Y"
+            label: Localization.t("clockPage.shadow_y")
             from: -40
             to: 40
             stepSize: 1
@@ -908,7 +908,7 @@ PageBase {
             onMoved: v => updateClock({ shadowY: v })
         }
         SettingSlider {
-            label: "Shadow opacity"
+            label: Localization.t("clockPage.shadow_opacity")
             isLast: true
             from: 0
             to: 100

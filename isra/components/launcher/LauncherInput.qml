@@ -77,10 +77,10 @@ Item {
     }
 
     readonly property var _placeholder: ({
-            "apps": "Search applications...",
-            "clipboard": "Search clipboard...",
-            "emoji": "Search emoji...",
-            "translate": "Type to translate..."
+            "apps": Localization.t("launcher.search_applications"),
+            "clipboard": Localization.t("launcher.search_clipboard"),
+            "emoji": Localization.t("launcher.search_emoji"),
+            "translate": Localization.t("launcher.type_to_translate")
         })
 
     Rectangle {

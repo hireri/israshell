@@ -618,13 +618,13 @@ Item {
             spacing: 6
 
             PillBtn {
-                label: "󰆏  copy result"
+                label: Localization.t("mathWidget.copy_result")
                 primary: true
                 visible: root._result !== ""
                 onClicked: root.copyResult(root._result)
             }
             PillBtn {
-                label: "󰆏  copy expression"
+                label: Localization.t("mathWidget.copy_expression")
                 primary: false
                 onClicked: root.copyResult(root.query.trim())
             }
@@ -759,7 +759,7 @@ Item {
                             }
                         }
                         Text {
-                            text: "fetching..."
+                            text: Localization.t("mathWidget.fetching")
                             color: Colors.md3.on_primary_container
                             font.pixelSize: 13
                             font.family: Config.fontFamily
@@ -799,7 +799,7 @@ Item {
         Text {
             visible: root._currError
             Layout.fillWidth: true
-            text: "couldn't fetch rates"
+            text: Localization.t("mathWidget.couldn_t_fetch_rates")
             color: Colors.md3.error
             font.pixelSize: 13
             font.family: Config.fontFamily
@@ -810,13 +810,13 @@ Item {
             spacing: 6
 
             PillBtn {
-                label: "󰆏  copy result"
+                label: Localization.t("mathWidget.copy_result")
                 primary: true
                 visible: root._result !== ""
                 onClicked: root.copyResult(root._result)
             }
             PillBtn {
-                label: "󰓡  swap"
+                label: Localization.t("mathWidget.swap")
                 primary: false
                 visible: root._result !== "" && root._currRate > 0
                 onClicked: {

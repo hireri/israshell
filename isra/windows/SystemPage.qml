@@ -12,8 +12,8 @@ import qs.icons
 
 PageBase {
     id: pageRoot
-    title: "System"
-    subtitle: "About and script paths"
+    title: Localization.t("settingsWindow.system")
+    subtitle: Localization.t("systemPage.about_and_script_paths")
 
     readonly property var dotMaterialShapes: ["clover4", "arrow", "pill", "softBurst", "diamond", "clamShell", "pentagon"]
 
@@ -100,7 +100,7 @@ PageBase {
                 font.family: Config.fontMonospace
                 font.pixelSize: 13
                 color: Colors.md3.on_surface_variant
-                text: "<b><font color='" + Colors.md3.on_surface + "'>kernel</font></b> " + SystemInfo.kernel + " <font color='" + Colors.md3.outline + "'>•</font> " + "<b><font color='" + Colors.md3.on_surface + "'>session</font></b> " + SystemInfo.session + " <font color='" + Colors.md3.outline + "'>•</font> " + "<b><font color='" + Colors.md3.on_surface + "'>uptime</font></b> " + SystemInfo.uptime
+                text: "<b><font color='" + Colors.md3.on_surface + "'>" + Localization.t("systemPage.kernel") + "</font></b> " + SystemInfo.kernel + " <font color='" + Colors.md3.outline + "'>•</font> " + "<b><font color='" + Colors.md3.on_surface + "'>" + Localization.t("systemPage.session") + "</font></b> " + SystemInfo.session + " <font color='" + Colors.md3.outline + "'>•</font> " + "<b><font color='" + Colors.md3.on_surface + "'>" + Localization.t("systemPage.uptime") + "</font></b> " + SystemInfo.uptime
                 textFormat: Text.RichText
             }
         }
@@ -175,7 +175,7 @@ PageBase {
                     Text {
                         id: updateLbl
                         anchors.centerIn: parent
-                        text: Updater.applying ? "Updating..." : "↑ " + Updater.latestVersion
+                        text: Updater.applying ? Localization.t("systemPage.updating") : "↑ " + Updater.latestVersion
                         font.family: Config.fontFamily
                         font.pixelSize: 14
                         font.weight: Font.Bold
@@ -200,7 +200,7 @@ PageBase {
                     Text {
                         id: ghLbl
                         anchors.centerIn: parent
-                        text: "GitHub ↗"
+                        text: Localization.t("systemPage.github")
                         font.family: Config.fontFamily
                         font.pixelSize: 14
                         font.weight: Font.Bold
@@ -224,7 +224,7 @@ PageBase {
             rowSpacing: 4
 
             HardwareCard {
-                labelText: "CPU"
+                labelText: Localization.t("sysMonitor.cpu")
                 valueText: SystemInfo.cpu
                 topLeftRadius: 16
                 topRightRadius: 8
@@ -232,7 +232,7 @@ PageBase {
                 bottomRightRadius: 8
             }
             HardwareCard {
-                labelText: "GPU"
+                labelText: Localization.t("sysMonitor.gpu")
                 valueText: SystemInfo.gpu
                 topLeftRadius: 8
                 topRightRadius: 16
@@ -240,7 +240,7 @@ PageBase {
                 bottomRightRadius: 8
             }
             HardwareCard {
-                labelText: "Memory"
+                labelText: Localization.t("systemPage.memory")
                 valueText: SystemInfo.memory
                 topLeftRadius: 4
                 topRightRadius: 4
@@ -248,7 +248,7 @@ PageBase {
                 bottomRightRadius: 4
             }
             HardwareCard {
-                labelText: "Motherboard"
+                labelText: Localization.t("systemPage.motherboard")
                 valueText: SystemInfo.motherboard
                 topLeftRadius: 4
                 topRightRadius: 4
@@ -258,12 +258,12 @@ PageBase {
         }
 
         SectionCard {
-            label: "Updates"
+            label: Localization.t("systemPage.updates")
             Layout.fillWidth: true
 
             SettingSwitch {
-                label: "Check for updates"
-                sublabel: "Poll GitHub for new releases hourly"
+                label: Localization.t("systemPage.check_for_updates")
+                sublabel: Localization.t("systemPage.poll_github_for_new_releases")
                 checked: Config.checkUpdates
                 onToggled: v => Config.update({
                         checkUpdates: v
@@ -272,8 +272,8 @@ PageBase {
 
             SettingSwitch {
                 isLast: true
-                label: "Check dependencies"
-                sublabel: "Warn about missing packages on startup"
+                label: Localization.t("systemPage.check_dependencies")
+                sublabel: Localization.t("systemPage.warn_about_missing_packages_on")
                 checked: Config.checkDeps
                 onToggled: v => Config.update({
                         checkDeps: v
@@ -282,12 +282,12 @@ PageBase {
         }
 
         SectionCard {
-            label: "Presets"
+            label: Localization.t("systemPage.presets")
             Layout.fillWidth: true
 
             SettingRow {
-                label: "Save preset"
-                sublabel: "Snapshot your config to ~/.config/israshell"
+                label: Localization.t("systemPage.save_preset")
+                sublabel: Localization.t("systemPage.snapshot_your_config_to_config")
 
                 Rectangle {
                     implicitHeight: 32
@@ -299,7 +299,7 @@ PageBase {
                     Text {
                         id: saveLbl
                         anchors.centerIn: parent
-                        text: ConfigPresetService.busy ? "Saving..." : "Save preset"
+                        text: ConfigPresetService.busy ? Localization.t("systemPage.saving") : Localization.t("systemPage.save_preset")
                         font.family: Config.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Medium
@@ -317,7 +317,7 @@ PageBase {
 
             Text {
                 visible: ConfigPresetService.entries.length === 0
-                text: "No presets yet"
+                text: Localization.t("systemPage.no_presets_yet")
                 font.family: Config.fontFamily
                 font.pixelSize: 12
                 color: Colors.md3.outline
@@ -374,7 +374,7 @@ PageBase {
                             }
 
                             Text {
-                                text: "Created " + (ConfigPresetService.nowTick, ConfigPresetService.relativeTime(presetRow.modelData.mtime))
+                                text: Localization.t("systemPage.created_value").arg((ConfigPresetService.nowTick, ConfigPresetService.relativeTime(presetRow.modelData.mtime)))
                                 font.family: Config.fontFamily
                                 font.pixelSize: 11
                                 color: Colors.md3.outline
@@ -394,7 +394,7 @@ PageBase {
                                 Text {
                                     id: applyTxt
                                     anchors.centerIn: parent
-                                    text: "Apply"
+                                    text: Localization.t("systemPage.apply")
                                     font.family: Config.fontFamily
                                     font.pixelSize: 11
                                     font.weight: Font.Medium
@@ -463,8 +463,8 @@ PageBase {
             }
 
             SettingRow {
-                label: "Regenerate config"
-                sublabel: "Reset every setting to its default, CANNOT be undone."
+                label: Localization.t("systemPage.regenerate_config")
+                sublabel: Localization.t("systemPage.reset_every_setting_to_its")
 
                 Rectangle {
                     implicitHeight: 32
@@ -475,7 +475,7 @@ PageBase {
                     Text {
                         id: regenLbl
                         anchors.centerIn: parent
-                        text: "Regenerate"
+                        text: Localization.t("systemPage.regenerate")
                         font.family: Config.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Medium
@@ -492,27 +492,27 @@ PageBase {
         }
 
         SectionCard {
-            label: "System Integration"
+            label: Localization.t("systemPage.system_integration")
             Layout.fillWidth: true
 
             SettingSwitch {
-                label: "Start locked"
-                sublabel: "Show lockscreen when shell starts"
+                label: Localization.t("systemPage.start_locked")
+                sublabel: Localization.t("systemPage.show_lockscreen_when_shell_starts")
                 checked: Config.startLocked
                 onToggled: v => Config.update({ startLocked: v })
             }
 
             SettingSwitch {
-                label: "Use Hyprlock"
-                sublabel: "Delegate locking to Hyprlock instead of built in"
+                label: Localization.t("systemPage.use_hyprlock")
+                sublabel: Localization.t("systemPage.delegate_locking_to_hyprlock_instead")
                 checked: Config.useHyprlock
                 onToggled: v => Config.update({ useHyprlock: v })
             }
 
             SettingChips {
                 isLast: true
-                label: "Password dot shape"
-                sublabel: "Shape of the lockscreen input dots"
+                label: Localization.t("systemPage.password_dot_shape")
+                sublabel: Localization.t("systemPage.shape_of_the_lockscreen_input")
                 options: [
                     { label: "", value: "roundedSquare", icon: dotShapeSquarePreview },
                     { label: "", value: "circle", icon: dotShapeCirclePreview },
@@ -528,13 +528,13 @@ PageBase {
         }
 
         SectionCard {
-            label: "LocalSend"
+            label: Localization.t("qsTileService.localsend")
             Layout.fillWidth: true
 
             SettingSwitch {
                 readonly property bool manageLocally: Config.localsend.host === "127.0.0.1" || Config.localsend.host === "localhost"
-                label: "Enable"
-                sublabel: LocalSendService.reachable ? "Connected to " + Config.localsend.host + ":" + Config.localsend.port : (manageLocally ? "Starts a local LocalSend server on this device" : (Config.localsend.enabled ? "Server not reachable" : "Server not reachable — start it on " + Config.localsend.host + " first"))
+                label: Localization.t("backgroundPage.enable")
+                sublabel: LocalSendService.reachable ? Localization.t("systemPage.connected_to_host_port").arg(Config.localsend.host).arg(Config.localsend.port) : (manageLocally ? Localization.t("systemPage.starts_a_local_localsend_server") : (Config.localsend.enabled ? Localization.t("systemPage.server_not_reachable") : Localization.t("systemPage.server_not_reachable_start_it").arg(Config.localsend.host)))
                 checked: Config.localsend.enabled
                 enabled: manageLocally || LocalSendService.reachable || Config.localsend.enabled
                 onToggled: v => Config.update({
@@ -545,16 +545,16 @@ PageBase {
             }
 
             SettingInput {
-                label: "Device name"
-                sublabel: "How this device appears to others"
+                label: Localization.t("systemPage.device_name")
+                sublabel: Localization.t("systemPage.how_this_device_appears_to")
                 value: Config.localsend.alias ?? ""
                 fieldWidth: 160
                 onCommitted: v => LocalSendService.setAlias(v)
             }
 
             SettingInput {
-                label: "Host"
-                sublabel: "127.0.0.1 runs our own server locally; any other address is treated as remote"
+                label: Localization.t("systemPage.host")
+                sublabel: Localization.t("systemPage.127_0_0_1_runs")
                 value: Config.localsend.host
                 fieldWidth: 160
                 onCommitted: v => Config.update({
@@ -565,8 +565,8 @@ PageBase {
             }
 
             SettingInput {
-                label: "Port"
-                sublabel: "LocalSend protocol + control API port"
+                label: Localization.t("systemPage.port")
+                sublabel: Localization.t("systemPage.localsend_protocol_control_api_port")
                 value: String(Config.localsend.port)
                 fieldWidth: 100
                 onCommitted: v => {
@@ -583,8 +583,8 @@ PageBase {
 
             SettingSwitch {
                 isLast: true
-                label: "Notify on receive"
-                sublabel: "Show a desktop notification for incoming transfers"
+                label: Localization.t("systemPage.notify_on_receive")
+                sublabel: Localization.t("systemPage.show_a_desktop_notification_for")
                 checked: Config.localsend.notifyOnReceive
                 onToggled: v => Config.update({
                         localsend: Object.assign({}, Config.localsend, {
@@ -595,12 +595,12 @@ PageBase {
         }
 
         SectionCard {
-            label: "Fonts"
+            label: Localization.t("systemPage.fonts")
             Layout.fillWidth: true
 
             SettingSelect {
-                label: "Interface font"
-                sublabel: "System default typeface"
+                label: Localization.t("systemPage.interface_font")
+                sublabel: Localization.t("systemPage.system_default_typeface")
                 options: pageRoot.systemFontsModel
                 currentValue: Config.fontFamily
                 onSelected: v => {
@@ -614,8 +614,8 @@ PageBase {
 
             SettingSelect {
                 isLast: true
-                label: "Monospace font"
-                sublabel: "Fixed-width terminal typeface"
+                label: Localization.t("systemPage.monospace_font")
+                sublabel: Localization.t("systemPage.fixed_width_terminal_typeface")
                 options: pageRoot.systemFontsModel
                 currentValue: Config.fontMonospace
                 onSelected: v => {
@@ -629,24 +629,30 @@ PageBase {
         }
 
         SectionCard {
-            label: "API Keys"
+            label: Localization.t("systemPage.api_keys")
             Layout.fillWidth: true
 
             SecretInput {
-                isLast: true
-                label: "Wolfram|Alpha"
-                sublabel: "Key for the Wolfram launcher widget"
+                label: Localization.t("systemPage.wolfram_alpha")
+                sublabel: Localization.t("systemPage.key_for_the_wolfram_launcher")
                 secretKey: "wolfram"
+            }
+
+            SecretInput {
+                isLast: true
+                label: Localization.t("systemPage.gemini")
+                sublabel: Localization.t("systemPage.key_for_requesting_new_shell")
+                secretKey: "gemini"
             }
         }
 
         SectionCard {
-            label: "Script paths"
+            label: Localization.t("systemPage.script_paths")
             Layout.fillWidth: true
 
             SettingInput {
-                label: "Screenshot"
-                sublabel: "Capture script"
+                label: Localization.t("qsTileService.screenshot")
+                sublabel: Localization.t("systemPage.capture_script")
                 value: Config.screencap.screenshotPath
                 fieldWidth: 220
                 onCommitted: v => Config.update({
@@ -657,8 +663,8 @@ PageBase {
             }
 
             SettingInput {
-                label: "Screen record"
-                sublabel: "Recording script"
+                label: Localization.t("keybindsPage.screen_record")
+                sublabel: Localization.t("systemPage.recording_script")
                 value: Config.screencap.recordPath
                 fieldWidth: 220
                 onCommitted: v => Config.update({
@@ -669,8 +675,8 @@ PageBase {
             }
 
             SettingInput {
-                label: "CTS"
-                sublabel: "Circle-to-search"
+                label: Localization.t("systemPage.cts")
+                sublabel: Localization.t("systemPage.circle_to_search")
                 value: Config.screencap.ctsPath ?? ""
                 fieldWidth: 220
                 onCommitted: v => Config.update({
@@ -681,8 +687,8 @@ PageBase {
             }
 
             SettingInput {
-                label: "OCR"
-                sublabel: "Text recognition"
+                label: Localization.t("barPage.ocr")
+                sublabel: Localization.t("systemPage.text_recognition")
                 value: Config.screencap.ocrPath ?? ""
                 fieldWidth: 220
                 onCommitted: v => Config.update({
@@ -693,8 +699,8 @@ PageBase {
             }
 
             SettingInput {
-                label: "Songrec"
-                sublabel: "Song recognition"
+                label: Localization.t("systemPage.songrec")
+                sublabel: Localization.t("systemPage.song_recognition")
                 value: Config.screencap.songrecPath ?? ""
                 fieldWidth: 220
                 onCommitted: v => Config.update({

@@ -174,7 +174,7 @@ Item {
 
             Text {
                 visible: root._loading || (root._answer === "" && !root._error)
-                text: root._loading ? "thinking..." : "..."
+                text: root._loading ? Localization.t("wolframWidget.thinking") : "..."
                 color: Colors.md3.on_surface_variant
                 font.pixelSize: root._loading ? 14 : 32
                 font.weight: Font.Light
@@ -186,7 +186,7 @@ Item {
                 id: answerText
                 visible: !root._loading && (root._answer !== "" || root._error)
                 Layout.fillWidth: true
-                text: root._error ? (root._errorText !== "" ? root._errorText : "Query failed") : root._answer
+                text: root._error ? (root._errorText !== "" ? root._errorText : Localization.t("wolframWidget.query_failed")) : root._answer
                 color: root._error ? Colors.md3.error : Colors.md3.on_surface
                 font.pixelSize: root._error ? 18 : root._answerFontSize
                 font.weight: Font.Light
@@ -202,7 +202,7 @@ Item {
             visible: root._answer !== "" && !root._error
 
             PillBtn {
-                label: "󰆏  copy"
+                label: Localization.t("translateWidget.copy")
                 primary: true
                 onTapped: root.copyResult(root._answer)
             }

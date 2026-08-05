@@ -7,46 +7,46 @@ import qs.windows.components
 import qs.services
 
 PageBase {
-    title: "Keybinds"
-    subtitle: "Shell shortcuts, read only"
+    title: Localization.t("keybindsPage.keybinds")
+    subtitle: Localization.t("keybindsPage.shell_shortcuts_read_only")
 
     SectionCard {
         Layout.fillWidth: true
 
         KeybindRow {
-            action: "Open launcher"
+            action: Localization.t("keybindsPage.open_launcher")
             keys: ["Super", "Space"]
         }
         KeybindRow {
-            action: "Quick settings"
+            action: Localization.t("widgetService.quick_settings")
             keys: ["Super", "S"]
         }
         KeybindRow {
-            action: "Open settings"
+            action: Localization.t("keybindsPage.open_settings")
             keys: ["Super", ","]
         }
         KeybindRow {
-            action: "Screenshot"
+            action: Localization.t("qsTileService.screenshot")
             keys: ["Super", "Shift", "S"]
         }
         KeybindRow {
-            action: "Screen record"
+            action: Localization.t("keybindsPage.screen_record")
             keys: ["Super", "Shift", "R"]
         }
         KeybindRow {
-            action: "Color picker"
+            action: Localization.t("qsTileService.color_picker")
             keys: ["Super", "Shift", "C"]
         }
         KeybindRow {
-            action: "Night light toggle"
+            action: Localization.t("keybindsPage.night_light_toggle")
             keys: ["Super", "N"]
         }
         KeybindRow {
-            action: "Media play/pause"
+            action: Localization.t("keybindsPage.media_play_pause")
             keys: ["Super", "M"]
         }
         KeybindRow {
-            action: "Open wallpapers"
+            action: Localization.t("keybindsPage.open_wallpapers")
             keys: ["Super", "W"]
         }
     }

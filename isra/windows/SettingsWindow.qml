@@ -15,7 +15,7 @@ FloatingWindow {
     visible: true
     implicitWidth: 960
     implicitHeight: 680
-    title: "Settings"
+    title: Localization.t("settingsWindow.settings")
     color: "transparent"
 
     readonly property int pageOverview: 0
@@ -91,7 +91,7 @@ FloatingWindow {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "Settings"
+                            text: Localization.t("settingsWindow.settings")
                             font.family: Config.fontFamily
                             font.pixelSize: 18
                             font.weight: Font.Bold
@@ -137,15 +137,15 @@ FloatingWindow {
 
                         SidebarItem {
                             page: root.pageOverview
-                            label: "Overview"
-                            sublabel: "Wallpaper, appearance"
+                            label: Localization.t("settingsWindow.overview")
+                            sublabel: Localization.t("settingsWindow.wallpaper_appearance")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "overview"; transitionType: "wipe-right" }
                         }
                         SidebarItem {
                             page: root.pageNetwork
-                            label: "Connectivity"
-                            sublabel: "Wi-Fi, Bluetooth"
+                            label: Localization.t("settingsWindow.connectivity")
+                            sublabel: Localization.t("settingsWindow.wi_fi_bluetooth")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "networking" }
                         }
@@ -160,29 +160,29 @@ FloatingWindow {
 
                         SidebarItem {
                             page: root.pageBar
-                            label: "Bar"
-                            sublabel: "Layout, media, tray"
+                            label: Localization.t("settingsWindow.bar")
+                            sublabel: Localization.t("settingsWindow.layout_media_tray")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "customization"; transitionType: "wipe-up" }
                         }
                         SidebarItem {
                             page: root.pageFloatingDock
-                            label: "Dock"
-                            sublabel: "Position, hiding, icon size"
+                            label: Localization.t("widgetService.dock")
+                            sublabel: Localization.t("settingsWindow.position_hiding_icon_size")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "call-to-action"; transitionType: "circle" }
                         }
                         SidebarItem {
                             page: root.pageBackground
-                            label: "Background"
-                            sublabel: "Effects, wallpaper, widgets"
+                            label: Localization.t("settingsWindow.background")
+                            sublabel: Localization.t("settingsWindow.effects_wallpaper_widgets")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "panorama"; transitionType: "wipe-right" }
                         }
                         SidebarItem {
                             page: root.pageClock
-                            label: "Desktop Clock"
-                            sublabel: "Mode, colors"
+                            label: Localization.t("settingsWindow.desktop_clock")
+                            sublabel: Localization.t("settingsWindow.mode_colors")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "analog-clock"; transitionType: "circle" }
                         }
@@ -197,15 +197,15 @@ FloatingWindow {
 
                         SidebarItem {
                             page: root.pageDisplay
-                            label: "Visuals & Display"
-                            sublabel: "Night light, blur"
+                            label: Localization.t("settingsWindow.visuals_display")
+                            sublabel: Localization.t("settingsWindow.night_light_blur")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "monitor"; transitionType: "wipe-down" }
                         }
                         SidebarItem {
                             page: root.pageSound
-                            label: "Sound & Audio"
-                            sublabel: "Audio, popups"
+                            label: Localization.t("settingsWindow.sound_audio")
+                            sublabel: Localization.t("settingsWindow.audio_popups")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "notifications"; transitionType: "wipe-up" }
                         }
@@ -219,15 +219,15 @@ FloatingWindow {
 
                         SidebarItem {
                             page: root.pageLocale
-                            label: "Locale"
-                            sublabel: "Time, date, units"
+                            label: Localization.t("settingsWindow.locale")
+                            sublabel: Localization.t("settingsWindow.time_date_units")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "language" }
                         }
                         SidebarItem {
                             page: root.pageSystem
-                            label: "System"
-                            sublabel: "About, paths, keybinds"
+                            label: Localization.t("settingsWindow.system")
+                            sublabel: Localization.t("settingsWindow.about_paths_keybinds")
                             onClicked: root.currentPage = page
                             MaterialIcon { name: "about"; transitionType: "circle" }
                         }

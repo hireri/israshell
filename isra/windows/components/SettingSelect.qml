@@ -464,7 +464,7 @@ SettingRow {
                 }
 
                 Text {
-                    text: "No matching options"
+                    text: Localization.t("settingSelect.no_matching_options")
                     font.family: Config.fontFamily
                     font.pixelSize: 12
                     color: Colors.md3.on_surface_variant

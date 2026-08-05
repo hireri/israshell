@@ -102,34 +102,34 @@ Singleton {
     function resultTitle(r) {
         if (!r)
             return "";
-        const who = r.peer ?? "device";
+        const who = r.peer ?? Localization.t("localSend.device");
         switch (r.kind) {
         case "sent":
             return who;
         case "received":
             return who;
         case "declined":
-            return who + " declined";
+            return Localization.t("localSend.who_declined").arg(who);
         case "cancelled":
-            return "Cancelled";
+            return Localization.t("localSend.cancelled");
         case "recv_cancelled":
-            return who + " cancelled";
+            return Localization.t("localSend.who_cancelled").arg(who);
         case "remote_cancelled":
-            return who + " cancelled";
+            return Localization.t("localSend.who_cancelled").arg(who);
         case "recv_timeout":
-            return "Request expired";
+            return Localization.t("localSend.request_expired");
         case "recv_failed":
-            return "Transfer from " + who + " failed";
+            return Localization.t("localSend.transfer_from_who_failed").arg(who);
         case "busy":
-            return who + " is busy";
+            return Localization.t("localSend.who_is_busy").arg(who);
         case "rate_limited":
-            return who + " is rate limiting";
+            return Localization.t("localSend.who_is_rate_limiting").arg(who);
         case "unreachable":
-            return "Couldn't reach " + who;
+            return Localization.t("localSend.couldnt_reach_who").arg(who);
         case "pin_required":
-            return who + " requires a PIN";
+            return Localization.t("localSend.who_requires_a_pin").arg(who);
         default:
-            return "Couldn't send to " + who;
+            return Localization.t("localSend.couldnt_send_to_who").arg(who);
         }
     }
 

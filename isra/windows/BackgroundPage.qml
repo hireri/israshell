@@ -11,8 +11,8 @@ import qs.components
 import Quickshell.Widgets
 
 PageBase {
-    title: "Background"
-    subtitle: "Effects, wallpaper, widgets"
+    title: Localization.t("settingsWindow.background")
+    subtitle: Localization.t("settingsWindow.effects_wallpaper_widgets")
 
     function titleCase(str) {
         return str.split(/[-_ ]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
@@ -33,24 +33,24 @@ PageBase {
     }
 
     SectionCard {
-        label: "Wallpaper"
+        label: Localization.t("backgroundPage.wallpaper")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Use awww"
-            sublabel: "Delegate wallpaper to awww instead of built in, WON'T SUPPORT VIDEOS"
+            label: Localization.t("backgroundPage.use_awww")
+            sublabel: Localization.t("backgroundPage.delegate_wallpaper_to_awww_instead")
             checked: Config.useAwww
             onToggled: v => Config.update({ useAwww: v })
         }
 
         SettingSelect {
-            label: "Transition"
-            sublabel: "Effect used when switching wallpapers"
+            label: Localization.t("backgroundPage.transition")
+            sublabel: Localization.t("backgroundPage.effect_used_when_switching_wallpapers")
             options: [
-                { label: "Crossfade", value: "crossfade" },
-                { label: "Directional wipe", value: "wipe" },
-                { label: "Circle reveal", value: "circle" },
-                { label: "Random", value: "random" }
+                { label: Localization.t("backgroundPage.crossfade"), value: "crossfade" },
+                { label: Localization.t("backgroundPage.directional_wipe"), value: "wipe" },
+                { label: Localization.t("backgroundPage.circle_reveal"), value: "circle" },
+                { label: Localization.t("backgroundPage.random"), value: "random" }
             ]
             currentValue: Config.background.transitionType
             onSelected: v => Config.update({
@@ -60,8 +60,8 @@ PageBase {
 
         SettingSlider {
             isLast: true
-            label: "Transition duration"
-            sublabel: "How long the wallpaper transition takes"
+            label: Localization.t("backgroundPage.transition_duration")
+            sublabel: Localization.t("backgroundPage.how_long_the_wallpaper_transition")
             from: 150
             to: 2000
             stepSize: 50
@@ -90,8 +90,8 @@ PageBase {
 
     HeroCard {
         Layout.fillWidth: true
-        title: "Audio Visualizer"
-        subtitle: Config.cava.enabled ? "Active · " + Config.cava.bars + " bars" : "Off"
+        title: Localization.t("backgroundPage.audio_visualizer")
+        subtitle: Config.cava.enabled ? Localization.t("backgroundPage.active_bars").arg(Config.cava.bars) : Localization.t("networkPage.off")
         iconBg: Colors.md3.primary_container
         cardColor: Colors.md3.surface_container
         checked: Config.cava.enabled
@@ -175,7 +175,7 @@ PageBase {
 
                         Text {
                             Layout.fillWidth: true
-                            text: "Curve"
+                            text: Localization.t("backgroundPage.curve")
                             font.family: Config.fontFamily
                             font.pixelSize: 12
                             font.weight: Font.Medium
@@ -238,7 +238,7 @@ PageBase {
 
                         Text {
                             Layout.fillWidth: true
-                            text: "Bars"
+                            text: Localization.t("backgroundPage.bars")
                             font.family: Config.fontFamily
                             font.pixelSize: 12
                             font.weight: Font.Medium
@@ -306,7 +306,7 @@ PageBase {
 
                         Text {
                             Layout.fillWidth: true
-                            text: "Blocks"
+                            text: Localization.t("backgroundPage.blocks")
                             font.family: Config.fontFamily
                             font.pixelSize: 12
                             font.weight: Font.Medium
@@ -379,7 +379,7 @@ PageBase {
                     spacing: 6
 
                     Text {
-                        text: "Main color"
+                        text: Localization.t("backgroundPage.main_color")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
@@ -433,7 +433,7 @@ PageBase {
                     spacing: 6
 
                     Text {
-                        text: "Accent color"
+                        text: Localization.t("backgroundPage.accent_color")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
@@ -490,15 +490,15 @@ PageBase {
             }
 
             SettingChips {
-                label: "Position"
+                label: Localization.t("backgroundPage.position")
                 options: [
                     {
-                        label: "Top",
+                        label: Localization.t("backgroundPage.top"),
                         value: 0,
                         icon: arrowUpwardComp
                     },
                     {
-                        label: "Bottom",
+                        label: Localization.t("backgroundPage.bottom"),
                         value: 1,
                         icon: arrowDownwardComp
                     }
@@ -512,19 +512,19 @@ PageBase {
             }
 
             SettingChips {
-                label: "Layout"
-                sublabel: "How bars are arranged across the width"
+                label: Localization.t("backgroundPage.layout")
+                sublabel: Localization.t("backgroundPage.how_bars_are_arranged_across")
                 options: [
                     {
-                        label: "Mono",
+                        label: Localization.t("backgroundPage.mono"),
                         value: "mono"
                     },
                     {
-                        label: "Edges",
+                        label: Localization.t("backgroundPage.edges"),
                         value: "edges"
                     },
                     {
-                        label: "Center",
+                        label: Localization.t("backgroundPage.center"),
                         value: "center"
                     }
                 ]
@@ -537,17 +537,17 @@ PageBase {
             }
 
             SettingChips {
-                label: "Curve type"
-                sublabel: Config.cava.renderType === "curve" ? "Smoothing applied to the curve render" : "Requires \"curve\" render type"
+                label: Localization.t("backgroundPage.curve_type")
+                sublabel: Config.cava.renderType === "curve" ? Localization.t("backgroundPage.smoothing_applied_to_the_curve") : Localization.t("backgroundPage.requires_curve_render_type")
                 enabled: Config.cava.renderType === "curve"
                 opacity: enabled ? 1.0 : 0.4
                 options: [
                     {
-                        label: "Smooth",
+                        label: Localization.t("backgroundPage.smooth"),
                         value: "smooth"
                     },
                     {
-                        label: "Sharp",
+                        label: Localization.t("backgroundPage.sharp"),
                         value: "sharp"
                     }
                 ]
@@ -560,8 +560,8 @@ PageBase {
             }
 
             SettingSwitch {
-                label: "Fill"
-                sublabel: "Draw a filled gradient area under the spectrum"
+                label: Localization.t("backgroundPage.fill")
+                sublabel: Localization.t("backgroundPage.draw_a_filled_gradient_area")
                 checked: Config.cava.drawFill
                 onToggled: v => Config.update({
                         cava: Object.assign({}, Config.cava, {
@@ -571,8 +571,8 @@ PageBase {
             }
 
             SettingSwitch {
-                label: "Stroke"
-                sublabel: "Draw an outline along the spectrum"
+                label: Localization.t("backgroundPage.stroke")
+                sublabel: Localization.t("backgroundPage.draw_an_outline_along_the")
                 checked: Config.cava.drawStroke
                 onToggled: v => Config.update({
                         cava: Object.assign({}, Config.cava, {
@@ -582,23 +582,23 @@ PageBase {
             }
 
             SettingChips {
-                label: "Color style"
-                sublabel: "How colors are applied across the spectrum"
+                label: Localization.t("backgroundPage.color_style")
+                sublabel: Localization.t("backgroundPage.how_colors_are_applied_across")
                 options: [
                     {
-                        label: "Solid",
+                        label: Localization.t("backgroundPage.solid"),
                         value: "solid"
                     },
                     {
-                        label: "Loudness",
+                        label: Localization.t("backgroundPage.loudness"),
                         value: "loudness"
                     },
                     {
-                        label: "Gradient V",
+                        label: Localization.t("backgroundPage.gradient_v"),
                         value: "gradient-v"
                     },
                     {
-                        label: "Gradient H",
+                        label: Localization.t("backgroundPage.gradient_h"),
                         value: "gradient-h"
                     }
                 ]
@@ -611,8 +611,8 @@ PageBase {
             }
 
             SettingSlider {
-                label: "Bars"
-                sublabel: "Number of frequency bars rendered"
+                label: Localization.t("backgroundPage.bars")
+                sublabel: Localization.t("backgroundPage.number_of_frequency_bars_rendered")
                 from: 8
                 to: 100
                 stepSize: 2
@@ -625,8 +625,8 @@ PageBase {
             }
 
             SettingSlider {
-                label: "Height"
-                sublabel: "Height of the visualizer in pixels"
+                label: Localization.t("backgroundPage.height")
+                sublabel: Localization.t("backgroundPage.height_of_the_visualizer_in")
                 from: 40
                 to: 1200
                 unit: "px"
@@ -639,8 +639,8 @@ PageBase {
             }
 
             SettingSlider {
-                label: "Opacity"
-                sublabel: "Overlay opacity of the visualizer"
+                label: Localization.t("backgroundPage.opacity")
+                sublabel: Localization.t("backgroundPage.overlay_opacity_of_the_visualizer")
                 from: 0.05
                 to: 1.0
                 stepSize: 0.05
@@ -657,11 +657,11 @@ PageBase {
     }
 
     SectionCard {
-        label: "Weyes"
+        label: Localization.t("backgroundPage.weyes")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Enable"
+            label: Localization.t("backgroundPage.enable")
             sublabel: CompositorService.hasCapability("cursorPosition") ? "Show wayland-weyes 👀" : "Requires Hyprland (cursor position isn't available on " + CompositorService.backendName + ")"
             enabled: CompositorService.hasCapability("cursorPosition")
             opacity: enabled ? 1.0 : 0.4
@@ -674,8 +674,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Mirror layout"
-            sublabel: "Synchronize coords and size across all screens"
+            label: Localization.t("backgroundPage.mirror_layout")
+            sublabel: Localization.t("backgroundPage.synchronize_coords_and_size_across")
             enabled: CompositorService.hasCapability("cursorPosition")
             opacity: enabled ? 1.0 : 0.4
             checked: Config.weyes.mirror
@@ -687,8 +687,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Tinted"
-            sublabel: "Match colors to the system theme"
+            label: Localization.t("backgroundPage.tinted")
+            sublabel: Localization.t("backgroundPage.match_colors_to_the_system")
             enabled: CompositorService.hasCapability("cursorPosition")
             opacity: enabled ? 1.0 : 0.4
             checked: Config.weyes.tinted
@@ -702,11 +702,11 @@ PageBase {
     }
 
     SectionCard {
-        label: "Neko"
+        label: Localization.t("backgroundPage.neko")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Enable"
+            label: Localization.t("backgroundPage.enable")
             sublabel: CompositorService.hasCapability("cursorPosition") ? "A cursor-chasing cat on your desktop" : "Requires Hyprland (cursor position isn't available on " + CompositorService.backendName + ")"
             enabled: CompositorService.hasCapability("cursorPosition")
             opacity: enabled ? 1.0 : 0.4
@@ -719,8 +719,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Sit above windows"
-            sublabel: "Render on top of windows instead of on the wallpaper"
+            label: Localization.t("backgroundPage.sit_above_windows")
+            sublabel: Localization.t("backgroundPage.render_on_top_of_windows")
             enabled: CompositorService.hasCapability("cursorPosition")
             opacity: enabled ? 1.0 : 0.4
             checked: Config.neko.onTop
@@ -732,8 +732,8 @@ PageBase {
         }
 
         SettingSelect {
-            label: "Sprite"
-            sublabel: "Appearance of the cat"
+            label: Localization.t("backgroundPage.sprite")
+            sublabel: Localization.t("backgroundPage.appearance_of_the_cat")
             enabled: CompositorService.hasCapability("cursorPosition")
             opacity: enabled ? 1.0 : 0.4
             options: NekoService.spriteNames.map(name => ({
@@ -750,8 +750,8 @@ PageBase {
         }
 
         SettingSlider {
-            label: "Size"
-            sublabel: "Rendered size of the sprite"
+            label: Localization.t("backgroundPage.size")
+            sublabel: Localization.t("backgroundPage.rendered_size_of_the_sprite")
             from: 32
             to: 160
             stepSize: 4
@@ -767,8 +767,8 @@ PageBase {
         }
 
         SettingSlider {
-            label: "Speed"
-            sublabel: "How fast it chases the cursor"
+            label: Localization.t("backgroundPage.speed")
+            sublabel: Localization.t("backgroundPage.how_fast_it_chases_the")
             from: 4
             to: 30
             stepSize: 1

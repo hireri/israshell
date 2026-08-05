@@ -6,25 +6,287 @@ import QtQuick.Layouts
 import qs.style
 import qs.icons
 import qs.services
+import qs.components
 import qs.windows.components
 
 PageBase {
-    title: "Locale"
-    subtitle: "Time, date and regional preferences"
+    id: page
+    title: Localization.t("settingsWindow.locale")
+    subtitle: Localization.t("localePage.time_date_and_regional_preferences")
+
+    readonly property var _requestableLanguages: [
+        {
+            code: "en_US",
+            name: "English"
+        },
+        {
+            code: "es_ES",
+            name: "Español"
+        },
+        {
+            code: "fr_FR",
+            name: "Français"
+        },
+        {
+            code: "de_DE",
+            name: "Deutsch"
+        },
+        {
+            code: "it_IT",
+            name: "Italiano"
+        },
+        {
+            code: "pt_BR",
+            name: "Português (Brasil)"
+        },
+        {
+            code: "pt_PT",
+            name: "Português"
+        },
+        {
+            code: "ru_RU",
+            name: "Русский"
+        },
+        {
+            code: "ja_JP",
+            name: "日本語"
+        },
+        {
+            code: "ko_KR",
+            name: "한국어"
+        },
+        {
+            code: "zh_CN",
+            name: "简体中文"
+        },
+        {
+            code: "zh_TW",
+            name: "繁體中文"
+        },
+        {
+            code: "ar_SA",
+            name: "العربية"
+        },
+        {
+            code: "hi_IN",
+            name: "हिन्दी"
+        },
+        {
+            code: "tr_TR",
+            name: "Türkçe"
+        },
+        {
+            code: "nl_NL",
+            name: "Nederlands"
+        },
+        {
+            code: "pl_PL",
+            name: "Polski"
+        },
+        {
+            code: "sv_SE",
+            name: "Svenska"
+        },
+        {
+            code: "da_DK",
+            name: "Dansk"
+        },
+        {
+            code: "no_NO",
+            name: "Norsk"
+        },
+        {
+            code: "fi_FI",
+            name: "Suomi"
+        },
+        {
+            code: "cs_CZ",
+            name: "Čeština"
+        },
+        {
+            code: "el_GR",
+            name: "Ελληνικά"
+        },
+        {
+            code: "he_IL",
+            name: "עברית"
+        },
+        {
+            code: "th_TH",
+            name: "ไทย"
+        },
+        {
+            code: "vi_VN",
+            name: "Tiếng Việt"
+        },
+        {
+            code: "uk_UA",
+            name: "Українська"
+        },
+        {
+            code: "ro_RO",
+            name: "Română"
+        },
+        {
+            code: "hu_HU",
+            name: "Magyar"
+        },
+        {
+            code: "id_ID",
+            name: "Bahasa Indonesia"
+        }
+    ]
+
+    readonly property var _installedLanguages: {
+        const opts = [
+            {
+                label: "English",
+                value: "en_US"
+            }
+        ];
+        for (const code in Localization.manifest)
+            opts.push({
+                label: Localization.manifest[code],
+                value: code
+            });
+        return opts;
+    }
+
+    readonly property var _pendingOptions: page._requestableLanguages.filter(l => {
+            const id = Localization.localeId(l.code, Config.translationTone);
+            return id !== "en_US" && !(id in Localization.manifest);
+        }).map(l => ({
+                label: l.name,
+                value: l.code
+            }))
+
+    readonly property bool _hasGeminiKey: Secrets.get("gemini") !== ""
+
+    property string _pendingCode: page._pendingOptions.length > 0 ? page._pendingOptions[0].value : ""
+    property string _pendingName: {
+        const found = page._requestableLanguages.find(l => l.code === page._pendingCode);
+        return found ? found.name : page._pendingCode;
+    }
 
     SectionCard {
-        label: "Clock"
+        label: Localization.t("localePage.language")
+        Layout.fillWidth: true
+
+        SettingSelect {
+            label: Localization.t("localePage.language")
+            sublabel: Localization.t("localePage.language_sublabel")
+            options: page._installedLanguages
+            currentValue: Config.language
+            onSelected: v => Config.update({
+                    language: v
+                })
+        }
+
+        SettingChips {
+            label: Localization.t("localePage.translation_tone")
+            sublabel: Localization.t("localePage.translation_tone_sublabel")
+            options: [
+                {
+                    label: Localization.t("localePage.tone_formal"),
+                    value: "formal"
+                },
+                {
+                    label: Localization.t("localePage.tone_playful"),
+                    value: "playful"
+                },
+                {
+                    label: Localization.t("localePage.tone_concise"),
+                    value: "concise"
+                }
+            ]
+            currentValue: Config.translationTone
+            onSelected: v => Config.update({
+                    translationTone: v
+                })
+        }
+
+        SettingSelect {
+            isLast: true
+            label: Localization.t("localePage.request_new_language")
+            sublabel: {
+                if (!page._hasGeminiKey)
+                    return Localization.t("localePage.set_gemini_key_hint");
+                if (Localization.translating)
+                    return Localization.t("localePage.contacting_gemini");
+                if (Localization.translateError !== "")
+                    return Localization.translateError;
+                return Localization.t("localePage.request_new_language_sublabel");
+            }
+            options: page._pendingOptions
+            currentValue: page._pendingCode
+            enabled: page._hasGeminiKey && page._pendingOptions.length > 0 && !Localization.translating
+            onSelected: v => page._pendingCode = v
+
+            Rectangle {
+                id: requestBtn
+                anchors.verticalCenter: parent?.verticalCenter
+                implicitWidth: (Localization.translating ? requestSpinner.width : requestTxt.implicitWidth) + 26
+                implicitHeight: 32
+                radius: height / 2
+                color: requestMa.containsMouse ? Colors.md3.primary : Colors.md3.primary_container
+                opacity: (page._hasGeminiKey && page._pendingCode !== "" && !Localization.translating) ? 1 : 0.5
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 90
+                    }
+                }
+                Behavior on implicitWidth {
+                    NumberAnimation {
+                        duration: 120
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Text {
+                    id: requestTxt
+                    anchors.centerIn: parent
+                    visible: !Localization.translating
+                    text: Localization.t("localePage.request")
+                    color: requestMa.containsMouse ? Colors.md3.on_primary : Colors.md3.on_primary_container
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                    font.family: Config.fontFamily
+                }
+
+                LoadingSpinner {
+                    id: requestSpinner
+                    anchors.centerIn: parent
+                    visible: Localization.translating
+                    running: Localization.translating
+                    size: 16
+                    color: requestMa.containsMouse ? Colors.md3.on_primary : Colors.md3.on_primary_container
+                }
+
+                MouseArea {
+                    id: requestMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Localization.translating ? Qt.ArrowCursor : Qt.PointingHandCursor
+                    enabled: page._hasGeminiKey && page._pendingCode !== "" && !Localization.translating
+                    onClicked: Localization.requestTranslation(page._pendingCode, page._pendingName)
+                }
+            }
+        }
+    }
+
+    SectionCard {
+        label: Localization.t("widgetService.clock")
         Layout.fillWidth: true
 
         SettingChips {
-            label: "Hour format"
+            label: Localization.t("localePage.hour_format")
             options: [
                 {
-                    label: "12h",
+                    label: Localization.t("localePage.12h"),
                     value: 1
                 },
                 {
-                    label: "24h",
+                    label: Localization.t("localePage.24h"),
                     value: 0
                 }
             ]
@@ -35,10 +297,10 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Show seconds"
+            label: Localization.t("clockPage.show_seconds")
             enabled: Config.timeFormat === ""
             opacity: Config.timeFormat === "" ? 1 : 0.6
-            sublabel: "Display seconds in the bar clock"
+            sublabel: Localization.t("localePage.display_seconds_in_the_bar")
             checked: Config.showSeconds
             onToggled: v => Config.update({
                     showSeconds: v
@@ -46,10 +308,10 @@ PageBase {
         }
 
         SettingInput {
-            label: "Custom time format"
-            sublabel: "Overrides clock settings. Leave empty to restore dynamic defaults"
+            label: Localization.t("localePage.custom_time_format")
+            sublabel: Localization.t("localePage.overrides_clock_settings_leave_empty")
             value: Config.timeFormat
-            placeholder: "hh:mm"
+            placeholder: Localization.t("localePage.hh_mm")
             onCommitted: v => Config.update({
                     timeFormat: v
                 })
@@ -57,8 +319,8 @@ PageBase {
 
         SettingSwitch {
             isLast: true
-            label: "Show bar clock"
-            sublabel: "Display the system time in the status bar"
+            label: Localization.t("localePage.show_bar_clock")
+            sublabel: Localization.t("localePage.display_the_system_time_in")
             checked: Config.bar.showClock ?? true
             onToggled: v => Config.update({
                 bar: Object.assign({}, Config.bar, {
@@ -69,12 +331,12 @@ PageBase {
     }
 
     SectionCard {
-        label: "Date"
+        label: Localization.t("localePage.date")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Week starts on Monday"
-            sublabel: "ISO week, Monday as first day"
+            label: Localization.t("localePage.week_starts_on_monday")
+            sublabel: Localization.t("localePage.iso_week_monday_as_first")
             checked: Config.weekMonday
             onToggled: v => Config.update({
                     weekMonday: v
@@ -82,14 +344,14 @@ PageBase {
         }
 
         SettingChips {
-            label: "Date order"
+            label: Localization.t("localePage.date_order")
             options: [
                 {
-                    label: "Day first",
+                    label: Localization.t("localePage.day_first"),
                     value: 0
                 },
                 {
-                    label: "Month first",
+                    label: Localization.t("localePage.month_first"),
                     value: 1
                 }
             ]
@@ -100,10 +362,10 @@ PageBase {
         }
 
         SettingInput {
-            label: "Custom date format"
-            sublabel: "Overrides date order. Leave empty to restore dynamic defaults"
+            label: Localization.t("localePage.custom_date_format")
+            sublabel: Localization.t("localePage.overrides_date_order_leave_empty")
             value: Config.dateFormat
-            placeholder: "ddd, dd/MM"
+            placeholder: Localization.t("localePage.ddd_dd_mm")
             onCommitted: v => Config.update({
                     dateFormat: v
                 })
@@ -111,8 +373,8 @@ PageBase {
 
         SettingSwitch {
             isLast: true
-            label: "Show bar date"
-            sublabel: "Display the current date in the status bar"
+            label: Localization.t("localePage.show_bar_date")
+            sublabel: Localization.t("localePage.display_the_current_date_in")
             checked: Config.bar.showDate ?? true
             onToggled: v => Config.update({
                 bar: Object.assign({}, Config.bar, {
@@ -123,22 +385,22 @@ PageBase {
     }
 
     SectionCard {
-        label: "Weather & Location"
+        label: Localization.t("localePage.weather_location")
         Layout.fillWidth: true
 
         SettingInput {
-            label: "City name"
-            sublabel: "Leave empty to auto locate via IP address"
+            label: Localization.t("localePage.city_name")
+            sublabel: Localization.t("localePage.leave_empty_to_auto_locate")
             value: Config.cityName
-            placeholder: "e.g., Paris"
+            placeholder: Localization.t("localePage.e_g_paris")
             onCommitted: v => Config.update({
                     cityName: v
                 })
         }
 
         SettingSwitch {
-            label: "Show bar weather info"
-            sublabel: "Display weather icon and current temp on the status bar"
+            label: Localization.t("localePage.show_bar_weather_info")
+            sublabel: Localization.t("localePage.display_weather_icon_and_current")
             checked: Config.showBarWeather
             onToggled: v => Config.update({
                     showBarWeather: v
@@ -147,8 +409,8 @@ PageBase {
 
         SettingSwitch {
             isLast: true
-            label: "Use Fahrenheit units"
-            sublabel: "Use °F instead of °C for temperature metrics"
+            label: Localization.t("localePage.use_fahrenheit_units")
+            sublabel: Localization.t("localePage.use_f_instead_of_c")
             checked: Config.useFahrenheit
             onToggled: v => Config.update({
                     useFahrenheit: v

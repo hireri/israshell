@@ -2,3 +2,5 @@ config.json
 __pycache__/*
 *.pyc
 secrets.enc
+isra/i18n/locales/*.json
+!isra/i18n/locales/en_US.json

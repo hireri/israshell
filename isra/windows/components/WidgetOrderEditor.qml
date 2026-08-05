@@ -322,7 +322,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: rowRoot.zone === "right" ? "Right" : rowRoot.zone === "center" ? "Center" : "Left"
+                        text: rowRoot.zone === "right" ? Localization.t("barPage.right") : rowRoot.zone === "center" ? Localization.t("backgroundPage.center") : Localization.t("barPage.left")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium

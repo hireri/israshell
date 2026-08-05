@@ -343,7 +343,7 @@ Rectangle {
             ToolButton {
                 anchors.centerIn: parent
                 height: 26
-                tooltip: "Wallpaper"
+                tooltip: Localization.t("backgroundPage.wallpaper")
                 active: root.wallpaperOpen
                 opacity: WallpaperService.applying ? 0.4 : 1.0
                 onClicked: WallpaperService.toggleFor(root.panelWindow)
@@ -365,7 +365,7 @@ Rectangle {
     Component {
         id: screenshotComp
         ToolButton {
-            tooltip: "Screenshot"
+            tooltip: Localization.t("qsTileService.screenshot")
             onClicked: screenshotScript.startDetached()
             MaterialIcon {
                 name: "screenshot"
@@ -379,7 +379,7 @@ Rectangle {
     Component {
         id: ctsComp
         ToolButton {
-            tooltip: "Circle to Search"
+            tooltip: Localization.t("qsTileService.circle_to_search")
             onClicked: ctsScript.startDetached()
             MaterialIcon {
                 name: "image-search"
@@ -393,7 +393,7 @@ Rectangle {
     Component {
         id: ocrComp
         ToolButton {
-            tooltip: "OCR Text"
+            tooltip: Localization.t("qsTileService.ocr_text")
             onClicked: ocrScript.startDetached()
             MaterialIcon {
                 name: "ocr"
@@ -407,7 +407,7 @@ Rectangle {
     Component {
         id: colorpickerComp
         ToolButton {
-            tooltip: "Color Picker"
+            tooltip: Localization.t("qsTileService.color_picker")
             onClicked: colorPickerScript.startDetached()
             MaterialIcon {
                 name: "colorize"
@@ -431,32 +431,32 @@ Rectangle {
             readonly property string lsLabel: {
                 switch (lsState) {
                 case "drag":
-                    return "drop to send";
+                    return Localization.t("screencapControls.drop_to_send");
                 case "staged":
                     return String(LocalSendService.attachedFiles.length);
                 case "sending":
                     return Math.round(100 * LocalSendService.transferProgress) + "%";
                 case "waiting":
-                    return "waiting";
+                    return Localization.t("screencapControls.waiting");
                 case "incoming":
-                    return "incoming";
+                    return Localization.t("screencapControls.incoming");
                 case "pin":
-                    return "PIN";
+                    return Localization.t("passwordWidget.pin");
                 case "done":
                     switch (LocalSendService.lastResult?.kind) {
                     case "sent":
-                        return "sent";
+                        return Localization.t("screencapControls.sent");
                     case "received":
-                        return "received";
+                        return Localization.t("screencapControls.received");
                     case "declined":
-                        return "declined";
+                        return Localization.t("screencapControls.declined");
                     case "recv_timeout":
-                        return "expired";
+                        return Localization.t("screencapControls.expired");
                     default:
-                        return "cancelled";
+                        return Localization.t("localSend.cancelled");
                     }
                 case "error":
-                    return "failed";
+                    return Localization.t("screencapControls.failed");
                 default:
                     return "";
                 }
@@ -585,46 +585,14 @@ Rectangle {
                     }
                 }
 
-                MaterialShape {
+                LoadingSpinner {
                     id: lsSpinner
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left
                     anchors.leftMargin: 6
                     visible: lsItem.lsState === "sending"
-                    shapeSize: 16
+                    size: 16
                     color: lsItem.lsFg
-                    shapes: ["pill", "sunny", "cookie4", "oval", "softBurst", "cookie9", "pentagon"]
-
-                    property real _cycleStart: 0
-
-                    SequentialAnimation on rotation {
-                        running: lsSpinner.visible
-                        loops: Animation.Infinite
-                        NumberAnimation {
-                            from: lsSpinner._cycleStart
-                            to: lsSpinner._cycleStart + 45
-                            duration: 650
-                            easing.type: Easing.Linear
-                        }
-                        NumberAnimation {
-                            from: lsSpinner._cycleStart + 45
-                            to: lsSpinner._cycleStart + 85
-                            duration: 150
-                            easing.type: Easing.InQuad
-                        }
-                        ScriptAction {
-                            script: lsSpinner.roundedPolygon = lsSpinner._pick()
-                        }
-                        NumberAnimation {
-                            from: lsSpinner._cycleStart + 85
-                            to: lsSpinner._cycleStart + 100
-                            duration: 200
-                            easing.type: Easing.OutQuad
-                        }
-                        ScriptAction {
-                            script: lsSpinner._cycleStart = (lsSpinner._cycleStart + 100) % 360
-                        }
-                    }
                 }
 
                 Text {
@@ -658,7 +626,7 @@ Rectangle {
                 onEntered: {
                     var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = "LocalSend";
+                    tooltipWindow.tipTitle = Localization.t("qsTileService.localsend");
                     tooltipWindow.open = true;
                 }
                 onExited: tooltipWindow.open = false
@@ -737,7 +705,7 @@ Rectangle {
                 onEntered: {
                     var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = ScreencapService.isRecognizing ? "Stop Recognizing" : "Recognize Music";
+                    tooltipWindow.tipTitle = ScreencapService.isRecognizing ? Localization.t("screencapControls.stop_recognizing") : Localization.t("barPage.recognize_music");
                     tooltipWindow.open = true;
                 }
                 onExited: tooltipWindow.open = false
@@ -821,7 +789,7 @@ Rectangle {
                 onEntered: {
                     var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = ScreencapService.isRecording ? "Stop Recording" : "Start Recording";
+                    tooltipWindow.tipTitle = ScreencapService.isRecording ? Localization.t("screencapControls.stop_recording") : Localization.t("screencapControls.start_recording");
                     tooltipWindow.open = true;
                 }
                 onExited: tooltipWindow.open = false

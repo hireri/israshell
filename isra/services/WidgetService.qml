@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import qs.style
 import qs.components
 
 Singleton {
@@ -18,16 +19,16 @@ Singleton {
     Component { id: sysMonitorComp; SysMonitor {} }
 
     readonly property var definitions: [
-        { id: "activeWindow",  label: "Active window",  defaultZone: "left",     component: activeWindowComp },
-        { id: "sysMonitor",    label: "System monitor", defaultZone: "left",    component: sysMonitorComp },
-        { id: "media",         label: "Media player",   defaultZone: "center",   component: mediaComp },
-        { id: "workspaces",    label: "Workspaces",     defaultZone: "center",   component: workspacesComp },
-        { id: "clock",         label: "Clock",          defaultZone: "center",   component: clockComp },
-        { id: "screencap",     label: "Toolbar", defaultZone: "right",    component: screencapComp },
-        { id: "tray",          label: "Tray",           defaultZone: "right",    component: trayComp },
-        { id: "quicksettings", label: "Quick settings", defaultZone: "right",    component: quicksettingsComp },
-        { id: "dock",          label: "Dock",           defaultZone: "disabled", component: dockComp },
-        { id: "launcher",      label: "App launcher",   defaultZone: "disabled", component: launcherComp }
+        { id: "activeWindow",  label: Localization.t("widgetService.active_window"),  defaultZone: "left",     component: activeWindowComp },
+        { id: "sysMonitor",    label: Localization.t("widgetService.system_monitor"), defaultZone: "left",    component: sysMonitorComp },
+        { id: "media",         label: Localization.t("widgetService.media_player"),   defaultZone: "center",   component: mediaComp },
+        { id: "workspaces",    label: Localization.t("widgetService.workspaces"),     defaultZone: "center",   component: workspacesComp },
+        { id: "clock",         label: Localization.t("widgetService.clock"),          defaultZone: "center",   component: clockComp },
+        { id: "screencap",     label: Localization.t("widgetService.toolbar"),        defaultZone: "right",    component: screencapComp },
+        { id: "tray",          label: Localization.t("widgetService.tray"),           defaultZone: "right",    component: trayComp },
+        { id: "quicksettings", label: Localization.t("widgetService.quick_settings"), defaultZone: "right",    component: quicksettingsComp },
+        { id: "dock",          label: Localization.t("widgetService.dock"),           defaultZone: "disabled", component: dockComp },
+        { id: "launcher",      label: Localization.t("widgetService.app_launcher"),   defaultZone: "disabled", component: launcherComp }
     ]
 
     readonly property var allIds: definitions.map(d => d.id)

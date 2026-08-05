@@ -459,7 +459,7 @@ Item {
                 Text {
                     id: redLbl
                     anchors.centerIn: parent
-                    text: "redacted"
+                    text: Localization.t("whoisWidget.redacted")
                     color: Colors.md3.on_tertiary_container
                     font.pixelSize: 11
                     font.family: Config.fontFamily
@@ -524,39 +524,39 @@ Item {
                 }
 
                 InfoRow {
-                    label: "registrar"
+                    label: Localization.t("whoisWidget.registrar")
                     value: root._info.registrar ?? ""
                 }
                 InfoRow {
-                    label: "registrar id"
+                    label: Localization.t("whoisWidget.registrar_id")
                     value: root._info.registrarId ?? ""
                 }
                 InfoRow {
-                    label: "created"
+                    label: Localization.t("whoisWidget.created")
                     value: root._info.created ?? ""
                 }
                 InfoRow {
-                    label: "updated"
+                    label: Localization.t("whoisWidget.updated")
                     value: root._info.updated ?? ""
                 }
                 InfoRow {
-                    label: "expires"
+                    label: Localization.t("whoisWidget.expires")
                     value: root._info.expires ?? ""
                 }
                 InfoRow {
-                    label: "nameservers"
+                    label: Localization.t("whoisWidget.nameservers")
                     value: root._info.nameservers ?? ""
                 }
                 InfoRow {
-                    label: "dnssec"
+                    label: Localization.t("whoisWidget.dnssec")
                     value: root._info.dnssec ?? ""
                 }
                 InfoRow {
-                    label: "registrant"
+                    label: Localization.t("whoisWidget.registrant")
                     value: root._info.registrantOrg ?? root._info.registrantName ?? ""
                 }
                 InfoRow {
-                    label: "abuse email"
+                    label: Localization.t("whoisWidget.abuse_email")
                     value: root._info.abuseEmail ?? ""
                 }
             }
@@ -584,43 +584,43 @@ Item {
                 }
 
                 InfoRow {
-                    label: "network"
+                    label: Localization.t("whoisWidget.network")
                     value: root._info.name ?? ""
                 }
                 InfoRow {
-                    label: "handle"
+                    label: Localization.t("whoisWidget.handle")
                     value: root._info.handle ?? ""
                 }
                 InfoRow {
-                    label: "range"
+                    label: Localization.t("whoisWidget.range")
                     value: root._info.startAddress && root._info.endAddress ? `${root._info.startAddress} - ${root._info.endAddress}` : (root._info.cidr ?? "")
                 }
                 InfoRow {
-                    label: "cidr"
+                    label: Localization.t("whoisWidget.cidr")
                     value: root._info.cidr ?? ""
                 }
                 InfoRow {
-                    label: "type"
+                    label: Localization.t("whoisWidget.type")
                     value: root._info.assignmentType ?? ""
                 }
                 InfoRow {
-                    label: "country"
+                    label: Localization.t("whoisWidget.country")
                     value: root._info.country ?? ""
                 }
                 InfoRow {
-                    label: "status"
+                    label: Localization.t("whoisWidget.status")
                     value: root._info.status ?? ""
                 }
                 InfoRow {
-                    label: "org"
+                    label: Localization.t("whoisWidget.org")
                     value: root._info.registrantOrg ?? ""
                 }
                 InfoRow {
-                    label: "abuse email"
+                    label: Localization.t("whoisWidget.abuse_email")
                     value: root._info.abuseEmail ?? ""
                 }
                 InfoRow {
-                    label: "whois srv"
+                    label: Localization.t("whoisWidget.whois_srv")
                     value: root._info.port43 ?? ""
                 }
             }
@@ -648,19 +648,19 @@ Item {
                 }
 
                 InfoRow {
-                    label: "asn"
+                    label: Localization.t("whoisWidget.asn")
                     value: root._info.asn ?? ""
                 }
                 InfoRow {
-                    label: "name"
+                    label: Localization.t("whoisWidget.name")
                     value: root._info.name ?? ""
                 }
                 InfoRow {
-                    label: "country"
+                    label: Localization.t("whoisWidget.country")
                     value: root._info.country ?? ""
                 }
                 InfoRow {
-                    label: "handle"
+                    label: Localization.t("whoisWidget.handle")
                     value: root._info.handle ?? ""
                 }
             }
@@ -669,7 +669,7 @@ Item {
         Text {
             visible: !root._loading && !root._error && Object.keys(root._info).length === 0 && root._raw !== "" && root._errorMsg === ""
             Layout.fillWidth: true
-            text: "No data parsed from RDAP response"
+            text: Localization.t("whoisWidget.no_data_parsed_from_rdap")
             color: Colors.md3.on_surface_variant
             font.pixelSize: 12
             font.family: Config.fontFamily
@@ -692,7 +692,7 @@ Item {
                 }
             }
             PillBtn {
-                label: "󰖟  open in browser"
+                label: Localization.t("translateWidget.open_in_browser")
                 showBtn: !root._isIp && !root._isAsn
                 onTapped: {
                     browserProc.command = ["xdg-open", "https://" + root.subject.trim()];
@@ -700,7 +700,7 @@ Item {
                 }
             }
             PillBtn {
-                label: "󰆏  copy rdap output"
+                label: Localization.t("whoisWidget.copy_rdap_output")
                 showBtn: root._raw !== ""
                 onTapped: {
                     copyProc.command = ["wl-copy", root._raw];
@@ -708,7 +708,7 @@ Item {
                 }
             }
             PillBtn {
-                label: "󰆏  copy abuse email"
+                label: Localization.t("whoisWidget.copy_abuse_email")
                 showBtn: (root._info.abuseEmail ?? "") !== ""
                 onTapped: {
                     copyProc.command = ["wl-copy", root._info.abuseEmail];

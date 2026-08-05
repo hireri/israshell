@@ -11,8 +11,8 @@ import qs.windows.components
 import qs.icons
 
 PageBase {
-    title: "Overview"
-    subtitle: "Wallpaper and appearance"
+    title: Localization.t("settingsWindow.overview")
+    subtitle: Localization.t("overviewPage.wallpaper_and_appearance")
 
     ColumnLayout {
         Layout.fillWidth: true
@@ -51,7 +51,7 @@ PageBase {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "No wallpaper"
+                        text: Localization.t("overviewPage.no_wallpaper")
                         font.family: Config.fontFamily
                         font.pixelSize: 12
                         color: Colors.md3.outline
@@ -222,7 +222,7 @@ PageBase {
 
                     SchemeButton {
                         Layout.fillWidth: true
-                        label: "Light"
+                        label: Localization.t("overviewPage.light")
                         active: !WallpaperService.isDark
                         onClicked: WallpaperService.isDark = false
 
@@ -236,7 +236,7 @@ PageBase {
 
                     SchemeButton {
                         Layout.fillWidth: true
-                        label: "Dark"
+                        label: Localization.t("overviewPage.dark")
                         active: WallpaperService.isDark
                         onClicked: WallpaperService.isDark = true
 
@@ -398,7 +398,7 @@ PageBase {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: "Shuffle from folder"
+                        text: Localization.t("overviewPage.shuffle_from_folder")
                         font.family: Config.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Medium
@@ -445,7 +445,7 @@ PageBase {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: "from Konachan"
+                        text: Localization.t("overviewPage.from_konachan")
                         font.family: Config.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Medium
@@ -497,7 +497,7 @@ PageBase {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: "from Wallhaven"
+                        text: Localization.t("overviewPage.from_wallhaven")
                         font.family: Config.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Medium
@@ -551,7 +551,7 @@ PageBase {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: "from Reddit"
+                        text: Localization.t("overviewPage.from_reddit")
                         font.family: Config.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Medium
@@ -577,12 +577,12 @@ PageBase {
     }
 
     SectionCard {
-        label: "Quick Toggles"
+        label: Localization.t("overviewPage.quick_toggles")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Desktop clock"
-            sublabel: "Clock widget on wallpaper"
+            label: Localization.t("overviewPage.desktop_clock")
+            sublabel: Localization.t("overviewPage.clock_widget_on_wallpaper")
             checked: Config.desktopClock
             onToggled: v => Config.update({
                     desktopClock: v
@@ -590,8 +590,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Screen corners"
-            sublabel: "Rounded corner overlay"
+            label: Localization.t("overviewPage.screen_corners")
+            sublabel: Localization.t("overviewPage.rounded_corner_overlay")
             checked: Config.screenCorners
             onToggled: v => Config.update({
                     screenCorners: v
@@ -600,8 +600,8 @@ PageBase {
 
         SettingSwitch {
             isLast: true
-            label: "Icon tint"
-            sublabel: "Colorize tray, dock and workspace icons with the theme color"
+            label: Localization.t("displayPage.icon_tint")
+            sublabel: Localization.t("displayPage.colorize_tray_dock_and_workspace")
             checked: Config.tintIcons
             onToggled: v => Config.update({
                 tintIcons: v
@@ -610,13 +610,13 @@ PageBase {
     }
 
     SectionCard {
-        label: "Blur & Transparency"
+        label: Localization.t("displayPage.blur_transparency")
         Layout.fillWidth: true
 
         SettingSwitch {
             id: blurSwitch
-            label: "Background blur"
-            sublabel: "Apply blur effect to panels and menus"
+            label: Localization.t("displayPage.background_blur")
+            sublabel: Localization.t("displayPage.apply_blur_effect_to_panels")
             checked: Config.blurEffects
             onToggled: v => Config.update({
                     blurEffects: v
@@ -624,8 +624,8 @@ PageBase {
         }
 
         SettingSlider {
-            label: "Panel opacity"
-            sublabel: "Overlay opacity of panels, and menus"
+            label: Localization.t("displayPage.panel_opacity")
+            sublabel: Localization.t("overviewPage.overlay_opacity_of_panels_and")
             from: 0.1
             to: 1.0
             stepSize: 0.05
@@ -639,14 +639,14 @@ PageBase {
     }
 
     SectionCard {
-        label: "Advanced"
+        label: Localization.t("overviewPage.advanced")
         Layout.fillWidth: true
 
         SettingRow {
             id: editRow
             isLast: true
-            label: "Edit config.json"
-            sublabel: "Open in default editor"
+            label: Localization.t("overviewPage.edit_config_json")
+            sublabel: Localization.t("overviewPage.open_in_default_editor")
 
             Text {
                 text: "󰬪"

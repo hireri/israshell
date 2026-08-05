@@ -5,7 +5,7 @@ import qs.style
 Item {
     id: root
 
-    property string placeholder: "Add..."
+    property string placeholder: Localization.t("chipAdd.add")
     property int maxFieldWidth: 160
     signal confirmed(string value)
 
@@ -39,7 +39,7 @@ Item {
     Text {
         id: idleLabel
         anchors.centerIn: backgroundRect
-        text: "+ Add"
+        text: Localization.t("chipAdd.add_2")
         font.family: Config.fontFamily
         font.pixelSize: 12
         color: Colors.md3.on_surface_variant

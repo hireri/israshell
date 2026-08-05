@@ -10,13 +10,13 @@ import qs.components
 import Quickshell.Widgets
 
 PageBase {
-    title: "Visuals"
-    subtitle: "Night light, blur"
+    title: Localization.t("settingsWindow.visuals_display")
+    subtitle: Localization.t("settingsWindow.night_light_blur")
 
     HeroCard {
         Layout.fillWidth: true
-        title: "Night light"
-        subtitle: NightLightService.active ? "Active · " + Config.nightLight.nightTemp + "K" : "Off · " + Config.nightLight.dayTemp + "K during day"
+        title: Localization.t("displayPage.night_light")
+        subtitle: NightLightService.active ? Localization.t("backgroundPage.active_k").arg(Config.nightLight.nightTemp) : Localization.t("displayPage.off_k_during_day").arg(Config.nightLight.dayTemp)
         iconBg: Colors.md3.tertiary_container
         cardColor: Colors.md3.surface_container
         checked: NightLightService.active
@@ -26,12 +26,12 @@ PageBase {
 
 
     SectionCard {
-        label: "Temperature"
+        label: Localization.t("barPage.temperature")
         Layout.fillWidth: true
 
         SettingRow {
-            label: "Night"
-            sublabel: "Applied when night light is active"
+            label: Localization.t("displayPage.night")
+            sublabel: Localization.t("displayPage.applied_when_night_light_is")
             TempStrip {
                 from: 1000
                 to: 10000
@@ -43,8 +43,8 @@ PageBase {
 
         SettingRow {
             isLast: true
-            label: "Day"
-            sublabel: "Applied during the day"
+            label: Localization.t("displayPage.day")
+            sublabel: Localization.t("displayPage.applied_during_the_day")
             TempStrip {
                 from: 1000
                 to: 10000
@@ -56,12 +56,12 @@ PageBase {
     }
 
     SectionCard {
-        label: "Schedule"
+        label: Localization.t("displayPage.schedule")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Auto night light"
-            sublabel: "Apply temperature on schedule"
+            label: Localization.t("displayPage.auto_night_light")
+            sublabel: Localization.t("displayPage.apply_temperature_on_schedule")
             checked: Config.nightLight.scheduleEnabled
             onToggled: v => Config.update({
                     nightLight: Object.assign({}, Config.nightLight, {
@@ -71,8 +71,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "Auto dark mode"
-            sublabel: "Switch theme at sunrise and sunset"
+            label: Localization.t("displayPage.auto_dark_mode")
+            sublabel: Localization.t("displayPage.switch_theme_at_sunrise_and")
             checked: Config.nightLight.autoDarkMode
             onToggled: v => Config.update({
                     nightLight: Object.assign({}, Config.nightLight, {
@@ -82,28 +82,28 @@ PageBase {
         }
 
         TimeInput {
-            label: "Sunrise"
-            sublabel: "Night light off · light mode"
+            label: Localization.t("displayPage.sunrise")
+            sublabel: Localization.t("displayPage.night_light_off_light_mode")
             value: Config.nightLight.sunrise
             onCommitted: v => NightLightService.setSunrise(v)
         }
 
         TimeInput {
-            label: "Sunset"
-            sublabel: "Night light on · dark mode"
+            label: Localization.t("displayPage.sunset")
+            sublabel: Localization.t("displayPage.night_light_on_dark_mode")
             value: Config.nightLight.sunset
             onCommitted: v => NightLightService.setSunset(v)
         }
     }
 
     SectionCard {
-        label: "Blur & Transparency"
+        label: Localization.t("displayPage.blur_transparency")
         Layout.fillWidth: true
 
         SettingSwitch {
             id: blurSwitch
-            label: "Background blur"
-            sublabel: "Apply blur effect to panels and menus"
+            label: Localization.t("displayPage.background_blur")
+            sublabel: Localization.t("displayPage.apply_blur_effect_to_panels")
             checked: Config.blurEffects
             onToggled: v => Config.update({
                     blurEffects: v
@@ -111,8 +111,8 @@ PageBase {
         }
 
         SettingSlider {
-            label: "Panel opacity"
-            sublabel: "Overlay opacity of panels and menus"
+            label: Localization.t("displayPage.panel_opacity")
+            sublabel: Localization.t("displayPage.overlay_opacity_of_panels_and")
             from: 0.1
             to: 1.0
             stepSize: 0.05
@@ -126,13 +126,13 @@ PageBase {
     }
 
     SectionCard {
-        label: "Icons"
+        label: Localization.t("barPage.icons")
         Layout.fillWidth: true
 
         SettingSwitch {
             isLast: true
-            label: "Icon tint"
-            sublabel: "Colorize tray, dock and workspace icons with the theme color"
+            label: Localization.t("displayPage.icon_tint")
+            sublabel: Localization.t("displayPage.colorize_tray_dock_and_workspace")
             checked: Config.tintIcons
             onToggled: v => Config.update({
                 tintIcons: v

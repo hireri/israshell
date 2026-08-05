@@ -615,7 +615,7 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.leftMargin: 8
                                 horizontalAlignment: Text.AlignLeft
-                                text: "Edit tiles"
+                                text: Localization.t("quickSettings.edit_tiles")
                                 font.family: Config.fontFamily
                                 font.pixelSize: 16
                                 color: Colors.md3.on_surface
@@ -645,7 +645,7 @@ Item {
                                     }
 
                                     Text {
-                                        text: "Reset"
+                                        text: Localization.t("quickSettings.reset")
                                         anchors.verticalCenter: parent.verticalCenter
                                         font.family: Config.fontFamily
                                         font.pixelSize: 13
@@ -797,7 +797,7 @@ Item {
                                         color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
                                         Text {
                                             anchors.centerIn: parent
-                                            text: NotificationService.qsGroupModel.count === 0 ? "No notifications" : NotificationService.qsGroupModel.count + " notification" + (NotificationService.qsGroupModel.count === 1 ? "" : "s")
+                                            text: NotificationService.qsGroupModel.count === 0 ? Localization.t("quickSettings.no_notifications") : NotificationService.qsGroupModel.count === 1 ? Localization.t("quickSettings.one_notification") : Localization.t("quickSettings.notifications_count").arg(NotificationService.qsGroupModel.count)
                                             font.pixelSize: 13
                                             font.family: Config.fontFamily
                                             font.weight: Font.Medium
@@ -872,8 +872,10 @@ Item {
                                         anchors.centerIn: parent
                                         readonly property int availableCount: (Config.quickSettingsTiles?.removed ?? []).length
                                         text: availableCount === 0
-                                            ? "No tiles available"
-                                            : availableCount + " tile" + (availableCount === 1 ? "" : "s") + " available"
+                                            ? Localization.t("quickSettings.no_tiles_available")
+                                            : availableCount === 1
+                                                ? Localization.t("quickSettings.one_tile_available")
+                                                : Localization.t("quickSettings.tiles_available_count").arg(availableCount)
                                         font.pixelSize: 13
                                         font.family: Config.fontFamily
                                         font.weight: Font.Medium
@@ -935,7 +937,7 @@ Item {
 
                                     Text {
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        text: "All caught up . . !"
+                                        text: Localization.t("quickSettings.all_caught_up")
                                         font.pixelSize: 16
                                         renderType: Text.NativeRendering
                                         font.family: Config.fontFamily

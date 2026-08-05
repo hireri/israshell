@@ -228,7 +228,7 @@ Item {
                 }
 
                 Text {
-                    text: root._error ? "Failed to load weather" : root._desc
+                    text: root._error ? Localization.t("weather.failed_to_load") : root._desc
                     font.pixelSize: root.type.bodySmall
                     font.weight: Font.Medium
                     color: root._error ? Colors.md3.error : Colors.md3.on_surface_variant
@@ -264,7 +264,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: root._uvi + " UVI"
+                        text: Localization.t("weather.uvi_value").arg(root._uvi)
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall
@@ -319,7 +319,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: root._aqi + " AQI"
+                        text: Localization.t("weather.aqi_value").arg(root._aqi)
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall
@@ -347,7 +347,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: "Fl " + root._feelsLike
+                        text: Localization.t("weather.feels_like_value").arg(root._feelsLike)
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall

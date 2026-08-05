@@ -772,7 +772,7 @@ ClippingRectangle {
 
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: sourcePill.noPlayers ? "No players" : root.getPlayerName(MediaPlayerState.players[0])
+                                        text: sourcePill.noPlayers ? Localization.t("mediaPlayer.no_players") : root.getPlayerName(MediaPlayerState.players[0])
                                         color: cardStack.frontCard.colOnSurface
                                         font.pixelSize: 13
                                         font.family: Config.fontFamily

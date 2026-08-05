@@ -185,21 +185,21 @@ Item {
 
     readonly property var powerEntries: [
         {
-            label: "Log Out",
+            label: Localization.t("lockSurface.log_out"),
             icon: logoutIconComp,
             command: ["sh", "-c", "loginctl terminate-user \"$USER\""],
             bg: Colors.md3.secondary_container,
             on: Colors.md3.on_secondary_container
         },
         {
-            label: "Shut Down",
+            label: Localization.t("lockSurface.shut_down"),
             icon: powerIconComp,
             command: ["sh", "-c", "systemctl poweroff || loginctl poweroff"],
             bg: Colors.md3.primary_container,
             on: Colors.md3.on_primary_container
         },
         {
-            label: "Restart",
+            label: Localization.t("lockSurface.restart"),
             icon: restartIconComp,
             command: ["sh", "-c", "systemctl reboot || loginctl reboot"],
             bg: Colors.md3.primary_container,
@@ -381,7 +381,7 @@ Item {
                         left: parent.left
                         leftMargin: 16
                     }
-                    text: "Password"
+                    text: Localization.t("lockSurface.password")
                     color: Colors.md3.on_surface_variant
                     font.pixelSize: 14
                     opacity: 0.6
@@ -825,7 +825,7 @@ Item {
 
                 MarqueeLine {
                     width: parent.width
-                    label: leftPill.hasPlayer ? leftPill.player.trackTitle : "No media playing"
+                    label: leftPill.hasPlayer ? leftPill.player.trackTitle : Localization.t("mediaPlayer.no_media_playing")
                     fontPixelSize: 13
                     fontWeight: Font.Medium
                     textColor: Colors.md3.on_surface

@@ -11,11 +11,11 @@ Item {
 
     required property var panelWindow
     readonly property var metricList: [
-        { id: "cpu",  label: "CPU",  icon: "memory",          color: Colors.md3.primary },
-        { id: "ram",  label: "RAM",  icon: "memory-alt",      color: Colors.md3.tertiary },
-        { id: "gpu",  label: "GPU",  icon: "videogame-asset", color: Colors.md3.secondary },
-        { id: "temp", label: "Temp", icon: "thermostat",      color: Colors.md3.error },
-        { id: "swap", label: "Swap", icon: "swap-horiz",      color: Colors.md3.outline }
+        { id: "cpu",  label: Localization.t("sysMonitor.cpu"),  icon: "memory",          color: Colors.md3.primary },
+        { id: "ram",  label: Localization.t("sysMonitor.ram"),  icon: "memory-alt",      color: Colors.md3.tertiary },
+        { id: "gpu",  label: Localization.t("sysMonitor.gpu"),  icon: "videogame-asset", color: Colors.md3.secondary },
+        { id: "temp", label: Localization.t("sysMonitor.temp"), icon: "thermostat",      color: Colors.md3.error },
+        { id: "swap", label: Localization.t("sysMonitor.swap"), icon: "swap-horiz",      color: Colors.md3.outline }
     ]
 
     readonly property int barStyle: Config.sysMonitor?.style ?? 0

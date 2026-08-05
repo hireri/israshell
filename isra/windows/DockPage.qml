@@ -9,8 +9,8 @@ import qs.services
 import qs.windows.components
 
 PageBase {
-    title: "Dock"
-    subtitle: "A separate app dock, pinned to any screen edge"
+    title: Localization.t("widgetService.dock")
+    subtitle: Localization.t("dockPage.a_separate_app_dock_pinned")
 
     Component { id: arrowUpwardComp; MaterialIcon { name: "arrow-upward"; iconSize: 16 } }
     Component { id: arrowDownwardComp; MaterialIcon { name: "arrow-downward"; iconSize: 16 } }
@@ -18,12 +18,12 @@ PageBase {
     Component { id: arrowForwComp; MaterialIcon { name: "arrow-forward"; iconSize: 16 } }
 
     SectionCard {
-        label: "Layout"
+        label: Localization.t("backgroundPage.layout")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Enabled"
-            sublabel: "Show the floating dock"
+            label: Localization.t("dockPage.enabled")
+            sublabel: Localization.t("dockPage.show_the_floating_dock")
             checked: Config.floatingDock.enabled
             onToggled: v => Config.update({
                 floatingDock: Object.assign({}, Config.floatingDock, { enabled: v })
@@ -31,8 +31,8 @@ PageBase {
         }
 
         SettingChips {
-            label: "Edge"
-            sublabel: "Screen edge the dock is pinned to"
+            label: Localization.t("dockPage.edge")
+            sublabel: Localization.t("dockPage.screen_edge_the_dock_is")
             options: [
                 { value: 0, icon: arrowUpwardComp },
                 { value: 1, icon: arrowDownwardComp },
@@ -46,8 +46,8 @@ PageBase {
         }
 
         SettingSlider {
-            label: "Icon size"
-            sublabel: "Size of the app icons in the dock"
+            label: Localization.t("dockPage.icon_size")
+            sublabel: Localization.t("dockPage.size_of_the_app_icons")
             from: 16
             to: 56
             stepSize: 2
@@ -59,8 +59,8 @@ PageBase {
         }
 
         SettingSwitch {
-            label: "App launcher button"
-            sublabel: "Show a button that opens the app launcher"
+            label: Localization.t("dockPage.app_launcher_button")
+            sublabel: Localization.t("dockPage.show_a_button_that_opens")
             checked: Config.floatingDock.showLauncher
             onToggled: v => Config.update({
                 floatingDock: Object.assign({}, Config.floatingDock, { showLauncher: v })
@@ -69,8 +69,8 @@ PageBase {
 
         SettingSwitch {
             isLast: true
-            label: "Trash bin"
-            sublabel: "Drag files onto it to throw them in the trash"
+            label: Localization.t("dockPage.trash_bin")
+            sublabel: Localization.t("dockPage.drag_files_onto_it_to")
             checked: Config.floatingDock.showTrash
             onToggled: v => Config.update({
                 floatingDock: Object.assign({}, Config.floatingDock, { showTrash: v })
@@ -79,12 +79,12 @@ PageBase {
     }
 
     SectionCard {
-        label: "Behavior"
+        label: Localization.t("dockPage.behavior")
         Layout.fillWidth: true
 
         SettingSwitch {
-            label: "Always visible"
-            sublabel: "Keep the dock out and reserve space so windows never cover it"
+            label: Localization.t("dockPage.always_visible")
+            sublabel: Localization.t("dockPage.keep_the_dock_out_and")
             checked: Config.floatingDock.exclusiveZone
             onToggled: v => Config.update({
                 floatingDock: Object.assign({}, Config.floatingDock, { exclusiveZone: v })
@@ -93,7 +93,7 @@ PageBase {
 
         SettingSwitch {
             isLast: true
-            label: "Smart hide"
+            label: Localization.t("dockPage.smart_hide")
             sublabel: Config.floatingDock.exclusiveZone
                 ? "Unavailable while the dock is always visible"
                 : "Slide back out whenever no window is in the way"

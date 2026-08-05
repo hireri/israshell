@@ -281,7 +281,7 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             Text {
-                                text: LocaleService.weatherUvi + " UVI"
+                                text: Localization.t("weather.uvi_value").arg(LocaleService.weatherUvi)
                                 color: Colors.md3.on_surface_variant
                                 font.family: Config.fontFamily
                                 font.pixelSize: root.type.bodySmall
@@ -346,7 +346,7 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             Text {
-                                text: LocaleService.weatherAqi + " AQI"
+                                text: Localization.t("weather.aqi_value").arg(LocaleService.weatherAqi)
                                 color: Colors.md3.on_surface_variant
                                 font.family: Config.fontFamily
                                 font.pixelSize: root.type.bodySmall
@@ -379,7 +379,7 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             Text {
-                                text: "Fl " + LocaleService.weatherFeelsLike
+                                text: Localization.t("weather.feels_like_value").arg(LocaleService.weatherFeelsLike)
                                 color: Colors.md3.on_surface_variant
                                 font.family: Config.fontFamily
                                 font.pixelSize: root.type.bodySmall
@@ -493,7 +493,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Text {
-                            text: "Calendar"
+                            text: Localization.t("clockCalendar.calendar")
                             font.family: Config.fontFamily
                             font.pixelSize: root.type.bodySmall
                             font.weight: Font.Medium
@@ -542,7 +542,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Text {
-                            text: "Settings"
+                            text: Localization.t("settingsWindow.settings")
                             font.family: Config.fontFamily
                             font.pixelSize: root.type.bodySmall
                             font.weight: Font.Medium

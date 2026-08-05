@@ -12,14 +12,14 @@ import qs.services
 import qs.windows.components
 
 PageBase {
-    title: "Sound & Notifications"
-    subtitle: "Audio output and interruption settings"
+    title: Localization.t("soundPage.sound_notifications")
+    subtitle: Localization.t("soundPage.audio_output_and_interruption_settings")
 
     Component.onCompleted: AudioService.startMicMeter()
     Component.onDestruction: AudioService.stopMicMeter()
 
     SectionCard {
-        label: "Output"
+        label: Localization.t("soundPage.output")
         Layout.fillWidth: true
 
         Rectangle {
@@ -175,7 +175,7 @@ PageBase {
     }
 
     SectionCard {
-        label: "Input"
+        label: Localization.t("soundPage.input")
         Layout.fillWidth: true
 
         Rectangle {
@@ -397,7 +397,7 @@ PageBase {
     }
 
     SectionCard {
-        label: "Apps"
+        label: Localization.t("soundPage.apps")
         Layout.fillWidth: true
 
         Repeater {
@@ -528,13 +528,13 @@ PageBase {
     }
 
     SectionCard {
-        label: "Notifications"
+        label: Localization.t("soundPage.notifications")
         Layout.fillWidth: true
 
         SettingSwitch {
             isLast: true
-            label: "Show on all monitors"
-            sublabel: "Mirror popups across every screen"
+            label: Localization.t("soundPage.show_on_all_monitors")
+            sublabel: Localization.t("soundPage.mirror_popups_across_every_screen")
             iconBg: Colors.md3.secondary_container
             checked: Config.notifications.showAllMonitors ?? false
             onToggled: v => Config.update({
@@ -544,24 +544,24 @@ PageBase {
                 })
         }
         SettingSelect {
-            label: "Popup timeout"
-            sublabel: "How long popups stay visible"
+            label: Localization.t("soundPage.popup_timeout")
+            sublabel: Localization.t("soundPage.how_long_popups_stay_visible")
             iconBg: Colors.md3.secondary_container
             options: [
                 {
-                    label: "3 seconds",
+                    label: Localization.t("soundPage.3_seconds"),
                     value: 3
                 },
                 {
-                    label: "5 seconds",
+                    label: Localization.t("soundPage.5_seconds"),
                     value: 5
                 },
                 {
-                    label: "8 seconds",
+                    label: Localization.t("soundPage.8_seconds"),
                     value: 8
                 },
                 {
-                    label: "Never",
+                    label: Localization.t("soundPage.never"),
                     value: 0
                 }
             ]
@@ -573,18 +573,18 @@ PageBase {
                 })
         }
         SettingChips {
-            label: "Position"
+            label: Localization.t("backgroundPage.position")
             options: [
                 {
-                    label: "Follow Bar",
+                    label: Localization.t("soundPage.follow_bar"),
                     value: 0
                 },
                 {
-                    label: "Always Top",
+                    label: Localization.t("soundPage.always_top"),
                     value: 1
                 },
                 {
-                    label: "Always Bottom",
+                    label: Localization.t("soundPage.always_bottom"),
                     value: 2
                 }
             ]

@@ -162,7 +162,7 @@ Item {
         Text {
             visible: !root._loading && !root._error && root._word === ""
             Layout.fillWidth: true
-            text: "type a word to look up"
+            text: Localization.t("defineWidget.type_a_word_to_look")
             color: Colors.md3.on_surface_variant
             font.pixelSize: 13
             font.family: Config.fontFamily
@@ -348,17 +348,17 @@ Item {
             topPadding: 2
 
             PillBtn {
-                label: "󰆏  copy word"
+                label: Localization.t("defineWidget.copy_word")
                 primary: true
                 onTapped: root.copyResult(root._word)
             }
             PillBtn {
-                label: "󰆏  copy definition"
+                label: Localization.t("defineWidget.copy_definition")
                 visible: root._meanings.length > 0
                 onTapped: root.copyResult(root._meanings[0]?.definition ?? "")
             }
             PillBtn {
-                label: "󰕾  speak"
+                label: Localization.t("defineWidget.speak")
                 onTapped: root._speak(root._word)
             }
         }

@@ -177,7 +177,7 @@ Item {
                 Text {
                     id: srcLbl
                     anchors.centerIn: parent
-                    text: root._detectedSrc !== "" ? root._detectedSrc : "auto"
+                    text: root._detectedSrc !== "" ? root._detectedSrc : Localization.t("translateWidget.auto")
                     color: Colors.md3.on_surface_variant
                     font.pixelSize: 11
                     font.family: Config.fontFamily
@@ -237,7 +237,7 @@ Item {
 
         Text {
             Layout.fillWidth: true
-            text: root._error ? "Translation failed" : root._translated !== "" ? root._translated : "..."
+            text: root._error ? Localization.t("translateWidget.translation_failed") : root._translated !== "" ? root._translated : "..."
             color: root._error ? Colors.md3.error : Colors.md3.on_surface
             font.pixelSize: 26
             font.weight: Font.Light
@@ -269,25 +269,25 @@ Item {
             spacing: 6
 
             PillBtn {
-                label: "󰆏  copy"
+                label: Localization.t("translateWidget.copy")
                 primary: true
                 visible: root._translated !== ""
                 onTapped: root.copyResult(root._translated)
             }
             PillBtn {
-                label: "󰆏  copy romanized"
+                label: Localization.t("translateWidget.copy_romanized")
                 primary: true
                 visible: root._romanized !== ""
                 onTapped: root.copyResult(root._romanized)
             }
             PillBtn {
-                label: "󰕾  speak"
+                label: Localization.t("defineWidget.speak")
                 primary: false
                 visible: root._translated !== ""
                 onTapped: root._speak(root._translated, root.targetLang)
             }
             PillBtn {
-                label: "󰖟  open in browser"
+                label: Localization.t("translateWidget.open_in_browser")
                 primary: false
                 visible: root._translated !== ""
                 onTapped: {

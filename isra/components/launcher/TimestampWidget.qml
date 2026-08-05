@@ -352,7 +352,7 @@ Item {
                     }
                     Text {
                         visible: root._r.mode === "unix"
-                        text: (root._r.raw || "") + " unix"
+                        text: Localization.t("timestampWidget.unix_value").arg(root._r.raw || "")
                         color: Colors.md3.on_surface_variant
                         font.pixelSize: 13
                         font.family: Config.fontFamily
@@ -410,7 +410,7 @@ Item {
                             font.family: Config.fontFamily
                         }
                         Text {
-                            text: root._r.mode === "diff" ? ((root._r.past ? "since " : "until ") + root._r.label) : ""
+                            text: root._r.mode === "diff" ? ((root._r.past ? Localization.t("timestampWidget.since_value") : Localization.t("timestampWidget.until_value")).arg(root._r.label)) : ""
                             color: Colors.md3.on_surface_variant
                             font.pixelSize: 12
                             font.family: Config.fontFamily
@@ -436,35 +436,35 @@ Item {
 
             PillBtn {
                 visible: root._r.mode === "unix" || root._r.mode === "date"
-                label: "󰆏  copy ISO"
+                label: Localization.t("timestampWidget.copy_iso")
                 primary: true
                 onTapped: root.copyResult(root._r.iso)
             }
             PillBtn {
                 visible: root._r.mode === "unix" || root._r.mode === "date"
-                label: "󰃭  copy date"
+                label: Localization.t("timestampWidget.copy_date")
                 onTapped: root.copyResult(root._r.longDate)
             }
             PillBtn {
                 visible: root._r.mode === "unix" || root._r.mode === "date"
-                label: "  copy unix"
+                label: Localization.t("timestampWidget.copy_unix")
                 onTapped: root.copyResult(root._r.unix)
             }
 
             PillBtn {
                 visible: root._r.mode === "diff"
-                label: "󰃭  copy count"
+                label: Localization.t("timestampWidget.copy_count")
                 primary: true
                 onTapped: root.copyResult(root._r.mode === "diff" ? (Number.isInteger(root._r.value) ? root._r.value.toString() : root._r.value.toFixed(1)) : "")
             }
             PillBtn {
                 visible: root._r.mode === "diff"
-                label: "󰃭  copy date"
+                label: Localization.t("timestampWidget.copy_date")
                 onTapped: root.copyResult(root._r.targetDate)
             }
             PillBtn {
                 visible: root._r.mode === "diff"
-                label: "  copy unix"
+                label: Localization.t("timestampWidget.copy_unix")
                 onTapped: root.copyResult(root._r.targetIso ? Math.floor(new Date(root._r.targetIso).getTime() / 1000).toString() : "")
             }
         }

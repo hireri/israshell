@@ -54,8 +54,8 @@ Rectangle {
     property string displayedTitle: ""
 
     readonly property bool showFallback: !activeWindow || (!activeWindow.address && !activeWindow.appId)
-    readonly property string fallbackAppId: "Desktop"
-    readonly property string fallbackTitle: "Empty workspace"
+    readonly property string fallbackAppId: Localization.t("activeWindow.desktop")
+    readonly property string fallbackTitle: Localization.t("activeWindow.empty_workspace")
 
     readonly property string kaomoji: " > ⩊ < "
 

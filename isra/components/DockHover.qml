@@ -638,7 +638,7 @@ PopupWindow {
                             Layout.preferredHeight: 16
 
                             Text {
-                                text: (previewCard.toplevel && previewCard.toplevel.title) ? previewCard.toplevel.title : "Window"
+                                text: (previewCard.toplevel && previewCard.toplevel.title) ? previewCard.toplevel.title : Localization.t("dockHover.window")
                                 font.pixelSize: 11
                                 font.family: (Config && Config.fontFamily) ? Config.fontFamily : "sans-serif"
                                 font.weight: Font.Medium
@@ -707,7 +707,7 @@ PopupWindow {
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
                                         Layout.maximumWidth: 150
-                                        text: (previewCard.toplevel && previewCard.toplevel.title) ? previewCard.toplevel.title : "Window"
+                                        text: (previewCard.toplevel && previewCard.toplevel.title) ? previewCard.toplevel.title : Localization.t("dockHover.window")
                                         font.pixelSize: 11
                                         font.family: (Config && Config.fontFamily) ? Config.fontFamily : "sans-serif"
                                         color: Colors.md3.on_surface_variant

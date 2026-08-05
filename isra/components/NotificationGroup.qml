@@ -751,7 +751,7 @@ MouseArea {
                                     Text {
                                         id: aLbl
                                         anchors.centerIn: parent
-                                        text: modelData.text || "Open"
+                                        text: modelData.text || Localization.t("notificationGroup.open")
                                         color: Colors.md3.on_surface
                                         font.family: Config.fontFamily
                                         font.pixelSize: 12

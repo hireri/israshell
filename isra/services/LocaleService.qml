@@ -6,6 +6,8 @@ import qs.style
 Singleton {
     id: root
 
+    readonly property var _qtLocale: Qt.locale(Config.language.split("_").slice(0, 2).join("_"))
+
     readonly property string liveTime: _liveTime
     readonly property string liveSecs: _liveSecs
     readonly property string liveAmPm: _liveAmPm
@@ -198,16 +200,17 @@ Singleton {
         _liveTime = String(hDisp).padStart(2, '0') + ":" + String(m).padStart(2, '0');
         _liveSecs = String(s).padStart(2, '0');
         const isPm = h >= 12;
-        _liveAmPm = Config.hourFormat === 0 ? "" : (isPm ? (Config.hourFormat === 2 ? " PM" : " pm") : (Config.hourFormat === 2 ? " AM" : " am"));
-        _liveDayName = Qt.formatDate(now, "dddd");
-        _liveFullDate = Qt.formatDate(now, "dd MMMM yyyy");
+        const amPmWord = isPm ? Localization.t("clock.pm") : Localization.t("clock.am");
+        _liveAmPm = Config.hourFormat === 0 ? "" : (" " + (Config.hourFormat === 2 ? amPmWord : amPmWord.toLowerCase()));
+        _liveDayName = now.toLocaleDateString(root._qtLocale, "dddd");
+        _liveFullDate = now.toLocaleDateString(root._qtLocale, "dd MMMM yyyy");
 
         const barTimeFmt = Config.timeFormat !== "" ? Config.timeFormat : root._dynamicTimeFormat();
-        _barTimeText = Qt.formatDateTime(now, barTimeFmt);
+        _barTimeText = now.toLocaleString(root._qtLocale, barTimeFmt);
 
         const barDateFmt = Config.dateFormat !== "" ? Config.dateFormat : root._dynamicDateFormat();
-        _barDateText = Qt.formatDateTime(now, barDateFmt);
-        _shortDateText = Qt.formatDateTime(now, Config.dateOrder === 1 ? "ddd, MMM dd" : "ddd, dd MMM");
+        _barDateText = now.toLocaleString(root._qtLocale, barDateFmt);
+        _shortDateText = now.toLocaleString(root._qtLocale, Config.dateOrder === 1 ? "ddd, MMM dd" : "ddd, dd MMM");
 
         root._updateAstroEvent(now);
     }
@@ -338,7 +341,7 @@ Singleton {
 
     function _fetchWeather() {
         if (!NetworkService.isOnline) {
-            root._weatherError = "Offline";
+            root._weatherError = Localization.t("weather.offline");
             root._weatherLoading = false;
             return;
         }
@@ -388,48 +391,48 @@ Singleton {
         const day = parseInt(isDay) !== 0;
         let iconName = "partly-cloudy-day";
         let colorRole = "primary";
-        let desc = "Unknown";
+        let desc = Localization.t("weather.unknown");
 
         if (c === 0) {
             if (day) {
                 iconName = "wb-sunny";
                 colorRole = "tertiary";
-                desc = "Sunny";
+                desc = Localization.t("weather.sunny");
             } else {
-                iconName = "moon-stars"; 
+                iconName = "moon-stars";
                 colorRole = "primary";
-                desc = "Clear Night";
+                desc = Localization.t("weather.clear_night");
             }
         } else if (c === 1 || c === 2) {
             if (day) {
                 iconName = "partly-cloudy-day";
                 colorRole = "primary";
-                desc = "Partly Cloudy";
+                desc = Localization.t("weather.partly_cloudy");
             } else {
-                iconName = "partly-cloudy-night"; 
+                iconName = "partly-cloudy-night";
                 colorRole = "primary";
-                desc = "Partly Cloudy";
+                desc = Localization.t("weather.partly_cloudy");
             }
         } else if (c === 3) {
             iconName = "cloudy";
             colorRole = "on_surface_variant";
-            desc = "Overcast";
+            desc = Localization.t("weather.overcast");
         } else if (c === 45 || c === 48) {
             iconName = "foggy";
             colorRole = "on_surface_variant";
-            desc = "Foggy";
+            desc = Localization.t("weather.foggy");
         } else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(c)) {
             iconName = "rainy";
             colorRole = "primary";
-            desc = c < 60 ? "Drizzle" : "Rain";
+            desc = c < 60 ? Localization.t("weather.drizzle") : Localization.t("weather.rain");
         } else if ([71, 73, 75, 77, 85, 86].includes(c)) {
             iconName = "snowy";
             colorRole = "outline";
-            desc = "Snow";
+            desc = Localization.t("weather.snow");
         } else if ([95, 96, 99].includes(c)) {
             iconName = "thunderstorm";
             colorRole = "error";
-            desc = "Thunderstorm";
+            desc = Localization.t("weather.thunderstorm");
         }
         
         return { iconName: iconName, colorRole: colorRole, desc: desc };
@@ -708,7 +711,7 @@ Singleton {
 
     function _maybeFetchAqi() {
         if (!NetworkService.isOnline) {
-            root._aqiError = "Offline";
+            root._aqiError = Localization.t("weather.offline");
             root._aqiLoading = false;
             return;
         }

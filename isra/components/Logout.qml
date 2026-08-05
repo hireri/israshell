@@ -36,7 +36,7 @@ Variants {
         LogoutButton {
             command: "loginctl lock-session"
             keybind: Qt.Key_L
-            text: "Lock"
+            text: Localization.t("logout.lock")
             icon: "lock"
             containerColor: Colors.md3.primary_container
             contentColor: Colors.md3.on_primary_container
@@ -44,7 +44,7 @@ Variants {
         LogoutButton {
             command: "loginctl terminate-user $USER"
             keybind: Qt.Key_E
-            text: "Logout"
+            text: Localization.t("logout.logout")
             icon: "logout"
             containerColor: Colors.md3.primary_container
             contentColor: Colors.md3.on_primary_container
@@ -52,7 +52,7 @@ Variants {
         LogoutButton {
             command: "systemctl suspend | loginctl suspend"
             keybind: Qt.Key_S
-            text: "Suspend"
+            text: Localization.t("logout.suspend")
             icon: "dark-mode"
             containerColor: Colors.md3.primary_container
             contentColor: Colors.md3.on_primary_container
@@ -60,7 +60,7 @@ Variants {
         LogoutButton {
             command: "systemctl hibernate | loginctl hibernate"
             keybind: Qt.Key_H
-            text: "Hibernate"
+            text: Localization.t("logout.hibernate")
             icon: "ac-unit"
             containerColor: Colors.md3.primary_container
             contentColor: Colors.md3.on_primary_container
@@ -68,7 +68,7 @@ Variants {
         LogoutButton {
             command: "systemctl poweroff | loginctl poweroff"
             keybind: Qt.Key_P
-            text: "Shutdown"
+            text: Localization.t("logout.shutdown")
             icon: "shutdown"
             containerColor: Colors.md3.primary
             contentColor: Colors.md3.on_primary
@@ -76,7 +76,7 @@ Variants {
         LogoutButton {
             command: "systemctl reboot | loginctl reboot"
             keybind: Qt.Key_R
-            text: "Reboot"
+            text: Localization.t("logout.reboot")
             icon: "reboot"
             containerColor: Colors.md3.primary
             contentColor: Colors.md3.on_primary
@@ -498,7 +498,7 @@ Variants {
                             }
 
                             Text {
-                                text: w.uptimeStr !== "" ? "up " + w.uptimeStr : ""
+                                text: w.uptimeStr !== "" ? Localization.t("logout.up_value").arg(w.uptimeStr) : ""
                                 font.pixelSize: 11
                                 font.family: Config.fontFamily
                                 color: Qt.alpha(Colors.md3.on_surface, 0.5)

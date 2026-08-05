@@ -16,27 +16,27 @@ Item {
 
     readonly property var _sections: [
         {
-            title: "happy",
+            title: Localization.t("kaomojiWidget.happy"),
             tags: ["happy", "joy", "yay", "excited", "smile", "giddy", "giggle", "chuckle", "snicker", "laugh", "lol", "dance", "party", "groove", "cheer"]
         },
         {
-            title: "love",
+            title: Localization.t("kaomojiWidget.love"),
             tags: ["love", "heart", "heart-eyes", "adore", "hug", "blush", "shy", "cute", "kiss", "sweet"]
         },
         {
-            title: "sad & sleepy",
+            title: Localization.t("kaomojiWidget.sad_sleepy"),
             tags: ["sad", "cry", "weep", "tears", "despair", "disappointed", "pout", "sleepy", "tired", "zzz", "bedtime", "rub", "yawn", "exhausted", "dead", "ghost"]
         },
         {
-            title: "angry & unimpressed",
+            title: Localization.t("kaomojiWidget.angry_unimpressed"),
             tags: ["angry", "mad", "rage", "table", "flip", "punch", "rude", "disapproval", "unimpressed", "side-eye", "sigh", "bored", "annoyed"]
         },
         {
-            title: "confused & surprised",
+            title: Localization.t("kaomojiWidget.confused_surprised"),
             tags: ["confused", "unsure", "skeptical", "huh", "shrug", "whatever", "idk", "sweat", "tilt", "think", "hmm", "pondering", "surprised", "shock", "gasp", "panic", "scared", "nervous", "wow", "amazed"]
         },
         {
-            title: "actions & animals",
+            title: Localization.t("kaomojiWidget.actions_animals"),
             tags: ["cat", "bear", "dog", "animal", "wave", "hi", "hello", "greeting", "bye", "bow", "respect", "salute", "food", "ok", "peace", "fight", "strut", "cool", "music", "pointing", "toast", "cheers"]
         }
     ]
@@ -85,7 +85,7 @@ Item {
 
         const remaining = _uniqueEntries.filter(e => !assigned.has(e.face));
         if (remaining.length > 0) {
-            groups.push({ title: "other", items: remaining });
+            groups.push({ title: Localization.t("kaomojiWidget.other"), items: remaining });
         }
         return groups;
     }
@@ -104,7 +104,7 @@ Item {
         Text {
             visible: root.entries.length > 0 && root.query.trim() !== "" && root._filtered.length === 0
             width: parent.width
-            text: "no kaomoji found for \"" + root.query.trim() + "\""
+            text: Localization.t("kaomojiWidget.no_kaomoji_found_for").arg(root.query.trim())
             color: Colors.md3.on_surface_variant
             font.pixelSize: 14
             font.family: Config.fontFamily
@@ -256,7 +256,7 @@ Item {
             Text {
                 id: faceLbl
                 anchors.centerIn: parent
-                text: tile._copied ? "copied!" : tile.modelData.face
+                text: tile._copied ? Localization.t("kaomojiWidget.copied") : tile.modelData.face
                 color: tile._copied ? Colors.md3.on_primary_container : (tileMa.containsMouse ? Colors.md3.on_secondary_container : Colors.md3.on_surface)
                 font.pixelSize: tile._copied ? 12 : 17
                 font.family: Config.fontFamily
