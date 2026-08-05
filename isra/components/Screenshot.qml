@@ -155,6 +155,23 @@ Item {
     readonly property bool useGrimCapture: SystemInfo.compositor === "niri"
     property var _grimPaths: ({})
 
+    property var _readyScreens: ({})
+    property bool _forceBackingReady: false
+    readonly property bool backingReady: root.activeTool === "record" || root._forceBackingReady || Object.keys(root._readyScreens).length >= Quickshell.screens.length
+
+    function _markScreenReady(screenName) {
+        if (root._readyScreens[screenName])
+            return;
+        root._readyScreens[screenName] = true;
+        root._readyScreens = Object.assign({}, root._readyScreens);
+    }
+
+    Timer {
+        interval: 500
+        running: uiLoader.active && !root.backingReady
+        onTriggered: root._forceBackingReady = true
+    }
+
     function _openOverlay() {
         if (root._closing || uiLoader.active)
             return;
@@ -163,6 +180,10 @@ Item {
 
         root.active = true;
         ScreencapService.refresh();
+
+        root._readyScreens = {};
+        root._forceBackingReady = false;
+        root._frozenClientRects = root.clientRects;
 
         uiLoader.active = true;
 
@@ -190,6 +211,7 @@ Item {
                 } else {
                     console.error("[Screenshot] grim capture failed for", screenName);
                 }
+                root._markScreenReady(grimProc.screenName);
                 grimProc.destroy();
             }
         }
@@ -236,6 +258,9 @@ Item {
         }
         return rects;
     }
+
+    property var _frozenClientRects: []
+    readonly property var effectiveClientRects: root.activeTool === "record" ? root.clientRects : root._frozenClientRects
 
     Process {
         id: captureProc
@@ -332,7 +357,7 @@ Item {
                 }
 
                 function windowAtGlobal(gx, gy) {
-                    const rects = root.clientRects;
+                    const rects = root.effectiveClientRects;
                     for (let i = rects.length - 1; i >= 0; i--) {
                         const r = rects[i];
                         if (gx >= r.x && gx < r.x + r.w && gy >= r.y && gy < r.y + r.h)
@@ -397,8 +422,11 @@ Item {
                             Component {
                                 id: screencopyViewComp
                                 ScreencopyView {
+                                    id: screencopyView
                                     captureSource: overlay.screen
                                     live: false
+                                    onHasContentChanged: if (hasContent)
+                                        root._markScreenReady(overlay.screen.name)
                                 }
                             }
                             Component {
@@ -414,7 +442,7 @@ Item {
 
                         Item {
                             anchors.fill: parent
-                            visible: !sessionRoot.capturing
+                            visible: !sessionRoot.capturing && root.backingReady
 
                             QtObject {
                                 id: currentHole
@@ -734,7 +762,7 @@ Item {
                                             color: Colors.md3.on_surface
                                         }
                                         Text {
-                                            text: "px"
+                                            text: Localization.t("screenshot.px")
                                             font.pixelSize: 9
                                             color: Colors.md3.outline
                                             anchors.verticalCenter: parent ? parent.verticalCenter : undefined
@@ -753,7 +781,7 @@ Item {
                                             visible: sessionRoot.dragging
                                             spacing: 6
                                             Text {
-                                                text: "FROM"
+                                                text: Localization.t("screenshot.from")
                                                 font.pixelSize: 8
                                                 font.letterSpacing: 1
                                                 color: Colors.md3.outline
@@ -769,7 +797,7 @@ Item {
                                         Row {
                                             spacing: 6
                                             Text {
-                                                text: sessionRoot.dragging ? "TO     " : "POS"
+                                                text: sessionRoot.dragging ? Localization.t("screenshot.to") : Localization.t("screenshot.pos")
                                                 font.pixelSize: 8
                                                 font.letterSpacing: 1
                                                 color: Colors.md3.outline
@@ -790,7 +818,7 @@ Item {
                         Item {
                             id: floatingPill
 
-                            property bool showPill: isFocused && !sessionRoot.dragging && !sessionRoot.capturing
+                            property bool showPill: isFocused && !sessionRoot.dragging && !sessionRoot.capturing && root.backingReady
                             visible: showPill || opacity > 0
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
@@ -1038,7 +1066,7 @@ Item {
                                                             anchors.verticalCenter: parent.verticalCenter
                                                         }
                                                         Text {
-                                                            text: "Stop recording"
+                                                            text: Localization.t("screenshot.stop_recording")
                                                             font.pixelSize: 12
                                                             font.weight: Font.Medium
                                                             color: Colors.md3.on_error
