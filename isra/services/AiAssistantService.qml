@@ -106,29 +106,17 @@ Singleton {
 
     property var screenShots: ({})
     readonly property bool hasScreenAttachment: pendingAttachments.some(a => a.isScreenAttachment === true)
-    property int _pendingShots: 0
-
-    Timer {
-        id: _openFallbackTimer
-        interval: 700
-        onTriggered: root.visible = true
-    }
 
     function open(): void {
         if (root.visible)
             return;
+        root.visible = true;
         root._captureAllScreens();
     }
 
     function _captureAllScreens(): void {
         root.screenShots = {};
         const screens = Quickshell.screens ?? [];
-        if (screens.length === 0) {
-            root.visible = true;
-            return;
-        }
-        root._pendingShots = screens.length;
-        _openFallbackTimer.restart();
         for (const scr of screens) {
             const name = scr.name;
             const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
@@ -143,11 +131,6 @@ Singleton {
                         base64: collector.text.trim()
                     };
                     root.screenShots = shots;
-                }
-                root._pendingShots -= 1;
-                if (root._pendingShots <= 0) {
-                    _openFallbackTimer.stop();
-                    root.visible = true;
                 }
                 proc.destroy();
             });
