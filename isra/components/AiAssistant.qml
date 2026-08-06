@@ -42,6 +42,10 @@ Item {
         readonly property bool isError: entry.isError === true
         readonly property real avatarSize: 30
         readonly property real maxContentWidth: width * 0.86
+        readonly property alias bubbleItem: bubble
+
+        signal bubbleShown(item: var)
+        signal bubbleHidden(item: var)
 
         height: rowLayout.height
         opacity: 1
@@ -55,7 +59,16 @@ Item {
             entranceAnim.restart();
         }
 
-        Component.onCompleted: msgRow._playEntrance()
+        Component.onCompleted: {
+            msgRow._playEntrance();
+            if (msgRow.isUser)
+                msgRow.bubbleShown(msgRow.bubbleItem);
+        }
+
+        Component.onDestruction: {
+            if (msgRow.isUser)
+                msgRow.bubbleHidden(msgRow.bubbleItem);
+        }
 
         onVisibleChanged: {
             if (msgRow.visible)
@@ -279,11 +292,11 @@ Item {
                     anchors.fill: plainText
                     visible: !msgRow.isUser
                     source: plainText
-                    radius: 10
-                    samples: 21
+                    radius: 6
+                    samples: 13
                     horizontalOffset: 0
-                    verticalOffset: 1
-                    color: Qt.alpha(Colors.md3.background, 0.75)
+                    verticalOffset: 2
+                    color: Qt.alpha(Colors.md3.background, 0.95)
                 }
 
                 Item {
@@ -323,6 +336,18 @@ Item {
             readonly property var focusedScreen: {
                 const name = CompositorService.focusedMonitor?.name;
                 return Quickshell.screens.find(s => s.name === name) ?? null;
+            }
+
+            property var bubbleItems: []
+
+            function registerBubble(item) {
+                if (!item || sessionRoot.bubbleItems.includes(item))
+                    return;
+                sessionRoot.bubbleItems = [...sessionRoot.bubbleItems, item];
+            }
+
+            function unregisterBubble(item) {
+                sessionRoot.bubbleItems = sessionRoot.bubbleItems.filter(i => i !== item);
             }
 
             readonly property string username: {
@@ -414,6 +439,26 @@ Item {
                         Region {
                             item: askScreenBtn
                         }
+                        Region { item: sessionRoot.bubbleItems[0] ?? null }
+                        Region { item: sessionRoot.bubbleItems[1] ?? null }
+                        Region { item: sessionRoot.bubbleItems[2] ?? null }
+                        Region { item: sessionRoot.bubbleItems[3] ?? null }
+                        Region { item: sessionRoot.bubbleItems[4] ?? null }
+                        Region { item: sessionRoot.bubbleItems[5] ?? null }
+                        Region { item: sessionRoot.bubbleItems[6] ?? null }
+                        Region { item: sessionRoot.bubbleItems[7] ?? null }
+                        Region { item: sessionRoot.bubbleItems[8] ?? null }
+                        Region { item: sessionRoot.bubbleItems[9] ?? null }
+                        Region { item: sessionRoot.bubbleItems[10] ?? null }
+                        Region { item: sessionRoot.bubbleItems[11] ?? null }
+                        Region { item: sessionRoot.bubbleItems[12] ?? null }
+                        Region { item: sessionRoot.bubbleItems[13] ?? null }
+                        Region { item: sessionRoot.bubbleItems[14] ?? null }
+                        Region { item: sessionRoot.bubbleItems[15] ?? null }
+                        Region { item: sessionRoot.bubbleItems[16] ?? null }
+                        Region { item: sessionRoot.bubbleItems[17] ?? null }
+                        Region { item: sessionRoot.bubbleItems[18] ?? null }
+                        Region { item: sessionRoot.bubbleItems[19] ?? null }
                     }
 
                     onIsFocusedChanged: {
@@ -482,11 +527,11 @@ Item {
                         DropShadow {
                             anchors.fill: heroText
                             source: heroText
-                            radius: 10
-                            samples: 21
+                            radius: 8
+                            samples: 13
                             horizontalOffset: 0
-                            verticalOffset: 1
-                            color: Qt.alpha(Colors.md3.background, 0.75)
+                            verticalOffset: 2
+                            color: Colors.md3.background
                         }
                     }
 
@@ -549,6 +594,8 @@ Item {
                                     username: sessionRoot.username
                                     modelDisplayName: sessionRoot.modelName
                                     modelShapeName: sessionRoot.modelShapeName
+                                    onBubbleShown: item => sessionRoot.registerBubble(item)
+                                    onBubbleHidden: item => sessionRoot.unregisterBubble(item)
                                 }
                             }
 
