@@ -139,4 +139,51 @@ PageBase {
             })
         }
     }
+
+    SectionCard {
+        label: Localization.t("barPage.osd")
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: Localization.t("displayPage.follow_bar_position")
+            sublabel: Localization.t("displayPage.snap_osd_to_the_same_edge")
+            checked: Config.osdFollowBar
+            onToggled: v => Config.update({
+                osdFollowBar: v
+            })
+        }
+
+        SettingChips {
+            isLast: true
+            label: Localization.t("backgroundPage.position")
+            enabled: !Config.osdFollowBar
+            opacity: enabled ? 1.0 : 0.4
+            options: [
+                {
+                    label: Localization.t("backgroundPage.center"),
+                    value: 0
+                },
+                {
+                    label: Localization.t("backgroundPage.top"),
+                    value: 1
+                },
+                {
+                    label: Localization.t("backgroundPage.bottom"),
+                    value: 3
+                },
+                {
+                    label: Localization.t("barPage.left"),
+                    value: 4
+                },
+                {
+                    label: Localization.t("barPage.right"),
+                    value: 2
+                }
+            ]
+            currentValue: Config.osdPosition
+            onSelected: v => Config.update({
+                osdPosition: v
+            })
+        }
+    }
 }

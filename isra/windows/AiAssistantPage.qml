@@ -179,9 +179,7 @@ PageBase {
                     implicitWidth: 30
                     implicitHeight: 30
                     radius: 15
-                    color: pageRoot.creatingProvider ? Colors.md3.primary : (addProviderMa.containsMouse ? Colors.md3.secondary_container : "transparent")
-                    border.width: pageRoot.creatingProvider ? 0 : 1
-                    border.color: Colors.md3.surface_variant
+                    color: pageRoot.creatingProvider ? Colors.md3.primary : (addProviderMa.containsMouse ? Colors.md3.secondary_container : Colors.md3.surface_container_high)
 
                     Behavior on color {
                         ColorAnimation {
@@ -217,9 +215,7 @@ PageBase {
                     implicitHeight: 30
                     radius: 15
                     visible: Object.keys(Config.aiAssistant.providers).length > 1
-                    color: deleteProviderMa.containsMouse ? Colors.md3.error_container : "transparent"
-                    border.width: 1
-                    border.color: Colors.md3.surface_variant
+                    color: deleteProviderMa.containsMouse ? Colors.md3.error_container : Colors.md3.surface_container_high
 
                     Text {
                         anchors.centerIn: parent
@@ -276,6 +272,7 @@ PageBase {
             sublabel: Localization.t("aiAssistantPage.base_url_requests_are_sent_to")
             value: Config.aiAssistant.providers[Config.aiAssistant.provider]?.endpoint ?? ""
             fieldWidth: 260
+            fieldHeight: 44
             onCommitted: v => pageRoot.updateProvider({
                     endpoint: v
                 })

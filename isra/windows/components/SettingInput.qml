@@ -9,6 +9,7 @@ SettingRow {
     property string placeholder: ""
     property bool password: false
     property int fieldWidth: 180
+    property int fieldHeight: 36
     property bool isLast: false
     property alias fieldContainer: fieldRect
     property alias fieldItem: field
@@ -18,7 +19,7 @@ SettingRow {
     Rectangle {
         id: fieldRect
         implicitWidth: root.fieldWidth
-        implicitHeight: 36
+        implicitHeight: root.fieldHeight
         anchors.verticalCenter: parent?.verticalCenter
         radius: 8
         color: (Config.dim(Colors.md3.surface_container))

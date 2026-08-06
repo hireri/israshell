@@ -8,14 +8,7 @@ Item {
     id: outer
     property bool keepActive: false
 
-    readonly property bool isBottom: {
-        const pos = Config.notifications.popupPosition ?? 0;
-        if (pos === 1)
-            return false;
-        if (pos === 2)
-            return true;
-        return (Config.bar.position ?? 0) === 1;
-    }
+    readonly property bool isBottom: (Config.notifications.popupFollowBar ?? true) ? (Config.bar.position ?? 0) === 1 : Config.notifications.popupPosition === 2
 
     Timer {
         id: deactivateTimer

@@ -146,7 +146,8 @@ Singleton {
     property var notifications: ({
             popupTimeout: 5,
             showAllMonitors: false,
-            popupPosition: 0
+            popupFollowBar: true,
+            popupPosition: 1
         })
     property var localsend: ({
             enabled: false,
@@ -194,6 +195,7 @@ Singleton {
     property bool startLocked: false
     property bool useHyprlock: false
     property int osdPosition: 1
+    property bool osdFollowBar: false
     property bool darkMode: true
     property string colorScheme: "scheme-tonal-spot"
     property int sourceColorIndex: 0
@@ -333,7 +335,8 @@ Singleton {
             notifications: {
                 popupTimeout: 5,
                 showAllMonitors: false,
-                popupPosition: 0
+                popupFollowBar: true,
+                popupPosition: 1
             },
             localsend: {
                 enabled: false,
@@ -381,6 +384,7 @@ Singleton {
             startLocked: false,
             useHyprlock: false,
             osdPosition: 1,
+            osdFollowBar: false,
             darkMode: true,
             colorScheme: "scheme-tonal-spot",
             sourceColorIndex: 0,
@@ -501,6 +505,17 @@ Singleton {
             result.bar = WidgetService.reconcile(result.bar);
         if (result.quickSettingsTiles)
             result.quickSettingsTiles = QsTileService.reconcile(result.quickSettingsTiles);
+
+        if (result.notifications) {
+            const rawPopupPosition = data.notifications && data.notifications.popupPosition;
+            const followBar = (data.notifications && data.notifications.popupFollowBar !== undefined)
+                ? data.notifications.popupFollowBar
+                : (rawPopupPosition === undefined || rawPopupPosition === 0);
+            result.notifications = Object.assign({}, result.notifications, {
+                popupFollowBar: followBar,
+                popupPosition: (rawPopupPosition === 1 || rawPopupPosition === 2) ? rawPopupPosition : 1
+            });
+        }
 
         if (result.aiAssistant)
             result.aiAssistant = Object.assign({}, result.aiAssistant, {

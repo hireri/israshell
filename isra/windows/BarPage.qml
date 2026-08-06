@@ -388,42 +388,6 @@ PageBase {
     }
 
     SectionCard {
-        label: Localization.t("barPage.osd")
-        Layout.fillWidth: true
-
-        SettingChips {
-            isLast: true
-            label: Localization.t("backgroundPage.position")
-            options: [
-                {
-                    label: Localization.t("backgroundPage.center"),
-                    value: 0
-                },
-                {
-                    label: Localization.t("backgroundPage.top"),
-                    value: 1
-                },
-                {
-                    label: Localization.t("backgroundPage.bottom"),
-                    value: 3
-                },
-                {
-                    label: Localization.t("barPage.left"),
-                    value: 4
-                },
-                {
-                    label: Localization.t("barPage.right"),
-                    value: 2
-                }
-            ]
-            currentValue: Config.osdPosition
-            onSelected: v => Config.update({
-                osdPosition: v
-            })
-        }
-    }
-
-    SectionCard {
         label: Localization.t("widgetService.system_monitor")
         Layout.fillWidth: true
 

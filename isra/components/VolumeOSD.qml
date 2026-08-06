@@ -11,7 +11,8 @@ Scope {
     id: root
     property int fontSize: 24
 
-    property bool isVertical: Config.osdPosition === 2 || Config.osdPosition === 4
+    readonly property int effectivePosition: Config.osdFollowBar ? (Config.bar.position === 1 ? 3 : 1) : Config.osdPosition
+    property bool isVertical: root.effectivePosition === 2 || root.effectivePosition === 4
 
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink]
@@ -64,20 +65,20 @@ Scope {
         active: root.shouldShowOsd
 
         PanelWindow {
-            anchors.top: Config.osdPosition === 0 || Config.osdPosition === 1
-            anchors.right: Config.osdPosition === 2
-            anchors.bottom: Config.osdPosition === 3
-            anchors.left: Config.osdPosition === 4
+            anchors.top: root.effectivePosition === 0 || root.effectivePosition === 1
+            anchors.right: root.effectivePosition === 2
+            anchors.bottom: root.effectivePosition === 3
+            anchors.left: root.effectivePosition === 4
 
             margins.top: {
-                if (Config.osdPosition === 0) {
+                if (root.effectivePosition === 0) {
                     return screen.height * 0.57;
                 }
-                return Config.osdPosition === 1 ? 24 : 0;
+                return root.effectivePosition === 1 ? 24 : 0;
             }
-            margins.right: Config.osdPosition === 2 ? 24 : 0
-            margins.bottom: Config.osdPosition === 3 ? 24 : 0
-            margins.left: Config.osdPosition === 4 ? 24 : 0
+            margins.right: root.effectivePosition === 2 ? 24 : 0
+            margins.bottom: root.effectivePosition === 3 ? 24 : 0
+            margins.left: root.effectivePosition === 4 ? 24 : 0
 
             exclusiveZone: 0
 
@@ -95,7 +96,7 @@ Scope {
                 clip: true
 
                 property real slideOffset: {
-                    switch (Config.osdPosition) {
+                    switch (root.effectivePosition) {
                     case 1:
                         return -(parent.height + 24);
                     case 2:
@@ -109,8 +110,8 @@ Scope {
                 }
 
                 transform: Translate {
-                    x: (Config.osdPosition === 2 || Config.osdPosition === 4) ? osdRect.slideOffset : 0
-                    y: (Config.osdPosition === 1 || Config.osdPosition === 3) ? osdRect.slideOffset : 0
+                    x: (root.effectivePosition === 2 || root.effectivePosition === 4) ? osdRect.slideOffset : 0
+                    y: (root.effectivePosition === 1 || root.effectivePosition === 3) ? osdRect.slideOffset : 0
                 }
 
                 Component.onCompleted: slideAnim.start()
