@@ -7,6 +7,7 @@ import qs.components
 Singleton {
     id: root
 
+    Component { id: aiAssistantComp; AiAssistantButton {} }
     Component { id: activeWindowComp; ActiveWindow {} }
     Component { id: workspacesComp; Workspaces {} }
     Component { id: mediaComp; MediaPlayer {} }
@@ -19,6 +20,7 @@ Singleton {
     Component { id: sysMonitorComp; SysMonitor {} }
 
     readonly property var definitions: [
+        { id: "aiAssistant",   label: Localization.t("widgetService.ai_assistant"),   defaultZone: "left",     component: aiAssistantComp },
         { id: "activeWindow",  label: Localization.t("widgetService.active_window"),  defaultZone: "left",     component: activeWindowComp },
         { id: "sysMonitor",    label: Localization.t("widgetService.system_monitor"), defaultZone: "left",    component: sysMonitorComp },
         { id: "media",         label: Localization.t("widgetService.media_player"),   defaultZone: "center",   component: mediaComp },

@@ -29,8 +29,9 @@ FloatingWindow {
     readonly property int pageDisplay: 6
     readonly property int pageSound: 7
     
-    readonly property int pageLocale: 8
-    readonly property int pageSystem: 9
+    readonly property int pageAiAssistant:  8
+    readonly property int pageLocale: 9
+    readonly property int pageSystem: 10
 
     property int currentPage: pageOverview
     property bool sidebarCollapsed: false
@@ -218,6 +219,13 @@ FloatingWindow {
                         onNavigate: p => root.currentPage = p
 
                         SidebarItem {
+                            page: root.pageAiAssistant
+                            label: Localization.t("settingsWindow.ai_assistant")
+                            sublabel: Localization.t("settingsWindow.provider_prompt_behavior")
+                            onClicked: root.currentPage = page
+                            MaterialIcon { name: "automation"; }
+                        }
+                        SidebarItem {
                             page: root.pageLocale
                             label: Localization.t("settingsWindow.locale")
                             sublabel: Localization.t("settingsWindow.time_date_units")
@@ -253,6 +261,7 @@ FloatingWindow {
             Component { id: localeComp; LocalePage {} }
             Component { id: systemComp; SystemPage {} }
             Component { id: floatingDockComp; DockPage {} }
+            Component { id: aiAssistantComp; AiAssistantPage {} }
 
             function componentForPage(page) {
                 switch (page) {
@@ -266,6 +275,7 @@ FloatingWindow {
                 case root.pageSound: return soundComp;
                 case root.pageLocale: return localeComp;
                 case root.pageSystem: return systemComp;
+                case root.pageAiAssistant: return aiAssistantComp;
                 default: return overviewComp;
                 }
             }
@@ -341,7 +351,8 @@ FloatingWindow {
             "display": root.pageDisplay,
             "sound": root.pageSound,
             "locale": root.pageLocale,
-            "system": root.pageSystem
+            "system": root.pageSystem,
+            "aiassistant": root.pageAiAssistant
         };
         const p = map[page];
         if (p !== undefined)

@@ -156,6 +156,38 @@ Singleton {
             deviceType: "desktop",
             alias: ""
         })
+    property var aiAssistant: ({
+            enabled: true,
+            provider: "gemini",
+            notifyOnFinish: false,
+            systemPrompt: "You are a helpful assistant embedded in the user's Linux desktop shell. Current time: {time} on {date}. The user is running {distro} with the {compositor} compositor, logged in as {user}. Keep answers concise and practical unless asked to go deeper.",
+            providers: {
+                gemini: {
+                    apiType: "gemini",
+                    model: "gemini-flash-latest",
+                    endpoint: "https://generativelanguage.googleapis.com/v1beta",
+                    requiresAuth: true,
+                    supportsTools: true,
+                    supportsVision: true
+                },
+                openai: {
+                    apiType: "openai",
+                    model: "gpt-4o-mini",
+                    endpoint: "https://api.openai.com/v1",
+                    requiresAuth: true,
+                    supportsTools: true,
+                    supportsVision: true
+                },
+                ollama: {
+                    apiType: "ollama",
+                    model: "llama3.2",
+                    endpoint: "http://localhost:11434",
+                    requiresAuth: false,
+                    supportsTools: false,
+                    supportsVision: false
+                }
+            }
+        })
     property bool weekMonday: true
     property bool useFahrenheit: false
     property bool verticalQSSliders: false
@@ -311,6 +343,38 @@ Singleton {
                 deviceType: "desktop",
                 alias: ""
             },
+            aiAssistant: {
+                enabled: true,
+                provider: "gemini",
+                notifyOnFinish: false,
+                systemPrompt: "You are a helpful assistant embedded in the user's Linux desktop shell. Current time: {time} on {date}. The user is running {distro} with the {compositor} compositor, logged in as {user}. Keep answers concise and practical unless asked to go deeper.",
+                providers: {
+                    gemini: {
+                        apiType: "gemini",
+                        model: "gemini-flash-latest",
+                        endpoint: "https://generativelanguage.googleapis.com/v1beta",
+                        requiresAuth: true,
+                        supportsTools: true,
+                        supportsVision: true
+                    },
+                    openai: {
+                        apiType: "openai",
+                        model: "gpt-4o-mini",
+                        endpoint: "https://api.openai.com/v1",
+                        requiresAuth: true,
+                        supportsTools: true,
+                        supportsVision: true
+                    },
+                    ollama: {
+                        apiType: "ollama",
+                        model: "llama3.2",
+                        endpoint: "http://localhost:11434",
+                        requiresAuth: false,
+                        supportsTools: false,
+                        supportsVision: false
+                    }
+                }
+            },
             weekMonday: true,
             useFahrenheit: false,
             verticalQSSliders: false,
@@ -437,6 +501,12 @@ Singleton {
             result.bar = WidgetService.reconcile(result.bar);
         if (result.quickSettingsTiles)
             result.quickSettingsTiles = QsTileService.reconcile(result.quickSettingsTiles);
+
+        if (result.aiAssistant)
+            result.aiAssistant = Object.assign({}, result.aiAssistant, {
+                providers: (data.aiAssistant && data.aiAssistant.providers) ? data.aiAssistant.providers : defs.aiAssistant.providers
+            });
+
         return result;
     }
 

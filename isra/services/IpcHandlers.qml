@@ -31,8 +31,9 @@ Item {
                 "clock": 5,
                 "display": 6,
                 "sound": 7,
-                "locale": 8,
-                "system": 9
+                "aiassistant": 8,
+                "locale": 9,
+                "system": 10
             };
             root.settingsLoader.active = true;
             root.settingsLoader.item.visible = true;
@@ -46,6 +47,13 @@ Item {
         target: "gamemode"
         function toggle(): void {
             GameModeService.toggle();
+        }
+    }
+
+    IpcHandler {
+        target: "aiassistant"
+        function toggle(): void {
+            AiAssistantService.toggle();
         }
     }
 

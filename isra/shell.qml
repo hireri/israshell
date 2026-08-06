@@ -29,6 +29,7 @@ ShellRoot {
 
     AppLauncher {}
     Screenshot {}
+    AiAssistant {}
 
     property var wallpaperPanels: ({})
     property var quickSettingsPanels: ({})
