@@ -290,7 +290,7 @@ PageBase {
         SecretInput {
             visible: Config.aiAssistant.providers[Config.aiAssistant.provider]?.requiresAuth ?? false
             label: Localization.t("aiAssistantPage.api_key")
-            sublabel: Config.aiAssistant.provider === "gemini" ? Localization.t("aiAssistantPage.shared_with_the_language_translation") : Localization.t("aiAssistantPage.key_for_the_selected_provider")
+            sublabel: (Config.translationProvider === "" || Config.translationProvider === Config.aiAssistant.provider) ? Localization.t("aiAssistantPage.shared_with_the_language_translation") : Localization.t("aiAssistantPage.key_for_the_selected_provider")
             secretKey: Config.aiAssistant.provider
         }
 
@@ -311,6 +311,7 @@ PageBase {
 
         SettingTextArea {
             isLast: true
+            areaHeight: 180
             sublabel: Localization.t("aiAssistantPage.supports_time_date_distro_compositor")
             value: Config.aiAssistant.systemPrompt
             onCommitted: v => pageRoot.updateAiAssistant({

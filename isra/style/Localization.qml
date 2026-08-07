@@ -14,6 +14,7 @@ Singleton {
     property var manifest: ({})
 
     property bool translating: false
+    property string translatingId: ""
     property string translateError: ""
 
     function t(key) {
@@ -151,29 +152,59 @@ Singleton {
         return tone === "formal" ? code : (code + "_" + tone);
     }
 
-    function requestTranslation(code, displayName) {
+    function _hashKeys(obj) {
+        const keys = Object.keys(obj).sort().join("\n");
+        let hash = 5381;
+        for (let i = 0; i < keys.length; i++) {
+            hash = ((hash << 5) + hash + keys.charCodeAt(i)) | 0;
+        }
+        return hash.toString(16);
+    }
+
+    readonly property string _sourceKeyHash: root._hashKeys(root._en)
+
+    function isOutdated(id) {
+        const entry = root.manifest[id];
+        if (!entry)
+            return false;
+        if (typeof entry !== "object" || entry.keyHash === undefined)
+            return true;
+        return entry.keyHash !== root._sourceKeyHash;
+    }
+
+    readonly property bool activeLocaleOutdated: Config.language !== "" && Config.language !== "en_US" && root.isOutdated(Config.language)
+
+    function requestTranslation(code, displayName, providerId, force, toneOverride) {
         if (root.translating)
             return;
 
-        const tone = Object.keys(root._toneInstructions).includes(Config.translationTone) ? Config.translationTone : "formal";
+        const requestedTone = toneOverride ?? Config.translationTone;
+        const tone = Object.keys(root._toneInstructions).includes(requestedTone) ? requestedTone : "formal";
         const id = root.localeId(code, tone);
 
         if (id === "en_US") {
             root.translateError = root.t("localization.english_formal_is_already_default");
             return;
         }
-        if (id in root.manifest) {
+        if (id in root.manifest && !force) {
             root.translateError = root.t("localization.that_language_and_tone_installed");
             return;
         }
 
-        const apiKey = Secrets.get("gemini");
-        if (apiKey === "") {
-            root.translateError = root.t("localization.no_gemini_api_key_configured");
+        const provider = providerId || Config.aiAssistant.provider;
+        const cfg = Config.aiAssistant.providers[provider];
+        if (!cfg) {
+            root.translateError = root.t("aiAssistant.unknown_provider").arg(provider);
+            return;
+        }
+        const apiKey = cfg.requiresAuth ? Secrets.get(provider) : "";
+        if (cfg.requiresAuth && apiKey === "") {
+            root.translateError = root.t("aiAssistant.no_api_key").arg(provider);
             return;
         }
 
         root.translating = true;
+        root.translatingId = id;
         root.translateError = "";
 
         const toneInstruction = root._toneInstructions[tone];
@@ -190,32 +221,23 @@ Singleton {
             + "Return ONLY a raw JSON object with the same keys and translated/restyled values, no markdown fences, no commentary.\n\n"
             + JSON.stringify(root._en);
 
-        const xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState !== XMLHttpRequest.DONE)
-                return;
+        const onDone = function (translatedText) {
             root.translating = false;
-
-            if (xhr.status !== 200) {
-                root.translateError = root._shortErrorMessage(xhr.status, xhr.responseText);
-                console.log("Localization translate error:", xhr.status, xhr.responseText);
-                return;
-            }
-
+            root.translatingId = "";
             try {
-                const data = JSON.parse(xhr.responseText);
-                const modelStep = (data.steps ?? []).find(s => s.type === "model_output");
-                const textPart = modelStep?.content?.find(c => c.type === "text");
-                const raw = textPart?.text;
-                if (!raw)
-                    throw new Error("no model_output text in response");
-                const translated = JSON.parse(root._stripCodeFence(raw));
-
+                const translated = JSON.parse(root._stripCodeFence(translatedText));
                 const label = displayName + (tone !== "formal" ? " (" + root.toneLabels[tone] + ")" : "");
 
                 root._writeJson(root.localesDir + "/" + id + ".json", translated);
                 const nextManifest = Object.assign({}, root.manifest, {
-                    [id]: label
+                    [id]: {
+                        label: label,
+                        sourceName: displayName,
+                        code: code,
+                        tone: tone,
+                        providerId: provider,
+                        keyHash: root._sourceKeyHash
+                    }
                 });
                 root._writeJson(root.localesDir + "/manifest.json", nextManifest);
                 root.manifest = nextManifest;
@@ -227,17 +249,124 @@ Singleton {
                 root._notify(root.t("localization.notify_summary"), root.t("localization.notify_body").arg(label));
             } catch (e) {
                 root.translateError = root.t("localization.couldnt_parse_gemini_response");
-                console.log("Localization translate error:", e, xhr.responseText);
+                console.log("Localization translate error:", e, translatedText);
             }
         };
+        const onError = function (status, bodyText) {
+            root.translating = false;
+            root.translatingId = "";
+            root.translateError = root._shortErrorMessage(status, bodyText);
+            console.log("Localization translate error:", status, bodyText);
+        };
 
-        xhr.open("POST", "https://generativelanguage.googleapis.com/v1beta/interactions");
+        root._dispatchTranslation(cfg, apiKey, prompt, onDone, onError);
+    }
+
+    function _dispatchTranslation(cfg, apiKey, prompt, onDone, onError): void {
+        switch (cfg.apiType) {
+        case "gemini":
+            root._translateViaGemini(cfg, apiKey, prompt, onDone, onError);
+            break;
+        case "openai":
+            root._translateViaOpenAi(cfg, apiKey, prompt, onDone, onError);
+            break;
+        case "ollama":
+            root._translateViaOllama(cfg, apiKey, prompt, onDone, onError);
+            break;
+        default:
+            root.translating = false;
+            root.translateError = root.t("aiAssistant.unsupported_provider_type").arg(cfg.apiType);
+        }
+    }
+
+    function _translateViaGemini(cfg, apiKey, prompt, onDone, onError): void {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (xhr.status !== 200) {
+                onError(xhr.status, xhr.responseText);
+                return;
+            }
+            try {
+                const data = JSON.parse(xhr.responseText);
+                const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text ?? "").join("") ?? "";
+                onDone(text);
+            } catch (e) {
+                onError(xhr.status, xhr.responseText);
+            }
+        };
+        xhr.open("POST", cfg.endpoint + "/models/" + cfg.model + ":generateContent");
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("x-goog-api-key", apiKey);
+        if (cfg.requiresAuth)
+            xhr.setRequestHeader("x-goog-api-key", apiKey);
         xhr.send(JSON.stringify({
-            model: "gemini-flash-lite-latest",
-            input: prompt,
-            store: false
+            contents: [{
+                    role: "user",
+                    parts: [{
+                            text: prompt
+                        }]
+                }]
+        }));
+    }
+
+    function _translateViaOpenAi(cfg, apiKey, prompt, onDone, onError): void {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (xhr.status !== 200) {
+                onError(xhr.status, xhr.responseText);
+                return;
+            }
+            try {
+                const data = JSON.parse(xhr.responseText);
+                onDone(data?.choices?.[0]?.message?.content ?? "");
+            } catch (e) {
+                onError(xhr.status, xhr.responseText);
+            }
+        };
+        xhr.open("POST", cfg.endpoint + "/chat/completions");
+        xhr.setRequestHeader("Content-Type", "application/json");
+        if (cfg.requiresAuth)
+            xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
+        xhr.send(JSON.stringify({
+            model: cfg.model,
+            messages: [{
+                    role: "user",
+                    content: prompt
+                }],
+            stream: false
+        }));
+    }
+
+    function _translateViaOllama(cfg, apiKey, prompt, onDone, onError): void {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (xhr.status !== 200) {
+                onError(xhr.status, xhr.responseText);
+                return;
+            }
+            try {
+                const data = JSON.parse(xhr.responseText);
+                onDone(data?.message?.content ?? "");
+            } catch (e) {
+                onError(xhr.status, xhr.responseText);
+            }
+        };
+        xhr.open("POST", cfg.endpoint + "/api/chat");
+        xhr.setRequestHeader("Content-Type", "application/json");
+        if (cfg.requiresAuth)
+            xhr.setRequestHeader("Authorization", "Bearer " + apiKey);
+        xhr.send(JSON.stringify({
+            model: cfg.model,
+            messages: [{
+                    role: "user",
+                    content: prompt
+                }],
+            stream: false
         }));
     }
 }

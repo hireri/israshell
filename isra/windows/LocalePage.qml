@@ -144,13 +144,59 @@ PageBase {
                 value: "en_US"
             }
         ];
-        for (const code in Localization.manifest)
+        for (const code in Localization.manifest) {
+            const entry = Localization.manifest[code];
+            const label = (typeof entry === "object" ? entry.label : entry) ?? code;
             opts.push({
-                label: Localization.manifest[code],
+                label: label + (Localization.isOutdated(code) ? Localization.t("localization.outdated_suffix") : ""),
                 value: code
             });
+        }
         return opts;
     }
+
+    function _resolveManifestEntry(id) {
+        const entry = Localization.manifest[id];
+        if (!entry)
+            return null;
+        if (typeof entry === "object" && entry.code)
+            return entry;
+
+        const knownTones = Object.keys(Localization.toneLabels ?? {
+                formal: true,
+                playful: true,
+                concise: true
+            });
+        for (const tone of knownTones) {
+            if (tone === "formal")
+                continue;
+            const suffix = "_" + tone;
+            if (id.endsWith(suffix)) {
+                const code = id.slice(0, -suffix.length);
+                const known = page._requestableLanguages.find(l => l.code === code);
+                if (known)
+                    return {
+                        code: code,
+                        tone: tone,
+                        sourceName: known.name
+                    };
+            }
+        }
+
+        const known = page._requestableLanguages.find(l => l.code === id);
+        return {
+            code: id,
+            tone: "formal",
+            sourceName: known ? known.name : (typeof entry === "string" ? entry : id)
+        };
+    }
+
+    readonly property var _providerOptions: Object.keys(Config.aiAssistant.providers).map(id => ({
+                label: id,
+                value: id
+            }))
+
+    property string _translationProvider: Config.aiAssistant.providers[Config.translationProvider] ? Config.translationProvider : Config.aiAssistant.provider
 
     readonly property var _pendingOptions: page._requestableLanguages.filter(l => {
             const id = Localization.localeId(l.code, Config.translationTone);
@@ -160,13 +206,22 @@ PageBase {
                 value: l.code
             }))
 
-    readonly property bool _hasGeminiKey: Secrets.get("gemini") !== ""
+    readonly property var _providerCfg: Config.aiAssistant.providers[page._translationProvider]
+    readonly property bool _hasProviderKey: page._providerCfg && (!page._providerCfg.requiresAuth || Secrets.get(page._translationProvider) !== "")
 
     property string _pendingCode: page._pendingOptions.length > 0 ? page._pendingOptions[0].value : ""
     property string _pendingName: {
         const found = page._requestableLanguages.find(l => l.code === page._pendingCode);
         return found ? found.name : page._pendingCode;
     }
+
+    readonly property string _regenTargetId: {
+        const entry = page._resolveManifestEntry(Config.language);
+        return entry ? Localization.localeId(entry.code, entry.tone) : "";
+    }
+    readonly property string _pendingTargetId: Localization.localeId(page._pendingCode, Config.translationTone)
+    readonly property bool _regenRunning: Localization.translating && Localization.translatingId === page._regenTargetId
+    readonly property bool _pendingRunning: Localization.translating && Localization.translatingId === page._pendingTargetId
 
     SectionCard {
         label: Localization.t("localePage.language")
@@ -180,6 +235,74 @@ PageBase {
             onSelected: v => Config.update({
                     language: v
                 })
+        }
+
+        SettingRow {
+            visible: Localization.activeLocaleOutdated
+            label: Localization.t("localization.outdated_banner_title")
+            sublabel: page._regenRunning ? Localization.t("localePage.contacting_gemini") : Localization.t("localization.outdated_banner_body")
+
+            Rectangle {
+                anchors.verticalCenter: parent?.verticalCenter
+                implicitWidth: (page._regenRunning ? regenSpinner.width : regenTxt.implicitWidth) + 26
+                implicitHeight: 32
+                radius: height / 2
+                color: regenMa.containsMouse ? Colors.md3.primary : Colors.md3.primary_container
+                opacity: (page._hasProviderKey && !Localization.translating) ? 1 : 0.5
+                Behavior on implicitWidth {
+                    NumberAnimation {
+                        duration: 120
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Text {
+                    id: regenTxt
+                    anchors.centerIn: parent
+                    visible: !page._regenRunning
+                    text: Localization.t("localization.regenerate")
+                    color: regenMa.containsMouse ? Colors.md3.on_primary : Colors.md3.on_primary_container
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                    font.family: Config.fontFamily
+                }
+
+                LoadingSpinner {
+                    id: regenSpinner
+                    anchors.centerIn: parent
+                    visible: page._regenRunning
+                    running: page._regenRunning
+                    size: 16
+                    color: regenMa.containsMouse ? Colors.md3.on_primary : Colors.md3.on_primary_container
+                }
+
+                MouseArea {
+                    id: regenMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Localization.translating ? Qt.ArrowCursor : Qt.PointingHandCursor
+                    enabled: page._hasProviderKey && !Localization.translating
+                    onClicked: {
+                        const entry = page._resolveManifestEntry(Config.language);
+                        if (!entry)
+                            return;
+                        Localization.requestTranslation(entry.code, entry.sourceName, page._translationProvider, true, entry.tone);
+                    }
+                }
+            }
+        }
+
+        SettingSelect {
+            label: Localization.t("localePage.translation_provider")
+            sublabel: Localization.t("localePage.translation_provider_sublabel")
+            options: page._providerOptions
+            currentValue: page._translationProvider
+            onSelected: v => {
+                page._translationProvider = v;
+                Config.update({
+                    translationProvider: v
+                });
+            }
         }
 
         SettingChips {
@@ -209,9 +332,9 @@ PageBase {
             isLast: true
             label: Localization.t("localePage.request_new_language")
             sublabel: {
-                if (!page._hasGeminiKey)
+                if (!page._hasProviderKey)
                     return Localization.t("localePage.set_gemini_key_hint");
-                if (Localization.translating)
+                if (page._pendingRunning)
                     return Localization.t("localePage.contacting_gemini");
                 if (Localization.translateError !== "")
                     return Localization.translateError;
@@ -219,17 +342,17 @@ PageBase {
             }
             options: page._pendingOptions
             currentValue: page._pendingCode
-            enabled: page._hasGeminiKey && page._pendingOptions.length > 0 && !Localization.translating
+            enabled: page._hasProviderKey && page._pendingOptions.length > 0 && !Localization.translating
             onSelected: v => page._pendingCode = v
 
             Rectangle {
                 id: requestBtn
                 anchors.verticalCenter: parent?.verticalCenter
-                implicitWidth: (Localization.translating ? requestSpinner.width : requestTxt.implicitWidth) + 26
+                implicitWidth: (page._pendingRunning ? requestSpinner.width : requestTxt.implicitWidth) + 26
                 implicitHeight: 32
                 radius: height / 2
                 color: requestMa.containsMouse ? Colors.md3.primary : Colors.md3.primary_container
-                opacity: (page._hasGeminiKey && page._pendingCode !== "" && !Localization.translating) ? 1 : 0.5
+                opacity: (page._hasProviderKey && page._pendingCode !== "" && !Localization.translating) ? 1 : 0.5
                 Behavior on color {
                     ColorAnimation {
                         duration: 90
@@ -245,7 +368,7 @@ PageBase {
                 Text {
                     id: requestTxt
                     anchors.centerIn: parent
-                    visible: !Localization.translating
+                    visible: !page._pendingRunning
                     text: Localization.t("localePage.request")
                     color: requestMa.containsMouse ? Colors.md3.on_primary : Colors.md3.on_primary_container
                     font.pixelSize: 12
@@ -256,8 +379,8 @@ PageBase {
                 LoadingSpinner {
                     id: requestSpinner
                     anchors.centerIn: parent
-                    visible: Localization.translating
-                    running: Localization.translating
+                    visible: page._pendingRunning
+                    running: page._pendingRunning
                     size: 16
                     color: requestMa.containsMouse ? Colors.md3.on_primary : Colors.md3.on_primary_container
                 }
@@ -267,8 +390,8 @@ PageBase {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Localization.translating ? Qt.ArrowCursor : Qt.PointingHandCursor
-                    enabled: page._hasGeminiKey && page._pendingCode !== "" && !Localization.translating
-                    onClicked: Localization.requestTranslation(page._pendingCode, page._pendingName)
+                    enabled: page._hasProviderKey && page._pendingCode !== "" && !Localization.translating
+                    onClicked: Localization.requestTranslation(page._pendingCode, page._pendingName, page._translationProvider)
                 }
             }
         }

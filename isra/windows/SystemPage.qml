@@ -633,16 +633,10 @@ PageBase {
             Layout.fillWidth: true
 
             SecretInput {
+                isLast: true
                 label: Localization.t("systemPage.wolfram_alpha")
                 sublabel: Localization.t("systemPage.key_for_the_wolfram_launcher")
                 secretKey: "wolfram"
-            }
-
-            SecretInput {
-                isLast: true
-                label: Localization.t("systemPage.gemini")
-                sublabel: Localization.t("systemPage.key_for_requesting_new_shell")
-                secretKey: "gemini"
             }
         }
 

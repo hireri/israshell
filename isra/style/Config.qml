@@ -15,6 +15,7 @@ Singleton {
     property string fontMonospace: "Roboto Mono"
     property string language: "en_US"
     property string translationTone: "formal"
+    property string translationProvider: ""
     property bool screenCorners: true
     property bool tintIcons: false
     property bool blurEffects: false
@@ -279,6 +280,7 @@ Singleton {
             fontMonospace: "Roboto Mono",
             language: "en_US",
             translationTone: "formal",
+            translationProvider: "",
             screenCorners: true,
             tintIcons: false,
             blurEffects: false,
