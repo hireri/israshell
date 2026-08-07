@@ -704,7 +704,5 @@
   "widgetService.tray": "Tray",
   "widgetService.workspaces": "Workspaces",
   "wolframWidget.query_failed": "Query failed",
-  "wolframWidget.thinking": "thinking...",
-  "_test.dummy_key": "test",
-  "_test.dummy_key_2": "test2"
+  "wolframWidget.thinking": "thinking..."
 }
