@@ -528,6 +528,21 @@ PageBase {
         }
 
         SectionCard {
+            label: Localization.t("systemPage.license")
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                isLast: true
+                label: Localization.t("systemPage.activate_license")
+                sublabel: Localization.t("systemPage.israshell_is_not_activated_activate")
+                checked: !Config.activateLinux
+                onToggled: v => Config.update({
+                        activateLinux: !v
+                    })
+            }
+        }
+
+        SectionCard {
             label: Localization.t("qsTileService.localsend")
             Layout.fillWidth: true
 
