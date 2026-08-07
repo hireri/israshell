@@ -273,7 +273,7 @@
   "displayPage.sunrise": "Sunrise",
   "displayPage.sunset": "Sunset",
   "displayPage.switch_theme_at_sunrise_and": "Switch theme at sunrise and sunset",
-  "displayPage.use_a_generic_icon_instead": "Use a generic icon instead of your distro logo, on both the dock and the bar",
+  "displayPage.use_a_generic_icon_instead": "Use a generic icon instead of your distro logo",
   "dockHover.window": "Window",
   "dockPage.a_separate_app_dock_pinned": "A separate app dock, pinned to any screen edge",
   "dockPage.always_visible": "Always visible",
