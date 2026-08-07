@@ -253,7 +253,7 @@ ShellRoot {
                 WlrLayershell.namespace: "quickshell:bar"
                 WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
 
-                readonly property bool blurEnabled: Config.blurAllowed() && Config.bar.transparency === 1
+                readonly property bool blurEnabled: Config.blurAllowed() && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && !Config.bar.transparentPills))
                 BackgroundEffect.blurRegion: blurEnabled ? barBlurRegion : null
 
                 Region {

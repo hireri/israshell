@@ -27,7 +27,7 @@ Item {
         if (Config.bar.transparentPills) {
             return Qt.alpha(Colors.md3.secondary_container, 0);
         } else {
-            return Qt.alpha(Colors.md3.surface_container_high, 0.8);
+            return Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity);
         }
     }
 
