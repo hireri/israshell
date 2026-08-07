@@ -783,4 +783,19 @@ PageBase {
             isLast: true
         }
     }
+
+    SectionCard {
+        label: Localization.t("backgroundPage.activateLinux")
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: Localization.t("backgroundPage.enable")
+            sublabel: Localization.t("backgroundPage.show_a_fake_activation_watermark")
+            checked: Config.activateLinux
+            onToggled: v => Config.update({
+                    activateLinux: v
+                })
+            isLast: true
+        }
+    }
 }

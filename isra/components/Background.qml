@@ -393,6 +393,16 @@ PanelWindow {
         }
     }
 
+    Loader {
+        id: activateLinuxLoader
+        anchors.fill: parent
+        active: Config.activateLinux
+
+        sourceComponent: ActivateLinux {
+            modelData: root.modelData
+        }
+    }
+
     CavaVisualizer {
         id: cavaVisualizer
         anchors.fill: parent

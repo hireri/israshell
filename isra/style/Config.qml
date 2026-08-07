@@ -256,6 +256,7 @@ Singleton {
             onTop: false,
             sprite: "oneko"
         })
+    property bool activateLinux: false
     property var lockscreen: ({
             dotShape: "roundedSquare"  // "roundedSquare" | "circle" | "material"
         })
@@ -445,6 +446,7 @@ Singleton {
                 onTop: false,
                 sprite: "oneko"
             },
+            activateLinux: false,
             lockscreen: {
                 dotShape: "roundedSquare"
             },
