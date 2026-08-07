@@ -36,7 +36,9 @@ Rectangle {
 
     readonly property bool overflows: codeViewport.contentWidth > codeViewport.width + 1
 
-    implicitWidth: Math.min(Math.max(codeText.implicitWidth + 24, headerRow.implicitWidth + 24, 120), root.maxWidth)
+    readonly property real headerMinWidth: headerRow.implicitWidth + copyBtn.width + 12 + 16 + 6
+
+    implicitWidth: Math.min(Math.max(codeText.implicitWidth + 24, root.headerMinWidth, 120), root.maxWidth)
     implicitHeight: header.height + codeViewport.height + 12 + (overflows ? scrollbar.height + 4 : 0)
 
     radius: 12
@@ -76,6 +78,8 @@ Rectangle {
 
         Rectangle {
             id: copyBtn
+
+            visible: !root.open
             anchors.right: parent.right
             anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
@@ -110,7 +114,7 @@ Rectangle {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: copyBtn.copied ? "Copied" : "Copy"
+                    text: copyBtn.copied ? Localization.t("aiAssistant.copied") : Localization.t("aiAssistant.copy")
                     color: copyBtn.contentColor
                     font.pixelSize: 11
                     font.weight: Font.Medium
@@ -175,6 +179,7 @@ Rectangle {
             selectByMouse: true
             persistentSelection: true
             cursorVisible: false
+            activeFocusOnPress: false
             color: Colors.md3.on_surface
             selectionColor: Qt.alpha(Colors.md3.primary, 0.35)
             selectedTextColor: Colors.md3.on_surface

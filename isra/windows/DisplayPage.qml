@@ -130,12 +130,21 @@ PageBase {
         Layout.fillWidth: true
 
         SettingSwitch {
-            isLast: true
             label: Localization.t("displayPage.icon_tint")
             sublabel: Localization.t("displayPage.colorize_tray_dock_and_workspace")
             checked: Config.tintIcons
             onToggled: v => Config.update({
                 tintIcons: v
+            })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: Localization.t("displayPage.generic_launcher_icon")
+            sublabel: Localization.t("displayPage.use_a_generic_icon_instead")
+            checked: Config.genericLauncherIcon
+            onToggled: v => Config.update({
+                genericLauncherIcon: v
             })
         }
     }

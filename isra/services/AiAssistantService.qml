@@ -13,6 +13,7 @@ Singleton {
     property string draftText: ""
     property var pendingAttachments: []
     property string streamedAnswer: ""
+    property string displayedAnswer: ""
     property bool isStreaming: false
     property bool awaitingFirstToken: false
     property bool hasError: false
@@ -24,6 +25,7 @@ Singleton {
     property string _streamBuffer: ""
     property string _pendingSubmitText: ""
     property var _pendingSubmitAttachments: []
+    property bool _resendOnly: false
     property var _activeXhr: null
 
     readonly property var _mimeByExt: ({
@@ -171,6 +173,8 @@ Singleton {
                 if (last?.role === "user")
                     root.history = root.history.slice(0, -1);
             } else if (root.streamedAnswer !== "") {
+                _displayFlushTimer.stop();
+                root.displayedAnswer = root.streamedAnswer;
                 root.history = root.history.concat([{
                         role: "model",
                         text: root.streamedAnswer,
@@ -186,6 +190,7 @@ Singleton {
         root.stop();
         root.history = [];
         root.streamedAnswer = "";
+        root.displayedAnswer = "";
         root.hasError = false;
         root.errorText = "";
         root.pendingAttachments = [];
@@ -208,9 +213,21 @@ Singleton {
         const trimmed = text.trim();
         if ((trimmed === "" && root.pendingAttachments.length === 0) || root.isStreaming)
             return;
+        root._resendOnly = false;
         root._pendingSubmitText = trimmed;
         root._pendingSubmitAttachments = root.pendingAttachments;
         root.pendingAttachments = [];
+        root._trySubmit();
+    }
+
+    readonly property bool canRetry: !isStreaming && hasError && history[history.length - 1]?.role === "user"
+
+    function retry(): void {
+        if (!root.canRetry)
+            return;
+        root._resendOnly = true;
+        root._pendingSubmitText = root.history[root.history.length - 1].text ?? "";
+        root._pendingSubmitAttachments = [];
         root._trySubmit();
     }
 
@@ -226,16 +243,20 @@ Singleton {
             return;
         }
 
+        const resendOnly = root._resendOnly;
+        root._resendOnly = false;
+
         const text = root._pendingSubmitText;
         const attachments = root._pendingSubmitAttachments.filter(a => a.kind === "file" || cfg.supportsVision === true);
         root._pendingSubmitText = "";
         root._pendingSubmitAttachments = [];
 
-        root.history = root.history.concat([{
-                role: "user",
-                text: text,
-                attachments: attachments
-            }]);
+        if (!resendOnly)
+            root.history = root.history.concat([{
+                    role: "user",
+                    text: text,
+                    attachments: attachments
+                }]);
         root.awaitingFirstToken = true;
         root._parsedLength = 0;
         root._streamBuffer = "";
@@ -473,9 +494,25 @@ Singleton {
             return;
         if (root.awaitingFirstToken) {
             root.streamedAnswer = delta;
+            root.displayedAnswer = delta;
             root.awaitingFirstToken = false;
         } else {
             root.streamedAnswer += delta;
+            if (!_displayFlushTimer.running)
+                _displayFlushTimer.start();
+        }
+    }
+
+    Timer {
+        id: _displayFlushTimer
+        interval: 200
+        repeat: true
+        onTriggered: {
+            if (root.displayedAnswer === root.streamedAnswer) {
+                stop();
+                return;
+            }
+            root.displayedAnswer = root.streamedAnswer;
         }
     }
 
@@ -543,9 +580,11 @@ Singleton {
         root._activeXhr = null;
         if (!root.isStreaming)
             return;
+        _displayFlushTimer.stop();
         const wasVisible = !root.awaitingFirstToken;
         const finalText = root.awaitingFirstToken ? "" : root.streamedAnswer;
         root.streamedAnswer = finalText;
+        root.displayedAnswer = finalText;
         root.history = root.history.concat([{
                 role: "model",
                 text: finalText,

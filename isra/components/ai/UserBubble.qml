@@ -45,6 +45,7 @@ Rectangle {
         width: Math.min(implicitWidth, root.maxWidth)
         wrapMode: Text.Wrap
         text: root.entry.text
+        textFormat: Text.PlainText
         color: root.isError ? Colors.md3.on_error_container : Colors.md3.on_surface
         font.pixelSize: 15
         font.family: Config.fontFamily

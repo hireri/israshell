@@ -6,12 +6,16 @@ import Quickshell.Widgets
 import QtQuick.Effects
 import qs.style
 import qs.services
+import qs.icons
 
 Item {
     id: root
 
     property int cellSize: 32
     property int glyphSize: 18
+    property bool showBackground: true
+
+    readonly property bool _open: PanelService.current?.isLauncher === true
 
     implicitWidth: pill.implicitWidth
     implicitHeight: pill.implicitHeight
@@ -23,7 +27,11 @@ Item {
         implicitHeight: root.cellSize
         radius: width / 2
         color: {
-            if (Config.bar.transparentPills) {
+            if (!root.showBackground) {
+                Qt.alpha(Colors.md3.secondary_container, 0)
+            } else if (root._open) {
+                Colors.md3.secondary_container
+            } else if (Config.bar.transparentPills) {
                 Qt.alpha(Colors.md3.secondary_container, 0)
             } else {
                 Qt.alpha(Colors.md3.surface_container_high, 0.8)
@@ -32,6 +40,15 @@ Item {
 
         Behavior on color {
             ColorAnimation { duration: 150 }
+        }
+
+        MaterialIcon {
+            anchors.centerIn: parent
+            visible: Config.genericLauncherIcon
+            name: "action-key"
+            filled: root._open
+            iconSize: root.glyphSize
+            color: Colors.md3.primary
         }
 
         IconImage {
@@ -46,6 +63,7 @@ Item {
         MultiEffect {
             anchors.fill: icon
             source: icon
+            visible: !Config.genericLauncherIcon
             brightness: 0.4
             colorization: 1.0
             colorizationColor: Colors.md3.primary

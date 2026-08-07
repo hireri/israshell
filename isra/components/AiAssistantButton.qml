@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import QtQuick.Shapes
 import qs.style
 import qs.services
 
@@ -36,11 +37,41 @@ Item {
             }
         }
 
-        Text {
+        Shape {
+            id: geminiLogo
             anchors.centerIn: parent
-            text: "✦"
-            font.pixelSize: 22
-            color: Colors.md3.primary
+            width: parent.width * 0.5
+            height: width
+            antialiasing: true
+            layer.enabled: true
+            layer.samples: 4
+
+            ShapePath {
+                strokeWidth: 0
+                fillGradient: LinearGradient {
+                    x1: 0
+                    y1: 0
+                    x2: geminiLogo.width
+                    y2: geminiLogo.height
+                    GradientStop {
+                        position: 0.0
+                        color: ColorUtils.hueShift(Colors.md3.primary, -120)
+                    }
+                    GradientStop {
+                        position: 0.5
+                        color: Colors.md3.primary
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: ColorUtils.hueShift(Colors.md3.primary, 120)
+                    }
+                }
+                scale: Qt.size(geminiLogo.width / 16, geminiLogo.height / 16)
+
+                PathSvg {
+                    path: "M8 0C8 4.418 4.418 8 0 8c4.418 0 8 3.582 8 8 0-4.418 3.582-8 8-8-4.418 0-8-3.582-8-8Z"
+                }
+            }
         }
 
         Rectangle {

@@ -35,6 +35,11 @@ Item {
         linkColor: Colors.md3.primary
         font.pixelSize: root.fontSize
         font.family: Config.fontFamily
+        lineHeight: 1.3
         onLinkActivated: link => Qt.openUrlExternally(link)
+
+        HoverHandler {
+            cursorShape: quoteText.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor
+        }
     }
 }

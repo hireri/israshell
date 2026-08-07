@@ -20,11 +20,35 @@ Item {
     readonly property bool isRecognizedCommand: ["/clear"].includes(inputField.text.trim().toLowerCase())
 
     property bool revealed: false
-    property int hintIndex: 0
+    property int hintIndex: Math.floor(Math.random() * root._hintPhrases.length)
 
     readonly property int freshWidth: 480
     readonly property int expandedWidth: 360
-    readonly property int thinkingWidth: 220
+
+    readonly property int actionBtnMargin: 10
+    readonly property int actionBtnSize: 36
+    readonly property int spinnerSize: 20
+    readonly property int thinkingGap: 12
+
+    readonly property int thinkingSideReserve: root.actionBtnMargin + root.actionBtnSize + root.thinkingGap
+
+    readonly property int thinkingMinWidth: 160
+
+    readonly property int thinkingResizeDuration: 320
+
+    readonly property int thinkingWidth: Math.round(Math.max(root.thinkingMinWidth, Math.min(root.expandedWidth, hintMetrics.advanceWidth + 2 * root.thinkingSideReserve)))
+
+    TextMetrics {
+        id: hintMetrics
+        text: root._hintPhrases[root.hintIndex] ?? ""
+        font.italic: true
+        font.pixelSize: 13
+        font.family: Config.fontFamily
+    }
+
+    function _pickHintIndex(): void {
+        root.hintIndex = Math.floor(Math.random() * root._hintPhrases.length);
+    }
 
     signal attachRequested
 
@@ -54,7 +78,6 @@ Item {
         if (thinking) {
             exitThinkingAnim.stop();
             enterThinkingAnim.restart();
-            root.hintIndex = Math.floor(Math.random() * root._hintPhrases.length);
             thinkingHintCycleTimer.restart();
         } else {
             enterThinkingAnim.stop();
@@ -99,6 +122,7 @@ Item {
         }
         ScriptAction {
             script: {
+                root._pickHintIndex();
                 if (root.isFocused)
                     Qt.callLater(() => root.focusInput());
             }
@@ -124,6 +148,9 @@ Item {
         ScriptAction {
             script: root.hintIndex = (root.hintIndex + 1) % root._hintPhrases.length
         }
+        PauseAnimation {
+            duration: root.thinkingResizeDuration
+        }
         NumberAnimation {
             target: hintText
             property: "opacity"
@@ -139,7 +166,6 @@ Item {
         if (thinking) {
             typingLayer.opacity = 0;
             thinkingRow.opacity = 1;
-            root.hintIndex = Math.floor(Math.random() * root._hintPhrases.length);
             thinkingHintCycleTimer.restart();
         }
         Qt.callLater(() => root.revealed = true);
@@ -154,7 +180,7 @@ Item {
 
     Behavior on width {
         NumberAnimation {
-            duration: 320
+            duration: root.thinkingResizeDuration
             easing.type: Easing.OutQuint
         }
     }
@@ -404,20 +430,17 @@ Item {
 
         LoadingSpinner {
             anchors.left: parent.left
-            anchors.leftMargin: 19
+            anchors.leftMargin: root.actionBtnMargin + (root.actionBtnSize - root.spinnerSize) / 2
             anchors.verticalCenter: parent.verticalCenter
-            size: 20
+            size: root.spinnerSize
             running: root.thinking
         }
 
         Text {
             id: hintText
             anchors.centerIn: parent
-            anchors.horizontalCenterOffset: -6
-            text: root._hintPhrases[root.hintIndex]
-            font.italic: true
-            font.pixelSize: 13
-            font.family: Config.fontFamily
+            text: hintMetrics.text
+            font: hintMetrics.font
             color: Colors.md3.on_surface_variant
         }
     }
@@ -428,12 +451,12 @@ Item {
         readonly property bool hasText: inputField.text.trim() !== ""
         anchors {
             right: parent.right
-            rightMargin: 10
+            rightMargin: root.actionBtnMargin
             verticalCenter: parent.verticalCenter
         }
-        width: 36
-        height: 36
-        radius: 18
+        width: root.actionBtnSize
+        height: root.actionBtnSize
+        radius: width / 2
         color: {
             if (showStop)
                 return actionMa.containsMouse ? Colors.md3.primary : Colors.md3.primary_container;

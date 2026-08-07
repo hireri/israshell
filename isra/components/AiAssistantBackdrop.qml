@@ -7,9 +7,8 @@ import qs.services
 PanelWindow {
     id: root
 
-    required property var modelData
-    screen: modelData
-    visible: modelData.name === CompositorService.focusedMonitor?.name
+    required property var targetScreen
+    screen: root.targetScreen
     color: Qt.alpha(Colors.md3.background, root.isFresh ? 0.45 : 0.65)
     exclusionMode: ExclusionMode.Ignore
 
@@ -34,6 +33,7 @@ PanelWindow {
     readonly property bool isFresh: AiAssistantService.history.length === 0 && !AiAssistantService.hasError && AiAssistantService.streamedAnswer === ""
 
     readonly property bool blurEnabled: Config.blurAllowed()
+
     BackgroundEffect.blurRegion: blurEnabled ? backdropBlurRegion : null
 
     Region {
@@ -59,9 +59,13 @@ PanelWindow {
 
         property vector2d resolution: Qt.vector2d(width, height)
 
-        property color colorA: Colors.md3.primary
-        property color colorB: Colors.md3.secondary
-        property color colorC: Colors.md3.tertiary
+        readonly property color hueLow: ColorUtils.hueShift(Colors.md3.primary, -120)
+        readonly property color hueMid: Colors.md3.primary
+        readonly property color hueHigh: ColorUtils.hueShift(Colors.md3.primary, 120)
+
+        property color colorA: hueMid
+        property color colorB: hueHigh
+        property color colorC: hueLow
         property color dotColor: Colors.md3.on_surface
 
         property real time: 0
@@ -100,23 +104,23 @@ PanelWindow {
         SequentialAnimation on colorA {
             loops: Animation.Infinite
             running: root.visible
-            ColorAnimation { to: Colors.md3.secondary; duration: 4000 }
-            ColorAnimation { to: Colors.md3.tertiary; duration: 4000 }
-            ColorAnimation { to: Colors.md3.primary; duration: 4000 }
+            ColorAnimation { to: glow.hueHigh; duration: 4000 }
+            ColorAnimation { to: glow.hueLow; duration: 4000 }
+            ColorAnimation { to: glow.hueMid; duration: 4000 }
         }
         SequentialAnimation on colorB {
             loops: Animation.Infinite
             running: root.visible
-            ColorAnimation { to: Colors.md3.tertiary; duration: 4000 }
-            ColorAnimation { to: Colors.md3.primary; duration: 4000 }
-            ColorAnimation { to: Colors.md3.secondary; duration: 4000 }
+            ColorAnimation { to: glow.hueLow; duration: 4000 }
+            ColorAnimation { to: glow.hueMid; duration: 4000 }
+            ColorAnimation { to: glow.hueHigh; duration: 4000 }
         }
         SequentialAnimation on colorC {
             loops: Animation.Infinite
             running: root.visible
-            ColorAnimation { to: Colors.md3.primary; duration: 4000 }
-            ColorAnimation { to: Colors.md3.secondary; duration: 4000 }
-            ColorAnimation { to: Colors.md3.tertiary; duration: 4000 }
+            ColorAnimation { to: glow.hueMid; duration: 4000 }
+            ColorAnimation { to: glow.hueHigh; duration: 4000 }
+            ColorAnimation { to: glow.hueLow; duration: 4000 }
         }
 
         NumberAnimation on gradientAngle {

@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Controls
 import Qt5Compat.GraphicalEffects
 import Qt.labs.platform as Labs
 import Quickshell
@@ -38,10 +39,7 @@ Item {
         Item {
             id: sessionRoot
 
-            readonly property var focusedScreen: {
-                const name = CompositorService.focusedMonitor?.name;
-                return Quickshell.screens.find(s => s.name === name) ?? null;
-            }
+            property var targetScreen: null
 
             property var bubbleItems: []
 
@@ -102,305 +100,372 @@ Item {
 
             Component.onCompleted: {
                 greetingIndex = Math.floor(Math.random() * greetingKeys.length);
+                const name = CompositorService.focusedMonitor?.name;
+                sessionRoot.targetScreen = Quickshell.screens.find(s => s.name === name) ?? Quickshell.screens[0] ?? null;
             }
 
-            Instantiator {
-                model: Quickshell.screens
-
-                AiAssistantBackdrop {}
+            AiAssistantBackdrop {
+                targetScreen: sessionRoot.targetScreen
             }
 
-            Instantiator {
-                model: Quickshell.screens
+            PanelWindow {
+                id: overlay
+                screen: sessionRoot.targetScreen
+                color: "transparent"
+                anchors {
+                    top: true
+                    bottom: true
+                    left: true
+                    right: true
+                }
+                exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.layer: WlrLayer.Overlay
+                WlrLayershell.namespace: "quickshell:aiassistant"
+                WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
-                PanelWindow {
-                    id: overlay
-                    required property var modelData
-                    screen: modelData
-                    color: "transparent"
-                    anchors {
-                        top: true
-                        bottom: true
-                        left: true
-                        right: true
-                    }
-                    exclusionMode: ExclusionMode.Ignore
-                    WlrLayershell.layer: WlrLayer.Overlay
-                    WlrLayershell.namespace: "quickshell:aiassistant"
+                readonly property bool blurEnabled: Config.blurAllowed()
 
-                    readonly property bool isFocused: sessionRoot.focusedScreen === modelData
-                    WlrLayershell.keyboardFocus: isFocused ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+                BackgroundEffect.blurRegion: blurEnabled ? aiBlurRegion : null
 
-                    readonly property bool blurEnabled: Config.blurAllowed()
-                    BackgroundEffect.blurRegion: blurEnabled ? aiBlurRegion : null
+                readonly property bool isFresh: AiAssistantService.history.length === 0 && !AiAssistantService.hasError && AiAssistantService.streamedAnswer === ""
 
-                    readonly property bool isFresh: AiAssistantService.history.length === 0 && !AiAssistantService.hasError && AiAssistantService.streamedAnswer === ""
-
+                Region {
+                    id: aiBlurRegion
                     Region {
-                        id: aiBlurRegion
-                        Region {
-                            item: floatingPill
-                        }
-                        Region {
-                            item: askScreenBtn
-                        }
-                        Region { item: sessionRoot.bubbleItems[0] ?? null }
-                        Region { item: sessionRoot.bubbleItems[1] ?? null }
-                        Region { item: sessionRoot.bubbleItems[2] ?? null }
-                        Region { item: sessionRoot.bubbleItems[3] ?? null }
-                        Region { item: sessionRoot.bubbleItems[4] ?? null }
-                        Region { item: sessionRoot.bubbleItems[5] ?? null }
-                        Region { item: sessionRoot.bubbleItems[6] ?? null }
-                        Region { item: sessionRoot.bubbleItems[7] ?? null }
-                        Region { item: sessionRoot.bubbleItems[8] ?? null }
-                        Region { item: sessionRoot.bubbleItems[9] ?? null }
-                        Region { item: sessionRoot.bubbleItems[10] ?? null }
-                        Region { item: sessionRoot.bubbleItems[11] ?? null }
-                        Region { item: sessionRoot.bubbleItems[12] ?? null }
-                        Region { item: sessionRoot.bubbleItems[13] ?? null }
-                        Region { item: sessionRoot.bubbleItems[14] ?? null }
-                        Region { item: sessionRoot.bubbleItems[15] ?? null }
-                        Region { item: sessionRoot.bubbleItems[16] ?? null }
-                        Region { item: sessionRoot.bubbleItems[17] ?? null }
-                        Region { item: sessionRoot.bubbleItems[18] ?? null }
-                        Region { item: sessionRoot.bubbleItems[19] ?? null }
+                        item: floatingPill
+                    }
+                    Region {
+                        item: askScreenBtn
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[0] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[1] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[2] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[3] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[4] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[5] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[6] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[7] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[8] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[9] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[10] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[11] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[12] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[13] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[14] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[15] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[16] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[17] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[18] ?? null
+                    }
+                    Region {
+                        item: sessionRoot.bubbleItems[19] ?? null
+                    }
+                }
+
+                Component.onCompleted: Qt.callLater(() => floatingPill.focusInput())
+
+                Shortcut {
+                    sequence: "Escape"
+                    onActivated: AiAssistantService.close()
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: AiAssistantService.close()
+                }
+
+                Item {
+                    id: heroContainer
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        bottom: floatingPill.top
+                        bottomMargin: 24 + floatingPill.attachmentGap
                     }
 
-                    onIsFocusedChanged: {
-                        if (isFocused)
-                            Qt.callLater(() => floatingPill.focusInput());
+                    width: Math.min(parent.width - 96, 560)
+                    height: heroText.implicitHeight
+
+                    readonly property bool shouldShow: overlay.isFresh && floatingPill.revealed
+
+                    opacity: shouldShow ? 1.0 : 0.0
+                    scale: shouldShow ? 1.0 : 0.85
+                    transformOrigin: Item.Bottom
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 280
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 320
+                            easing.type: Easing.OutQuint
+                        }
+                    }
+                    Behavior on anchors.bottomMargin {
+                        NumberAnimation {
+                            duration: 260
+                            easing.type: Easing.OutQuint
+                        }
                     }
 
-                    Shortcut {
-                        enabled: overlay.isFocused
-                        sequence: "Escape"
-                        onActivated: AiAssistantService.close()
+                    Text {
+                        id: heroText
+                        anchors.centerIn: parent
+                        width: parent.width
+                        text: sessionRoot.getGreeting(sessionRoot.greetingIndex, sessionRoot.username)
+                        color: Colors.md3.on_surface
+                        font.pixelSize: 28
+                        font.family: Config.fontFamily
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                Flickable {
+                    id: chatFlick
+                    anchors {
+                        top: parent.top
+                        topMargin: 64
+                        left: parent.left
+                        right: parent.right
+                        bottom: floatingPill.top
+                        bottomMargin: 16
+                    }
+                    readonly property bool shouldShow: !overlay.isFresh && floatingPill.revealed
+
+                    clip: true
+                    opacity: shouldShow ? 1.0 : 0.0
+                    visible: opacity > 0
+                    enabled: shouldShow
+                    boundsBehavior: Flickable.DragAndOvershootBounds
+                    flickDeceleration: 4000
+                    maximumFlickVelocity: 1200
+                    contentWidth: width
+                    contentHeight: chatColumn.height + 40
+
+                    ScrollBar.vertical: ScrollBar {
+                        policy: ScrollBar.AlwaysOff
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 260
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    property real _prevContentHeight: 0
+
+                    onContentHeightChanged: {
+                        const wasAtBottom = contentY + height >= _prevContentHeight - 24;
+                        _prevContentHeight = contentHeight;
+                        if (wasAtBottom)
+                            Qt.callLater(() => {
+                                chatFlick.contentY = Math.max(0, chatFlick.contentHeight - chatFlick.height);
+                            });
                     }
 
                     MouseArea {
-                        anchors.fill: parent
+                        x: 0
+                        y: 0
+                        width: chatFlick.width
+                        height: Math.max(chatFlick.contentHeight, chatFlick.height)
                         onClicked: AiAssistantService.close()
                     }
 
-                    Item {
-                        id: heroContainer
-                        anchors {
-                            horizontalCenter: parent.horizontalCenter
-                            bottom: floatingPill.top
-                            bottomMargin: 24 + floatingPill.attachmentGap
-                        }
-                        width: floatingPill.width
-                        height: heroText.implicitHeight
+                    Column {
+                        id: chatColumn
+                        x: Math.max(24, (chatFlick.width - width) / 2)
+                        y: 20
+                        width: Math.min(chatFlick.width - 48, 940)
+                        spacing: 22
 
-                        readonly property bool shouldShow: overlay.isFresh && overlay.isFocused && floatingPill.revealed
-
-                        opacity: shouldShow ? 1.0 : 0.0
-                        scale: shouldShow ? 1.0 : 0.85
-                        transformOrigin: Item.Bottom
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 280
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: 320
-                                easing.type: Easing.OutQuint
-                            }
-                        }
-                        Behavior on anchors.bottomMargin {
-                            NumberAnimation {
-                                duration: 260
-                                easing.type: Easing.OutQuint
-                            }
-                        }
-
-                        Text {
-                            id: heroText
-                            anchors.centerIn: parent
-                            width: parent.width
-                            text: sessionRoot.getGreeting(sessionRoot.greetingIndex, sessionRoot.username)
-                            color: Colors.md3.on_surface
-                            font.pixelSize: 28
-                            font.family: Config.fontFamily
-                            horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.WordWrap
-                        }
-
-                        DropShadow {
-                            anchors.fill: heroText
-                            source: heroText
-                            radius: 8
-                            samples: 13
-                            horizontalOffset: 0
-                            verticalOffset: 2
-                            color: Colors.md3.background
-                        }
-                    }
-
-                    Flickable {
-                        id: chatFlick
-                        anchors {
-                            top: parent.top
-                            topMargin: 64
-                            left: parent.left
-                            right: parent.right
-                            bottom: floatingPill.top
-                            bottomMargin: 16
-                        }
-                        clip: true
-                        visible: !overlay.isFresh && overlay.isFocused && floatingPill.revealed
-                        opacity: visible ? 1.0 : 0.0
-                        boundsBehavior: Flickable.StopAtBounds
-                        contentWidth: width
-                        contentHeight: chatColumn.height + 40
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 260
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-
-                        property real _prevContentHeight: 0
-
-                        onContentHeightChanged: {
-                            const wasAtBottom = contentY + height >= _prevContentHeight - 24;
-                            _prevContentHeight = contentHeight;
-                            if (wasAtBottom)
-                                Qt.callLater(() => {
-                                    chatFlick.contentY = Math.max(0, chatFlick.contentHeight - chatFlick.height);
-                                });
-                        }
-
-                        MouseArea {
-                            x: 0
-                            y: 0
-                            width: chatFlick.width
-                            height: Math.max(chatFlick.contentHeight, chatFlick.height)
-                            onClicked: AiAssistantService.close()
-                        }
-
-                        Column {
-                            id: chatColumn
-                            x: Math.max(24, (chatFlick.width - width) / 2)
-                            y: 20
-                            width: Math.min(chatFlick.width - 48, 940)
-                            spacing: 22
-
-                            Repeater {
-                                model: AiAssistantService.history.length
-                                delegate: ChatMessageRow {
-                                    required property int index
-                                    width: chatColumn.width
-                                    entry: AiAssistantService.history[index]
-                                    username: sessionRoot.username
-                                    modelDisplayName: sessionRoot.modelName
-                                    modelShapeName: sessionRoot.modelShapeName
-                                    onBubbleShown: item => sessionRoot.registerBubble(item)
-                                    onBubbleHidden: item => sessionRoot.unregisterBubble(item)
-                                }
-                            }
-
-                            ChatMessageRow {
+                        Repeater {
+                            model: AiAssistantService.history.length
+                            delegate: ChatMessageRow {
+                                required property int index
                                 width: chatColumn.width
-                                visible: AiAssistantService.isStreaming && !AiAssistantService.awaitingFirstToken && AiAssistantService.streamedAnswer !== ""
-                                entry: ({
-                                    role: "model",
-                                    text: AiAssistantService.streamedAnswer
-                                })
+                                entry: AiAssistantService.history[index]
                                 username: sessionRoot.username
                                 modelDisplayName: sessionRoot.modelName
                                 modelShapeName: sessionRoot.modelShapeName
+                                onBubbleShown: item => sessionRoot.registerBubble(item)
+                                onBubbleHidden: item => sessionRoot.unregisterBubble(item)
                             }
+                        }
 
-                            ChatMessageRow {
-                                width: chatColumn.width
-                                visible: AiAssistantService.hasError
-                                entry: ({
+                        ChatMessageRow {
+                            width: chatColumn.width
+                            visible: AiAssistantService.isStreaming && !AiAssistantService.awaitingFirstToken && AiAssistantService.streamedAnswer !== ""
+                            entry: ({
+                                    role: "model",
+                                    text: AiAssistantService.displayedAnswer
+                                })
+                            username: sessionRoot.username
+                            modelDisplayName: sessionRoot.modelName
+                            modelShapeName: sessionRoot.modelShapeName
+                        }
+
+                        ChatMessageRow {
+                            width: chatColumn.width
+                            visible: AiAssistantService.hasError
+                            entry: ({
                                     role: "model",
                                     text: AiAssistantService.errorText,
                                     isError: true
                                 })
-                                username: sessionRoot.username
-                                modelDisplayName: sessionRoot.modelName
-                                modelShapeName: sessionRoot.modelShapeName
+                            username: sessionRoot.username
+                            modelDisplayName: sessionRoot.modelName
+                            modelShapeName: sessionRoot.modelShapeName
+                        }
+                    }
+                }
+
+                Rectangle {
+                    id: chatScrollIndicator
+
+                    readonly property real scrollRange: Math.max(chatFlick.contentHeight - chatFlick.height, 0)
+                    readonly property real trackHeight: chatFlick.height - 16
+                    readonly property bool lit: chatFlick.movingVertically || settleHold.running
+
+                    visible: chatFlick.visible && scrollRange > 1
+                    x: chatFlick.x + chatColumn.x + chatColumn.width + 12
+                    width: 4
+                    radius: 2
+                    color: Colors.md3.on_surface_variant
+                    height: Math.max(36, chatScrollIndicator.trackHeight * (chatFlick.height / Math.max(chatFlick.contentHeight, 1)))
+                    y: chatFlick.y + 8 + (chatScrollIndicator.scrollRange > 0 ? (chatFlick.contentY / chatScrollIndicator.scrollRange) * (chatScrollIndicator.trackHeight - height) : 0)
+                    opacity: chatScrollIndicator.lit ? 0.45 * chatFlick.opacity : 0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 260
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Timer {
+                        id: settleHold
+                        interval: 700
+                    }
+
+                    Connections {
+                        target: chatFlick
+                        function onMovingVerticallyChanged(): void {
+                            if (!chatFlick.movingVertically)
+                                settleHold.restart();
+                        }
+                    }
+                }
+
+                PromptPill {
+                    id: floatingPill
+                    isFresh: overlay.isFresh
+                    isFocused: true
+                    onAttachRequested: {
+                        imagePicker.open();
+                        AiAssistantService.close();
+                    }
+                }
+
+                Item {
+                    id: askScreenBtn
+                    readonly property bool shouldShow: overlay.isFresh && floatingPill.revealed && !AiAssistantService.hasScreenAttachment && AiAssistantService.currentProviderSupportsVision()
+                    anchors.top: floatingPill.bottom
+                    anchors.topMargin: 12
+                    anchors.left: floatingPill.left
+                    width: askScreenRow.implicitWidth + 26
+                    height: 34
+                    opacity: shouldShow ? 1.0 : 0.0
+                    visible: opacity > 0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 280
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: height / 2
+                        color: askScreenMa.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+                        border.width: 1
+                        border.color: Colors.md3.outline_variant
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
                             }
                         }
                     }
 
-                    PromptPill {
-                        id: floatingPill
-                        isFresh: overlay.isFresh
-                        isFocused: overlay.isFocused
-                        onAttachRequested: {
-                            imagePicker.open();
-                            AiAssistantService.close();
+                    Row {
+                        id: askScreenRow
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        MaterialIcon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: "present-to-all"
+                            iconSize: 15
+                            color: Colors.md3.on_surface_variant
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: Localization.t("aiAssistant.ask_about_screen")
+                            color: Colors.md3.on_surface_variant
+                            font.pixelSize: 13
+                            font.family: Config.fontFamily
                         }
                     }
 
-                    Item {
-                        id: askScreenBtn
-                        readonly property bool shouldShow: overlay.isFresh && overlay.isFocused && floatingPill.revealed && !AiAssistantService.hasScreenAttachment && AiAssistantService.currentProviderSupportsVision()
-                        anchors.top: floatingPill.bottom
-                        anchors.topMargin: 12
-                        anchors.left: floatingPill.left
-                        width: askScreenRow.implicitWidth + 26
-                        height: 34
-                        opacity: shouldShow ? 1.0 : 0.0
-                        visible: opacity > 0
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 280
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: height / 2
-                            color: askScreenMa.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-                            border.width: 1
-                            border.color: Colors.md3.outline_variant
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 150
-                                }
-                            }
-                        }
-
-                        Row {
-                            id: askScreenRow
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            MaterialIcon {
-                                anchors.verticalCenter: parent.verticalCenter
-                                name: "present-to-all"
-                                iconSize: 15
-                                color: Colors.md3.on_surface_variant
-                            }
-
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: Localization.t("aiAssistant.ask_about_screen")
-                                color: Colors.md3.on_surface_variant
-                                font.pixelSize: 13
-                                font.family: Config.fontFamily
-                            }
-                        }
-
-                        MouseArea {
-                            id: askScreenMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: AiAssistantService.attachScreenshot(overlay.modelData.name)
-                        }
+                    MouseArea {
+                        id: askScreenMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: AiAssistantService.attachScreenshot(overlay.screen.name)
                     }
                 }
             }

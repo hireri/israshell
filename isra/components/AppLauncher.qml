@@ -11,6 +11,8 @@ import qs.services
 Scope {
     id: root
 
+    readonly property bool isLauncher: true
+
     property bool isOpen: false
     property bool _opening: false
     property bool _animating: false

@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Widgets
 import qs.style
 import qs.icons
@@ -16,6 +17,7 @@ Item {
 
     readonly property bool isUser: entry.role === "user"
     readonly property bool isError: entry.isError === true
+    readonly property string messageText: entry.text ?? ""
     readonly property real avatarSize: 30
     readonly property real maxContentWidth: width * 0.86
     readonly property real contentMaxWidth: maxContentWidth - avatarSize - 10
@@ -26,6 +28,14 @@ Item {
 
     height: rowLayout.height
     opacity: 1
+
+    HoverHandler {
+        id: rowHover
+    }
+
+    Process {
+        id: copyProc
+    }
 
     function _playEntrance(): void {
         if (root.entry._skipEntranceAnim === true || root.entry._entered === true)
@@ -73,7 +83,7 @@ Item {
     Item {
         id: rowLayout
         width: parent.width
-        height: Math.max(avatarShape.height, nameText.height + 6 + textCol.height)
+        height: Math.max(root.avatarSize, nameText.height + 6 + textCol.height)
 
         Rectangle {
             id: avatarShape
@@ -131,6 +141,68 @@ Item {
             font.family: Config.fontFamily
         }
 
+        Rectangle {
+            id: copyBtn
+            visible: !root.isError && root.messageText !== ""
+            anchors.left: root.isUser ? undefined : nameText.right
+            anchors.leftMargin: root.isUser ? 0 : 8
+            anchors.right: root.isUser ? nameText.left : undefined
+            anchors.rightMargin: root.isUser ? 8 : 0
+            anchors.verticalCenter: nameText.verticalCenter
+            width: 22
+            height: 22
+            radius: 11
+
+            property bool copied: false
+
+            readonly property color containerColor: copyBtn.copied ? Colors.md3.primary_container : Colors.md3.secondary_container
+            readonly property color contentColor: copyBtn.copied ? Colors.md3.on_primary_container : Colors.md3.on_secondary_container
+
+            color: Qt.tint(copyBtn.containerColor, Qt.alpha(copyBtn.contentColor, copyMa.containsMouse ? 0.08 : 0))
+            opacity: (rowHover.hovered || copyBtn.copied) ? 1 : 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: 150
+                }
+            }
+
+            MaterialIcon {
+                anchors.centerIn: parent
+                name: copyBtn.copied ? "check" : "copy"
+                iconSize: 13
+                transitionType: "none"
+                color: copyBtn.contentColor
+            }
+
+            Timer {
+                id: copiedReset
+                interval: 1600
+                onTriggered: copyBtn.copied = false
+            }
+
+            MouseArea {
+                id: copyMa
+                anchors.fill: parent
+                enabled: copyBtn.opacity > 0
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    copyProc.command = ["wl-copy", root.messageText];
+                    copyProc.running = true;
+                    copyBtn.copied = true;
+                    copiedReset.restart();
+                }
+            }
+        }
+
         Item {
             id: textCol
             anchors.top: nameText.bottom
@@ -141,6 +213,11 @@ Item {
             anchors.rightMargin: root.isUser ? root.avatarSize + 10 : 0
             width: root.isUser ? bubble.implicitWidth : reply.implicitWidth
             height: root.isUser ? bubble.implicitHeight : reply.implicitHeight
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {}
+            }
 
             UserBubble {
                 id: bubble
@@ -155,7 +232,7 @@ Item {
                 id: reply
                 visible: !root.isUser
                 anchors.left: parent.left
-                text: root.entry.text
+                text: root.messageText
                 isError: root.isError
                 maxWidth: root.contentMaxWidth
             }

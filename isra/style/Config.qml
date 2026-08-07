@@ -18,6 +18,7 @@ Singleton {
     property string translationProvider: ""
     property bool screenCorners: true
     property bool tintIcons: false
+    property bool genericLauncherIcon: false
     property bool blurEffects: false
     property real blurOpacity: 1
 
@@ -283,6 +284,7 @@ Singleton {
             translationProvider: "",
             screenCorners: true,
             tintIcons: false,
+            genericLauncherIcon: false,
             blurEffects: false,
             blurOpacity: 1,
             

@@ -280,6 +280,7 @@ PanelWindow {
                     sourceComponent: LauncherButton {
                         cellSize: dockRoot.itemCellSize
                         glyphSize: dockRoot.itemGlyphSize
+                        showBackground: false
                     }
                 }
 

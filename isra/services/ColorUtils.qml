@@ -15,6 +15,13 @@ Singleton {
         return Qt.rgba(c.r, c.g, c.b, Math.max(0, Math.min(1, alpha)));
     }
 
+    function hueShift(color, degrees) {
+        const c = Qt.color(color);
+        let h = c.hslHue + degrees / 360.0;
+        h = ((h % 1) + 1) % 1;
+        return Qt.hsla(h, c.hslSaturation, c.hslLightness, c.a);
+    }
+
     function m3CardScheme(dominantColor, darkMode) {
         const d = Qt.color(dominantColor);
         const h = d.hslHue;
