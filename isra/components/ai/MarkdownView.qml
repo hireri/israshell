@@ -60,6 +60,7 @@ ColumnLayout {
 
             readonly property bool _looseGap: blockLoader.type !== "prose" || (blockLoader.index > 0 && blockModel.get(blockLoader.index - 1).type !== "prose")
             Layout.topMargin: blockLoader.index === 0 ? 0 : (blockLoader._looseGap ? 24 : 12)
+            Layout.maximumWidth: root.maxWidth
 
             sourceComponent: {
                 if (blockLoader.type === "code")
@@ -87,7 +88,6 @@ ColumnLayout {
         Text {
             property string body: ""
 
-            width: Math.min(implicitWidth, root.maxWidth)
             text: body
             textFormat: Text.MarkdownText
             wrapMode: Text.Wrap

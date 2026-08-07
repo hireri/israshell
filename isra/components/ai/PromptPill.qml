@@ -404,7 +404,7 @@ Item {
 
         LoadingSpinner {
             anchors.left: parent.left
-            anchors.leftMargin: 14
+            anchors.leftMargin: 24
             anchors.verticalCenter: parent.verticalCenter
             size: 20
             running: root.thinking

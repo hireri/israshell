@@ -75,7 +75,7 @@ Item {
 
             readonly property var greetingKeys: {
                 const bucket = _timeOfDayBucket();
-                return ["aiAssistant.welcome_" + bucket + "_1", "aiAssistant.welcome_" + bucket + "_2"];
+                return ["aiAssistant.welcome_" + bucket + "_1", "aiAssistant.welcome_" + bucket + "_2", "aiAssistant.welcome_" + bucket + "_3", "aiAssistant.welcome_" + bucket + "_4"];
             }
 
             function getGreeting(index, name) {
