@@ -27,8 +27,9 @@ Singleton {
         return hDisp + ":" + m + " " + (Config.hourFormat === 2 ? ap : ap.toLowerCase());
     }
 
-    function runScreencap(verb: string): void {
-        PanelService.closeAll(true);
+    function runScreencap(verb: string, closePanel: bool): void {
+        if (closePanel)
+            PanelService.closeAll(true);
         captureProc.command = ["qs", "-c", "isra", "ipc", "call", "screenshot", verb];
         captureProc.running = true;
     }
@@ -140,7 +141,7 @@ Singleton {
                 }
                 const n = BluetoothService.connectedCount;
                 if (n > 1)
-                    return n + " devices";
+                    return Localization.t("qsTileService.devices_count").arg(n);
                 return "";
             }
             onToggled: BluetoothService.toggle()
@@ -198,7 +199,7 @@ Singleton {
             active: NightLightService.active
             label: Localization.t("qsTileService.night_light")
             sublabelForOn: on => Config.nightLight.scheduleEnabled
-                ? ((on ? "Off at " : "On at ") + root._formatHourMinute(on ? Config.nightLight.sunrise : Config.nightLight.sunset))
+                ? Localization.t(on ? "qsTileService.off_at" : "qsTileService.on_at").arg(root._formatHourMinute(on ? Config.nightLight.sunrise : Config.nightLight.sunset))
                 : ""
             iconComponent: MaterialIcon {
                 name: "nightlight"
@@ -262,7 +263,7 @@ Singleton {
                 name: "screenshot"
                 iconSize: 22
             }
-            onToggled: root.runScreencap("activate")
+            onToggled: root.runScreencap("activate", true)
         }
     }
 
@@ -275,7 +276,7 @@ Singleton {
                 name: "screenshot"
                 iconSize: 22
             }
-            onToggled: root.runScreencap("activate")
+            onToggled: root.runScreencap("activate", true)
         }
     }
 
@@ -314,7 +315,7 @@ Singleton {
                 name: "image-search"
                 iconSize: 22
             }
-            onToggled: root.runScreencap("cts")
+            onToggled: root.runScreencap("cts", true)
         }
     }
 
@@ -327,7 +328,7 @@ Singleton {
                 name: "image-search"
                 iconSize: 22
             }
-            onToggled: root.runScreencap("cts")
+            onToggled: root.runScreencap("cts", true)
         }
     }
 
@@ -339,7 +340,7 @@ Singleton {
                 name: "ocr"
                 iconSize: 22
             }
-            onToggled: root.runScreencap("ocr")
+            onToggled: root.runScreencap("ocr", true)
         }
     }
 
@@ -352,7 +353,7 @@ Singleton {
                 name: "ocr"
                 iconSize: 22
             }
-            onToggled: root.runScreencap("ocr")
+            onToggled: root.runScreencap("ocr", true)
         }
     }
 
@@ -367,7 +368,7 @@ Singleton {
                 iconSize: 22
                 transitionType: "none"
             }
-            onToggled: root.runScreencap("record")
+            onToggled: root.runScreencap("record", !ScreencapService.isRecording)
         }
     }
 
@@ -378,13 +379,13 @@ Singleton {
             label: Localization.t("qsTileService.record")
             accentColor: Colors.md3.error
             onAccentColor: Colors.md3.on_error
-            sublabelForOn: on => on ? ScreencapService.recordingTime : "Not Recording"
+            sublabelForOn: on => on ? ScreencapService.recordingTime : null
             iconComponent: MaterialIcon {
                 name: "record"
                 iconSize: 22
                 transitionType: "none"
             }
-            onToggled: root.runScreencap("record")
+            onToggled: root.runScreencap("record", !ScreencapService.isRecording)
         }
     }
 
@@ -409,7 +410,7 @@ Singleton {
             active: WallpaperService.isDark
             label: Localization.t("qsTileService.dark_theme")
             sublabelForOn: on => Config.nightLight.autoDarkMode
-                ? ((on ? "Light at " : "Dark at ") + root._formatHourMinute(on ? Config.nightLight.sunrise : Config.nightLight.sunset))
+                ? Localization.t(on ? "qsTileService.light_at" : "qsTileService.dark_at").arg(root._formatHourMinute(on ? Config.nightLight.sunrise : Config.nightLight.sunset))
                 : ""
             iconComponent: MaterialIcon {
                 name: "contrast"

@@ -230,12 +230,11 @@ Item {
 
         captureProc.command = ["sh", "-c", `${tool?.cmd ?? ""} '${geom}'`];
 
-        if (root.activeTool === "screenshot") {
-            if (uiLoader.item)
-                uiLoader.item.capturing = true;
-        } else {
+        if (uiLoader.item)
+            uiLoader.item.capturing = true;
+
+        if (root.activeTool !== "screenshot")
             root._closeOverlay();
-        }
         captureDelay.start();
     }
 
@@ -1080,7 +1079,7 @@ Item {
                                                     cursorShape: Qt.PointingHandCursor
                                                     enabled: recordingModeContainer.showStop
                                                     onClicked: {
-                                                        ScreencapService.isRecording = false;
+                                                        ScreencapService.markRecordingStoppedOptimistic();
                                                         stopRecordingProc.running = true;
                                                     }
                                                 }
