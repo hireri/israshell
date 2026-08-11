@@ -6,13 +6,13 @@ Slider {
     id: control
 
     property color fillColor: Colors.md3.primary
-    property color trackColor: Colors.md3.surface_variant
-    property real trackHeight: 6
-    property real thumbWidth: 3
-    property real thumbGapIdle: 2
-    property real thumbGapHover: 4
-    property real thumbHeightIdle: 14
-    property real thumbHeightHover: 18
+    readonly property color trackColor: Colors.md3.surface_variant
+    readonly property real trackHeight: 6
+    readonly property real thumbWidth: 3
+    readonly property real thumbGapIdle: 2
+    readonly property real thumbGapHover: 4
+    readonly property real thumbHeightIdle: 14
+    readonly property real thumbHeightHover: 18
 
     implicitHeight: 24
     hoverEnabled: true

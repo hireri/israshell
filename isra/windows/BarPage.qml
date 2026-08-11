@@ -290,13 +290,10 @@ PageBase {
 
         WidgetOrderEditor {
             width: parent.width
-            isLast: true
             leftIds: Config.bar.left
             centerData: Config.bar.center
             rightIds: Config.bar.right
             disabledIds: Config.bar.disabled
-            allWidgetIds: WidgetService.allIds
-            widgetLabels: WidgetService.labelMap
             onOrderChanged: (newLeft, newCenter, newRight, newDisabled) => Config.update({
                 bar: Object.assign({}, Config.bar, {
                     left: newLeft, center: newCenter, right: newRight, disabled: newDisabled
@@ -565,7 +562,7 @@ PageBase {
 
                 ChipAdd {
                     placeholder: Localization.t("barPage.app_name")
-                    onConfirmed: v => {
+                    onCommitted: v => {
                         if (!Config.bar.trayBlacklist.includes(v)) {
                             Config.update({
                                 bar: Object.assign({}, Config.bar, {

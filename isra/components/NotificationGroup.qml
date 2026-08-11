@@ -21,12 +21,8 @@ MouseArea {
 
     readonly property string groupKey: appName + "|" + groupSummary
 
-    readonly property var groupData: {
-        const _ = NotificationService.version;
-        return NotificationService.groups[group.groupKey] ?? null;
-    }
+    readonly property var groupData: NotificationService.groups[group.groupKey] ?? null
     readonly property var messages: {
-        const _ = NotificationService.version;
         const d = group.groupData;
         if (!d || d.messages.length === 0)
             return [];
@@ -37,10 +33,6 @@ MouseArea {
     readonly property var liveNotif: groupData?.liveNotification ?? null
     readonly property bool isCritical: (groupData?.urgency ?? "normal") === "2"
 
-    property string _icon: Quickshell.iconPath("", "application-x-executable")
-    property string _appBadgeIcon: ""
-    property bool _hasBadge: false
-    property bool _isAvatarMode: false
     property string _summary: groupSummary
     property string _appName: appName
     property var _cachedActions: []
@@ -112,7 +104,7 @@ MouseArea {
     onMessagesChanged: {
         if (messages.length > 0) {
             let globallyHovered = false;
-            if (group.popup && group.listRef && group.listRef.anyHovered !== undefined) {
+            if (group.popup && group.listRef) {
                 globallyHovered = group.listRef.anyHovered;
             }
             if (group.popup && !containsMouse && !globallyHovered && group.liveNotif !== null)
@@ -217,7 +209,7 @@ MouseArea {
     property bool _wasHovered: false
 
     Component.onDestruction: {
-        if (_wasHovered && group.listRef && group.listRef.hoveredCount !== undefined) {
+        if (_wasHovered && group.popup && group.listRef) {
             group.listRef.hoveredCount--;
         }
     }
@@ -228,15 +220,15 @@ MouseArea {
 
         if (containsMouse && !_wasHovered) {
             _wasHovered = true;
-            if (group.listRef && group.listRef.hoveredCount !== undefined)
+            if (group.listRef)
                 group.listRef.hoveredCount++;
         } else if (!containsMouse && _wasHovered) {
             _wasHovered = false;
-            if (group.listRef && group.listRef.hoveredCount !== undefined)
+            if (group.listRef)
                 group.listRef.hoveredCount--;
         }
 
-        if (!group.listRef || group.listRef.anyHovered === undefined) {
+        if (!group.listRef) {
             if (containsMouse)
                 groupTimer.stop();
             else if (group.liveNotif)
@@ -292,7 +284,7 @@ MouseArea {
 
     Connections {
         target: group.listRef
-        enabled: group.listRef !== null && group.listRef.anyHovered !== undefined
+        enabled: group.listRef !== null && group.popup
         function onAnyHoveredChanged() {
             if (!group.popup || !group.listRef)
                 return;

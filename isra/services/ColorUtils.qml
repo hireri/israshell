@@ -5,11 +5,6 @@ import QtQuick
 Singleton {
     id: root
 
-    function mix(c1, c2, t) {
-        const a = Qt.color(c1), b = Qt.color(c2);
-        return Qt.rgba(t * a.r + (1 - t) * b.r, t * a.g + (1 - t) * b.g, t * a.b + (1 - t) * b.b, t * a.a + (1 - t) * b.a);
-    }
-
     function withAlpha(color, alpha) {
         const c = Qt.color(color);
         return Qt.rgba(c.r, c.g, c.b, Math.max(0, Math.min(1, alpha)));

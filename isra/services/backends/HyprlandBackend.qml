@@ -4,11 +4,12 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import QtQuick
+import "Shapes.js" as Shapes
 
 Scope {
     id: root
 
-    readonly property var capabilities: ["groups", "pseudotile", "dpms", "tags", "cursorPosition"]
+    readonly property var capabilities: ["cursorPosition"]
 
     property var activeWindow: _windowShape(null)
     property var focusedMonitor: _monitorShape(null)
@@ -20,7 +21,7 @@ Scope {
 
     function _windowShape(t): var {
         if (!t)
-            return { address: "", title: "", appId: "", workspace: -1, fullscreen: false, x: 0, y: 0, w: 0, h: 0 };
+            return Shapes.emptyWindow({ x: 0, y: 0, w: 0, h: 0 });
 
         const ipc = t.lastIpcObject;
         const visible = !!ipc && ipc.mapped !== false && !ipc.hidden;
@@ -40,7 +41,7 @@ Scope {
 
     function _monitorShape(m): var {
         if (!m)
-            return { name: "", id: -1, activeWorkspaceId: -1, activeWorkspaceHasFullscreen: false };
+            return Shapes.emptyMonitor();
         return {
             name: m.name ?? "",
             id: m.id ?? -1,
@@ -51,7 +52,7 @@ Scope {
 
     function _workspaceShape(w): var {
         if (!w)
-            return { id: -1, name: "", monitor: "", windows: 0, active: false, hasFullscreen: false };
+            return Shapes.emptyWorkspace();
         return {
             id: w.id,
             name: w.name,

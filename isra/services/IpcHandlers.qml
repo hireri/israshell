@@ -22,22 +22,9 @@ Item {
     IpcHandler {
         target: "settings"
         function open(page: string): void {
-            const map = {
-                "overview": 0,
-                "network": 1,
-                "bar": 2,
-                "floatingdock": 3,
-                "background": 4,
-                "clock": 5,
-                "display": 6,
-                "sound": 7,
-                "aiassistant": 8,
-                "locale": 9,
-                "system": 10
-            };
             root.settingsLoader.active = true;
             root.settingsLoader.item.visible = true;
-            const p = map[page];
+            const p = root.settingsLoader.item.pageIndexByName[page];
             if (p !== undefined)
                 root.settingsLoader.item.currentPage = p;
         }

@@ -13,7 +13,7 @@ Singleton {
     property QtObject backend: null
 
     Component.onCompleted: {
-        console.log("[CompositorSerivce] using " + backendName)
+        console.log("[CompositorService] using " + backendName)
         switch (backendName) {
         case "hyprland":
             backend = hyprlandBackendComp.createObject(root);
@@ -141,10 +141,6 @@ Singleton {
             return true;
         }).map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h, workspaceId: r.workspaceId }));
     }
-
-    signal workspaceChanged(workspace: var)
-    signal windowOpened(window: var)
-    signal windowClosed(address: string)
 
     function focusDirection(direction: string): void {
         backend?.focusDirection(direction);

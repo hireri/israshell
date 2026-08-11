@@ -20,8 +20,8 @@ Singleton {
     property bool _updateAvailable: false
     property bool _applyInProgress: false
 
-    readonly property string _scriptsDir: Qt.resolvedUrl("../scripts").toString().replace("file://", "")
-    readonly property string _repoRoot: _scriptsDir.replace(/\/isra\/scripts\/?$/, "")
+    readonly property string _scriptsDir: Quickshell.shellDir + "/scripts"
+    readonly property string _repoRoot: Quickshell.shellDir + "/.."
 
     Process {
         id: _versionProc
@@ -56,10 +56,7 @@ Singleton {
         }
 
         onExited: (code, _status) => {
-            console.log("[Updater] check-deps.sh exited with code", code);
-            if (code === 0) {
-                console.log("[Updater] all dependencies satisfied");
-            } else if (code === 1) {
+            if (code === 1) {
                 const missing = _depProc._stdout.trim().split("\n").filter(s => s.length > 0);
                 console.warn("[Updater] missing dependencies:", missing.join(", "));
                 if (missing.length > 0)
@@ -87,7 +84,6 @@ Singleton {
         }
 
         onExited: (code, _status) => {
-            console.log("[Updater] check-update.sh exited with code", code);
             const lines = _checkProc._stdout.trim().split("\n").filter(s => s.length > 0);
             _checkProc._stdout = "";
 
@@ -100,14 +96,12 @@ Singleton {
             }
 
             if (code === 1) {
-                console.log("[Updater] update available, prompting user");
                 root._updateAvailable = true;
                 _promptUpdate();
             } else if (code === 2) {
                 console.warn("[Updater] check-update.sh returned error");
                 _notify("Update check failed", "Could not reach GitHub.", "normal", 8000);
             } else {
-                console.log("[Updater] already up to date");
                 root._updateAvailable = false;
             }
         }
@@ -126,12 +120,8 @@ Singleton {
             const action = _updatePromptProc._stdout.trim();
             _updatePromptProc._stdout = "";
 
-            if (action === "update") {
-                console.log("[Updater] user accepted update");
+            if (action === "update")
                 applyUpdate();
-            } else {
-                console.log("[Updater] user deferred update (action: '" + action + "')");
-            }
         }
     }
 
@@ -150,7 +140,6 @@ Singleton {
             _applyProc._stdout = "";
             root._applyInProgress = false;
 
-            console.log("[Updater] do-update.sh exited with code", code);
             if (out.length > 0)
                 console.log("[Updater] do-update.sh output:\n" + out);
 
@@ -170,10 +159,8 @@ Singleton {
     Connections {
         target: NetworkService
         function onIsOnlineChanged() {
-            if (NetworkService.isOnline && Config.checkUpdates) {
-                console.log("[Updater] Network back online, running checkNow().");
+            if (NetworkService.isOnline && Config.checkUpdates)
                 root.checkNow();
-            }
         }
     }
 
@@ -182,45 +169,28 @@ Singleton {
         interval: 60 * 60 * 1000
         repeat: true
         running: Config.checkUpdates && NetworkService.isOnline
-        onTriggered: {
-            console.log("[Updater] poll timer triggered");
-            root.checkNow();
-        }
+        onTriggered: root.checkNow()
     }
 
     Component.onCompleted: {
-        console.log("[Updater] initialized — scriptsDir:", root._scriptsDir);
-        console.log("[Updater] repoRoot:", root._repoRoot);
-        console.log("[Updater] githubRepo:", Config.githubRepo);
-        console.log("[Updater] checkDeps:", Config.checkDeps, "/ checkUpdates:", Config.checkUpdates);
         _versionProc.running = true;
-        if (Config.checkDeps) {
-            console.log("[Updater] starting dependency check");
+        if (Config.checkDeps)
             _depProc.running = true;
-        }
-        if (Config.checkUpdates && NetworkService.isOnline) {
-            console.log("[Updater] starting update check");
+        if (Config.checkUpdates && NetworkService.isOnline)
             root.checkNow();
-        }
     }
 
     function checkNow() {
-        if (!NetworkService.isOnline) {
-            console.log("[Updater] checkNow skipped, network is offline");
+        if (!NetworkService.isOnline)
             return;
-        }
-        if (_checkProc.running || _applyInProgress) {
-            console.log("[Updater] checkNow skipped, already running");
+        if (_checkProc.running || _applyInProgress)
             return;
-        }
         _checkProc.running = true;
     }
 
     function _promptUpdate() {
-        if (_updatePromptProc.running) {
-            console.log("[Updater] prompt already visible, skipping");
+        if (_updatePromptProc.running)
             return;
-        }
         _updatePromptProc.command = ["notify-send", "--action=update=  Update Now", "--action=later=  Later", "-u", "normal", "-i", "software-update-available", "-a", "QuickShell", "-t", "0", "Update available: " + root._latestVersion, "Currently on " + root._currentVersion + "\nUpdate will restart the shell when done."];
         _updatePromptProc.running = true;
     }
@@ -230,7 +200,6 @@ Singleton {
             console.warn("[Updater] applyUpdate skipped — already running");
             return;
         }
-        console.log("[Updater] starting apply");
         root._applyInProgress = true;
         _notify("Updating QuickShell...", root._currentVersion + " → " + root._latestVersion + "\nThis will only take a moment.", "low", 6000);
         _applyProc.running = true;

@@ -32,8 +32,4 @@ Singleton {
         toggleProc.running = true;
     }
 
-    function refresh() {
-        checkProc.running = false;
-        checkProc.running = true;
-    }
 }

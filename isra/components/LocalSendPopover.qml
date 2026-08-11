@@ -30,7 +30,6 @@ Item {
     readonly property bool showError: LocalSendService.resultIsError && !busy
     readonly property bool showDone: (LocalSendService.resultIsOk || LocalSendService.resultIsNeutral) && !busy
     readonly property bool showPicker: Config.localsend.enabled && !busy
-    readonly property bool showDevices: showPicker
 
     readonly property bool isOpen: root._isOpen
     property bool _isOpen: false
@@ -939,7 +938,7 @@ Item {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                visible: root.showDevices
+                                visible: root.showPicker
                                 spacing: 0
 
                                 RowLayout {

@@ -809,9 +809,7 @@ Item {
             property var pathItems: []
             property int activeIndex: -1
             property string currentDir: ""
-            property var navigateCallback: function (path) {
-                WallpaperService.navigate(path);
-            }
+            required property var navigateCallback
 
             property real _contentWidth: 0
 
@@ -1072,9 +1070,7 @@ Item {
 
             property var entry: null
             property int entryIndex: 0
-            property var navigateCallback: function (path) {
-                WallpaperService.navigate(path);
-            }
+            required property var navigateCallback
 
             readonly property bool isDir: entry?.isDir ?? false
             readonly property string entryPath: entry?.path ?? ""

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.style
+import "IconSlotSync.js" as IconSlotSync
 
 Rectangle {
     id: root
@@ -92,15 +93,7 @@ Rectangle {
     Component.onCompleted: deferSync.restart()
 
     function _syncIcon() {
-        for (let i = 0; i < iconSlot.children.length; i++) {
-            const ico = iconSlot.children[i];
-            if (ico.hasOwnProperty("iconSize"))
-                ico.iconSize = 24;
-            if (ico.hasOwnProperty("color"))
-                ico.color = Colors.md3.on_surface;
-            if (ico.hasOwnProperty("filled"))
-                ico.filled = root.checked;
-        }
+        IconSlotSync.syncIconSlot(iconSlot.children, 24, Colors.md3.on_surface, root.checked);
     }
 
     onCheckedChanged: _syncIcon()

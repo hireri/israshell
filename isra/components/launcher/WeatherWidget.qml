@@ -11,30 +11,47 @@ Item {
     property string query: ""
     readonly property bool hasResult: true
 
-    signal copyResult(string text)
+    readonly property var _liveData: ({
+        temp: LocaleService.weatherTemp,
+        high: LocaleService.weatherHigh,
+        low: LocaleService.weatherLow,
+        desc: LocaleService.weatherDesc,
+        iconName: (LocaleService.weatherError !== "") ? "brightness-alert" : LocaleService.weatherIconName,
+        iconColor: LocaleService.weatherIconColor,
+        uvi: LocaleService.weatherUvi,
+        humidity: LocaleService.weatherHumid,
+        aqi: LocaleService.weatherAqi,
+        feelsLike: LocaleService.weatherFeelsLike,
+        rainChance: LocaleService.weatherRainChance,
+        location: Config.cityName || "Local Forecast",
+        astroIcon: LocaleService.activeAstroMaterialIcon,
+        astroColor: LocaleService.activeAstroColorType === "moon" ? root.weatherColor.air : root.weatherColor.sun,
+        astroTime: LocaleService.activeAstroTime,
+        loading: LocaleService.weatherLoading,
+        error: LocaleService.weatherError !== ""
+    })
 
-    property string _temp: query === "" ? LocaleService.weatherTemp : _searchedTemp
-    property string _high: query === "" ? LocaleService.weatherHigh : _searchedHigh
-    property string _low: query === "" ? LocaleService.weatherLow : _searchedLow
-    property string _desc: query === "" ? LocaleService.weatherDesc : _searchedDesc
-        property string _iconName: _error ? "brightness-alert" : (query === "" ? LocaleService.weatherIconName : _searchedIconName)
-    property color _iconColor: query === "" ? LocaleService.weatherIconColor : _searchedIconColor
+    readonly property var _searchedData: ({
+        temp: _searchedTemp,
+        high: _searchedHigh,
+        low: _searchedLow,
+        desc: _searchedDesc,
+        iconName: _searchError ? "brightness-alert" : _searchedIconName,
+        iconColor: _searchedIconColor,
+        uvi: _searchedUvi,
+        humidity: _searchedHumidity,
+        aqi: _searchedAqi,
+        feelsLike: _searchedFeelsLike,
+        rainChance: _searchedRainChance,
+        location: _searchedLocation,
+        astroIcon: _searchedAstroIcon,
+        astroColor: _searchedAstroColorType === "moon" ? root.weatherColor.air : root.weatherColor.sun,
+        astroTime: _searchedAstroTime,
+        loading: _searchLoading,
+        error: _searchError
+    })
 
-    property string _uvi: query === "" ? LocaleService.weatherUvi : _searchedUvi
-    property string _humidity: query === "" ? LocaleService.weatherHumid : _searchedHumidity
-    property string _aqi: query === "" ? LocaleService.weatherAqi : _searchedAqi
-    property string _feelsLike: query === "" ? LocaleService.weatherFeelsLike : _searchedFeelsLike
-    property string _rainChance: query === "" ? LocaleService.weatherRainChance : _searchedRainChance
-    property string _location: query === "" ? (Config.cityName || "Local Forecast") : _searchedLocation
-
-    property string _astroIcon: query === "" ? LocaleService.activeAstroMaterialIcon : _searchedAstroIcon
-    property color _astroColor: query === "" ? 
-        (LocaleService.activeAstroColorType === "moon" ? root.weatherColor.air : root.weatherColor.sun) : 
-        (_searchedAstroColorType === "moon" ? root.weatherColor.air : root.weatherColor.sun)
-    property string _astroTime: query === "" ? LocaleService.activeAstroTime : _searchedAstroTime
-
-    property bool _loading: query === "" ? LocaleService.weatherLoading : _searchLoading
-    property bool _error: query === "" ? (LocaleService.weatherError !== "") : _searchError
+    readonly property var weatherData: query === "" ? _liveData : _searchedData
 
     property string _searchedTemp: "—"
     property string _searchedHigh: "—"
@@ -63,14 +80,6 @@ Item {
         large: 16,
         extraLarge: 28,
         full: 9999
-    })
-
-    readonly property var motion: ({
-        short2: 100,
-        short3: 150,
-        short4: 200,
-        medium3: 350,
-        long4: 600
     })
 
     readonly property var type: ({
@@ -173,9 +182,9 @@ Item {
             spacing: 16
 
             MaterialIcon {
-                name: root._iconName
+                name: root.weatherData.iconName
                 iconSize: 36
-                color: root._iconColor
+                color: root.weatherData.iconColor
                 anchors.verticalCenter: parent.verticalCenter
                 transitionType: "none"
             }
@@ -189,14 +198,14 @@ Item {
 
                     Text {
                         id: tempLabel
-                        text: root._temp
+                        text: root.weatherData.temp
                         font.pixelSize: root.type.headlineSmall
                         color: Colors.md3.on_surface
                         font.family: Config.fontFamily
                     }
 
                     Text {
-                        text: root._high + " / " + root._low
+                        text: root.weatherData.high + " / " + root.weatherData.low
                         font.pixelSize: root.type.bodyMedium
                         font.weight: Font.Medium
                         color: Colors.md3.on_surface_variant
@@ -205,7 +214,7 @@ Item {
                     }
 
                     Rectangle {
-                        visible: root._loading
+                        visible: root.weatherData.loading
                         width: 6
                         height: 6
                         radius: 3
@@ -213,7 +222,7 @@ Item {
                         anchors.verticalCenter: tempLabel.verticalCenter
                         opacity: 0.7
                         SequentialAnimation on opacity {
-                            running: root._loading
+                            running: root.weatherData.loading
                             loops: Animation.Infinite
                             NumberAnimation {
                                 to: 0.2
@@ -228,10 +237,10 @@ Item {
                 }
 
                 Text {
-                    text: root._error ? Localization.t("weather.failed_to_load") : root._desc
+                    text: root.weatherData.error ? Localization.t("weather.failed_to_load") : root.weatherData.desc
                     font.pixelSize: root.type.bodySmall
                     font.weight: Font.Medium
-                    color: root._error ? Colors.md3.error : Colors.md3.on_surface_variant
+                    color: root.weatherData.error ? Colors.md3.error : Colors.md3.on_surface_variant
                     font.family: Config.fontFamily
                 }
             }
@@ -264,7 +273,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: Localization.t("weather.uvi_value").arg(root._uvi)
+                        text: Localization.t("weather.uvi_value").arg(root.weatherData.uvi)
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall
@@ -291,7 +300,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: root._humidity
+                        text: root.weatherData.humidity
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall
@@ -319,7 +328,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: Localization.t("weather.aqi_value").arg(root._aqi)
+                        text: Localization.t("weather.aqi_value").arg(root.weatherData.aqi)
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall
@@ -347,7 +356,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: Localization.t("weather.feels_like_value").arg(root._feelsLike)
+                        text: Localization.t("weather.feels_like_value").arg(root.weatherData.feelsLike)
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall
@@ -374,7 +383,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: root._rainChance
+                        text: root.weatherData.rainChance
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall
@@ -396,13 +405,13 @@ Item {
                     spacing: 6
 
                     MaterialIcon {
-                        name: root._astroIcon
+                        name: root.weatherData.astroIcon
                         iconSize: 14
-                        color: root._astroColor
+                        color: root.weatherData.astroColor
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: root._astroTime
+                        text: root.weatherData.astroTime
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: root.type.bodySmall

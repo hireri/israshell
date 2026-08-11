@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pam
+import qs.services
 import qs.style
 
 Singleton {
@@ -14,14 +15,13 @@ Singleton {
     property bool lockAnimating: false
     property bool unlockAnimating: false
     property bool lockVisualActive: false
-    property bool isFirstLock: false 
+    property bool _isFirstLock: false
 
     property var _savedWorkspaces: ({})
     property string _savedActiveWindow: ""
     property string _savedActiveMonitor: ""
 
     signal unlocked()
-    signal lockAnimationStart()
     signal unlockAnimationStart()
 
     onCurrentTextChanged: showFailure = false
@@ -32,7 +32,7 @@ Singleton {
 
     function lock(isFresh = false): void {
         if (root.locked || root.lockAnimating) return
-        root.isFirstLock = isFresh;
+        root._isFirstLock = isFresh;
 
         if (Config.useHyprlock) {
             hyprlockProcess.running = true
@@ -41,7 +41,6 @@ Singleton {
 
         if (!isFresh) {
             lockAnimating = true
-            lockAnimationStart()
         }
         saveWorkspaceProcess.running = true
     }
@@ -67,21 +66,8 @@ Singleton {
     }
 
     function _doRestoreDispatch(saved, activeMonitor, activeWindow): void {
-        let batch = ""
-        for (const monitorName in saved) {
-            const ws = saved[monitorName]
-            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${monitorName}"})'; `
-            batch += `hyprctl dispatch 'hl.dsp.focus({workspace=${ws}})'; `
-        }
-        if (activeMonitor !== "") {
-            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${activeMonitor}"})'; `
-        }
-        if (activeWindow !== "") {
-            batch += `hyprctl dispatch focuswindow address:${activeWindow}; `
-        }
-        batch += `rm -f /run/user/$(id -u)/israshell/workspaces; `
-        if (batch.length > 0)
-            Quickshell.execDetached(["bash", "-c", batch])
+        CompositorService.restoreLayout(saved, activeMonitor, activeWindow)
+        Quickshell.execDetached(["bash", "-c", "rm -f /run/user/$(id -u)/israshell/workspaces"])
     }
 
     function _restoreWorkspaces(): void {
@@ -120,72 +106,86 @@ Singleton {
         onTriggered: root.unlockAnimating = false
     }
 
+    readonly property int _dummyWorkspaceBase: 2147483647
+
+    function _parseSaveOutput(text) {
+        const parts = text.split("---SPLIT---")
+        const monitorsText = parts[0].trim()
+        const activeWindowText = parts[1] ? parts[1].trim() : ""
+
+        let activeWindowAddr = ""
+        if (activeWindowText && activeWindowText !== "Invalid") {
+            try {
+                const win = JSON.parse(activeWindowText)
+                if (win && win.address)
+                    activeWindowAddr = win.address
+            } catch (e) {
+                console.log("Failed to parse active window JSON:", e)
+            }
+        }
+
+        return { monitors: JSON.parse(monitorsText), activeWindowAddr: activeWindowAddr }
+    }
+
+    function _buildLockBatch(monitors): string {
+        let originalFocusedMonitor = ""
+        for (const mon of monitors) {
+            if (mon.focused === true) {
+                originalFocusedMonitor = mon.name
+                root._savedActiveMonitor = mon.name
+                break
+            }
+        }
+
+        const saved = {}
+        let batch = ""
+        for (const mon of monitors) {
+            if (mon.activeWorkspace === undefined || mon.activeWorkspace.id === undefined)
+                continue
+            const ws = mon.activeWorkspace.id
+            saved[mon.name] = ws
+
+            if (!root._isFirstLock) {
+                const dummy = root._dummyWorkspaceBase - ws;
+                batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${mon.name}"})'; `
+                batch += `hyprctl dispatch 'hl.dsp.focus({workspace=${dummy}})'; `
+            } else {
+                batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${mon.name}"})'; `
+            }
+        }
+        root._savedWorkspaces = saved
+
+        const saveData = JSON.stringify({
+            workspaces: saved,
+            activeMonitor: root._savedActiveMonitor,
+            activeWindow: root._savedActiveWindow
+        })
+        batch += `mkdir -p /run/user/$(id -u)/israshell && echo '${saveData}' > /run/user/$(id -u)/israshell/workspaces; `
+
+        if (originalFocusedMonitor !== "") {
+            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${originalFocusedMonitor}"})'; `
+        }
+
+        return batch
+    }
+
     Process {
         id: saveWorkspaceProcess
         command: ["sh", "-c", "hyprctl monitors -j && echo '---SPLIT---' && hyprctl activewindow -j"]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    const parts = text.split("---SPLIT---")
-                    const monitorsText = parts[0].trim()
-                    const activeWindowText = parts[1] ? parts[1].trim() : ""
+                    const parsed = root._parseSaveOutput(text)
+                    if (parsed.activeWindowAddr)
+                        root._savedActiveWindow = parsed.activeWindowAddr
 
-                    if (activeWindowText && activeWindowText !== "Invalid") {
-                        try {
-                            const win = JSON.parse(activeWindowText)
-                            if (win && win.address) {
-                                root._savedActiveWindow = win.address
-                            }
-                        } catch (e) {
-                            console.log("Failed to parse active window JSON:", e)
-                        }
-                    }
-
-                    const monitors = JSON.parse(monitorsText)
-                    if (monitors.length === 0) {
+                    if (parsed.monitors.length === 0) {
                         lockVisualDelayTimer.start()
                         lockEngageTimer.start()
                         return
                     }
 
-                    let originalFocusedMonitor = ""
-                    for (const mon of monitors) {
-                        if (mon.focused === true) {
-                            originalFocusedMonitor = mon.name
-                            root._savedActiveMonitor = mon.name
-                            break
-                        }
-                    }
-
-                    const saved = {}
-                    let batch = ""
-                    for (const mon of monitors) {
-                        if (mon.activeWorkspace === undefined || mon.activeWorkspace.id === undefined)
-                            continue
-                        const ws = mon.activeWorkspace.id
-                        saved[mon.name] = ws
-                        
-                        if (!root.isFirstLock) {
-                            const dummy = 2147483647 - ws;
-                            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${mon.name}"})'; `
-                            batch += `hyprctl dispatch 'hl.dsp.focus({workspace=${dummy}})'; `
-                        } else {
-                            batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${mon.name}"})'; `
-                        }
-                    }
-                    root._savedWorkspaces = saved
-
-                    const saveData = JSON.stringify({
-                        workspaces: saved,
-                        activeMonitor: root._savedActiveMonitor,
-                        activeWindow: root._savedActiveWindow
-                    })
-                    batch += `mkdir -p /run/user/$(id -u)/israshell && echo '${saveData}' > /run/user/$(id -u)/israshell/workspaces; `
-
-                    if (originalFocusedMonitor !== "") {
-                        batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${originalFocusedMonitor}"})'; `
-                    }
-
+                    const batch = root._buildLockBatch(parsed.monitors)
                     if (batch.length > 0)
                         Quickshell.execDetached(["bash", "-c", batch])
                     lockVisualDelayTimer.start()

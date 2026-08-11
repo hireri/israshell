@@ -33,6 +33,20 @@ FloatingWindow {
     readonly property int pageLocale: 9
     readonly property int pageSystem: 10
 
+    readonly property var pageIndexByName: ({
+        "overview": pageOverview,
+        "network": pageNetwork,
+        "bar": pageBar,
+        "floatingdock": pageFloatingDock,
+        "background": pageBackground,
+        "clock": pageClock,
+        "display": pageDisplay,
+        "sound": pageSound,
+        "aiassistant": pageAiAssistant,
+        "locale": pageLocale,
+        "system": pageSystem
+    })
+
     property int currentPage: pageOverview
     property bool sidebarCollapsed: false
     readonly property int collapseThreshold: 900

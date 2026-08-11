@@ -33,18 +33,9 @@ Singleton {
     readonly property string weatherUvi: _weatherUvi
     readonly property string weatherSunrise: _weatherSunrise
     readonly property string weatherSunset: _weatherSunset
-    readonly property string weatherCode: _weatherCode
-    
+
     readonly property string weatherIconName: _weatherIconName
-    readonly property color weatherIconColor: {
-        switch (_weatherIconColorRole) {
-        case "tertiary": return Colors.md3.tertiary;
-        case "on_surface_variant": return Colors.md3.on_surface_variant;
-        case "outline": return Colors.md3.outline;
-        case "error": return Colors.md3.error;
-        default: return Colors.md3.primary;
-        }
-    }
+    readonly property color weatherIconColor: _colorForRole(_weatherIconColorRole)
 
     readonly property bool weatherLoading: _weatherLoading
     readonly property string weatherError: _weatherError
@@ -68,10 +59,10 @@ Singleton {
     property string _activeAstroMaterialIcon: "wb-twilight"
     property string _activeAstroColorType: "sun"
 
-    property string _rawSunrise: ""
-    property string _rawSunset: ""
-    property string _rawMoonrise: ""
-    property string _rawMoonset: ""
+    property int _sunriseHour: -1
+    property int _sunriseMinute: 0
+    property int _sunsetHour: -1
+    property int _sunsetMinute: 0
 
     property string _weatherTemp: "—"
     property string _weatherFeelsLike: "—"
@@ -83,7 +74,6 @@ Singleton {
     property string _weatherUvi: "—"
     property string _weatherSunrise: "—"
     property string _weatherSunset: "—"
-    property string _weatherCode: "0"
     property bool _weatherLoading: true
     property string _weatherError: ""
 
@@ -93,8 +83,6 @@ Singleton {
     property string _weatherAqi: "—"
     property bool _aqiLoading: true
     property string _aqiError: ""
-
-    property var _lastWeatherData: null
 
     Connections {
         target: Config
@@ -222,48 +210,14 @@ Singleton {
         const dateParts = parts[0].split('-');
         const timeParts = parts[1].split(':');
         if (dateParts.length !== 3 || timeParts.length < 2) return null;
-        
+
         const year = parseInt(dateParts[0]);
         const month = parseInt(dateParts[1]) - 1;
         const day = parseInt(dateParts[2]);
         const hour = parseInt(timeParts[0]);
         const minute = parseInt(timeParts[1]);
-        
+
         return new Date(year, month, day, hour, minute, 0, 0);
-    }
-
-    function _dateToAstroRaw(date) {
-        if (!date || isNaN(date.getTime())) return "";
-        let hours = date.getHours();
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const ampm = hours >= 12 ? "pm" : "am";
-        hours = hours % 12 || 12;
-        return hours + ":" + minutes + " " + ampm;
-    }
-
-    function _parseAstroTime(timeStr, referenceDate) {
-        if (!timeStr) return null;
-        const cleanStr = timeStr.trim().toLowerCase();
-        if (cleanStr.includes("no") || cleanStr === "" || cleanStr === "—") {
-            return null;
-        }
-
-        const match = cleanStr.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/);
-        if (!match) return null;
-
-        let hours = parseInt(match[1], 10);
-        const minutes = parseInt(match[2], 10);
-        const ampm = match[3];
-
-        if (ampm === "pm" && hours < 12) {
-            hours += 12;
-        } else if (ampm === "am" && hours === 12) {
-            hours = 0;
-        }
-
-        const d = new Date(referenceDate);
-        d.setHours(hours, minutes, 0, 0);
-        return d;
     }
 
     function _formatAstroTime(date) {
@@ -278,30 +232,30 @@ Singleton {
         return String(hDisp).padStart(2, '0') + ":" + mDisp + ampm;
     }
 
-    function _updateAstroEvent(now) {
-        if (!root._rawSunrise && !root._rawSunset && !root._rawMoonrise && !root._rawMoonset) {
-            root._activeAstroName = "—";
-            root._activeAstroTime = "—";
-            root._activeAstroMaterialIcon = "wb-twilight";
-            root._activeAstroColorType = "sun";
-            return;
+    function _colorForRole(role) {
+        switch (role) {
+        case "tertiary": return Colors.md3.tertiary;
+        case "on_surface_variant": return Colors.md3.on_surface_variant;
+        case "outline": return Colors.md3.outline;
+        case "error": return Colors.md3.error;
+        default: return Colors.md3.primary;
         }
+    }
 
-        const events = [
-            { name: "Sunrise", materialIcon: "wb-twilight", colorType: "sun", raw: root._rawSunrise },
-            { name: "Sunset", materialIcon: "wb-twilight", colorType: "sun", raw: root._rawSunset },
-            { name: "Moonrise", materialIcon: "wb-twilight2", colorType: "moon", raw: root._rawMoonrise },
-            { name: "Moonset", materialIcon: "wb-twilight2", colorType: "moon", raw: root._rawMoonset }
-        ];
+    function _bestAstroEvent(sunriseHour, sunriseMinute, sunsetHour, sunsetMinute, now) {
+        const events = [];
+        if (sunriseHour >= 0)
+            events.push({ name: "Sunrise", materialIcon: "wb-twilight", colorType: "sun", hour: sunriseHour, minute: sunriseMinute });
+        if (sunsetHour >= 0)
+            events.push({ name: "Sunset", materialIcon: "wb-twilight", colorType: "sun", hour: sunsetHour, minute: sunsetMinute });
 
         let bestEvent = null;
         let bestDiff = Infinity;
         const oneDayMs = 24 * 60 * 60 * 1000;
 
         events.forEach(function(ev) {
-            const todayTime = root._parseAstroTime(ev.raw, now);
-            if (!todayTime) return;
-
+            const todayTime = new Date(now);
+            todayTime.setHours(ev.hour, ev.minute, 0, 0);
             const times = [todayTime, new Date(todayTime.getTime() - oneDayMs)];
 
             times.forEach(function(t) {
@@ -317,6 +271,12 @@ Singleton {
                 }
             });
         });
+
+        return bestEvent;
+    }
+
+    function _updateAstroEvent(now) {
+        const bestEvent = root._bestAstroEvent(root._sunriseHour, root._sunriseMinute, root._sunsetHour, root._sunsetMinute, now);
 
         if (bestEvent) {
             root._activeAstroName = bestEvent.name;
@@ -339,51 +299,50 @@ Singleton {
         onTriggered: root._fetchWeather()
     }
 
-    function _fetchWeather() {
-        if (!NetworkService.isOnline) {
-            root._weatherError = Localization.t("weather.offline");
-            root._weatherLoading = false;
-            return;
-        }
-
-        if (!_coordsKnown) {
-            root._maybeFetchAqi();
-            return;
-        }
-
+    function _weatherUrl(lat, lon) {
         const tempUnit = Config.useFahrenheit ? "fahrenheit" : "celsius";
-        const url = "https://api.open-meteo.com/v1/forecast"
-            + "?latitude=" + _lat
-            + "&longitude=" + _lon
+        return "https://api.open-meteo.com/v1/forecast"
+            + "?latitude=" + lat
+            + "&longitude=" + lon
             + "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day"
             + "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max"
             + "&hourly=precipitation_probability"
             + "&temperature_unit=" + tempUnit
             + "&timezone=auto"
             + "&forecast_days=1";
+    }
 
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
-        xhr.timeout = 15000;
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState !== XMLHttpRequest.DONE)
-                return;
-            if (xhr.status === 200) {
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    root._lastWeatherData = data;
-                    root._applyWeatherData(data);
-                } catch (e) {
-                    root._weatherError = "parse error: " + e;
-                    console.warn("[LocaleService] weather parse error:", e);
-                }
-            } else {
-                root._weatherError = "HTTP " + xhr.status;
-                console.warn("[LocaleService] weather fetch failed:", xhr.status);
-            }
-            root._weatherLoading = false;
+    function _parseWeatherResponse(data) {
+        const cur = data.current;
+        const daily = data.daily;
+        const hourly = data.hourly;
+
+        const precipProb = hourly.precipitation_probability || [];
+        let maxChance = 0;
+        for (let i = 0; i < Math.min(24, precipProb.length); i++) {
+            const chance = parseInt(precipProb[i]);
+            if (chance > maxChance)
+                maxChance = chance;
+        }
+
+        const sunriseDate = _parseOpenMeteoDateTime(daily.sunrise[0]);
+        const sunsetDate = _parseOpenMeteoDateTime(daily.sunset[0]);
+        const details = _getWmoDetails(cur.weather_code, cur.is_day);
+
+        return {
+            temp: Math.round(cur.temperature_2m) + "°",
+            feelsLike: Math.round(cur.apparent_temperature) + "°",
+            high: Math.round(daily.temperature_2m_max[0]) + "°",
+            low: Math.round(daily.temperature_2m_min[0]) + "°",
+            humidity: Math.round(cur.relative_humidity_2m) + "%",
+            uvi: String(Math.round(daily.uv_index_max[0] || 0)),
+            rainChance: String(maxChance) + "%",
+            sunriseDate: sunriseDate,
+            sunsetDate: sunsetDate,
+            desc: details.desc,
+            iconName: details.iconName,
+            iconColorRole: details.colorRole
         };
-        xhr.send();
     }
 
     function _getWmoDetails(wmoCode, isDay) {
@@ -434,56 +393,67 @@ Singleton {
             colorRole = "error";
             desc = Localization.t("weather.thunderstorm");
         }
-        
+
         return { iconName: iconName, colorRole: colorRole, desc: desc };
     }
 
-    function _updateWeatherIcon(wmoCode, isDay) {
-        const details = _getWmoDetails(wmoCode, isDay);
-        _weatherIconName = details.iconName;
-        _weatherIconColorRole = details.colorRole;
-        _weatherDesc = details.desc;
+    function _fetchWeather() {
+        if (!NetworkService.isOnline) {
+            root._weatherError = Localization.t("weather.offline");
+            root._weatherLoading = false;
+            return;
+        }
+
+        if (!_coordsKnown) {
+            root._maybeFetchAqi();
+            return;
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", root._weatherUrl(_lat, _lon));
+        xhr.timeout = 15000;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return;
+            if (xhr.status === 200) {
+                try {
+                    const parsed = root._parseWeatherResponse(JSON.parse(xhr.responseText));
+                    root._applyWeatherData(parsed);
+                } catch (e) {
+                    root._weatherError = "parse error: " + e;
+                    console.warn("[LocaleService] weather parse error:", e);
+                }
+            } else {
+                root._weatherError = "HTTP " + xhr.status;
+                console.warn("[LocaleService] weather fetch failed:", xhr.status);
+            }
+            root._weatherLoading = false;
+        };
+        xhr.send();
     }
 
-    function _applyWeatherData(data) {
+    function _applyWeatherData(parsed) {
         try {
-            const cur = data.current;
-            const daily = data.daily;
-            const hourly = data.hourly;
+            root._weatherTemp = parsed.temp;
+            root._weatherFeelsLike = parsed.feelsLike;
+            root._weatherRainChance = parsed.rainChance;
+            root._weatherHigh = parsed.high;
+            root._weatherLow = parsed.low;
+            root._weatherHumid = parsed.humidity;
+            root._weatherUvi = parsed.uvi;
 
-            root._weatherTemp = Math.round(cur.temperature_2m) + "°";
-            root._weatherFeelsLike = Math.round(cur.apparent_temperature) + "°";
+            root._weatherSunrise = parsed.sunriseDate ? _formatAstroTime(parsed.sunriseDate) : "—";
+            root._weatherSunset = parsed.sunsetDate ? _formatAstroTime(parsed.sunsetDate) : "—";
 
-            const precipProb = hourly.precipitation_probability || [];
-            let maxChance = 0;
-            for (let i = 0; i < Math.min(24, precipProb.length); i++) {
-                let chance = parseInt(precipProb[i]);
-                if (chance > maxChance) {
-                    maxChance = chance;
-                }
-            }
-            root._weatherRainChance = String(maxChance) + "%";
-
-            root._weatherHigh = Math.round(daily.temperature_2m_max[0]) + "°";
-            root._weatherLow = Math.round(daily.temperature_2m_min[0]) + "°";
-            
-            root._weatherHumid = Math.round(cur.relative_humidity_2m) + "%";
-            root._weatherUvi = String(Math.round(daily.uv_index_max[0] || 0));
-
-            const sunriseDate = _parseOpenMeteoDateTime(daily.sunrise[0]);
-            const sunsetDate = _parseOpenMeteoDateTime(daily.sunset[0]);
-
-            root._weatherSunrise = sunriseDate ? _formatAstroTime(sunriseDate) : "—";
-            root._weatherSunset = sunsetDate ? _formatAstroTime(sunsetDate) : "—";
-            
-            root._weatherCode = String(cur.weather_code);
-            root._updateWeatherIcon(cur.weather_code, cur.is_day);
+            root._weatherIconName = parsed.iconName;
+            root._weatherIconColorRole = parsed.iconColorRole;
+            root._weatherDesc = parsed.desc;
             root._weatherError = "";
 
-            root._rawSunrise = sunriseDate ? _dateToAstroRaw(sunriseDate) : "";
-            root._rawSunset = sunsetDate ? _dateToAstroRaw(sunsetDate) : "";
-            root._rawMoonrise = "";
-            root._rawMoonset = "";
+            root._sunriseHour = parsed.sunriseDate ? parsed.sunriseDate.getHours() : -1;
+            root._sunriseMinute = parsed.sunriseDate ? parsed.sunriseDate.getMinutes() : 0;
+            root._sunsetHour = parsed.sunsetDate ? parsed.sunsetDate.getHours() : -1;
+            root._sunsetMinute = parsed.sunsetDate ? parsed.sunsetDate.getMinutes() : 0;
 
             root._updateAstroEvent(new Date());
         } catch (e) {
@@ -540,99 +510,21 @@ Singleton {
     }
 
     function _fetchWeatherForCoords(lat, lon, prettyLocation, callback) {
-        const tempUnit = Config.useFahrenheit ? "fahrenheit" : "celsius";
-        const url = "https://api.open-meteo.com/v1/forecast"
-            + "?latitude=" + lat
-            + "&longitude=" + lon
-            + "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day"
-            + "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max"
-            + "&hourly=precipitation_probability"
-            + "&temperature_unit=" + tempUnit
-            + "&timezone=auto"
-            + "&forecast_days=1";
-
         const xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+        xhr.open("GET", root._weatherUrl(lat, lon));
         xhr.timeout = 15000;
         xhr.onreadystatechange = function () {
             if (xhr.readyState !== XMLHttpRequest.DONE)
                 return;
             if (xhr.status === 200) {
                 try {
-                    const data = JSON.parse(xhr.responseText);
-                    const cur = data.current;
-                    const daily = data.daily;
-                    const hourly = data.hourly;
-
-                    const temp = Math.round(cur.temperature_2m) + "°";
-                    const feelsLike = Math.round(cur.apparent_temperature) + "°";
-                    const high = Math.round(daily.temperature_2m_max[0]) + "°";
-                    const low = Math.round(daily.temperature_2m_min[0]) + "°";
-                    const humidity = Math.round(cur.relative_humidity_2m) + "%";
-                    const uvi = String(Math.round(daily.uv_index_max[0] || 0));
-
-                    const precipProb = hourly.precipitation_probability || [];
-                    let maxChance = 0;
-                    for (let i = 0; i < Math.min(24, precipProb.length); i++) {
-                        let chance = parseInt(precipProb[i]);
-                        if (chance > maxChance) {
-                            maxChance = chance;
-                        }
-                    }
-                    const rainChance = String(maxChance) + "%";
-
-                    const sunriseDate = _parseOpenMeteoDateTime(daily.sunrise[0]);
-                    const sunsetDate = _parseOpenMeteoDateTime(daily.sunset[0]);
-
-                    let activeAstroTime = "—";
-                    let activeAstroIcon = "wb-twilight";
-                    let activeAstroColorType = "sun";
-
+                    const parsed = root._parseWeatherResponse(JSON.parse(xhr.responseText));
                     const now = new Date();
-                    if (sunriseDate && sunsetDate) {
-                        const oneDayMs = 24 * 60 * 60 * 1000;
-                        const events = [
-                            { name: "Sunrise", icon: "wb-twilight", colorType: "sun", time: sunriseDate },
-                            { name: "Sunset", icon: "wb-twilight", colorType: "sun", time: sunsetDate }
-                        ];
-
-                        let bestEvent = null;
-                        let bestDiff = Infinity;
-
-                        events.forEach(function(ev) {
-                            const times = [ev.time, new Date(ev.time.getTime() - oneDayMs)];
-                            times.forEach(function(t) {
-                                const diff = now.getTime() - t.getTime();
-                                if (diff >= 0 && diff < bestDiff) {
-                                    bestDiff = diff;
-                                    bestEvent = {
-                                        name: ev.name,
-                                        icon: ev.icon,
-                                        colorType: ev.colorType,
-                                        time: t
-                                    };
-                                }
-                            });
-                        });
-
-                        if (bestEvent) {
-                            activeAstroTime = _formatAstroTime(bestEvent.time);
-                            activeAstroIcon = bestEvent.icon;
-                            activeAstroColorType = bestEvent.colorType;
-                        }
-                    } else if (sunriseDate) {
-                        activeAstroTime = _formatAstroTime(sunriseDate);
-                    }
-
-                    const details = _getWmoDetails(cur.weather_code, cur.is_day);
-                    
-                    let mappedColor = Colors.md3.primary;
-                    switch (details.colorRole) {
-                    case "tertiary": mappedColor = Colors.md3.tertiary; break;
-                    case "on_surface_variant": mappedColor = Colors.md3.on_surface_variant; break;
-                    case "outline": mappedColor = Colors.md3.outline; break;
-                    case "error": mappedColor = Colors.md3.error; break;
-                    }
+                    const sunriseHour = parsed.sunriseDate ? parsed.sunriseDate.getHours() : -1;
+                    const sunriseMinute = parsed.sunriseDate ? parsed.sunriseDate.getMinutes() : 0;
+                    const sunsetHour = parsed.sunsetDate ? parsed.sunsetDate.getHours() : -1;
+                    const sunsetMinute = parsed.sunsetDate ? parsed.sunsetDate.getMinutes() : 0;
+                    const bestEvent = root._bestAstroEvent(sunriseHour, sunriseMinute, sunsetHour, sunsetMinute, now);
 
                     const aqiUrl = "https://air-quality-api.open-meteo.com/v1/air-quality"
                         + "?latitude=" + lat
@@ -668,20 +560,20 @@ Singleton {
                         }
 
                         callback(null, {
-                            temp: temp,
-                            feelsLike: feelsLike,
-                            high: high,
-                            low: low,
-                            humidity: humidity,
-                            uvi: uvi,
-                            rainChance: rainChance,
-                            astroTime: activeAstroTime,
-                            astroIcon: activeAstroIcon,
-                            astroColorType: activeAstroColorType,
+                            temp: parsed.temp,
+                            feelsLike: parsed.feelsLike,
+                            high: parsed.high,
+                            low: parsed.low,
+                            humidity: parsed.humidity,
+                            uvi: parsed.uvi,
+                            rainChance: parsed.rainChance,
+                            astroTime: bestEvent ? root._formatAstroTime(bestEvent.time) : "—",
+                            astroIcon: bestEvent ? bestEvent.materialIcon : "wb-twilight",
+                            astroColorType: bestEvent ? bestEvent.colorType : "sun",
                             location: prettyLocation,
-                            desc: details.desc,
-                            iconName: details.iconName,
-                            iconColor: mappedColor,
+                            desc: parsed.desc,
+                            iconName: parsed.iconName,
+                            iconColor: root._colorForRole(parsed.iconColorRole),
                             aqi: aqiVal
                         });
                     };

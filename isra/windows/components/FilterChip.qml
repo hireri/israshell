@@ -35,10 +35,7 @@ Rectangle {
         id: mouseArea
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        onClicked: {
-            root.active = !root.active;
-            root.toggled(root.active);
-        }
+        onClicked: root.toggled(!root.active)
     }
 
     Behavior on implicitWidth {

@@ -7,7 +7,7 @@ Item {
 
     property string placeholder: Localization.t("chipAdd.add")
     property int maxFieldWidth: 160
-    signal confirmed(string value)
+    signal committed(string value)
 
     property bool editing: false
 
@@ -135,7 +135,7 @@ Item {
     function _commit() {
         const val = field.text.trim();
         if (val.length > 0) {
-            root.confirmed(val);
+            root.committed(val);
         }
         _cancel();
     }

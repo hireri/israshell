@@ -18,7 +18,6 @@ Singleton {
     property string currentDir: Quickshell.env("HOME") + "/Pictures"
 
     property int sortMode: 0
-    readonly property var sortModeLabels: ["A → Z", "Z → A", "Newest", "Oldest"]
 
     function cycleSortMode(): void {
         sortMode = (sortMode + 1) % 4;
@@ -154,69 +153,46 @@ Singleton {
         selectWall(walls[Math.floor(Math.random() * walls.length)].path);
     }
 
-    function randomizeWallhaven() {
+    function _startDownload(url, dest) {
+        downloadProc.url = url;
+        downloadProc.dest = dest;
+        downloadProc.running = false;
+        downloadProc.running = true;
+    }
+
+    function _fetchRandomFromApi(sourceName, apiUrl, extractUrl) {
         if (applying || loading)
             return;
-        const purity = Config.allowNsfw ? "110" : "100";
         const req = new XMLHttpRequest();
-        req.open("GET", "https://wallhaven.cc/api/v1/search?sorting=random&purity=" + purity);
+        req.open("GET", apiUrl);
         req.onreadystatechange = () => {
             if (req.readyState !== XMLHttpRequest.DONE)
                 return;
             if (req.status !== 200) {
-                console.log("[Wallpaper] Wallhaven fetch failed:", req.status);
+                console.log("[Wallpaper] " + sourceName + " fetch failed:", req.status);
                 return;
             }
             try {
-                const res = JSON.parse(req.responseText);
-                if (!res.data || res.data.length === 0)
-                    return;
-                const url = res.data[0].path;
+                const url = extractUrl(JSON.parse(req.responseText));
                 if (!url)
                     return;
                 const ext = url.split(".").pop().split("?")[0];
-                const dest = Quickshell.env("HOME") + "/Pictures/Random/wallhaven_" + Date.now() + "." + ext;
-                wallhavenDownloadProc.url = url;
-                wallhavenDownloadProc.dest = dest;
-                wallhavenDownloadProc.running = false;
-                wallhavenDownloadProc.running = true;
+                const dest = Quickshell.env("HOME") + "/Pictures/Random/" + sourceName.toLowerCase() + "_" + Date.now() + "." + ext;
+                _startDownload(url, dest);
             } catch (e) {
-                console.log("[Wallpaper] Wallhaven parse error:", e);
+                console.log("[Wallpaper] " + sourceName + " parse error:", e);
             }
         };
         req.send();
     }
 
+    function randomizeWallhaven() {
+        const purity = Config.allowNsfw ? "110" : "100";
+        _fetchRandomFromApi("Wallhaven", "https://wallhaven.cc/api/v1/search?sorting=random&purity=" + purity, res => (res.data && res.data.length > 0) ? res.data[0].path : null);
+    }
+
     function randomizeKonachan() {
-        if (applying || loading)
-            return;
-        const req = new XMLHttpRequest();
-        req.open("GET", "https://konachan.net/post.json?limit=1&tags=order:random+" + (Config.allowNsfw ? "rating:e" : "rating:s"));
-        req.onreadystatechange = () => {
-            if (req.readyState !== XMLHttpRequest.DONE)
-                return;
-            if (req.status !== 200) {
-                console.log("[Wallpaper] Konachan fetch failed:", req.status);
-                return;
-            }
-            try {
-                const posts = JSON.parse(req.responseText);
-                if (!posts || posts.length === 0)
-                    return;
-                const url = posts[0].file_url;
-                if (!url)
-                    return;
-                const ext = url.split(".").pop().split("?")[0];
-                const dest = Quickshell.env("HOME") + "/Pictures/Random/konachan_" + Date.now() + "." + ext;
-                konaDownloadProc.url = url;
-                konaDownloadProc.dest = dest;
-                konaDownloadProc.running = false;
-                konaDownloadProc.running = true;
-            } catch (e) {
-                console.log("[Wallpaper] Konachan parse error:", e);
-            }
-        };
-        req.send();
+        _fetchRandomFromApi("Konachan", "https://konachan.net/post.json?limit=1&tags=order:random+" + (Config.allowNsfw ? "rating:e" : "rating:s"), posts => (posts && posts.length > 0) ? posts[0].file_url : null);
     }
 
     function randomizeReddit() {
@@ -230,10 +206,6 @@ Singleton {
     function openFolder() {
         openFolderProc.running = false;
         openFolderProc.running = true;
-    }
-
-    function refresh() {
-        _runList();
     }
 
     function _fetchCandidates() {
@@ -548,30 +520,16 @@ Singleton {
     }
 
     Process {
-        id: konaDownloadProc
+        id: downloadProc
         property string url: ""
         property string dest: ""
         command: ["bash", "-c", "mkdir -p " + JSON.stringify(Quickshell.env("HOME") + "/Pictures/Random") + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
         running: false
         onExited: (code, _) => {
-            if (code === 0 && konaDownloadProc.dest !== "")
-                selectWall(konaDownloadProc.dest);
+            if (code === 0 && downloadProc.dest !== "")
+                selectWall(downloadProc.dest);
             else
-                console.log("[Wallpaper] Konachan download failed, code:", code);
-        }
-    }
-
-    Process {
-        id: wallhavenDownloadProc
-        property string url: ""
-        property string dest: ""
-        command: ["bash", "-c", "mkdir -p " + JSON.stringify(Quickshell.env("HOME") + "/Pictures/Random") + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
-        running: false
-        onExited: (code, _) => {
-            if (code === 0 && wallhavenDownloadProc.dest !== "")
-                selectWall(wallhavenDownloadProc.dest);
-            else
-                console.log("[Wallpaper] Wallhaven download failed, code:", code);
+                console.log("[Wallpaper] Download failed, code:", code);
         }
     }
 
@@ -609,27 +567,12 @@ Singleton {
                     const ext = finalUrl.split('.').pop().split(/[?#]/)[0] || "jpg";
                     const dest = Quickshell.env("HOME") + "/Pictures/Random/reddit_" + Date.now() + "." + ext;
 
-                    redditDownloadProc.url = finalUrl;
-                    redditDownloadProc.dest = dest;
-                    redditDownloadProc.running = false;
-                    redditDownloadProc.running = true;
+                    _startDownload(finalUrl, dest);
                 } catch (e) {
                     console.error("Reddit JSON parse error:", e);
                     console.error("Buffer preview:", outputBuffer.substring(0, 300));
                 }
             }
-        }
-    }
-
-    Process {
-        id: redditDownloadProc
-        property string url: ""
-        property string dest: ""
-        command: ["bash", "-c", "mkdir -p " + JSON.stringify(Quickshell.env("HOME") + "/Pictures/Random") + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
-        running: false
-        onExited: (code, _) => {
-            if (code === 0 && redditDownloadProc.dest !== "")
-                selectWall(redditDownloadProc.dest);
         }
     }
 

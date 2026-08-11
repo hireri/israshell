@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.style
+import "IconSlotSync.js" as IconSlotSync
 
 Rectangle {
     id: root
@@ -93,18 +94,7 @@ Rectangle {
     onActiveChanged: _syncIcon()
 
     function _syncIcon() {
-        for (let i = 0; i < iconSlot.children.length; i++) {
-            const ico = iconSlot.children[i];
-            if (ico.hasOwnProperty("iconSize")) {
-                ico.iconSize = 20;
-            }
-            if (ico.hasOwnProperty("color")) {
-                ico.color = Qt.binding(() => root.active ? Colors.md3.on_secondary_container : Colors.md3.outline);
-            }
-            if (ico.hasOwnProperty("filled")) {
-                ico.filled = Qt.binding(() => root.active);
-            }
-        }
+        IconSlotSync.syncIconSlot(iconSlot.children, 20, root.active ? Colors.md3.on_secondary_container : Colors.md3.outline, root.active);
     }
 
     MouseArea {

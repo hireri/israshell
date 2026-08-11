@@ -10,12 +10,21 @@ import qs.components.qstiles
 Singleton {
     id: root
 
-    readonly property var sizeSteps: [25, 50, 75, 100]
-
     function openSettings(page: string): void {
         PanelService.closeAll();
         appletProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", page];
         appletProc.running = true;
+    }
+
+    function _formatHourMinute(timeStr) {
+        const parts = timeStr.split(":");
+        const h = parseInt(parts[0], 10);
+        const m = parts[1];
+        if (Config.hourFormat === 0)
+            return String(h).padStart(2, '0') + ":" + m;
+        const hDisp = h % 12 || 12;
+        const ap = h >= 12 ? "PM" : "AM";
+        return hDisp + ":" + m + " " + (Config.hourFormat === 2 ? ap : ap.toLowerCase());
     }
 
     function runScreencap(verb: string): void {
@@ -184,10 +193,13 @@ Singleton {
 
     Component {
         id: nightlightWideComp
-        NightLightWideTile {
+        WideActionTile {
             offSecondary: true
             active: NightLightService.active
             label: Localization.t("qsTileService.night_light")
+            sublabelForOn: on => Config.nightLight.scheduleEnabled
+                ? ((on ? "Off at " : "On at ") + root._formatHourMinute(on ? Config.nightLight.sunrise : Config.nightLight.sunset))
+                : ""
             iconComponent: MaterialIcon {
                 name: "nightlight"
                 iconSize: 22
@@ -346,17 +358,27 @@ Singleton {
 
     Component {
         id: recordCompactComp
-        RecordCompactTile {
+        CompactToggleTile {
             active: ScreencapService.isRecording
+            accentColor: Colors.md3.error
+            onAccentColor: Colors.md3.on_error
+            iconComponent: MaterialIcon {
+                name: "record"
+                iconSize: 22
+                transitionType: "none"
+            }
             onToggled: root.runScreencap("record")
         }
     }
 
     Component {
         id: recordWideComp
-        RecordWideTile {
+        SimpleIconLabelTile {
             active: ScreencapService.isRecording
             label: Localization.t("qsTileService.record")
+            accentColor: Colors.md3.error
+            onAccentColor: Colors.md3.on_error
+            sublabelForOn: on => on ? ScreencapService.recordingTime : "Not Recording"
             iconComponent: MaterialIcon {
                 name: "record"
                 iconSize: 22
@@ -383,9 +405,12 @@ Singleton {
 
     Component {
         id: darkThemeWideComp
-        DarkThemeWideTile {
+        WideActionTile {
             active: WallpaperService.isDark
             label: Localization.t("qsTileService.dark_theme")
+            sublabelForOn: on => Config.nightLight.autoDarkMode
+                ? ((on ? "Light at " : "Dark at ") + root._formatHourMinute(on ? Config.nightLight.sunrise : Config.nightLight.sunset))
+                : ""
             iconComponent: MaterialIcon {
                 name: "contrast"
                 iconSize: 22
@@ -450,26 +475,15 @@ Singleton {
 
     readonly property var defaultDisabledIds: ["localsend", "screenshot", "record", "colorPicker", "cts", "ocr", "darkTheme", "mediaMini"]
 
-    readonly property var compactComponentMap: {
+    function _indexBy(key) {
         const m = {};
         for (const d of definitions)
-            m[d.id] = d.compactComponent;
+            m[d.id] = d[key];
         return m;
     }
 
-    readonly property var wideComponentMap: {
-        const m = {};
-        for (const d of definitions)
-            m[d.id] = d.wideComponent;
-        return m;
-    }
-
-    readonly property var labelMap: {
-        const m = {};
-        for (const d of definitions)
-            m[d.id] = d.label;
-        return m;
-    }
+    readonly property var compactComponentMap: _indexBy("compactComponent")
+    readonly property var wideComponentMap: _indexBy("wideComponent")
 
     function defaultLayout() {
         const disabled = new Set(defaultDisabledIds);

@@ -11,8 +11,6 @@ SettingRow {
     property int fieldWidth: 180
     property int fieldHeight: 36
     property bool isLast: false
-    property alias fieldContainer: fieldRect
-    property alias fieldItem: field
 
     signal committed(string value)
 

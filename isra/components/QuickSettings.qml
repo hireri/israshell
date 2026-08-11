@@ -27,6 +27,8 @@ Item {
     property bool _instantHidden: false
 
     property bool _editVisual: false
+    readonly property bool _showNormal: !editMode && !_editVisual
+    readonly property bool _showEdit: editMode && _editVisual
     onEditModeChanged: editFadeTimer.restart()
 
     Timer {
@@ -365,7 +367,7 @@ Item {
                             id: userRow
                             anchors.fill: parent
                             spacing: 12
-                            opacity: (!root.editMode && !root._editVisual) ? 1 : 0
+                            opacity: root._showNormal ? 1 : 0
                             visible: opacity > 0
 
                             Behavior on opacity {
@@ -457,118 +459,35 @@ Item {
                                     anchors.centerIn: parent
                                     spacing: 2
 
-                                    Rectangle {
-                                        width: 32
-                                        height: 32
-                                        radius: width / 2
-                                        color: tileEditMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_highest, 0)
+                                    ActionIconBtn {
+                                        btnIcon: "edit"
+                                        onBtnClicked: root.editMode = true
+                                    }
 
-                                        Behavior on color {
-                                            ColorAnimation { duration: 150 }
-                                        }
-
-                                        MaterialIcon {
-                                            name: "edit"
-                                            anchors.centerIn: parent
-                                            iconSize: 16
-                                            color: tileEditMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                                        }
-
-                                        MouseArea {
-                                            id: tileEditMouse
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            hoverEnabled: true
-                                            onClicked: root.editMode = true
+                                    ActionIconBtn {
+                                        btnIcon: "restart"
+                                        onBtnClicked: {
+                                            root.isOpen = false;
+                                            Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -n -c isra"]);
                                         }
                                     }
 
-                                    Rectangle {
-                                        width: 32
-                                        height: 32
-                                        radius: width / 2
-                                        color: reloadMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_highest, 0)
-
-                                        Behavior on color {
-                                            ColorAnimation { duration: 150 }
-                                        }
-
-                                        MaterialIcon {
-                                            name: "restart"
-                                            anchors.centerIn: parent
-                                            iconSize: 16
-                                            color: reloadMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                                        }
-
-                                        MouseArea {
-                                            id: reloadMouse
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            hoverEnabled: true
-                                            onClicked: {
-                                                root.isOpen = false;
-                                                Quickshell.execDetached(["bash", "-c", "kill $(pidof quickshell); sleep 0.1; qs -n -c isra"]);
-                                            }
+                                    ActionIconBtn {
+                                        btnIcon: "settings"
+                                        onBtnClicked: {
+                                            root.isOpen = false;
+                                            sysProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"];
+                                            sysProc.running = true;
                                         }
                                     }
 
-                                    Rectangle {
-                                        width: 32
-                                        height: 32
-                                        radius: width / 2
-                                        color: editMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_highest, 0)
-
-                                        Behavior on color {
-                                            ColorAnimation { duration: 150 }
-                                        }
-
-                                        MaterialIcon {
-                                            name: "settings"
-                                            anchors.centerIn: parent
-                                            iconSize: 16
-                                            color: editMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                                        }
-
-                                        MouseArea {
-                                            id: editMouse
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            hoverEnabled: true
-                                            onClicked: {
-                                                root.isOpen = false;
-                                                sysProc.command = ["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"];
-                                                sysProc.running = true;
-                                            }
-                                        }
-                                    }
-
-                                    Rectangle {
+                                    ActionIconBtn {
                                         id: userRowRight
-                                        width: 32
-                                        height: 32
-                                        radius: width / 2
-                                        color: pwrMouse.containsMouse ? Colors.md3.error : Qt.alpha(Colors.md3.surface_container_highest, 0)
-
-                                        Behavior on color {
-                                            ColorAnimation { duration: 150 }
-                                        }
-
-                                        MaterialIcon {
-                                            name: "shutdown"
-                                            anchors.centerIn: parent
-                                            iconSize: 16
-                                            color: pwrMouse.containsMouse ? Colors.md3.on_error : Colors.md3.on_surface_variant
-                                        }
-
-                                        MouseArea {
-                                            id: pwrMouse
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            hoverEnabled: true
-                                            onClicked: {
-                                                root.isOpen = false;
-                                                PowerMenuState.toggle();
-                                            }
+                                        btnIcon: "shutdown"
+                                        danger: true
+                                        onBtnClicked: {
+                                            root.isOpen = false;
+                                            PowerMenuState.toggle();
                                         }
                                     }
                                 }
@@ -578,7 +497,7 @@ Item {
                         RowLayout {
                             id: editHeaderRow
                             anchors.fill: parent
-                            opacity: (root.editMode && root._editVisual) ? 1 : 0
+                            opacity: root._showEdit ? 1 : 0
                             visible: opacity > 0
 
                             Behavior on opacity {
@@ -744,7 +663,7 @@ Item {
                                         bottomMargin: 0
                                     }
                                     spacing: 4
-                                    opacity: (!root.editMode && !root._editVisual) ? 1 : 0
+                                    opacity: root._showNormal ? 1 : 0
                                     visible: opacity > 0
 
                                     Behavior on opacity {
@@ -861,7 +780,7 @@ Item {
                                     topLeftRadius: 18
                                     topRightRadius: 18
                                     color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                                    opacity: (root.editMode && root._editVisual) ? 1 : 0
+                                    opacity: root._showEdit ? 1 : 0
                                     visible: opacity > 0
 
                                     Behavior on opacity {
@@ -900,7 +819,7 @@ Item {
                                     spacing: 12
                                     readonly property bool isAllCaughtUp: NotificationService.qsGroupModel.count === 0
 
-                                    opacity: (isAllCaughtUp && !root.editMode && !root._editVisual) ? 1.0 : 0.0
+                                    opacity: (isAllCaughtUp && root._showNormal) ? 1.0 : 0.0
                                     visible: opacity > 0
 
                                     Behavior on opacity {
@@ -952,7 +871,7 @@ Item {
                                     anchors.margins: 8
                                     contentHeight: notifCol.implicitHeight
                                     clip: false
-                                    opacity: (!root.editMode && !root._editVisual) ? 1 : 0
+                                    opacity: root._showNormal ? 1 : 0
                                     visible: opacity > 0
 
                                     Behavior on opacity {
@@ -999,7 +918,7 @@ Item {
                                     anchors.margins: 8
                                     contentHeight: removedTray.implicitHeight
                                     clip: false
-                                    opacity: (root.editMode && root._editVisual) ? 1 : 0
+                                    opacity: root._showEdit ? 1 : 0
                                     visible: opacity > 0
 
                                     Behavior on opacity {
@@ -1025,11 +944,39 @@ Item {
     Process {
         id: sysProc
     }
-    Process {
-        id: settingsProc
+
+    component ActionIconBtn: Rectangle {
+        id: aBtn
+        property string btnIcon: ""
+        property bool danger: false
+        signal btnClicked
+
+        width: 32
+        height: 32
+        radius: width / 2
+        color: aBtnMA.containsMouse
+            ? (aBtn.danger ? Colors.md3.error : Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity))
+            : Qt.alpha(Colors.md3.surface_container_highest, 0)
+
+        Behavior on color {
+            ColorAnimation { duration: 150 }
+        }
+
+        MaterialIcon {
+            name: aBtn.btnIcon
+            anchors.centerIn: parent
+            iconSize: 16
+            color: aBtnMA.containsMouse ? (aBtn.danger ? Colors.md3.on_error : Colors.md3.on_surface) : Colors.md3.on_surface_variant
+        }
+
+        MouseArea {
+            id: aBtnMA
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onClicked: aBtn.btnClicked()
+        }
     }
-
-
 
     component QsSliderRow: Item {
         id: sliderRow
@@ -1249,7 +1196,6 @@ Item {
 
     component StatusIcon: Item {
         property bool active: true
-        property string icon: ""
         property Component iconComponent: null
         property bool overrideColor: false
         property color iconColor: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface

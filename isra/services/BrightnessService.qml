@@ -28,11 +28,6 @@ Singleton {
         _gammaText = String(gammaVal);
     }
 
-    function adjustBrightness(delta) {
-        let newGamma = Math.round(Math.max(1, Math.min(100, _gamma + delta)));
-        setBrightness(newGamma / 100.0);
-    }
-
     Process {
         id: getGammaProc
         running: true

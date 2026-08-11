@@ -30,12 +30,6 @@ Item {
         }
         spacing: 3
 
-        Item {
-            Layout.preferredWidth: visible ? implicitWidth : 0
-            implicitWidth: 0
-            visible: false
-        }
-
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 28

@@ -552,6 +552,11 @@ Scope {
         id: copyProc
         running: false
     }
+
+    function copyToClipboard(text) {
+        copyProc.command = ["wl-copy", text];
+        copyProc.running = true;
+    }
     Process {
         id: imgCopyProc
         running: false
@@ -898,10 +903,7 @@ Scope {
                                     }
                                     visible: root.widgetType === "math"
                                     query: root.modeQuery
-                                    onCopyResult: result => {
-                                        copyProc.command = ["wl-copy", result];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                     onSwapRequested: q => {
                                         _launcherInput.prefill(q);
                                     }
@@ -917,10 +919,7 @@ Scope {
                                     visible: root.widgetType === "translate"
                                     sourceText: root.modeQuery
                                     targetLang: root.translateTarget
-                                    onCopyResult: text => {
-                                        copyProc.command = ["wl-copy", text];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                 }
 
                                 ColorWidget {
@@ -932,10 +931,7 @@ Scope {
                                     }
                                     visible: root.widgetType === "color"
                                     query: root._query.trim()
-                                    onCopyResult: text => {
-                                        copyProc.command = ["wl-copy", text];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                 }
 
                                 TimestampWidget {
@@ -947,10 +943,7 @@ Scope {
                                     }
                                     visible: root.widgetType === "timestamp"
                                     query: root._query.trim()
-                                    onCopyResult: text => {
-                                        copyProc.command = ["wl-copy", text];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                 }
 
                                 DefineWidget {
@@ -962,10 +955,7 @@ Scope {
                                     }
                                     visible: root.widgetType === "define"
                                     word: root.widgetQuery
-                                    onCopyResult: text => {
-                                        copyProc.command = ["wl-copy", text];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                 }
 
                                 WhoisWidget {
@@ -977,10 +967,7 @@ Scope {
                                     }
                                     visible: root.widgetType === "whois"
                                     subject: root.widgetQuery
-                                    onCopyResult: text => {
-                                        copyProc.command = ["wl-copy", text];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                 }
 
                                 KaomojiWidget {
@@ -993,10 +980,7 @@ Scope {
                                     visible: root.widgetType === "kaomoji"
                                     entries: root._kaomojiData
                                     query: root.widgetQuery
-                                    onCopyResult: result => {
-                                        copyProc.command = ["wl-copy", result];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                     onCategoryRequested: tag => {
                                         _launcherInput.prefill("kao " + tag);
                                     }
@@ -1007,10 +991,7 @@ Scope {
                                     anchors { top: parent.top; left: parent.left; right: parent.right }
                                     visible: root.widgetType === "password"
                                     query: root.modeQuery
-                                    onCopyResult: text => {
-                                        copyProc.command = ["wl-copy", text];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                 }
 
                                 WeatherWidget {
@@ -1018,10 +999,6 @@ Scope {
                                     anchors { top: parent.top; left: parent.left; right: parent.right }
                                     visible: root.widgetType === "weather"
                                     query: root.widgetQuery
-                                    onCopyResult: text => {
-                                        copyProc.command = ["wl-copy", text];
-                                        copyProc.running = true;
-                                    }
                                 }
 
                                 WolframWidget {
@@ -1029,10 +1006,7 @@ Scope {
                                     anchors { top: parent.top; left: parent.left; right: parent.right }
                                     visible: root.widgetType === "wolfram"
                                     question: root.widgetQuery
-                                    onCopyResult: text => {
-                                        copyProc.command = ["wl-copy", text];
-                                        copyProc.running = true;
-                                    }
+                                    onCopyResult: root.copyToClipboard
                                 }
                             }
                         }

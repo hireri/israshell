@@ -14,7 +14,6 @@ Item {
     //   liveNotification: <Notification | null>
     // }
     property var groups: ({})
-    property int version: 0
     property bool dnd: false
 
     readonly property ListModel popupGroupModel: ListModel {}
@@ -35,7 +34,6 @@ Item {
             const t = Qt.createQmlObject('import QtQuick; Timer { interval: 600; repeat: false }', popupCleanupTimer);
             _pending[gKey] = t;
             t.triggered.connect(() => {
-                console.log("[NOTIF] ⏱ popup cleanup timeout:", gKey);
                 root._removeGroup(gKey);
                 t.destroy();
                 delete popupCleanupTimer._pending[gKey];
@@ -48,7 +46,6 @@ Item {
                 _pending[gKey].stop();
                 _pending[gKey].destroy();
                 delete _pending[gKey];
-                console.log("[NOTIF] ✓ popup cleanup cancelled (replacement arrived):", gKey);
             }
         }
     }
@@ -77,8 +74,6 @@ Item {
                 time: Date.now()
             };
 
-            console.log("[NOTIF] ▶ ARRIVE", "id:", notification.id, "replacesId:", notification.replacesId, "gKey:", gKey, "body:", msg.body.substring(0, 60), "urgency:", notification.urgency?.toString(), "image:", msg.image || "(none)", "appIcon:", msg.appIcon || "(none)", "actions:", (notification.actions || []).map(a => a.identifier).join(",") || "(none)");
-
             popupCleanupTimer.cancel(gKey);
 
             const gs = Object.assign({}, root.groups);
@@ -97,22 +92,13 @@ Item {
                 urgency: notification.urgency?.toString() ?? "normal"
             });
             root.groups = gs;
-            root.version++;
 
             const isCritical = notification.urgency?.toString() === "2";
             if ((!root.dnd || isCritical) && !root.suppressPopups)
-                root._ensurePopupGroup(appName, groupSummary, gKey);
-            root._ensureQsGroup(appName, groupSummary, gKey);
+                root._ensureGroupInModel(popupGroupModel, appName, groupSummary, gKey);
+            root._ensureGroupInModel(qsGroupModel, appName, groupSummary, gKey);
 
             notification.closed.connect(reason => {
-                const reasonStr = {
-                    [NotificationCloseReason.Expired]: "Expired",
-                    [NotificationCloseReason.Dismissed]: "Dismissed",
-                    [NotificationCloseReason.CloseRequested]: "CloseRequested"
-                }[reason] ?? `Unknown(${reason})`;
-
-                console.log("[NOTIF] ✗ CLOSE", "reason:", reasonStr, "gKey:", gKey, "body:", msg.body.substring(0, 40));
-
                 if (reason === NotificationCloseReason.CloseRequested) {
                     const gs2 = Object.assign({}, root.groups);
                     if (gs2[gKey]) {
@@ -120,12 +106,9 @@ Item {
                             liveNotification: null
                         });
                         root.groups = gs2;
-                        root.version++;
                     }
                     popupCleanupTimer.schedule(gKey, appName, groupSummary);
-                    console.log("[NOTIF] ↷ CloseRequested — nulled liveNotification, waiting for replacement");
                 } else {
-                    console.log("[NOTIF] ✗ REMOVING group:", gKey);
                     root._removeGroup(gKey);
                 }
             });
@@ -136,23 +119,20 @@ Item {
         const gs = Object.assign({}, root.groups);
         delete gs[gKey];
         root.groups = gs;
-        root.version++;
-        _removePopupGroup(gKey);
-        _removeQsGroup(gKey);
-        console.log("[NOTIF] - group removed:", gKey);
+        _removeGroupFromModel(popupGroupModel, gKey);
+        _removeGroupFromModel(qsGroupModel, gKey);
     }
 
-    function _popupGroupIndex(gKey) {
-        for (let i = 0; i < popupGroupModel.count; i++)
-            if (popupGroupModel.get(i).groupKey === gKey)
+    function _groupIndex(model, gKey) {
+        for (let i = 0; i < model.count; i++)
+            if (model.get(i).groupKey === gKey)
                 return i;
         return -1;
     }
 
-    function _ensurePopupGroup(appName, groupSummary, gKey) {
-        if (_popupGroupIndex(gKey) === -1) {
-            console.log("[NOTIF] + popupGroup:", gKey);
-            popupGroupModel.insert(0, {
+    function _ensureGroupInModel(model, appName, groupSummary, gKey) {
+        if (_groupIndex(model, gKey) === -1) {
+            model.insert(0, {
                 appName,
                 groupSummary,
                 groupKey: gKey
@@ -160,43 +140,14 @@ Item {
         }
     }
 
-    function _removePopupGroup(gKey) {
-        const idx = _popupGroupIndex(gKey);
-        if (idx !== -1) {
-            console.log("[NOTIF] - popupGroup:", gKey);
-            popupGroupModel.remove(idx);
-        }
-    }
-
-    function _qsGroupIndex(gKey) {
-        for (let i = 0; i < qsGroupModel.count; i++)
-            if (qsGroupModel.get(i).groupKey === gKey)
-                return i;
-        return -1;
-    }
-
-    function _ensureQsGroup(appName, groupSummary, gKey) {
-        if (_qsGroupIndex(gKey) === -1) {
-            console.log("[NOTIF] + qsGroup:", gKey);
-            qsGroupModel.insert(0, {
-                appName,
-                groupSummary,
-                groupKey: gKey
-            });
-        }
-    }
-
-    function _removeQsGroup(gKey) {
-        const idx = _qsGroupIndex(gKey);
-        if (idx !== -1) {
-            console.log("[NOTIF] - qsGroup:", gKey);
-            qsGroupModel.remove(idx);
-        }
+    function _removeGroupFromModel(model, gKey) {
+        const idx = _groupIndex(model, gKey);
+        if (idx !== -1)
+            model.remove(idx);
     }
 
     function sendGroupToPanel(gKey) {
-        console.log("[NOTIF] → sendGroupToPanel:", gKey);
-        _removePopupGroup(gKey);
+        _removeGroupFromModel(popupGroupModel, gKey);
     }
 
     function dismissGroup(gKey) {

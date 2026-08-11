@@ -59,21 +59,20 @@ Singleton {
 
     readonly property var cavaCommand: [
         "bash", "-c",
-        "printf '" +
-        "[general]\\n" +
-        "framerate = 60\\n" +
-        "bars = " + service.activeBars + "\\n" +
-        "[output]\\n" +
-        "method = raw\\n" +
-        "raw_target = /dev/stdout\\n" +
-        "data_format = ascii\\n" +
-        "ascii_max_range = 100\\n" +
-        "bar_delimiter = 59\\n" +
-        "frame_delimiter = 10\\n" +
-        "[smoothing]\\n" +
-        "monstercat = 1\\n" +
-        "noise_reduction = 0.77\\n" +
-        "' > /tmp/cava_quickshell.conf && exec cava -p /tmp/cava_quickshell.conf"
+        "printf '%s' \"$1\" | cava -p /dev/stdin", "--",
+        "[general]\n" +
+        "framerate = 60\n" +
+        "bars = " + service.activeBars + "\n" +
+        "[output]\n" +
+        "method = raw\n" +
+        "raw_target = /dev/stdout\n" +
+        "data_format = ascii\n" +
+        "ascii_max_range = 100\n" +
+        "bar_delimiter = 59\n" +
+        "frame_delimiter = 10\n" +
+        "[smoothing]\n" +
+        "monstercat = 1\n" +
+        "noise_reduction = 0.77\n"
     ]
 
     Component.onCompleted: {

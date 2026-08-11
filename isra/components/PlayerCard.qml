@@ -10,6 +10,7 @@ import Quickshell.Services.Mpris
 import qs.style
 import qs.services
 import qs.icons
+import "PlayerIcon.js" as PlayerIcon
 
 Item {
     id: root
@@ -135,7 +136,6 @@ Item {
     property real currentPosition: 0
     property bool _isDragging: false
     property real _dragProgress: 0
-    property bool _isResetting: false
     property string _prevTitle: ""
     property real progress: 0
     property real _displayLength: 1
@@ -156,13 +156,11 @@ Item {
     }
 
     function handleTrackChange() {
-        _isResetting = false;
         trackChangeAnim.restart();
         skipSyncTimer.restart();
     }
 
     function snapToPosition() {
-        _isResetting = false;
         if (!root.player) {
             progress = 0;
             _displayLength = 1;
@@ -176,14 +174,6 @@ Item {
         }
         _displayLength = len;
         progress = Math.max(0, Math.min(pos / len, 1));
-    }
-
-    function resetToPosition() {
-        snapToPosition();
-    }
-
-    function resyncPosition() {
-        snapToPosition();
     }
 
     Timer {
@@ -207,7 +197,7 @@ Item {
         target: root.player
         ignoreUnknownSignals: true
         function onPlaybackStateChanged() {
-            if (_isResetting || trackChangeAnim.running)
+            if (trackChangeAnim.running)
                 return;
             root.snapToPosition();
         }
@@ -231,17 +221,7 @@ Item {
     }
 
     function getIconSource(player) {
-        if (!player)
-            return "";
-        const de = (player.desktopEntry ?? "").trim();
-        const identity = (player.identity ?? "").trim().toLowerCase().replace(/\s+/g, "-");
-        const id = de !== "" ? de : identity;
-        if (id === "")
-            return "";
-        const entry = DesktopEntries.heuristicLookup(id);
-        if (entry && entry.icon)
-            return "image://icon/" + entry.icon + "?fallback=application-x-executable";
-        return "image://icon/" + id + "?fallback=application-x-executable";
+        return PlayerIcon.getIconSource(player, DesktopEntries);
     }
 
     readonly property real displayProgress: {
@@ -639,7 +619,7 @@ CAVAEOF`]
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
                         root.player?.togglePlaying();
-                        root.resyncPosition();
+                        root.snapToPosition();
                     }
                 }
             }
@@ -823,7 +803,7 @@ CAVAEOF`]
                     onReleased: mouse => {
                         if (root._isDragging && (root.player?.canSeek ?? false)) {
                             root.player.position = root._dragProgress * (root._displayLength);
-                            root.resyncPosition();
+                            root.snapToPosition();
                         }
                         root._isDragging = false;
                         scrubber.scrubHover = containsMouse;

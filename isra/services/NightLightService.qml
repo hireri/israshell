@@ -14,7 +14,6 @@ Singleton {
     property bool active: false
     property int currentTemp: Config.nightLight.dayTemp
 
-    property bool _manualOverride: false
     property bool _lastIsNight: false
     property bool _initialCheckDone: false
     property int _pendingWlsunsetTemp: Config.nightLight.dayTemp
@@ -48,24 +47,8 @@ Singleton {
                         const nl = Config.nightLight;
                         const isNight = _isNight(nl);
                         root._lastIsNight = isNight;
-
                         root.active = (temp === nl.nightTemp);
-
-                        if (nl.scheduleEnabled) {
-                            const expected = isNight ? nl.nightTemp : nl.dayTemp;
-                            if (temp !== expected) {
-                                _applyTemp(expected);
-                                root.active = isNight;
-                            }
-                        }
-
-                        if (nl.autoDarkMode) {
-                            if (WallpaperService.isDark !== isNight) {
-                                WallpaperService.isDark = isNight;
-                            } else {
-                                WallpaperService.applyTheme();
-                            }
-                        }
+                        root._syncToSchedule(nl, isNight);
                     }
                 }
             }
@@ -121,17 +104,7 @@ Singleton {
                 return;
 
             root._lastIsNight = isNight;
-            root._manualOverride = false;
-
-            if (nl.scheduleEnabled) {
-                root.active = isNight;
-                _applyTemp(isNight ? nl.nightTemp : nl.dayTemp);
-            }
-
-            if (nl.autoDarkMode) {
-                WallpaperService.isDark = isNight;
-                WallpaperService.applyTheme();
-            }
+            root._syncToSchedule(nl, isNight);
         }
     }
 
@@ -139,17 +112,25 @@ Singleton {
         const nl = Config.nightLight;
         const isNight = _isNight(nl);
         root._lastIsNight = isNight;
-        root._manualOverride = false;
+        root._syncToSchedule(nl, isNight);
+    }
 
+    function _expectedTemp(nl, isNight) {
+        return isNight ? nl.nightTemp : nl.dayTemp;
+    }
+
+    function _syncToSchedule(nl, isNight) {
         if (nl.scheduleEnabled) {
             root.active = isNight;
-            const expected = isNight ? nl.nightTemp : nl.dayTemp;
+            const expected = _expectedTemp(nl, isNight);
             if (root.currentTemp !== expected)
                 _applyTemp(expected);
         }
 
-        if (nl.autoDarkMode)
+        if (nl.autoDarkMode) {
             WallpaperService.isDark = isNight;
+            WallpaperService.applyTheme();
+        }
     }
 
     function _isNight(nl) {
@@ -188,44 +169,33 @@ Singleton {
     }
 
     function toggle() {
-        root._manualOverride = true;
         root.active = !root.active;
         _applyTemp(root.active ? Config.nightLight.nightTemp : Config.nightLight.dayTemp);
     }
 
-    function setNightTemp(temp) {
+    function _patchNightLight(patch) {
         Config.update({
-            nightLight: Object.assign({}, Config.nightLight, {
-                nightTemp: temp
-            })
+            nightLight: Object.assign({}, Config.nightLight, patch)
         });
+    }
+
+    function setNightTemp(temp) {
+        _patchNightLight({ nightTemp: temp });
         if (!Config.nightLight.scheduleEnabled && root.active)
             _applyTemp(temp);
     }
 
     function setDayTemp(temp) {
-        Config.update({
-            nightLight: Object.assign({}, Config.nightLight, {
-                dayTemp: temp
-            })
-        });
+        _patchNightLight({ dayTemp: temp });
         if (!Config.nightLight.scheduleEnabled && !root.active)
             _applyTemp(temp);
     }
 
     function setSunrise(time) {
-        Config.update({
-            nightLight: Object.assign({}, Config.nightLight, {
-                sunrise: time
-            })
-        });
+        _patchNightLight({ sunrise: time });
     }
 
     function setSunset(time) {
-        Config.update({
-            nightLight: Object.assign({}, Config.nightLight, {
-                sunset: time
-            })
-        });
+        _patchNightLight({ sunset: time });
     }
 }

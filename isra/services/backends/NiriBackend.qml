@@ -3,11 +3,12 @@ pragma ComponentBehavior: Bound
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "Shapes.js" as Shapes
 
 Scope {
     id: root
 
-    readonly property var capabilities: ["dpms"]
+    readonly property var capabilities: []
 
     property var activeWindow: _windowShape(null)
     property var focusedMonitor: _monitorShape(null)
@@ -21,7 +22,7 @@ Scope {
 
     function _windowShape(t): var {
         if (!t)
-            return { address: "", title: "", appId: "", workspace: -1, fullscreen: false };
+            return Shapes.emptyWindow();
         return {
             address: (t.id !== undefined && t.id !== null) ? t.id.toString() : "",
             title: t.title ?? "",
@@ -33,7 +34,7 @@ Scope {
 
     function _monitorShape(m): var {
         if (!m)
-            return { name: "", id: -1, activeWorkspaceId: -1, activeWorkspaceHasFullscreen: false };
+            return Shapes.emptyMonitor();
         return {
             name: m.name ?? "",
             id: m.id ?? m.name ?? -1,
@@ -44,7 +45,7 @@ Scope {
 
     function _workspaceShape(w): var {
         if (!w)
-            return { id: -1, idx: -1, name: "", monitor: "", windows: 0, active: false, hasFullscreen: false };
+            return Shapes.emptyWorkspace({ idx: -1 });
 
         let winCount = 0;
         let hasFs = false;

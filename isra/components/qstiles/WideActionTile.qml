@@ -8,15 +8,17 @@ Item {
     property Component iconComponent: null
     property string label: ""
     property string sublabel: ""
+    property var sublabelForOn: null
     property bool active: false
     property bool forceOff: false
-    
+
     property bool offSecondary: false
     signal toggled
     signal rightClicked
 
     readonly property bool _on: active && !forceOff
     readonly property bool _hovered: (bodyMouse.containsMouse || iconMouse.containsMouse) && !forceOff
+    readonly property string _effectiveSublabel: sublabelForOn ? sublabelForOn(_on) : sublabel
 
     readonly property color bgColor: _hovered
         ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity)
@@ -88,12 +90,12 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: root.sublabel
+                text: root._effectiveSublabel
                 font.pixelSize: 11
                 font.family: Config.fontFamily
                 color: Colors.md3.on_surface_variant
                 elide: Text.ElideRight
-                visible: root.sublabel !== ""
+                visible: root._effectiveSublabel !== ""
                 renderType: Text.NativeRendering
             }
         }

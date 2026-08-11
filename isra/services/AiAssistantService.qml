@@ -41,10 +41,6 @@ Singleton {
         return Config.aiAssistant.providers[Config.aiAssistant.provider]?.supportsVision === true;
     }
 
-    function attachImageFromUrl(url: var): void {
-        root._attachFromUrl(url);
-    }
-
     function attachFileFromUrl(url: var): void {
         root._attachFromUrl(url);
     }
@@ -465,23 +461,31 @@ Singleton {
             }));
     }
 
-    function _handleSseProgress(xhr, extractDelta): void {
-        if (xhr !== root._activeXhr)
-            return;
+    function _drainBuffer(xhr, delimiter) {
         const newSlice = xhr.responseText.substring(root._parsedLength);
         root._parsedLength = xhr.responseText.length;
         if (newSlice !== "")
             root._streamBuffer += newSlice.replace(/\r\n/g, "\n");
 
-        const parts = root._streamBuffer.split("\n\n");
+        const parts = root._streamBuffer.split(delimiter);
         root._streamBuffer = parts.pop() ?? "";
-        root._consumeSseFrames(parts, extractDelta);
 
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (root._streamBuffer.trim() !== "") {
-                root._consumeSseFrames([root._streamBuffer], extractDelta);
-                root._streamBuffer = "";
-            }
+        const isDone = xhr.readyState === XMLHttpRequest.DONE;
+        if (isDone && root._streamBuffer.trim() !== "") {
+            parts.push(root._streamBuffer);
+            root._streamBuffer = "";
+        }
+
+        return { parts: parts, isDone: isDone };
+    }
+
+    function _handleSseProgress(xhr, extractDelta): void {
+        if (xhr !== root._activeXhr)
+            return;
+        const drained = root._drainBuffer(xhr, "\n\n");
+        root._consumeSseFrames(drained.parts, extractDelta);
+
+        if (drained.isDone) {
             if (xhr.status === 200)
                 root._finishStream();
             else
@@ -536,20 +540,10 @@ Singleton {
     function _handleNdjsonProgress(xhr): void {
         if (xhr !== root._activeXhr)
             return;
-        const newSlice = xhr.responseText.substring(root._parsedLength);
-        root._parsedLength = xhr.responseText.length;
-        if (newSlice !== "")
-            root._streamBuffer += newSlice.replace(/\r\n/g, "\n");
+        const drained = root._drainBuffer(xhr, "\n");
+        const sawDone = root._consumeNdjsonLines(drained.parts);
 
-        const lines = root._streamBuffer.split("\n");
-        root._streamBuffer = lines.pop() ?? "";
-        let sawDone = root._consumeNdjsonLines(lines);
-
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (root._streamBuffer.trim() !== "") {
-                sawDone = root._consumeNdjsonLines([root._streamBuffer]) || sawDone;
-                root._streamBuffer = "";
-            }
+        if (drained.isDone) {
             if (xhr.status === 200)
                 root._finishStream();
             else

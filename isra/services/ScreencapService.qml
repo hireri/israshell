@@ -18,6 +18,15 @@ Singleton {
             songrecCheckProc.running = true;
     }
 
+    function toggleRecognitionOptimistic() {
+        root.isRecognizing = !root.isRecognizing;
+    }
+
+    function markRecordingStoppedOptimistic() {
+        root.isRecording = false;
+        root.recordingTime = "00:00";
+    }
+
     Process {
         id: recordingCheckProc
         command: ["sh", "-c", "test -f /tmp/screenrec-region.pid"]

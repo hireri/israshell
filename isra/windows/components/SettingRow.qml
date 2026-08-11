@@ -11,19 +11,7 @@ Item {
     property string label: ""
     property string sublabel: ""
 
-    property bool isLast: {
-        if (!parent)
-            return false;
-        const siblings = parent.children;
-        let lastVisible = null;
-        for (let i = siblings.length - 1; i >= 0; i--) {
-            if (siblings[i].visible !== false) {
-                lastVisible = siblings[i];
-                break;
-            }
-        }
-        return lastVisible === this;
-    }
+    property bool isLast: false
 
     default property alias content: trailingSlot.data
 

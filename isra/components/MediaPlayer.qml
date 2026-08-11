@@ -8,12 +8,12 @@ import Quickshell.Services.Mpris
 import qs.style
 import qs.services
 import qs.icons
+import "PlayerIcon.js" as PlayerIcon
 
 ClippingRectangle {
     id: root
 
     required property var panelScreen
-    property var panelWindow: null
 
     color: {
         if (root.isOpen) {
@@ -56,7 +56,7 @@ ClippingRectangle {
         if (isOpen) {
             closeDelayTimer.stop();
             popupWindowVisible = true;
-            PanelService.opened(root, root.panelScreen ?? root.panelWindow?.screen);
+            PanelService.opened(root, root.panelScreen);
         } else {
             closeDelayTimer.restart();
             PanelService.closed(root);
@@ -76,17 +76,7 @@ ClippingRectangle {
     }
 
     function getIconSource(player) {
-        if (!player)
-            return "";
-        const de = (player.desktopEntry ?? "").trim();
-        const identity = (player.identity ?? "").trim().toLowerCase().replace(/\s+/g, "-");
-        const id = de !== "" ? de : identity;
-        if (id === "")
-            return "";
-        const entry = DesktopEntries.heuristicLookup(id);
-        if (entry && entry.icon)
-            return "image://icon/" + entry.icon + "?fallback=application-x-executable";
-        return "image://icon/" + id + "?fallback=application-x-executable";
+        return PlayerIcon.getIconSource(player, DesktopEntries);
     }
 
     function getPlayerName(player) {
@@ -450,7 +440,7 @@ ClippingRectangle {
             required property ShellScreen modelData
             screen: modelData
 
-            readonly property bool isOwnScreen: modelData === (root.panelScreen ?? root.panelWindow?.screen)
+            readonly property bool isOwnScreen: modelData === root.panelScreen
 
             anchors {
                 top: true
@@ -603,7 +593,7 @@ ClippingRectangle {
                             function onPlayerSwitched(oldPlayer, newPlayer) {
                                 cardStack.backCard.suppressAnimations = true;
                                 cardStack.backCard.player = newPlayer;
-                                cardStack.backCard.resyncPosition();
+                                cardStack.backCard.snapToPosition();
                                 Qt.callLater(() => {
                                     cardStack.backCard.suppressAnimations = false;
                                     swapOut.start();

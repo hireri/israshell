@@ -485,39 +485,6 @@ Item {
         return _codeToSymbol[code] ?? "";
     }
 
-    component PillBtn: Rectangle {
-        id: pb
-        property string label: ""
-        property bool primary: true
-        signal clicked
-
-        implicitWidth: pbLbl.implicitWidth + 22
-        implicitHeight: 30
-        radius: height / 2
-        color: pbMa.containsMouse ? (primary ? Colors.md3.primary : Colors.md3.secondary_container) : (primary ? Colors.md3.primary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
-        Behavior on color {
-            ColorAnimation {
-                duration: 90
-            }
-        }
-
-        Text {
-            id: pbLbl
-            anchors.centerIn: parent
-            text: pb.label
-            color: pbMa.containsMouse ? (pb.primary ? Colors.md3.on_primary : Colors.md3.on_secondary_container) : (pb.primary ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant)
-            font.pixelSize: 12
-            font.family: Config.fontFamily
-        }
-        MouseArea {
-            id: pbMa
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: pb.clicked()
-        }
-    }
-
     component Chip: Rectangle {
         property string label: ""
         property bool accent: false
@@ -621,12 +588,12 @@ Item {
                 label: Localization.t("mathWidget.copy_result")
                 primary: true
                 visible: root._result !== ""
-                onClicked: root.copyResult(root._result)
+                onTapped: root.copyResult(root._result)
             }
             PillBtn {
                 label: Localization.t("mathWidget.copy_expression")
                 primary: false
-                onClicked: root.copyResult(root.query.trim())
+                onTapped: root.copyResult(root.query.trim())
             }
         }
     }
@@ -813,13 +780,13 @@ Item {
                 label: Localization.t("mathWidget.copy_result")
                 primary: true
                 visible: root._result !== ""
-                onClicked: root.copyResult(root._result)
+                onTapped: root.copyResult(root._result)
             }
             PillBtn {
                 label: Localization.t("mathWidget.swap")
                 primary: false
                 visible: root._result !== "" && root._currRate > 0
-                onClicked: {
+                onTapped: {
                     const decimals = root._noDecimalCodes.includes(root._currTo) ? 0 : 2;
                     const newAmt = root._currRawResult.toFixed(decimals);
                     root.swapRequested(newAmt + " " + root._currTo + " to " + root._currFrom);

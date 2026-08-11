@@ -17,10 +17,6 @@ Item {
     })
     property var rightIds: []
     property var disabledIds: []
-    property bool isLast: false
-
-    property var allWidgetIds: []
-    property var widgetLabels: ({})
 
     signal orderChanged(var newLeft, var newCenter, var newRight, var newDisabled)
 

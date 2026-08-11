@@ -49,8 +49,4 @@ Singleton {
         setProc.running = true
     }
 
-    function refresh() {
-        getProc.running = false
-        getProc.running = true
-    }
 }

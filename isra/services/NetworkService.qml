@@ -17,7 +17,6 @@ Singleton {
     property int wifiSignal: 0
     property bool scanning: false
     property bool wifiConnecting: false
-    property bool wifiAvailable: true
     property bool ethAvailable: false
 
     property string pendingPasswordSsid: ""

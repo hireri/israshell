@@ -50,7 +50,6 @@ Singleton {
     property string ramTotalLabel: "—"
     property string swapUsedLabel: "—"
     property string swapTotalLabel: "—"
-    property string gpuVendor: ""
 
     property string gpuPower: "—"
     property string cpuPower: "—"
@@ -73,7 +72,6 @@ Singleton {
     readonly property string tempUnit: Config.useFahrenheit ? "°F" : "°C"
 
     readonly property var cpuTempHistoryDisplay: Config.useFahrenheit ? cpuTempHistory.map(c => celsiusToFahrenheit(c)) : cpuTempHistory
-    readonly property var gpuTempHistoryDisplay: Config.useFahrenheit ? gpuTempHistory.map(c => celsiusToFahrenheit(c)) : gpuTempHistory
 
     property real _stageCpuUsage: 0
     property real _stageRamUsage: 0
@@ -168,7 +166,7 @@ Singleton {
                 root._commitMetrics();
                 root.cycleStarted();
             }
-            
+
             fileProcStat.reload();
             fileMemInfo.reload();
             tempProc.running = true;
@@ -315,8 +313,6 @@ Singleton {
                             let name = gpuDev.device_name;
 
                             if (name) {
-                                let lowName = name.toLowerCase();
-                                root.gpuVendor = lowName.includes("nvidia") ? "nvidia" : lowName.includes("amd") ? "amd" : "intel";
                                 if (root.gpu === "Unknown GPU" || root.gpu === "") root.gpu = name;
                             }
 

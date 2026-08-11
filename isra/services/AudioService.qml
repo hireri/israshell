@@ -28,14 +28,6 @@ Singleton {
         return node.properties["application.process.binary"] || node.properties["application.name"] || node.description || node.name || "Unknown";
     }
 
-    function streamIconName(node) {
-        const explicit = node.properties["application.icon-name"] ?? "";
-        if (explicit.length > 0)
-            return explicit;
-        const binary = node.properties["application.process.binary"] ?? "";
-        return binary.toLowerCase();
-    }
-
     function isDefaultSink(node) {
         return sink?.id !== undefined && sink?.id === node?.id;
     }

@@ -699,7 +699,7 @@ Rectangle {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    ScreencapService.isRecognizing = !ScreencapService.isRecognizing;
+                    ScreencapService.toggleRecognitionOptimistic();
                     songrecScript.startDetached();
                 }
                 onEntered: {

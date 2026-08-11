@@ -18,7 +18,6 @@ Singleton {
     readonly property list<var> connectedDevices: Bluetooth.devices.values.filter(d => d.connected).sort(sortFunction)
     readonly property list<var> pairedDevices: Bluetooth.devices.values.filter(d => d.paired && !d.connected).sort(sortFunction)
     readonly property list<var> newDevices: Bluetooth.devices.values.filter(d => !d.paired && !d.connected).sort(sortFunction)
-    readonly property list<var> allDevices: [...connectedDevices, ...pairedDevices, ...newDevices]
     readonly property list<var> knownDevices: [...connectedDevices, ...pairedDevices]
 
     readonly property bool anyDeviceBusy: Bluetooth.devices.values.some(d => isDeviceBusy(d))
