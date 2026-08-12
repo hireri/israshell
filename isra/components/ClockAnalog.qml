@@ -29,8 +29,8 @@ Item {
     readonly property real ringAmplitude: (Config.clock.ringAmplitude ?? 6) * (root.analogSize / 200)
     readonly property int  ringPoints:    256
 
-    implicitWidth:  analogSize
-    implicitHeight: analogSize
+    implicitWidth:  analogSize + Config.clock.outlineWidth
+    implicitHeight: analogSize + Config.clock.outlineWidth
 
     Shape {
         id: wobblyFace
@@ -236,8 +236,8 @@ Item {
         Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
 
 
-        readonly property real vPad: 4 * (root.analogSize / 200)
-        readonly property real hPad: 10 * (root.analogSize / 200)
+        readonly property real vPad: 4 * ((Config.clock.dateSize ?? 25) / 25)
+        readonly property real hPad: 10 * ((Config.clock.dateSize ?? 25) / 25)
 
         width:  dateLbl.implicitWidth  + hPad * 2
         height: dateLbl.implicitHeight + vPad * 2
@@ -250,7 +250,7 @@ Item {
             id: dateLbl
             anchors.centerIn: parent
             font.family:       root.clockFont
-            font.pixelSize:    (Config.clock.dateSize ?? 14) * (root.analogSize / 200)
+            font.pixelSize:    Config.clock.dateSize ?? 25
             font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
             font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
             color: Colors.md3.on_primary_container

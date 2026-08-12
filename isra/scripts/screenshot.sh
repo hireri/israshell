@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e
+
+NOTIFY_ERROR_TITLE="${NOTIFY_SCREENSHOT_ERROR_TITLE:-Screenshot Error}"
+NOTIFY_ERROR_BODY="${NOTIFY_SCREENSHOT_ERROR_BODY:-Cannot create directory: %s}"
+
 [[ -f ~/.config/user-dirs.dirs ]] && source ~/.config/user-dirs.dirs
 OUTPUT_DIR="${SCREENSHOT_DIR:-${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots}"
 mkdir -p "$OUTPUT_DIR" 2>/dev/null || {
-    notify-send "Screenshot Error" "Cannot create directory: $OUTPUT_DIR" -u critical -t 3000
+    notify-send "$NOTIFY_ERROR_TITLE" "$(printf "$NOTIFY_ERROR_BODY" "$OUTPUT_DIR")" -u critical -t 3000
     exit 1
 }
 

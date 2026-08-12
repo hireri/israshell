@@ -37,7 +37,10 @@ Singleton {
 
     property var background: ({
             transitionType: "crossfade", // "crossfade" | "wipe" | "circle" | "random"
-            transitionDuration: 550      // ms; converted to seconds for awww
+            transitionDuration: 550,     // ms; converted to seconds for awww
+            wipeAngle: 0,                // degrees; direction both wallpapers move during a wipe
+            circleReverse: false,        // false = new wallpaper grows in; true = old wallpaper shrinks away
+            transitionDisplacement: 20   // percent; how far the wallpapers drift/scale during a transition
         })
     property var cava: ({
             enabled: false,
@@ -227,8 +230,6 @@ Singleton {
             minuteWeight: 300,
             fontWidth: 100,
             fontRoundness: 0,
-            subWidth: 100,
-            subRoundness: 0,
             colorRole: "primary",
             subColorRole: "secondary",
             shadowBlur: 16,
@@ -295,7 +296,10 @@ Singleton {
 
             background: {
                 transitionType: "crossfade",
-                transitionDuration: 550
+                transitionDuration: 550,
+                wipeAngle: 0,
+                circleReverse: false,
+                transitionDisplacement: 20
             },
             cava: {
                 enabled: false,
@@ -418,8 +422,6 @@ Singleton {
                 minuteWeight: 300,
                 fontWidth: 100,
                 fontRoundness: 0,
-                subWidth: 100,
-                subRoundness: 0,
                 colorRole: "primary",
                 subColorRole: "secondary",
                 shadowBlur: 16,

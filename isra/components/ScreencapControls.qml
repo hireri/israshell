@@ -27,6 +27,13 @@ Rectangle {
         return !Config.screencap.blacklist.includes(name);
     }
 
+    readonly property var songrecEnv: ({
+            NOTIFY_FIND_ON_GOOGLE_ACTION: Localization.t("songrecScript.find_on_google_action"),
+            NOTIFY_NO_MATCH_TITLE: Localization.t("songrecScript.no_match_title"),
+            NOTIFY_NO_MATCH_FILE_BODY: Localization.t("songrecScript.no_match_file_body"),
+            NOTIFY_NO_MATCH_LIVE_BODY: Localization.t("songrecScript.no_match_live_body")
+        })
+
     function componentFor(type) {
         switch (type) {
         case "wallpaper":
@@ -92,6 +99,7 @@ Rectangle {
     Process {
         id: songrecScript
         command: ["sh", "-c", getScript(Config.screencap.songrecPath)]
+        environment: root.songrecEnv
     }
 
     Process {
@@ -648,23 +656,44 @@ Rectangle {
     Component {
         id: songrecComp
         Item {
+            id: srItem
             width: songrecBg.width
             height: 32
+
+            property bool fileRecognizing: false
+            readonly property bool dragActive: srDrop.containsDrag
+            readonly property bool fileActive: fileRecognizing || dragActive
+
+            function recognizeFile(path) {
+                if (srItem.fileRecognizing)
+                    return;
+                srItem.fileRecognizing = true;
+                songrecFileScript.command = ["sh", getScript(Config.screencap.songrecPath), path];
+                songrecFileScript.running = true;
+            }
+
+            Process {
+                id: songrecFileScript
+                environment: root.songrecEnv
+                onExited: srItem.fileRecognizing = false
+            }
 
             Rectangle {
                 id: songrecBg
                 anchors.verticalCenter: parent.verticalCenter
-                width: ScreencapService.isRecognizing ? 38 : 32
-                height: ScreencapService.isRecognizing ? 26 : 32
+                width: (ScreencapService.isRecognizing || srItem.fileActive) ? 38 : 32
+                height: 26
                 radius: 16
-                color: ScreencapService.isRecognizing ? Qt.alpha(Colors.md3.primary, 0.15) : (songrecHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
-
-                Behavior on height {
-                    NumberAnimation {
-                        duration: 250
-                        easing.type: Easing.OutCubic
-                    }
+                color: {
+                    if (srItem.fileActive)
+                        return Qt.alpha(Colors.md3.tertiary, 0.15);
+                    if (ScreencapService.isRecognizing)
+                        return Qt.alpha(Colors.md3.primary, 0.15);
+                    return songrecHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent";
                 }
+                border.width: srItem.dragActive ? 1 : 0
+                border.color: Colors.md3.tertiary
+
                 Behavior on width {
                     NumberAnimation {
                         duration: 250
@@ -682,7 +711,7 @@ Rectangle {
                 name: "songrec"
                 iconSize: 18
                 anchors.centerIn: parent
-                color: ScreencapService.isRecognizing ? Colors.md3.primary : Colors.md3.on_surface
+                color: srItem.fileActive ? Colors.md3.tertiary : (ScreencapService.isRecognizing ? Colors.md3.primary : Colors.md3.on_surface)
                 Behavior on color {
                     ColorAnimation {
                         duration: 200
@@ -699,16 +728,34 @@ Rectangle {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
+                    if (srItem.fileRecognizing) {
+                        songrecFileScript.running = false;
+                        srItem.fileRecognizing = false;
+                        return;
+                    }
                     ScreencapService.toggleRecognitionOptimistic();
                     songrecScript.startDetached();
                 }
                 onEntered: {
                     var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = ScreencapService.isRecognizing ? Localization.t("screencapControls.stop_recognizing") : Localization.t("barPage.recognize_music");
+                    tooltipWindow.tipTitle = srItem.fileRecognizing ? Localization.t("screencapControls.recognizing_file") : (ScreencapService.isRecognizing ? Localization.t("screencapControls.stop_recognizing") : Localization.t("barPage.recognize_music"));
                     tooltipWindow.open = true;
                 }
                 onExited: tooltipWindow.open = false
+            }
+
+            DropArea {
+                id: srDrop
+                anchors.fill: parent
+                enabled: !ScreencapService.isRecognizing && !srItem.fileRecognizing
+                onDropped: drop => {
+                    if (!drop.urls || drop.urls.length === 0)
+                        return;
+                    const path = decodeURIComponent(drop.urls[0].toString().replace(/^file:\/\//, ""));
+                    srItem.recognizeFile(path);
+                    drop.accept();
+                }
             }
         }
     }

@@ -650,14 +650,12 @@ PageBase {
             label: Localization.t("clockPage.outline_width")
             sublabel: Localization.t("clockPage.colored_outline_around_the_clock")
             isLast: true
-            enabled: Config.clock.layout === "analog"
-            from: 0
-            to: 10
+            visible: ClockSizing.fieldsForLayout(Config.clock.layout).includes("outlineWidth")
+            from: ClockSizing.boundsFor(Config.clock.layout, "outlineWidth")?.min ?? 0
+            to: ClockSizing.boundsFor(Config.clock.layout, "outlineWidth")?.max ?? 10
             stepSize: 1
             value: Config.clock.outlineWidth
             onMoved: v => updateClock({ outlineWidth: v })
-            opacity: enabled ? 1.0 : 0.4
-            Behavior on opacity { NumberAnimation { duration: 150 } }
         }
     }
 
@@ -745,24 +743,26 @@ PageBase {
 
         SettingSlider {
             label: Localization.t("clockPage.hour_size")
-            from: 40
-            to: 200
+            from: ClockSizing.boundsFor(Config.clock.layout, "hourSize")?.min ?? 40
+            to: ClockSizing.boundsFor(Config.clock.layout, "hourSize")?.max ?? 200
             stepSize: 1
             value: Config.clock.hourSize
             onMoved: v => updateClock({ hourSize: v })
         }
         SettingSlider {
             label: Localization.t("clockPage.minute_size")
-            from: 40
-            to: 200
+            visible: ClockSizing.fieldsForLayout(Config.clock.layout).includes("minuteSize")
+            from: ClockSizing.boundsFor(Config.clock.layout, "minuteSize")?.min ?? 40
+            to: ClockSizing.boundsFor(Config.clock.layout, "minuteSize")?.max ?? 200
             stepSize: 1
             value: Config.clock.minuteSize
             onMoved: v => updateClock({ minuteSize: v })
         }
         SettingSlider {
             label: Localization.t("clockPage.time_spacing")
-            from: -100
-            to: 40
+            visible: ClockSizing.fieldsForLayout(Config.clock.layout).includes("timeSpacing")
+            from: ClockSizing.boundsFor(Config.clock.layout, "timeSpacing")?.min ?? -100
+            to: ClockSizing.boundsFor(Config.clock.layout, "timeSpacing")?.max ?? 40
             stepSize: 1
             value: Config.clock.timeSpacing
             onMoved: v => updateClock({ timeSpacing: v })
@@ -770,8 +770,8 @@ PageBase {
         SettingSlider {
             label: Localization.t("clockPage.date_spacing")
             visible: Config.clock.showDate
-            from: -60
-            to: 40
+            from: ClockSizing.boundsFor(Config.clock.layout, "dateSpacing")?.min ?? -60
+            to: ClockSizing.boundsFor(Config.clock.layout, "dateSpacing")?.max ?? 40
             stepSize: 1
             value: Config.clock.dateSpacing
             onMoved: v => updateClock({ dateSpacing: v })
@@ -780,8 +780,8 @@ PageBase {
             label: Localization.t("clockPage.date_size")
             visible: Config.clock.showDate
             isLast: true
-            from: 10
-            to: 60
+            from: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.min ?? 10
+            to: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.max ?? 60
             stepSize: 1
             value: Config.clock.dateSize
             onMoved: v => updateClock({ dateSize: v })
@@ -794,16 +794,16 @@ PageBase {
 
         SettingSlider {
             label: Localization.t("clockPage.word_size")
-            from: 20
-            to: 120
+            from: ClockSizing.boundsFor(Config.clock.layout, "hourSize")?.min ?? 40
+            to: ClockSizing.boundsFor(Config.clock.layout, "hourSize")?.max ?? 200
             stepSize: 1
             value: Config.clock.hourSize
             onMoved: v => updateClock({ hourSize: v })
         }
         SettingSlider {
             label: Localization.t("clockPage.line_spacing")
-            from: -40
-            to: 40
+            from: ClockSizing.boundsFor(Config.clock.layout, "wordSpacing")?.min ?? -40
+            to: ClockSizing.boundsFor(Config.clock.layout, "wordSpacing")?.max ?? 40
             stepSize: 1
             value: Config.clock.wordSpacing ?? -6
             onMoved: v => updateClock({ wordSpacing: v })
@@ -811,8 +811,8 @@ PageBase {
         SettingSlider {
             label: Localization.t("clockPage.date_spacing")
             visible: Config.clock.showDate
-            from: -60
-            to: 40
+            from: ClockSizing.boundsFor(Config.clock.layout, "dateSpacing")?.min ?? -60
+            to: ClockSizing.boundsFor(Config.clock.layout, "dateSpacing")?.max ?? 40
             stepSize: 1
             value: Config.clock.dateSpacing
             onMoved: v => updateClock({ dateSpacing: v })
@@ -821,8 +821,8 @@ PageBase {
             label: Localization.t("clockPage.date_size")
             visible: Config.clock.showDate
             isLast: true
-            from: 10
-            to: 60
+            from: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.min ?? 10
+            to: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.max ?? 60
             stepSize: 1
             value: Config.clock.dateSize
             onMoved: v => updateClock({ dateSize: v })
@@ -835,8 +835,8 @@ PageBase {
 
         SettingSlider {
             label: Localization.t("clockPage.clock_size")
-            from: 80
-            to: 500
+            from: ClockSizing.boundsFor(Config.clock.layout, "analogSize")?.min ?? 80
+            to: ClockSizing.boundsFor(Config.clock.layout, "analogSize")?.max ?? 500
             stepSize: 4
             value: Config.clock.analogSize ?? 200
             onMoved: v => updateClock({ analogSize: v })
@@ -861,7 +861,7 @@ PageBase {
         }
         SettingSlider {
             label: Localization.t("clockPage.date_spacing")
-            visible: Config.clock.showDate
+            visible: Config.clock.showDate && ClockSizing.fieldsForLayout(Config.clock.layout).includes("dateSpacing")
             from: -60
             to: 40
             stepSize: 1
@@ -872,8 +872,8 @@ PageBase {
             label: Localization.t("clockPage.date_size")
             visible: Config.clock.showDate
             isLast: true
-            from: 10
-            to: 60
+            from: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.min ?? 10
+            to: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.max ?? 60
             stepSize: 1
             value: Config.clock.dateSize
             onMoved: v => updateClock({ dateSize: v })

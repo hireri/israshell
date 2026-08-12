@@ -495,6 +495,9 @@ Singleton {
                 cmd.push("--awww");
                 cmd.push("--transition", Config.background.transitionType);
                 cmd.push("--duration", String(Config.background.transitionDuration));
+                cmd.push("--wipe-angle", String(Config.background.wipeAngle));
+                if (Config.background.circleReverse)
+                    cmd.push("--circle-reverse");
             }
             return cmd;
         }

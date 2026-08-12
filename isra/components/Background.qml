@@ -14,14 +14,13 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     color: "transparent"
-    focusable: (Config.clock.manualPos ?? false) && !LockscreenService.locked
 
     WlrLayershell.namespace: "quickshell:background"
-    WlrLayershell.layer: WlrLayer.Bottom
+    WlrLayershell.layer: WlrLayer.Background
     anchors { top: true; bottom: true; left: true; right: true }
 
     readonly property bool shouldBlur: LockscreenService.locked || LockscreenService.lockVisualActive
-    
+
     readonly property string activeWall: {
         const isVid = /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(WallpaperService.currentWall);
         if (GameModeService.active && isVid && WallpaperService.currentWallPreview) {
@@ -143,6 +142,52 @@ PanelWindow {
         readonly property int transitionDuration: Config.background.transitionDuration ?? 550
         readonly property real _diagonal: Math.sqrt(width * width + height * height)
 
+        readonly property bool _maskThisSlot: (transitionType === "circle"
+                && (Config.background.circleReverse ? !isFront : isFront)
+                && _progress < 1)
+            || (transitionType === "wipe" && isFront && _progress < 1)
+
+        readonly property real _wipeAngleRad: (Config.background.wipeAngle ?? 0) * Math.PI / 180
+        readonly property real _wipeDx: Math.cos(_wipeAngleRad)
+        readonly property real _wipeDy: Math.sin(_wipeAngleRad)
+
+        readonly property real _wipeAx: Math.abs(_wipeDx)
+        readonly property real _wipeAy: Math.abs(_wipeDy)
+
+        readonly property real _wipeSpan: _wipeAx * width + _wipeAy * height
+        readonly property real _displacement: Math.max(0, Math.min(1,
+            (Config.background.transitionDisplacement ?? 20) / 100))
+
+        readonly property real _wipeDrift: _displacement * _wipeSpan * (1 - _progress)
+
+        readonly property real _contentOffsetX: transitionType === "wipe"
+            ? (isFront ? -1 : 1) * _wipeDrift * _wipeDx
+            : 0
+        readonly property real _contentOffsetY: transitionType === "wipe"
+            ? (isFront ? -1 : 1) * _wipeDrift * _wipeDy
+            : 0
+
+        readonly property real _wipePeakAtX: _wipeSpan > 0 ? width * _wipeAx / _wipeSpan : 1
+        readonly property real _wipePeakAtY: _wipeSpan > 0 ? height * _wipeAy / _wipeSpan : 1
+
+        readonly property real _wipeScale: width > 0 && height > 0 ? Math.max(
+            1 + 2 * _displacement * _wipeSpan * _wipeAx
+                * (1 - Math.max(_progress, _wipePeakAtX)) / width,
+            1 + 2 * _displacement * _wipeSpan * _wipeAy
+                * (1 - Math.max(_progress, _wipePeakAtY)) / height) : 1
+
+        readonly property real _circleScale: 1 + _displacement * (1 - _progress)
+
+        readonly property real _crossfadeScale: 1 - 0.3 * _displacement * (1 - _progress)
+
+        readonly property real _contentScale: {
+            if (transitionType === "wipe")
+                return _wipeScale;
+            if (transitionType === "circle")
+                return _circleScale;
+            return 1;
+        }
+
         property real _progress: isFront ? 1 : 0
         Behavior on _progress {
             NumberAnimation { duration: slot.transitionDuration; easing.type: Easing.OutCubic }
@@ -168,8 +213,10 @@ PanelWindow {
         }
 
         opacity: transitionType === "crossfade" ? _progress : 1
-        scale: transitionType === "crossfade" ? (0.94 + 0.06 * _progress) : 1
-        z: isFront ? 1 : 0
+        scale: transitionType === "crossfade" ? _crossfadeScale : 1
+        z: (transitionType === "circle" && Config.background.circleReverse)
+            ? (isFront ? 0 : 1)
+            : (isFront ? 1 : 0)
 
         onPathChanged: frozenFrame.visible = false
         onVideoTornDownChanged: {
@@ -182,92 +229,108 @@ PanelWindow {
             id: content
             anchors.fill: parent
 
-            layer.enabled: slot.isFront && slot.transitionType !== "crossfade"
-                && slot._progress < 1
+            layer.enabled: slot._maskThisSlot
             layer.samples: 4
             layer.smooth: true
             layer.effect: MultiEffect {
                 maskEnabled: true
-                maskSource: slot.transitionType === "circle" ? circleMask : wipeMask
+                maskSource: slot.transitionType === "wipe" ? wipeMask : circleMask
             }
 
-            AnimatedImage {
-                id: img
+            Item {
+                id: shifted
                 anchors.fill: parent
-                visible: !slot.isVideo
-                asynchronous: true
-                source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
-                fillMode: Image.PreserveAspectCrop
-                sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1080
-                playing: slot.isFront && !slot.pause
-            }
+                transform: [
+                    Scale {
+                        origin.x: shifted.width / 2
+                        origin.y: shifted.height / 2
+                        xScale: slot._contentScale
+                        yScale: slot._contentScale
+                    },
+                    Translate {
+                        x: slot._contentOffsetX
+                        y: slot._contentOffsetY
+                    }
+                ]
 
-            Loader {
-                id: videoLoader
-                anchors.fill: parent
-                asynchronous: false
-                active: slot.isVideo && !slot.videoTornDown
+                AnimatedImage {
+                    id: img
+                    anchors.fill: parent
+                    visible: !slot.isVideo
+                    asynchronous: true
+                    source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
+                    fillMode: Image.PreserveAspectCrop
+                    sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1080
+                    playing: slot.isFront && !slot.pause
+                }
 
-                sourceComponent: Component {
-                    Item {
-                        id: videoRoot
-                        anchors.fill: parent
-                        readonly property alias videoOutput: vo
-                        property bool ready: false
+                Loader {
+                    id: videoLoader
+                    anchors.fill: parent
+                    asynchronous: false
+                    active: slot.isVideo && !slot.videoTornDown
 
-                        MediaPlayer {
-                            id: player
-                            source: slot.path ? ("file://" + slot.path) : ""
-                            videoOutput: vo
-                            loops: MediaPlayer.Infinite
-                            onSourceChanged: videoRoot.ready = false
-                            onMediaStatusChanged: {
-                                if (mediaStatus === MediaPlayer.Loaded || mediaStatus === MediaPlayer.Buffered) {
-                                    videoRoot.ready = true;
+                    sourceComponent: Component {
+                        Item {
+                            id: videoRoot
+                            anchors.fill: parent
+                            readonly property alias videoOutput: vo
+                            property bool ready: false
+
+                            MediaPlayer {
+                                id: player
+                                source: slot.path ? ("file://" + slot.path) : ""
+                                videoOutput: vo
+                                loops: MediaPlayer.Infinite
+                                onSourceChanged: videoRoot.ready = false
+                                onMediaStatusChanged: {
+                                    if (mediaStatus === MediaPlayer.Loaded || mediaStatus === MediaPlayer.Buffered) {
+                                        videoRoot.ready = true;
+                                    }
                                 }
                             }
-                        }
 
-                        VideoOutput {
-                            id: vo
-                            anchors.fill: parent
-                            visible: !frozenFrame.visible
-                            fillMode: VideoOutput.PreserveAspectCrop
-                        }
-
-                        Component.onCompleted: {
-                            if (slot.shouldPlay) {
-                                frozenFrame.visible = false;
-                                player.play();
-                            } else {
-                                player.pause();
+                            VideoOutput {
+                                id: vo
+                                anchors.fill: parent
+                                visible: !frozenFrame.visible
+                                fillMode: VideoOutput.PreserveAspectCrop
                             }
-                        }
 
-                        Connections {
-                            target: slot
-                            function onShouldPlayChanged() {
+                            Component.onCompleted: {
                                 if (slot.shouldPlay) {
                                     frozenFrame.visible = false;
                                     player.play();
                                 } else {
-                                    frozenFrame.scheduleUpdate();
-                                    frozenFrame.visible = true;
                                     player.pause();
+                                }
+                            }
+
+                            Connections {
+                                target: slot
+                                function onShouldPlayChanged() {
+                                    if (slot.shouldPlay) {
+                                        frozenFrame.visible = false;
+                                        player.play();
+                                    } else {
+                                        frozenFrame.scheduleUpdate();
+                                        frozenFrame.visible = true;
+                                        player.pause();
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            ShaderEffectSource {
-                id: frozenFrame
-                anchors.fill: parent
-                sourceItem: videoLoader.item ? videoLoader.item.videoOutput : null
-                live: false
-                hideSource: false
-                visible: false
+                ShaderEffectSource {
+                    id: frozenFrame
+                    anchors.fill: parent
+                    sourceItem: videoLoader.item ? videoLoader.item.videoOutput : null
+                    live: false
+                    hideSource: false
+                    visible: false
+                }
             }
         }
 
@@ -280,10 +343,16 @@ PanelWindow {
             layer.samples: 4
             layer.smooth: true
 
+            readonly property real _sweep: slot._wipeSpan * (slot._progress - 0.5) - slot._diagonal
+            readonly property real _cx: slot.width / 2 + slot._wipeDx * _sweep
+            readonly property real _cy: slot.height / 2 + slot._wipeDy * _sweep
+
             Rectangle {
-                anchors.right: parent.right
-                width: parent.width * slot._progress
-                height: parent.height
+                width: slot._diagonal * 2
+                height: slot._diagonal * 4
+                x: wipeMask._cx - width / 2
+                y: wipeMask._cy - height / 2
+                rotation: Config.background.wipeAngle
                 color: "black"
             }
         }
@@ -337,8 +406,8 @@ PanelWindow {
             Image {
                 id: blurSrcImg
                 anchors.fill: parent
-                source: (WallpaperService.currentWallPreview || WallpaperService.currentWall) 
-                    ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall)) 
+                source: (WallpaperService.currentWallPreview || WallpaperService.currentWall)
+                    ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall))
                     : ""
                 fillMode: Image.PreserveAspectCrop
                 visible: false
@@ -373,52 +442,44 @@ PanelWindow {
         }
     }
 
-    Loader {
-        id: weyesLoader
-        active: Config.weyes.enabled && CompositorService.hasCapability("cursorPosition")
-
-        sourceComponent: Weyes {
-            modelData: root.modelData
-        }
-    }
-
-    readonly property bool nekoForceBehind: LockscreenService.locked || LockscreenService.lockAnimating || LockscreenService.lockVisualActive || LockscreenService.unlockAnimating
-
-    Loader {
-        id: nekoLoader
-        active: Config.neko.enabled && (!Config.neko.onTop || root.nekoForceBehind) && CompositorService.hasCapability("cursorPosition")
-
-        sourceComponent: Neko {
-            modelData: root.modelData
-        }
-    }
-
-    Loader {
-        id: activateLinuxLoader
+    Item {
+        id: editDim
         anchors.fill: parent
-        active: Config.activateLinux
+        z: 2
+        opacity: EditModeService.active ? 1 : 0
+        visible: opacity > 0
 
-        sourceComponent: ActivateLinux {
-            modelData: root.modelData
+        Behavior on opacity {
+            NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
         }
-    }
 
-    CavaVisualizer {
-        id: cavaVisualizer
-        anchors.fill: parent
-        z: 3
-        pause: root.shouldPause
-        visible: Config.cava.enabled
-    }
+        Rectangle {
+            anchors.fill: parent
+            color: Qt.alpha("black", 0.35)
+        }
 
-    Loader {
-        id: clockLoader
-        anchors.fill: parent
-        active: Config.desktopClock || loadedOnce
-        property bool loadedOnce: false
-        onLoaded: loadedOnce = true
-        z: 4
-        sourceComponent: ClockWidget { modelData: root.modelData }
+        Canvas {
+            id: editGridCanvas
+            anchors.fill: parent
+            readonly property real spacing: 24
+            readonly property real dotRadius: 1.2
+
+            onPaint: {
+                const ctx = getContext("2d");
+                ctx.reset();
+                ctx.fillStyle = Qt.alpha(Colors.md3.primary, 0.45);
+                for (let x = 0; x <= width; x += spacing) {
+                    for (let y = 0; y <= height; y += spacing) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+        }
     }
 
     Item {

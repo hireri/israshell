@@ -59,7 +59,6 @@ PageBase {
         }
 
         SettingSlider {
-            isLast: true
             label: Localization.t("backgroundPage.transition_duration")
             sublabel: Localization.t("backgroundPage.how_long_the_wallpaper_transition")
             from: 150
@@ -69,6 +68,46 @@ PageBase {
             value: Config.background.transitionDuration
             onMoved: v => Config.update({
                 background: Object.assign({}, Config.background, { transitionDuration: Math.round(v) })
+            })
+        }
+
+        SettingSlider {
+            label: Localization.t("backgroundPage.transition_displacement")
+            sublabel: Localization.t("backgroundPage.how_far_the_wallpapers_drift_or_grow")
+            from: 0
+            to: 100
+            stepSize: 1
+            unit: "%"
+            value: Config.background.transitionDisplacement
+            onMoved: v => Config.update({
+                background: Object.assign({}, Config.background, { transitionDisplacement: Math.round(v) })
+            })
+        }
+
+        SettingSlider {
+            label: Localization.t("backgroundPage.wipe_direction")
+            sublabel: Localization.t("backgroundPage.angle_both_wallpapers_move_during_a_wipe")
+            enabled: Config.background.transitionType === "wipe" || Config.background.transitionType === "random"
+            opacity: enabled ? 1.0 : 0.4
+            from: 0
+            to: 359
+            stepSize: 1
+            unit: "°"
+            value: Config.background.wipeAngle
+            onMoved: v => Config.update({
+                background: Object.assign({}, Config.background, { wipeAngle: Math.round(v) })
+            })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: Localization.t("backgroundPage.reverse_circle_wipe")
+            sublabel: Localization.t("backgroundPage.shrink_the_old_wallpaper_away_instead_of_growing_the_new_one_in")
+            enabled: Config.background.transitionType === "circle" || Config.background.transitionType === "random"
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.background.circleReverse
+            onToggled: v => Config.update({
+                background: Object.assign({}, Config.background, { circleReverse: v })
             })
         }
     }

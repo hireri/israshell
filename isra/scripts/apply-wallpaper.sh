@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# apply-wallpaper.sh <wall-path> <mode> [scheme] [source-color-index] [--awww] [--transition <type>] [--duration <ms>]
+# apply-wallpaper.sh <wall-path> <mode> [scheme] [source-color-index] [--awww] [--transition <type>]
+#                     [--duration <ms>] [--wipe-angle <deg>] [--circle-reverse]
 #   mode: dark | light
 #   transition type: crossfade | wipe | circle | random
 
@@ -8,12 +9,16 @@ set -euo pipefail
 USE_AWWW="false"
 TRANSITION_TYPE="crossfade"
 TRANSITION_DURATION_MS="550"
+WIPE_ANGLE="0"
+CIRCLE_REVERSE="false"
 ARGS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --awww|-awww) USE_AWWW="true"; shift ;;
         --transition) TRANSITION_TYPE="${2:-crossfade}"; shift 2 ;;
         --duration) TRANSITION_DURATION_MS="${2:-550}"; shift 2 ;;
+        --wipe-angle) WIPE_ANGLE="${2:-0}"; shift 2 ;;
+        --circle-reverse) CIRCLE_REVERSE="true"; shift ;;
         *) ARGS+=("$1"); shift ;;
     esac
 done
@@ -113,10 +118,25 @@ manage_awww_daemon() {
     local target="$HYPR_DIR/current_wall_prev"
     is_video "$WALL" || target="$HYPR_DIR/current_wall"
 
+    local awww_angle
+    awww_angle=$(awk -v a="$WIPE_ANGLE" 'BEGIN{
+        v = 180 - a
+        while (v < 0)   v += 360
+        while (v >= 360) v -= 360
+        printf "%.0f", v
+    }')
+
     local awww_type awww_extra=()
     case "$TRANSITION_TYPE" in
-        wipe)    awww_type="wipe"; awww_extra=(--transition-angle 0) ;;
-        circle)  awww_type="grow"; awww_extra=(--transition-pos center) ;;
+        wipe)    awww_type="wipe"; awww_extra=(--transition-angle "$awww_angle") ;;
+        circle)
+            if [[ "$CIRCLE_REVERSE" == "true" ]]; then
+                awww_type="outer"
+            else
+                awww_type="grow"
+            fi
+            awww_extra=(--transition-pos center)
+            ;;
         random)  awww_type="random" ;;
         crossfade|*) awww_type="fade" ;;
     esac

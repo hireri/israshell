@@ -91,7 +91,10 @@ PanelWindow {
     property bool trashBusy: false
     property bool trashFileHovering: false
 
-    readonly property bool revealed: pinned || hoverLatched || interactionHold || (smartHide && !hasWindowsUnderneath)
+    readonly property bool forceHidden: EditModeService.active || AiAssistantService.visible
+
+    readonly property bool revealed: !forceHidden
+        && (pinned || hoverLatched || interactionHold || (smartHide && !hasWindowsUnderneath))
 
     property bool blurHoldActive: revealed
     onRevealedChanged: {

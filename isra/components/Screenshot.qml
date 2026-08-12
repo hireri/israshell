@@ -72,6 +72,52 @@ Item {
             },
         ])
 
+    function envFor(id) {
+        switch (id) {
+        case "screenshot":
+            return {
+                NOTIFY_SCREENSHOT_ERROR_TITLE: Localization.t("screenshotScript.error_title"),
+                NOTIFY_SCREENSHOT_ERROR_BODY: Localization.t("screenshotScript.error_body")
+            };
+        case "record":
+            return {
+                NOTIFY_OPTIMIZE_FAILED_TITLE: Localization.t("recordScript.optimize_failed_title"),
+                NOTIFY_OPTIMIZE_FAILED_BODY: Localization.t("recordScript.optimize_failed_body"),
+                NOTIFY_CONVERTING_GIF_TITLE: Localization.t("recordScript.converting_gif_title"),
+                NOTIFY_GIF_SAVED_TITLE: Localization.t("recordScript.gif_saved_title"),
+                NOTIFY_OPEN_GIF_ACTION: Localization.t("recordScript.open_gif_action"),
+                NOTIFY_VIEW_FOLDER_ACTION: Localization.t("recordScript.view_folder_action"),
+                NOTIFY_GIF_FAILED_TITLE: Localization.t("recordScript.gif_failed_title"),
+                NOTIFY_GIF_FAILED_BODY: Localization.t("recordScript.gif_failed_body"),
+                NOTIFY_RECORDING_SAVED_TITLE: Localization.t("recordScript.recording_saved_title"),
+                NOTIFY_SAVED_TO_BODY: Localization.t("recordScript.saved_to_body"),
+                NOTIFY_PROCESSING_TITLE: Localization.t("recordScript.processing_title"),
+                NOTIFY_DOWNSCALING_BODY: Localization.t("recordScript.downscaling_body"),
+                NOTIFY_OPEN_ACTION: Localization.t("recordScript.open_action"),
+                NOTIFY_TO_GIF_ACTION: Localization.t("recordScript.to_gif_action"),
+                NOTIFY_WARNING_TITLE: Localization.t("recordScript.warning_title"),
+                NOTIFY_NO_AUDIO_BODY: Localization.t("recordScript.no_audio_body"),
+                NOTIFY_LIMIT_REACHED_TITLE: Localization.t("recordScript.limit_reached_title"),
+                NOTIFY_AUTO_STOPPING_BODY: Localization.t("recordScript.auto_stopping_body"),
+                NOTIFY_RECORDING_STARTED_TITLE: Localization.t("recordScript.recording_started_title"),
+                NOTIFY_RECORDING_REGION_BODY: Localization.t("recordScript.recording_region_body")
+            };
+        case "cts":
+            return {
+                NOTIFY_UPLOAD_FAILED_TITLE: Localization.t("ctsScript.upload_failed_title"),
+                NOTIFY_UPLOAD_FAILED_BODY: Localization.t("ctsScript.upload_failed_body")
+            };
+        case "ocr":
+            return {
+                NOTIFY_OCR_TITLE: Localization.t("ocrScript.title"),
+                NOTIFY_NO_TEXT_FOUND_BODY: Localization.t("ocrScript.no_text_found_body"),
+                NOTIFY_COPIED_BODY: Localization.t("ocrScript.copied_body")
+            };
+        default:
+            return ({});
+        }
+    }
+
     ScreenshotPreview {
         id: screenshotPreview
     }
@@ -86,6 +132,7 @@ Item {
     Process {
         id: stopRecordingProc
         command: ["sh", "-c", Config.screencap.recordPath]
+        environment: root.envFor("record")
         running: false
         onExited: {
             ScreencapService.refresh();
@@ -228,6 +275,7 @@ Item {
         const geom = `${Math.round(gx)},${Math.round(gy)} ${Math.round(gw)}x${Math.round(gh)}`;
         const tool = root.toolList.find(t => t.id === root.activeTool);
 
+        captureProc.environment = root.envFor(root.activeTool);
         captureProc.command = ["sh", "-c", `${tool?.cmd ?? ""} '${geom}'`];
 
         if (uiLoader.item)

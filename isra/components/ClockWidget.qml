@@ -3,6 +3,7 @@ import QtQuick.Effects
 import Quickshell
 import qs.style
 import qs.services
+import qs.icons
 
 Item {
     id: root
@@ -16,29 +17,19 @@ Item {
     property bool _isInitializing: true
     property bool animate: true
 
-    Behavior on _cx {
-        enabled: root.animate && !root._isInitializing && !Config.loading && !(Config.clock.manualPos ?? false)
-        NumberAnimation {
-            duration: 350
-            easing.type: Easing.OutQuint
-        }
-    }
-    Behavior on _cy {
-        enabled: root.animate && !root._isInitializing && !Config.loading && !(Config.clock.manualPos ?? false)
-        NumberAnimation {
-            duration: 350
-            easing.type: Easing.OutQuint
-        }
-    }
-
     property var _currentTime: new Date()
 
     function updatePosition() {
         if (Config.clock.manualPos ?? false) return
         const pos = Config.clockPositions?.[modelData?.name]
-        if (!pos || (pos.x === _cx && pos.y === _cy)) return
-        _cx = pos.x
-        _cy = pos.y
+        if (pos) {
+            if (pos.x === _cx && pos.y === _cy) return
+            _cx = pos.x
+            _cy = pos.y
+        } else {
+            _cx = (modelData?.width  ?? root.width)  * 0.82
+            _cy = (modelData?.height ?? root.height) * 0.10
+        }
     }
 
     function loadSavedPosition() {
@@ -113,6 +104,33 @@ Item {
 
     property real _dragDx: 0
     property real _dragDy: 0
+    property bool _dragActive: false
+
+    property real _resizeScaleDelta: 0
+    property bool _resizeActive: false
+    property var _resizeFactorBounds: ({ min: 1, max: 1 })
+    property real _resizeStartW: 1
+    property real _resizeStartH: 1
+
+    function _clockFactorBounds() {
+        const layout = Config.clock.layout;
+        const fields = ClockSizing.resizableFieldsForLayout(layout);
+
+        let min = 0;
+        let max = Infinity;
+        let matched = false;
+        for (const field of fields) {
+            const bounds = ClockSizing.boundsFor(layout, field);
+            const current = Config.clock[field] ?? ClockSizing.scaledDefaultFor(field);
+            if (!bounds || current <= 0) continue;
+            matched = true;
+            min = Math.max(min, bounds.min / current);
+            max = Math.min(max, bounds.max / current);
+        }
+
+        if (!matched) return { min: 1, max: 1 };
+        return { min: min, max: Math.max(min, max) };
+    }
 
     property bool forceVisible: false
     property bool forceCentered: false
@@ -153,7 +171,7 @@ Item {
         }
 
         Behavior on currentCx {
-            enabled: root.animate && !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
+            enabled: root.animate && !root._isInitializing && !root._dragActive && !clockRoot._snapAfterDrag
             NumberAnimation {
                 duration: 350
                 easing.type: Easing.BezierSpline
@@ -161,7 +179,7 @@ Item {
             }
         }
         Behavior on currentCy {
-            enabled: root.animate && !root._isInitializing && !dragHandler.active && !clockRoot._snapAfterDrag
+            enabled: root.animate && !root._isInitializing && !root._dragActive && !clockRoot._snapAfterDrag
             NumberAnimation {
                 duration: 350
                 easing.type: Easing.BezierSpline
@@ -207,12 +225,14 @@ Item {
                 }
         }
 
-        scale: !isClockEnabled ? 0.9 : (dragHandler.active ? 1.06 : 1.0)
+        readonly property real _configScale: Math.max(root._resizeFactorBounds.min, Math.min(root._resizeFactorBounds.max, 1.0 + root._resizeScaleDelta))
+
+        scale: (!isClockEnabled ? 0.9 : (root._dragActive ? 1.06 : 1.0)) * _configScale
         transformOrigin: Item.Center
         Behavior on scale {
-            enabled: root.animate && !root._isInitializing
+            enabled: root.animate && !root._isInitializing && !root._resizeActive
             NumberAnimation {
-                duration: clockRoot.isClockEnabled ? (dragHandler.active ? 220 : 200) : 150
+                duration: clockRoot.isClockEnabled ? (root._dragActive ? 220 : 200) : 150
                 easing.type: Easing.OutCubic
             }
         }
@@ -227,41 +247,7 @@ Item {
         }
 
         HoverHandler {
-            cursorShape: dragHandler.active ? Qt.ClosedHandCursor : ((Config.clock.manualPos ?? false) && clockRoot.isClockEnabled) ? Qt.OpenHandCursor : Qt.ArrowCursor
-        }
-
-        DragHandler {
-            id: dragHandler
-            enabled: (Config.clock.manualPos ?? false) && clockRoot.isClockEnabled
-            target: null
-            onActiveChanged: {
-                if (!active) {
-                    root._cx += root._dragDx;
-                    root._cy += root._dragDy;
-                    root._dragDx = 0;
-                    root._dragDy = 0;
-
-                    const positions = Object.assign({}, Config.clockPositions ?? {});
-                    positions[root.modelData.name] = {
-                        x: root._cx,
-                        y: root._cy
-                    };
-                    Config.update({
-                        clockPositions: positions
-                    });
-
-                    clockRoot._snapAfterDrag = true;
-                    clockRoot.currentCx = clockRoot.targetCx;
-                    clockRoot.currentCy = clockRoot.targetCenterY;
-                    clockRoot._snapAfterDrag = false;
-                }
-            }
-            onTranslationChanged: {
-                if (active) {
-                    root._dragDx = translation.x;
-                    root._dragDy = translation.y;
-                }
-            }
+            cursorShape: root._dragActive ? Qt.ClosedHandCursor : (clockEditFrame.interactive ? Qt.OpenHandCursor : Qt.ArrowCursor)
         }
 
         readonly property string _font: Config.clock.fontFamily !== "" ? Config.clock.fontFamily : Config.fontFamily
@@ -347,5 +333,117 @@ Item {
         Component { id: verticalComp;   ClockVertical   {} }
         Component { id: wordComp;       ClockWord       {} }
         Component { id: analogComp;     ClockAnalog     {} }
+    }
+
+    readonly property real _clockVisualWidth: clockRoot.width * clockRoot.scale
+    readonly property real _clockVisualHeight: clockRoot.height * clockRoot.scale
+    readonly property real _clockVisualX: clockRoot.x - (_clockVisualWidth - clockRoot.width) / 2
+    readonly property real _clockVisualY: clockRoot.y - (_clockVisualHeight - clockRoot.height) / 2
+
+    EditableFrame {
+        id: clockEditFrame
+        trackX: root._clockVisualX
+        trackY: root._clockVisualY
+        trackWidth: root._clockVisualWidth
+        trackHeight: root._clockVisualHeight
+        label: "Clock"
+        interactive: (EditModeService.active || (Config.clock.manualPos ?? false)) && clockRoot.isClockEnabled
+        showChrome: EditModeService.active
+        movable: true
+        resizable: EditModeService.active
+        uniformScale: true
+        cornerRadius: 16
+
+        quickActions: Component {
+            Rectangle {
+                readonly property bool _manualPos: Config.clock.manualPos ?? false
+                width: 16
+                height: 16
+                radius: 8
+                color: pinMouse.containsMouse ? Qt.alpha(Colors.md3.on_primary_container, 0.15) : "transparent"
+
+                Behavior on color {
+                    ColorAnimation { duration: 100 }
+                }
+
+                MaterialIcon {
+                    anchors.centerIn: parent
+                    name: "keep"
+                    filled: parent._manualPos
+                    iconSize: 12
+                    color: Colors.md3.on_primary_container
+                }
+
+                MouseArea {
+                    id: pinMouse
+                    anchors.fill: parent
+                    anchors.margins: -3
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Config.update({
+                        clock: Object.assign({}, Config.clock, { manualPos: !(Config.clock.manualPos ?? false) })
+                    })
+                }
+            }
+        }
+
+        onMoveStarted: root._dragActive = true
+        onMoveDelta: (dx, dy) => {
+            root._dragDx = dx;
+            root._dragDy = dy;
+        }
+        onMoveCommitted: {
+            root._dragActive = false;
+
+            const newCx = root._cx + root._dragDx;
+            const newCy = root._cy + root._dragDy;
+            root._dragDx = 0;
+            root._dragDy = 0;
+
+            const positions = Object.assign({}, Config.clockPositions ?? {});
+            positions[root.modelData.name] = {
+                x: newCx,
+                y: newCy
+            };
+            Config.update({
+                clockPositions: positions,
+                clock: Object.assign({}, Config.clock, { manualPos: true })
+            });
+
+            root._cx = newCx;
+            root._cy = newCy;
+
+            clockRoot._snapAfterDrag = true;
+            clockRoot.currentCx = clockRoot.targetCx;
+            clockRoot.currentCy = clockRoot.targetCenterY;
+            clockRoot._snapAfterDrag = false;
+        }
+        onResizeStarted: {
+            root._resizeActive = true;
+            root._resizeScaleDelta = 0;
+            root._resizeStartW = clockEditFrame.trackWidth;
+            root._resizeStartH = clockEditFrame.trackHeight;
+            root._resizeFactorBounds = root._clockFactorBounds();
+        }
+        onResizeDelta: (dw, dh) => {
+            root._resizeScaleDelta = 2 * (dw + dh) / Math.max(1, root._resizeStartW + root._resizeStartH);
+        }
+        onResizeCommitted: {
+            const bounds = root._resizeFactorBounds;
+            const factor = Math.max(bounds.min, Math.min(bounds.max, 1.0 + root._resizeScaleDelta));
+            root._resizeScaleDelta = 0;
+            root._resizeActive = false;
+
+            const changes = {};
+            for (const field of ClockSizing.scaledFields()) {
+                const b = ClockSizing.scaledBoundsFor(field);
+                const current = Config.clock[field] ?? ClockSizing.scaledDefaultFor(field);
+                changes[field] = Math.max(b.min, Math.min(b.max, Math.round(current * factor)));
+            }
+
+            Config.update({
+                clock: Object.assign({}, Config.clock, changes)
+            });
+        }
     }
 }

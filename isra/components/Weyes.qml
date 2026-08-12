@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
+import Quickshell
 import qs.services
 import qs.style
 
@@ -8,10 +9,7 @@ Item {
     id: root
     required property var modelData
 
-    x: localX
-    y: localY
-    width: localWidth
-    height: localHeight
+    anchors.fill: parent
 
     property real localX: 100
     property real localY: 100
@@ -33,15 +31,36 @@ Item {
         ? (Colors.md3.on_surface ?? "#202020")
         : "#000000"
 
+    readonly property var referenceScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+    readonly property real referenceWidth: referenceScreen?.width ?? modelData?.width ?? 1920
+    readonly property real referenceHeight: referenceScreen?.height ?? modelData?.height ?? 1080
+
+    function _screenTransform(curW: real, curH: real): var {
+        const scale = Math.max(curW / root.referenceWidth, curH / root.referenceHeight);
+        return {
+            scale: scale,
+            cropX: (root.referenceWidth * scale - curW) / 2,
+            cropY: (root.referenceHeight * scale - curH) / 2
+        };
+    }
+
+    function _applyScaledDefault(): void {
+        const curW = modelData?.width ?? root.referenceWidth;
+        const curH = modelData?.height ?? root.referenceHeight;
+        const t = _screenTransform(curW, curH);
+
+        localX = (Config.weyes.x ?? 100) * t.scale - t.cropX;
+        localY = (Config.weyes.y ?? 100) * t.scale - t.cropY;
+        localWidth = (Config.weyes.width ?? 220) * t.scale;
+        localHeight = (Config.weyes.height ?? 120) * t.scale;
+    }
+
     function loadGeometry(): void {
         if (!Config.weyes) return;
-        
+
         const mirror = Config.weyes.mirror ?? true;
         if (mirror) {
-            localX = Config.weyes.x ?? 100;
-            localY = Config.weyes.y ?? 100;
-            localWidth = Config.weyes.width ?? 220;
-            localHeight = Config.weyes.height ?? 120;
+            _applyScaledDefault();
         } else if (modelData && modelData.name) {
             const pos = Config.weyesPositions?.[modelData.name];
             if (pos) {
@@ -50,28 +69,68 @@ Item {
                 localWidth = pos.width ?? 220;
                 localHeight = pos.height ?? 120;
             } else {
-                localX = Config.weyes.x ?? 100;
-                localY = Config.weyes.y ?? 100;
-                localWidth = Config.weyes.width ?? 220;
-                localHeight = Config.weyes.height ?? 120;
+                _applyScaledDefault();
             }
         }
     }
 
     onModelDataChanged: loadGeometry()
 
+    property bool _mirrorInitialized: false
+    property bool _prevMirror: true
+
+    function _seedMirrorBaseFromReferenceMonitor(): void {
+        if (root.modelData !== root.referenceScreen) return;
+        const pos = Config.weyesPositions?.[root.modelData?.name];
+        if (!pos) return;
+        Config.update({
+            weyes: Object.assign({}, Config.weyes, {
+                x: pos.x,
+                y: pos.y,
+                width: pos.width,
+                height: pos.height
+            })
+        });
+    }
+
+    function _captureCurrentAsIndividualPosition(): void {
+        if (!root.modelData || !root.modelData.name) return;
+        const positions = Object.assign({}, Config.weyesPositions ?? {});
+        positions[root.modelData.name] = {
+            x: Math.round(root.localX),
+            y: Math.round(root.localY),
+            width: Math.round(root.localWidth),
+            height: Math.round(root.localHeight)
+        };
+        Config.update({ weyesPositions: positions });
+    }
+
     Connections {
         target: Config
         function onWeyesChanged() {
+            const mirror = Config.weyes.mirror ?? true;
+            const enabling = root._mirrorInitialized && !root._prevMirror && mirror;
+            const disabling = root._mirrorInitialized && root._prevMirror && !mirror;
+            root._prevMirror = mirror;
+            root._mirrorInitialized = true;
+            if (enabling) {
+                root._seedMirrorBaseFromReferenceMonitor();
+            } else if (disabling) {
+                root._captureCurrentAsIndividualPosition();
+            }
             root.loadGeometry();
         }
         function onWeyesPositionsChanged() {
+            if (root._mirrorInitialized && root._prevMirror !== (Config.weyes.mirror ?? true))
+                return;
             root.loadGeometry();
         }
     }
 
     Component.onCompleted: {
         CursorService.acquire();
+        root._prevMirror = Config.weyes?.mirror ?? true;
+        root._mirrorInitialized = true;
         root.loadGeometry();
     }
     Component.onDestruction: CursorService.release()
@@ -91,18 +150,26 @@ Item {
     readonly property real screenOffsetX: modelData ? modelData.x : 0
     readonly property real screenOffsetY: modelData ? modelData.y : 0
 
-    Row {
-        id: eyesRow
-        anchors.centerIn: parent
-        spacing: Math.max(4, root.width * 0.07)
+    Item {
+        id: weyesRoot
+        x: root.localX
+        y: root.localY
+        width: root.localWidth
+        height: root.localHeight
 
-        Eye {
-            width: (root.width - eyesRow.spacing) / 2
-            height: root.height
-        }
-        Eye {
-            width: (root.width - eyesRow.spacing) / 2
-            height: root.height
+        Row {
+            id: eyesRow
+            anchors.centerIn: parent
+            spacing: Math.max(4, weyesRoot.width * 0.07)
+
+            Eye {
+                width: (weyesRoot.width - eyesRow.spacing) / 2
+                height: weyesRoot.height
+            }
+            Eye {
+                width: (weyesRoot.width - eyesRow.spacing) / 2
+                height: weyesRoot.height
+            }
         }
     }
 
@@ -110,7 +177,7 @@ Item {
         id: eye
 
         readonly property real borderWidth: Math.max(3.0, Math.min(eye.width, eye.height) * 0.1)
-        
+
         readonly property real pupilMargin: Math.max(3.0, Math.min(eye.width, eye.height) * 0.07)
 
         Shape {
@@ -142,8 +209,8 @@ Item {
             layer.enabled: true
             layer.samples: 4
 
-            readonly property real eyeCenterX: eye.x + eye.width / 2 + (root.width - eyesRow.width) / 2
-            readonly property real eyeCenterY: eye.y + eye.height / 2 + (root.height - eyesRow.height) / 2
+            readonly property real eyeCenterX: eye.x + eye.width / 2 + (weyesRoot.width - eyesRow.width) / 2
+            readonly property real eyeCenterY: eye.y + eye.height / 2 + (weyesRoot.height - eyesRow.height) / 2
 
             readonly property real eyeScreenCenterX: root.screenOffsetX + root.localX + eyeCenterX
             readonly property real eyeScreenCenterY: root.screenOffsetY + root.localY + eyeCenterY
@@ -178,72 +245,61 @@ Item {
         }
     }
 
-    MouseArea {
-        id: interactionArea
-        anchors.fill: parent
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        
-        cursorShape: {
-            if (pressedButtons & Qt.RightButton) return Qt.SizeFDiagCursor;
-            if (pressedButtons & Qt.LeftButton) return Qt.ClosedHandCursor;
-            return Qt.OpenHandCursor;
+    EditableFrame {
+        id: weyesEditFrame
+        trackX: weyesRoot.x
+        trackY: weyesRoot.y
+        trackWidth: weyesRoot.width
+        trackHeight: weyesRoot.height
+        label: "Weyes"
+        interactive: EditModeService.active
+        showChrome: EditModeService.active
+        movable: true
+        resizable: true
+        uniformScale: false
+        cornerRadius: 8
+
+        property real _startX: 0
+        property real _startY: 0
+        property real _startWidth: 0
+        property real _startHeight: 0
+
+        onMoveStarted: {
+            _startX = root.localX;
+            _startY = root.localY;
         }
-
-        property real startMouseX: 0
-        property real startMouseY: 0
-        property real startX: 0
-        property real startY: 0
-        property real startWidth: 0
-        property real startHeight: 0
-        property int activeDragButton: 0 
-
-        onPressed: mouse => {
-            const g = mapToItem(null, mouse.x, mouse.y);
-            startMouseX = g.x;
-            startMouseY = g.y;
-            startX = root.localX;
-            startY = root.localY;
-            startWidth = root.localWidth;
-            startHeight = root.localHeight;
-            activeDragButton = mouse.button;
+        onMoveDelta: (dx, dy) => {
+            root.localX = _startX + dx;
+            root.localY = _startY + dy;
         }
+        onMoveCommitted: root.commitGeometry()
 
-        onPositionChanged: mouse => {
-            if (activeDragButton === 0)
-                return;
-
-            const g = mapToItem(null, mouse.x, mouse.y);
-            const deltaX = g.x - startMouseX;
-            const deltaY = g.y - startMouseY;
-
-            if (activeDragButton === Qt.LeftButton) {
-                root.localX = startX + deltaX;
-                root.localY = startY + deltaY;
-            } else if (activeDragButton === Qt.RightButton) {
-                root.localWidth = Math.max(root.minWidth, startWidth + deltaX);
-                root.localHeight = Math.max(root.minHeight, startHeight + deltaY);
-            }
+        onResizeStarted: {
+            _startWidth = root.localWidth;
+            _startHeight = root.localHeight;
         }
-
-        onReleased: {
-            activeDragButton = 0;
-            root.commitGeometry();
+        onResizeDelta: (dw, dh) => {
+            root.localWidth = Math.max(root.minWidth, _startWidth + dw);
+            root.localHeight = Math.max(root.minHeight, _startHeight + dh);
         }
+        onResizeCommitted: root.commitGeometry()
     }
 
     function commitGeometry(): void {
         const mirror = Config.weyes.mirror ?? true;
         if (mirror) {
+            const curW = root.modelData?.width ?? root.referenceWidth;
+            const curH = root.modelData?.height ?? root.referenceHeight;
+            const t = root._screenTransform(curW, curH);
+
             Config.update({
-                weyes: {
-                    enabled: Config.weyes.enabled,
-                    tinted: Config.weyes.tinted,
+                weyes: Object.assign({}, Config.weyes, {
                     mirror: true,
-                    x: Math.round(root.localX),
-                    y: Math.round(root.localY),
-                    width: Math.round(root.localWidth),
-                    height: Math.round(root.localHeight)
-                }
+                    x: Math.round((root.localX + t.cropX) / t.scale),
+                    y: Math.round((root.localY + t.cropY) / t.scale),
+                    width: Math.round(root.localWidth / t.scale),
+                    height: Math.round(root.localHeight / t.scale)
+                })
             });
         } else {
             const positions = Object.assign({}, Config.weyesPositions ?? {});

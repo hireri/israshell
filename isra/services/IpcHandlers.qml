@@ -72,4 +72,17 @@ Item {
                 console.warn("[IpcHandlers] no quicksettings panel available");
         }
     }
+
+    IpcHandler {
+        target: "editmode"
+        function enable(): void {
+            EditModeService.enable();
+        }
+        function disable(): void {
+            EditModeService.disable();
+        }
+        function toggle(): void {
+            EditModeService.toggle();
+        }
+    }
 }

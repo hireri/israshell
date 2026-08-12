@@ -4,6 +4,10 @@
 # Stdout/stderr are captured by QML for logging.
 set -euo pipefail
 
+NOTIFY_SHELL_UPDATED_TITLE="${NOTIFY_SHELL_UPDATED_TITLE:-Shell updated}"
+NOTIFY_RESTARTING_BODY="${NOTIFY_RESTARTING_BODY:-Restarting...}"
+NOTIFY_NOW_RUNNING_BODY="${NOTIFY_NOW_RUNNING_BODY:-Now running %s}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
@@ -28,7 +32,7 @@ echo "Updating: $current_tag -> $new_tag"
 git -C "$REPO_ROOT" checkout "$new_tag" 2>&1
 
 notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
-    "Shell updated" "Restarting..."
+    "$NOTIFY_SHELL_UPDATED_TITLE" "$NOTIFY_RESTARTING_BODY"
 
 setsid bash -c '
     sleep 0.5
@@ -40,7 +44,7 @@ setsid bash -c '
 setsid bash -c '
     sleep 2
     notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
-        "Shell updated" "Now running '"$new_tag"'"
+        "'"$NOTIFY_SHELL_UPDATED_TITLE"'" "'"$(printf "$NOTIFY_NOW_RUNNING_BODY" "$new_tag")"'"
 ' >/dev/null 2>&1 &
 
 echo "done:$new_tag"

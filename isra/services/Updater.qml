@@ -129,6 +129,12 @@ Singleton {
         id: _applyProc
         command: ["bash", root._scriptsDir + "/do-update.sh"]
 
+        environment: ({
+                NOTIFY_SHELL_UPDATED_TITLE: Localization.t("doUpdateScript.shell_updated_title"),
+                NOTIFY_RESTARTING_BODY: Localization.t("doUpdateScript.restarting_body"),
+                NOTIFY_NOW_RUNNING_BODY: Localization.t("doUpdateScript.now_running_body")
+            })
+
         property string _stdout: ""
 
         stdout: SplitParser {

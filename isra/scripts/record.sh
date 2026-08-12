@@ -1,4 +1,26 @@
 #!/bin/bash
+
+NOTIFY_OPTIMIZE_FAILED_TITLE="${NOTIFY_OPTIMIZE_FAILED_TITLE:-Video optimization failed}"
+NOTIFY_OPTIMIZE_FAILED_BODY="${NOTIFY_OPTIMIZE_FAILED_BODY:-Keeping original file}"
+NOTIFY_CONVERTING_GIF_TITLE="${NOTIFY_CONVERTING_GIF_TITLE:-Converting to GIF…}"
+NOTIFY_GIF_SAVED_TITLE="${NOTIFY_GIF_SAVED_TITLE:-GIF saved}"
+NOTIFY_OPEN_GIF_ACTION="${NOTIFY_OPEN_GIF_ACTION:-Open GIF}"
+NOTIFY_VIEW_FOLDER_ACTION="${NOTIFY_VIEW_FOLDER_ACTION:-View Folder}"
+NOTIFY_GIF_FAILED_TITLE="${NOTIFY_GIF_FAILED_TITLE:-GIF conversion failed}"
+NOTIFY_GIF_FAILED_BODY="${NOTIFY_GIF_FAILED_BODY:-ffmpeg error}"
+NOTIFY_RECORDING_SAVED_TITLE="${NOTIFY_RECORDING_SAVED_TITLE:-Recording saved}"
+NOTIFY_SAVED_TO_BODY="${NOTIFY_SAVED_TO_BODY:-Saved to %s}"
+NOTIFY_PROCESSING_TITLE="${NOTIFY_PROCESSING_TITLE:-Processing recording…}"
+NOTIFY_DOWNSCALING_BODY="${NOTIFY_DOWNSCALING_BODY:-Downscaling to %sp using %s}"
+NOTIFY_OPEN_ACTION="${NOTIFY_OPEN_ACTION:-Open}"
+NOTIFY_TO_GIF_ACTION="${NOTIFY_TO_GIF_ACTION:-To GIF}"
+NOTIFY_WARNING_TITLE="${NOTIFY_WARNING_TITLE:-Warning}"
+NOTIFY_NO_AUDIO_BODY="${NOTIFY_NO_AUDIO_BODY:-No active audio monitor found, recording without audio}"
+NOTIFY_LIMIT_REACHED_TITLE="${NOTIFY_LIMIT_REACHED_TITLE:-Recording limit reached}"
+NOTIFY_AUTO_STOPPING_BODY="${NOTIFY_AUTO_STOPPING_BODY:-Auto stopping at 5 minutes}"
+NOTIFY_RECORDING_STARTED_TITLE="${NOTIFY_RECORDING_STARTED_TITLE:-Recording started}"
+NOTIFY_RECORDING_REGION_BODY="${NOTIFY_RECORDING_REGION_BODY:-Recording region...}"
+
 PIDFILE="/tmp/screenrec-region.pid"
 TIMERPID_FILE="/tmp/screenrec-region.timer.pid"
 FILEPATH_FILE="/tmp/screenrec-region.filepath"
@@ -63,7 +85,7 @@ optimize_video() {
         mv "$tmp" "$input"
     else
         rm -f "$tmp"
-        notify-send -u critical "Video optimization failed" "Keeping original file" \
+        notify-send -u critical "$NOTIFY_OPTIMIZE_FAILED_TITLE" "$NOTIFY_OPTIMIZE_FAILED_BODY" \
             -a "Screen Recorder" -t 6000
     fi
 }
@@ -79,7 +101,7 @@ convert_to_gif() {
     local basename="${basename##*/}"
     local output="$GIF_DIR/${basename}.gif"
 
-    notify-send "Converting to GIF…" "${input##*/}" \
+    notify-send "$NOTIFY_CONVERTING_GIF_TITLE" "${input##*/}" \
         -i "video-x-generic" -a "Screen Recorder" -t 4000
 
     ffmpeg -i "$input" \
@@ -88,15 +110,15 @@ convert_to_gif() {
 
     if [ $? -eq 0 ]; then
         ACTION=$(notify-send \
-            -A "open=Open GIF" -A "folder=View Folder" \
-            "GIF saved" "${basename}.gif" \
+            -A "open=$NOTIFY_OPEN_GIF_ACTION" -A "folder=$NOTIFY_VIEW_FOLDER_ACTION" \
+            "$NOTIFY_GIF_SAVED_TITLE" "${basename}.gif" \
             -i "image-gif" -a "Screen Recorder" -t 10000)
         case "$ACTION" in
             open)   xdg-open "$output" ;;
             folder) xdg-open "$GIF_DIR" ;;
         esac
     else
-        notify-send -u critical "GIF conversion failed" "ffmpeg error" \
+        notify-send -u critical "$NOTIFY_GIF_FAILED_TITLE" "$NOTIFY_GIF_FAILED_BODY" \
             -a "Screen Recorder" -t 6000
     fi
 }
@@ -116,7 +138,7 @@ stop_recording() {
     rm -f "$FILEPATH_FILE"
 
     if [ -z "$LATEST" ] || [ ! -f "$LATEST" ]; then
-        notify-send "Recording saved" "Saved to $OUTPUT_DIR" \
+        notify-send "$NOTIFY_RECORDING_SAVED_TITLE" "$(printf "$NOTIFY_SAVED_TO_BODY" "$OUTPUT_DIR")" \
             -i "video-x-generic" -a "Screen Recorder" -t 8000
         exit 0
     fi
@@ -133,7 +155,7 @@ stop_recording() {
             vaapi:*)  BACKEND_LABEL="VAAPI (${BACKEND#vaapi:})" ;;
             cpu)      BACKEND_LABEL="CPU (no GPU encoder found)" ;;
         esac
-        notify-send "Processing recording…" "Downscaling to ${MAX_H}p using $BACKEND_LABEL" \
+        notify-send "$NOTIFY_PROCESSING_TITLE" "$(printf "$NOTIFY_DOWNSCALING_BODY" "$MAX_H" "$BACKEND_LABEL")" \
             -i "video-x-generic" -a "Screen Recorder" -t 4000
         optimize_video "$LATEST" "$BACKEND"
     fi
@@ -149,13 +171,13 @@ stop_recording() {
 
     if [ -n "$DURATION" ] && [ "$DURATION" -lt 16 ] 2>/dev/null; then
         ACTION=$(notify-send \
-            -A "open=Open" -A "gif=To GIF" \
-            "Recording saved" "<img src=\"$THUMB\"/>Saved to $OUTPUT_DIR" \
+            -A "open=$NOTIFY_OPEN_ACTION" -A "gif=$NOTIFY_TO_GIF_ACTION" \
+            "$NOTIFY_RECORDING_SAVED_TITLE" "<img src=\"$THUMB\"/>$(printf "$NOTIFY_SAVED_TO_BODY" "$OUTPUT_DIR")" \
             -i "video-x-generic" -a "Screen Recorder" -t 10000)
     else
         ACTION=$(notify-send \
-            -A "open=Open" \
-            "Recording saved" "<img src=\"$THUMB\"/>Saved to $OUTPUT_DIR" \
+            -A "open=$NOTIFY_OPEN_ACTION" \
+            "$NOTIFY_RECORDING_SAVED_TITLE" "<img src=\"$THUMB\"/>$(printf "$NOTIFY_SAVED_TO_BODY" "$OUTPUT_DIR")" \
             -i "video-x-generic" -a "Screen Recorder" -t 10000)
     fi
 
@@ -194,7 +216,7 @@ else
     if [ -n "$AUDIO_DEVICE" ]; then
         setsid gpu-screen-recorder "${GSR_OPTS[@]}" -a "device:$AUDIO_DEVICE" </dev/null >/dev/null 2>&1 &
     else
-        notify-send "Warning" "No active audio monitor found, recording without audio" \
+        notify-send "$NOTIFY_WARNING_TITLE" "$NOTIFY_NO_AUDIO_BODY" \
             -i "dialog-warning" -a "Screen Recorder" -t 6000
         setsid gpu-screen-recorder "${GSR_OPTS[@]}" </dev/null >/dev/null 2>&1 &
     fi
@@ -203,11 +225,11 @@ else
 
     ( sleep $MAX_DURATION && \
       [ -f "$PIDFILE" ] && \
-      notify-send "Recording limit reached" "Auto stopping at 5 minutes" \
+      notify-send "$NOTIFY_LIMIT_REACHED_TITLE" "$NOTIFY_AUTO_STOPPING_BODY" \
           -u "critical" -a "Screen Recorder" -t 6000 && \
       stop_recording ) &
     echo $! > "$TIMERPID_FILE"
 
-    notify-send "Recording started" "Recording region..." \
+    notify-send "$NOTIFY_RECORDING_STARTED_TITLE" "$NOTIFY_RECORDING_REGION_BODY" \
         -i "media-record" -a "Screen Recorder" -t 3000
 fi
