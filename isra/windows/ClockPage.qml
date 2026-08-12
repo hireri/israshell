@@ -571,7 +571,7 @@ PageBase {
                     spacing: 6
 
                     Text {
-                        text: Config.clock.layout === "analog" ? Localization.t("clockPage.seconds_hand_color") : Localization.t("backgroundPage.accent_color")
+                        text: Localization.t("backgroundPage.accent_color")
                         font.family: Config.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium

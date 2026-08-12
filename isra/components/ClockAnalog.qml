@@ -3,6 +3,7 @@ import QtQuick.Effects
 import QtQuick.Shapes
 import Qt5Compat.GraphicalEffects
 import qs.style
+import qs.icons
 
 Item {
     id: root
@@ -220,14 +221,19 @@ Item {
         }
     }
 
-    Rectangle {
-        id: dateBadge
-        anchors {
-            horizontalCenter: face.right
-            horizontalCenterOffset: Config.clock.showDate ? -8 : -12
-            verticalCenter: face.verticalCenter
-            Behavior on horizontalCenterOffset   { NumberAnimation { duration: 800; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
-        }
+    readonly property real datePillPad: 8 * ((Config.clock.dateSize ?? 25) / 25)
+    readonly property real datePillSize: Math.max(dayLbl.implicitWidth, dayLbl.implicitHeight,
+                                                    monthLbl.implicitWidth, monthLbl.implicitHeight)
+                                          + root.datePillPad * 2
+
+    readonly property real dateRimPush:   7 * (root.analogSize / 200)
+    readonly property real dateRimOffset: (root.analogSize / 2) * Math.SQRT1_2 + root.dateRimPush
+
+    Item {
+        id: dayBadge
+        x: face.x + face.width  / 2 - root.dateRimOffset - width  / 2
+        y: face.y + face.height / 2 - root.dateRimOffset - height / 2
+
         z: 2
         opacity: Config.clock.showDate ? 1 : 0
         scale: Config.clock.showDate ? 1.0 : 0.75
@@ -235,19 +241,55 @@ Item {
         Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
         Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
 
+        width:  root.datePillSize
+        height: root.datePillSize
 
-        readonly property real vPad: 4 * ((Config.clock.dateSize ?? 25) / 25)
-        readonly property real hPad: 10 * ((Config.clock.dateSize ?? 25) / 25)
-
-        width:  dateLbl.implicitWidth  + hPad * 2
-        height: dateLbl.implicitHeight + vPad * 2
-        radius: height / 2
-
-        color: Colors.md3.primary_container
-               ?? Qt.rgba(0.85, 0.85, 0.95, 1)
+        MaterialShape {
+            anchors.fill: parent
+            name: "pill"
+            shapeSize: parent.width
+            color: Colors.md3.secondary_container
+                   ?? Qt.rgba(0.85, 0.85, 0.95, 1)
+        }
 
         Text {
-            id: dateLbl
+            id: dayLbl
+            anchors.centerIn: parent
+            font.family:       root.clockFont
+            font.pixelSize:    (Config.clock.dateSize ?? 25) * 1.45
+            font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
+            font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
+            color: Colors.md3.on_secondary_container
+                   ?? root.subColor
+            text: Qt.formatDate(root.currentTime, "d")
+        }
+    }
+
+    Item {
+        id: monthBadge
+        x: face.x + face.width  / 2 + root.dateRimOffset - width  / 2
+        y: face.y + face.height / 2 + root.dateRimOffset - height / 2
+
+        z: 2
+        opacity: Config.clock.showDate ? 1 : 0
+        scale: Config.clock.showDate ? 1.0 : 0.75
+
+        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+        Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
+
+        width:  root.datePillSize
+        height: root.datePillSize
+
+        MaterialShape {
+            anchors.fill: parent
+            name: "gem"
+            shapeSize: parent.width
+            color: Colors.md3.primary_container
+                   ?? Qt.rgba(0.85, 0.85, 0.95, 1)
+        }
+
+        Text {
+            id: monthLbl
             anchors.centerIn: parent
             font.family:       root.clockFont
             font.pixelSize:    Config.clock.dateSize ?? 25
@@ -255,7 +297,7 @@ Item {
             font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
             color: Colors.md3.on_primary_container
                    ?? root.subColor
-            text: Qt.formatDate(root.currentTime, "d")
+            text: Qt.formatDate(root.currentTime, "MMM")
         }
     }
 }
