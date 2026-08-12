@@ -14,8 +14,6 @@ SettingRow {
 
     signal moved(real value)
 
-    property bool isLast: false
-
     function _format(v) {
         return root.decimals > 0
             ? v.toFixed(root.decimals) + root.unit

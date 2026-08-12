@@ -7,8 +7,6 @@ SettingRow {
     property bool checked: false
     signal toggled(bool checked)
 
-    property bool isLast: false
-
     Md3Switch {
         checked: root.checked
         enabled: root.enabled

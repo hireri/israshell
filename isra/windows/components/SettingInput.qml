@@ -10,7 +10,6 @@ SettingRow {
     property bool password: false
     property int fieldWidth: 180
     property int fieldHeight: 36
-    property bool isLast: false
 
     signal committed(string value)
 

@@ -9,8 +9,6 @@ SettingRow {
     property var currentValue: null
     signal selected(var value)
 
-    property bool isLast: false
-
     property Component icon: null
 
     readonly property real smallRadius: 6

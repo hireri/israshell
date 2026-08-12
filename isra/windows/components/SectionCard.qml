@@ -38,6 +38,8 @@ Column {
 
     Component.onCompleted: Qt.callLater(_updateDividers)
 
+    property var _trackedRows: []
+
     function _updateDividers() {
         const rows = [];
         const kids = cardColumn.children;
@@ -53,7 +55,18 @@ Column {
                 rows.push(k);
             }
         }
+
+        for (const row of rows) {
+            if (root._trackedRows.indexOf(row) === -1) {
+                root._trackedRows.push(row);
+                row.visibleChanged.connect(() => Qt.callLater(root._updateDividers));
+            }
+        }
+
+        const visibleRows = rows.filter(r => r.visible);
         for (let i = 0; i < rows.length; i++)
-            rows[i].isLast = (i === rows.length - 1);
+            rows[i].isLast = false;
+        for (let i = 0; i < visibleRows.length; i++)
+            visibleRows[i].isLast = (i === visibleRows.length - 1);
     }
 }

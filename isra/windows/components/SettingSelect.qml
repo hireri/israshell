@@ -7,7 +7,6 @@ SettingRow {
     property var options: []
     property var currentValue: null
     signal selected(var value)
-    property bool isLast: false
 
     SelectField {
         anchors.verticalCenter: parent?.verticalCenter
