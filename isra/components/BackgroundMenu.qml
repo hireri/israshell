@@ -128,7 +128,7 @@ Item {
     property real cardX: 0
     property real cardY: 0
 
-    function open(localX, localY) {
+    function _doOpen(localX, localY) {
         cardX = Math.max(8, Math.min(localX, root.width - cardW - 8));
         cardY = Math.max(8, Math.min(localY, root.height - cardH - 8));
 
@@ -144,6 +144,22 @@ Item {
             return;
         closeAnim.start();
         PanelService.closed(root);
+        if (BackgroundMenuService.openScreen === root.hostScreen)
+            BackgroundMenuService.close();
+    }
+
+    Connections {
+        target: BackgroundMenuService
+        function onOpenRequested(screen, localX, localY) {
+            if (screen === root.hostScreen) {
+                root._doOpen(localX, localY);
+            }
+        }
+        function onOpenScreenChanged() {
+            if (BackgroundMenuService.openScreen !== root.hostScreen && root.visible) {
+                root.close();
+            }
+        }
     }
 
     MouseArea {

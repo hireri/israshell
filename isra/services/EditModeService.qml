@@ -9,6 +9,12 @@ Singleton {
     property bool active: false
     property var _snapshot: null
 
+    onActiveChanged: active ? PanelService.opened(root) : PanelService.closed(root)
+
+    function close(): void {
+        root.disable();
+    }
+
     function enable(): void {
         if (!root.active) {
             const clockFields = {};
@@ -19,7 +25,8 @@ Singleton {
                 clockManualPos: Config.clock.manualPos ?? false,
                 clockFields: clockFields,
                 weyesPositions: Object.assign({}, Config.weyesPositions ?? {}),
-                weyes: Object.assign({}, Config.weyes ?? {})
+                weyes: Object.assign({}, Config.weyes ?? {}),
+                desktopWidgets: (Config.desktopWidgets ?? []).map(w => Object.assign({}, w, { data: Object.assign({}, w.data) }))
             };
         }
         root.active = true;
@@ -44,6 +51,7 @@ Singleton {
             clockPositions: root._snapshot.clockPositions,
             weyesPositions: root._snapshot.weyesPositions,
             weyes: root._snapshot.weyes,
+            desktopWidgets: root._snapshot.desktopWidgets,
             clock: Object.assign({}, Config.clock, root._snapshot.clockFields)
         });
         if (root._snapshot.clockManualPos) {

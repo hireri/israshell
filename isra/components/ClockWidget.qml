@@ -348,41 +348,72 @@ Item {
         trackHeight: root._clockVisualHeight
         label: "Clock"
         interactive: (EditModeService.active || (Config.clock.manualPos ?? false)) && clockRoot.isClockEnabled
-        showChrome: EditModeService.active
+        showChrome: EditModeService.active && clockRoot.isClockEnabled
         movable: true
         resizable: EditModeService.active
         uniformScale: true
         cornerRadius: 16
 
         quickActions: Component {
-            Rectangle {
-                readonly property bool _manualPos: Config.clock.manualPos ?? false
-                width: 16
-                height: 16
-                radius: 8
-                color: pinMouse.containsMouse ? Qt.alpha(Colors.md3.on_primary_container, 0.15) : "transparent"
+            Row {
+                spacing: 2
 
-                Behavior on color {
-                    ColorAnimation { duration: 100 }
+                Rectangle {
+                    readonly property bool _manualPos: Config.clock.manualPos ?? false
+                    width: 16
+                    height: 16
+                    radius: 8
+                    color: pinMouse.containsMouse ? Qt.alpha(Colors.md3.on_primary_container, 0.15) : "transparent"
+
+                    Behavior on color {
+                        ColorAnimation { duration: 100 }
+                    }
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: "keep"
+                        filled: parent._manualPos
+                        iconSize: 12
+                        color: Colors.md3.on_primary_container
+                    }
+
+                    MouseArea {
+                        id: pinMouse
+                        anchors.fill: parent
+                        anchors.margins: -3
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Config.update({
+                            clock: Object.assign({}, Config.clock, { manualPos: !(Config.clock.manualPos ?? false) })
+                        })
+                    }
                 }
 
-                MaterialIcon {
-                    anchors.centerIn: parent
-                    name: "keep"
-                    filled: parent._manualPos
-                    iconSize: 12
-                    color: Colors.md3.on_primary_container
-                }
+                Rectangle {
+                    width: 16
+                    height: 16
+                    radius: 8
+                    color: removeMouse.containsMouse ? Qt.alpha(Colors.md3.error, 0.15) : "transparent"
 
-                MouseArea {
-                    id: pinMouse
-                    anchors.fill: parent
-                    anchors.margins: -3
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Config.update({
-                        clock: Object.assign({}, Config.clock, { manualPos: !(Config.clock.manualPos ?? false) })
-                    })
+                    Behavior on color {
+                        ColorAnimation { duration: 100 }
+                    }
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: "delete"
+                        iconSize: 12
+                        color: Colors.md3.error
+                    }
+
+                    MouseArea {
+                        id: removeMouse
+                        anchors.fill: parent
+                        anchors.margins: -3
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Config.update({ desktopClock: false })
+                    }
                 }
             }
         }

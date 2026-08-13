@@ -265,6 +265,7 @@ Singleton {
         })
     property var clockPositions: ({})
     property var weyesPositions: ({})
+    property var desktopWidgets: []
     property bool checkUpdates: true
     property bool checkDeps: true
     property string githubRepo: "hireri/israshell"
@@ -459,6 +460,7 @@ Singleton {
             useAwww: false,
             clockPositions: {},
             weyesPositions: {},
+            desktopWidgets: [],
             checkUpdates: true,
             checkDeps: true,
             githubRepo: "hireri/israshell",
@@ -513,6 +515,8 @@ Singleton {
             result.bar = WidgetService.reconcile(result.bar);
         if (result.quickSettingsTiles)
             result.quickSettingsTiles = QsTileService.reconcile(result.quickSettingsTiles);
+        if (result.desktopWidgets)
+            result.desktopWidgets = DesktopWidgetService.reconcile(result.desktopWidgets);
 
         if (result.notifications) {
             const rawPopupPosition = data.notifications && data.notifications.popupPosition;

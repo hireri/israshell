@@ -11,10 +11,20 @@ ShapeCanvas {
     property bool random: false
     property int cycleInterval: 0
     property real shapeSize: 24
+    property real rotationDegrees: 0
 
     width: shapeSize
     height: shapeSize
     color: "white"
+    rotation: root.rotationDegrees
+
+    Behavior on rotation {
+        NumberAnimation {
+            duration: 350
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: [0.42, 1.67, 0.21, 0.90, 1, 1]
+        }
+    }
 
     readonly property var _catalog: ({
         circle: MaterialShapes.getCircle,
@@ -69,10 +79,14 @@ ShapeCanvas {
     }
 
     roundedPolygon: {
-        if (root.random || root.cycleInterval > 0 || !root.name)
-            return root._pick();
-        const getter = root._catalog[root.name];
-        return getter ? getter() : root._pick();
+        let base;
+        if (root.random || root.cycleInterval > 0 || !root.name) {
+            base = root._pick();
+        } else {
+            const getter = root._catalog[root.name];
+            base = getter ? getter() : root._pick();
+        }
+        return base;
     }
 
     Timer {

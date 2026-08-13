@@ -8,8 +8,15 @@ Item {
 
     readonly property bool barAtBottom: Config.bar.position === 1
     readonly property alias toolbarItem: toolbar
+    readonly property Item drawerCardItem: widgetDrawer.open ? widgetDrawer.cardItem : null
 
     anchors.fill: parent
+
+    MouseArea {
+        anchors.fill: parent
+        enabled: widgetDrawer.open
+        onClicked: widgetDrawer.close()
+    }
 
     Rectangle {
         id: toolbar
@@ -37,6 +44,34 @@ Item {
                 color: Colors.md3.on_surface
                 font.family: Config.fontFamily
                 font.pixelSize: 12
+            }
+
+            Rectangle {
+                id: addButton
+                width: 32
+                height: 32
+                radius: 16
+                anchors.verticalCenter: parent.verticalCenter
+                color: (widgetDrawer.open || addMouse.containsMouse) ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent"
+                Behavior on color {
+                    ColorAnimation { duration: 120 }
+                }
+
+                MaterialIcon {
+                    anchors.centerIn: parent
+                    name: "add"
+                    filled: widgetDrawer.open
+                    iconSize: 16
+                    color: Colors.md3.on_surface_variant
+                }
+
+                MouseArea {
+                    id: addMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: widgetDrawer.toggle()
+                }
             }
 
             Rectangle {
@@ -99,5 +134,14 @@ Item {
                 }
             }
         }
+    }
+
+    WidgetDrawer {
+        id: widgetDrawer
+        anchors.horizontalCenter: toolbar.horizontalCenter
+        anchors.top: root.barAtBottom ? undefined : toolbar.bottom
+        anchors.bottom: root.barAtBottom ? toolbar.top : undefined
+        anchors.topMargin: 10
+        anchors.bottomMargin: 10
     }
 }

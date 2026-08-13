@@ -4,6 +4,7 @@ import QtQuick.Shapes
 import Quickshell
 import qs.services
 import qs.style
+import qs.icons
 
 Item {
     id: root
@@ -258,6 +259,37 @@ Item {
         resizable: true
         uniformScale: false
         cornerRadius: 8
+
+        quickActions: Component {
+            Rectangle {
+                width: 16
+                height: 16
+                radius: 8
+                color: removeMouse.containsMouse ? Qt.alpha(Colors.md3.error, 0.15) : "transparent"
+
+                Behavior on color {
+                    ColorAnimation { duration: 100 }
+                }
+
+                MaterialIcon {
+                    anchors.centerIn: parent
+                    name: "delete"
+                    iconSize: 12
+                    color: Colors.md3.error
+                }
+
+                MouseArea {
+                    id: removeMouse
+                    anchors.fill: parent
+                    anchors.margins: -3
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Config.update({
+                        weyes: Object.assign({}, Config.weyes, { enabled: false })
+                    })
+                }
+            }
+        }
 
         property real _startX: 0
         property real _startY: 0
