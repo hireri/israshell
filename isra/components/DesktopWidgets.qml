@@ -1,4 +1,6 @@
 import QtQuick
+import QtQuick.Window
+import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Wayland
 import qs.services
@@ -16,19 +18,23 @@ PanelWindow {
     anchors { top: true; bottom: true; left: true; right: true }
 
     readonly property bool wantsInput: (backgroundContextMenu.visible || EditModeService.active) && !LockscreenService.locked
-    focusable: ((Config.clock.manualPos ?? false) || root.wantsInput) && !LockscreenService.locked
+    focusable: root.wantsInput
 
     function _syncKeyboardFocus(): void {
         WlrLayershell.keyboardFocus = root.wantsInput ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None;
     }
     function reclaimFocus(): void {
-        if (!root.wantsInput)
+        if (!root.wantsInput || escapeHandler.Window.active)
             return;
         WlrLayershell.keyboardFocus = WlrKeyboardFocus.None;
         Qt.callLater(root._syncKeyboardFocus);
     }
     onWantsInputChanged: root._syncKeyboardFocus()
-    Component.onCompleted: root._syncKeyboardFocus()
+    Component.onCompleted: {
+        root._syncKeyboardFocus();
+        if (root.blurShouldShow)
+            root.blurLoaderActive = true;
+    }
 
     Connections {
         target: CompositorService
@@ -38,38 +44,82 @@ PanelWindow {
         }
     }
 
-    readonly property Item _activeBlurItem: backgroundContextMenu.visible
-        ? backgroundContextMenu.cardItem
-        : (EditModeService.active ? editModeOverlayLoader.item?.toolbarItem ?? null : null)
-    readonly property bool blurEnabled: Config.blurAllowed(root._activeBlurItem !== null)
+    Connections {
+        target: EditModeService
+        function onSelectedIdChanged(): void {
+            if (EditModeService.selectedId !== "")
+                escapeHandler.forceActiveFocus();
+        }
+    }
+
+    readonly property var _overlay: EditModeService.active ? editModeOverlayLoader.item : null
+    readonly property bool _anyBlurTarget: backgroundContextMenu.visible || root._overlay !== null || widgetContextMenu.visible || widgetInspector.visible
+    readonly property bool blurEnabled: Config.blurAllowed(root._anyBlurTarget)
     BackgroundEffect.blurRegion: blurEnabled ? activeBlurRegion : null
+
+    component ScaledCutout: Region {
+        id: cutout
+        required property Item source
+        required property bool sourceVisible
+        property real originX: 0
+        property real originY: 0
+        intersection: Intersection.Combine
+
+        readonly property real _scale: cutout.source.scale
+
+        x: cutout.source.x + cutout.originX * cutout.source.width * (1 - cutout._scale)
+        y: cutout.source.y + cutout.originY * cutout.source.height * (1 - cutout._scale)
+        width: cutout.sourceVisible ? cutout.source.width * cutout._scale : 0
+        height: cutout.sourceVisible ? cutout.source.height * cutout._scale : 0
+        radius: cutout.source.radius * cutout._scale
+    }
 
     Region {
         id: activeBlurRegion
-        item: root._activeBlurItem
+
+        ScaledCutout {
+            source: backgroundContextMenu.cardItem
+            sourceVisible: backgroundContextMenu.visible
+            originX: backgroundContextMenu.cardOriginX
+            originY: backgroundContextMenu.cardOriginY
+        }
 
         Region {
-            item: EditModeService.active ? editModeOverlayLoader.item?.drawerCardItem ?? null : null
             intersection: Intersection.Combine
+            x: root._overlay?.toolbarRect.x ?? 0
+            y: root._overlay?.toolbarRect.y ?? 0
+            width: root._overlay ? root._overlay.toolbarRect.width : 0
+            height: root._overlay ? root._overlay.toolbarRect.height : 0
+            radius: root._overlay?.toolbarRadius ?? 0
+        }
+
+        ScaledCutout {
+            source: widgetContextMenu.cardItem
+            sourceVisible: widgetContextMenu.visible
+            originX: widgetContextMenu.cardOriginX
+            originY: widgetContextMenu.cardOriginY
+        }
+
+        ScaledCutout {
+            source: widgetInspector.cardItem
+            sourceVisible: widgetInspector.visible
+            originX: widgetInspector.cardOriginX
+            originY: widgetInspector.cardOriginY
         }
     }
 
     MouseArea {
         id: backgroundContextCatcher
         anchors.fill: parent
-        acceptedButtons: Qt.RightButton
+        acceptedButtons: EditModeService.active ? (Qt.RightButton | Qt.LeftButton) : Qt.RightButton
         onClicked: mouse => {
-            BackgroundMenuService.open(root.modelData, mouse.x, mouse.y);
-        }
-    }
-
-    Loader {
-        id: weyesLoader
-        anchors.fill: parent
-        active: Config.weyes.enabled && CompositorService.hasCapability("cursorPosition")
-
-        sourceComponent: Weyes {
-            modelData: root.modelData
+            if (mouse.button === Qt.RightButton) {
+                EditModeService.clearSelection();
+                editModeOverlayLoader.item?.widgetDrawerItem?.close();
+                backgroundContextMenu.open(mouse.x, mouse.y);
+            } else {
+                EditModeService.clearSelection();
+            }
         }
     }
 
@@ -95,21 +145,128 @@ PanelWindow {
     }
 
     Repeater {
-        model: DesktopWidgetService.enabledIds
-        z: 1
+        model: DesktopWidgetService.entryModel
 
         Loader {
             id: desktopWidgetLoader
             anchors.fill: parent
-            required property string modelData
-            readonly property var _entry: DesktopWidgetService.entryFor(modelData)
-            active: _entry !== null
-            sourceComponent: _entry ? DesktopWidgetService.componentMap[_entry.type] : null
+            z: 4
+            required property string widgetId
+
+            readonly property string _type: DesktopWidgetService.entryFor(widgetId)?.type ?? ""
+            active: _type !== ""
+            sourceComponent: _type !== "" ? DesktopWidgetService.componentMap[_type] : null
             onLoaded: {
-                item.entryId = desktopWidgetLoader.modelData;
+                item.entryId = desktopWidgetLoader.widgetId;
                 item.hostScreen = root.modelData;
+                item.widgetMenu = widgetContextMenu;
+                item.widgetInspector = widgetInspector;
+                item.widgetDrawer = Qt.binding(() => editModeOverlayLoader.item?.widgetDrawerItem ?? null);
             }
         }
+    }
+
+    readonly property bool blurShouldShow: LockscreenService.locked || LockscreenService.lockVisualActive
+    property bool blurLoaderActive: false
+
+    onBlurShouldShowChanged: {
+        if (blurShouldShow)
+            blurLoaderActive = true;
+        else
+            blurUnloadDelay.restart();
+    }
+
+    Timer {
+        id: blurUnloadDelay
+        interval: 420
+        onTriggered: root.blurLoaderActive = false
+    }
+
+    Loader {
+        id: blurLoader
+        anchors.fill: parent
+        active: root.blurLoaderActive
+        z: 4
+
+        onLoaded: item.targetActive = root.blurShouldShow
+
+        sourceComponent: Item {
+            id: blurRoot
+            anchors.fill: parent
+
+            property bool targetActive: false
+
+            opacity: targetActive ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
+            }
+
+            Component.onCompleted: {
+                Qt.callLater(() => {
+                    targetActive = root.blurShouldShow;
+                });
+            }
+
+            Image {
+                id: blurSrcImg
+                anchors.fill: parent
+                source: (WallpaperService.currentWallPreview || WallpaperService.currentWall)
+                    ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall))
+                    : ""
+                fillMode: Image.PreserveAspectCrop
+                visible: false
+                layer.enabled: true
+                layer.textureSize: Qt.size(sourceSize.width, sourceSize.height)
+
+                sourceSize.width: root.screen ? Math.max(1, Math.round(root.screen.width * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 480
+                sourceSize.height: root.screen ? Math.max(1, Math.round(root.screen.height * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 270
+            }
+
+            FastBlur {
+                anchors.fill: parent
+                source: blurSrcImg
+                radius: blurRoot.targetActive && Config.blurEffects ? 64 : 0
+
+                Behavior on radius {
+                    NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color: Qt.alpha(Colors.md3.surface_container, 0.65)
+            }
+
+            Connections {
+                target: root
+                function onBlurShouldShowChanged() {
+                    blurRoot.targetActive = root.blurShouldShow;
+                }
+            }
+        }
+    }
+
+    Loader {
+        id: clockLoader
+        anchors.fill: parent
+        active: Config.desktopClock || loadedOnce
+        property bool loadedOnce: false
+        onLoaded: loadedOnce = true
+        z: 5
+        sourceComponent: ClockWidget { modelData: root.modelData }
+    }
+
+    ContextMenu {
+        id: widgetContextMenu
+        hostScreen: root.modelData
+        z: 45
+    }
+
+    WidgetInspector {
+        id: widgetInspector
+        hostScreen: root.modelData
+        z: 44
+        onClosed: escapeHandler.forceActiveFocus()
     }
 
     CavaVisualizer {
@@ -120,19 +277,10 @@ PanelWindow {
         visible: Config.cava.enabled
     }
 
-    Loader {
-        id: clockLoader
-        anchors.fill: parent
-        active: Config.desktopClock || loadedOnce
-        property bool loadedOnce: false
-        onLoaded: loadedOnce = true
-        z: 4
-        sourceComponent: ClockWidget { modelData: root.modelData }
-    }
-
     BackgroundMenu {
         id: backgroundContextMenu
         hostScreen: root.modelData
+        widgetDrawer: editModeOverlayLoader.item?.widgetDrawerItem ?? null
         z: 20
     }
 
@@ -141,7 +289,9 @@ PanelWindow {
         anchors.fill: parent
         active: EditModeService.active
         z: 20
-        sourceComponent: EditModeOverlay {}
+        sourceComponent: EditModeOverlay {
+            hostScreen: root.modelData
+        }
     }
 
     Item {
@@ -154,14 +304,53 @@ PanelWindow {
                 root.reclaimFocus()
         }
 
+        readonly property var _drawer: editModeOverlayLoader.item?.widgetDrawerItem ?? null
+
         Keys.onEscapePressed: event => {
-            if (backgroundContextMenu.visible) {
-                event.accepted = true;
+            event.accepted = true;
+            if (escapeHandler._drawer?.open) {
+                escapeHandler._drawer.close();
+            } else if (backgroundContextMenu.visible) {
                 backgroundContextMenu.close();
+            } else if (widgetContextMenu.visible) {
+                widgetContextMenu.close();
+            } else if (widgetInspector.visible) {
+                widgetInspector.close();
+            } else if (EditModeService.selectedId !== "") {
+                EditModeService.clearSelection();
             } else if (EditModeService.active) {
-                event.accepted = true;
                 EditModeService.disable();
+            } else {
+                event.accepted = false;
             }
+        }
+
+        Keys.onPressed: event => {
+            if (!EditModeService.active || EditModeService.selectedId === "")
+                return;
+
+            const step = (event.modifiers & Qt.ShiftModifier) ? 10 : 1;
+            switch (event.key) {
+            case Qt.Key_Left:
+                EditModeService.nudgeRequested(-step, 0);
+                break;
+            case Qt.Key_Right:
+                EditModeService.nudgeRequested(step, 0);
+                break;
+            case Qt.Key_Up:
+                EditModeService.nudgeRequested(0, -step);
+                break;
+            case Qt.Key_Down:
+                EditModeService.nudgeRequested(0, step);
+                break;
+            case Qt.Key_Delete:
+            case Qt.Key_Backspace:
+                EditModeService.deleteRequested();
+                break;
+            default:
+                return;
+            }
+            event.accepted = true;
         }
     }
 }

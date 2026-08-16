@@ -6,9 +6,14 @@ import qs.services
 Item {
     id: root
 
+    property var hostScreen: null
     readonly property bool barAtBottom: Config.bar.position === 1
+
     readonly property alias toolbarItem: toolbar
-    readonly property Item drawerCardItem: widgetDrawer.open ? widgetDrawer.cardItem : null
+    readonly property alias widgetDrawerItem: widgetDrawer
+
+    readonly property rect toolbarRect: Qt.rect(toolbar.x, toolbar.y, toolbar.width, toolbar.height)
+    readonly property real toolbarRadius: toolbar.radius
 
     anchors.fill: parent
 
@@ -18,6 +23,53 @@ Item {
         onClicked: widgetDrawer.close()
     }
 
+    component ToolButton: Rectangle {
+        id: btn
+
+        property string icon: ""
+        property bool active: false
+        property bool filled: false
+        property string tooltip: ""
+        signal activated
+
+        implicitWidth: 34
+        implicitHeight: 34
+        radius: height / 2
+        anchors.verticalCenter: parent.verticalCenter
+
+        color: btn.filled ? Colors.md3.primary : (btn.active ? Qt.alpha(Colors.md3.on_surface, 0.12) : Qt.alpha(Colors.md3.on_surface, 0))
+
+        Behavior on color {
+            ColorAnimation { duration: 100 }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: btn.filled ? Qt.rgba(1, 1, 1, 0.10) : Qt.alpha(Colors.md3.on_surface, 0.08)
+            opacity: btnMouse.containsMouse ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation { duration: 100 }
+            }
+        }
+
+        MaterialIcon {
+            anchors.centerIn: parent
+            name: btn.icon
+            filled: btn.active || btn.filled
+            iconSize: 17
+            color: btn.filled ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+        }
+
+        MouseArea {
+            id: btnMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: btn.activated()
+        }
+    }
+
     Rectangle {
         id: toolbar
         anchors.horizontalCenter: parent.horizontalCenter
@@ -25,9 +77,28 @@ Item {
         anchors.bottom: root.barAtBottom ? undefined : parent.bottom
         anchors.topMargin: 24
         anchors.bottomMargin: 24
-        radius: height / 2
-        height: 44
-        width: toolbarRow.implicitWidth + 16
+        clip: true
+
+        readonly property real pillW: toolbarRow.implicitWidth + 12
+        readonly property real pillH: 48
+        readonly property real _targetW: widgetDrawer.open ? widgetDrawer.cardW : pillW
+        readonly property real _targetH: widgetDrawer.open ? widgetDrawer.cardH : pillH
+        readonly property real _targetRadius: widgetDrawer.open ? 20 : _targetH / 2
+
+        width: _targetW
+        height: _targetH
+        radius: _targetRadius
+
+        Behavior on width {
+            NumberAnimation { duration: 380; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
+        }
+        Behavior on height {
+            NumberAnimation { duration: 380; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
+        }
+        Behavior on radius {
+            NumberAnimation { duration: 380; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
+        }
+
         color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
         border.width: 1
         border.color: Qt.alpha(Colors.md3.on_surface, 0.15)
@@ -35,113 +106,92 @@ Item {
         Row {
             id: toolbarRow
             anchors.centerIn: parent
-            spacing: 6
+            spacing: 4
+            visible: opacity > 0.01
 
-            Text {
+            Row {
                 anchors.verticalCenter: parent.verticalCenter
+                spacing: 7
                 leftPadding: 8
-                text: Localization.t("background.editing_widgets")
-                color: Colors.md3.on_surface
-                font.family: Config.fontFamily
-                font.pixelSize: 12
-            }
-
-            Rectangle {
-                id: addButton
-                width: 32
-                height: 32
-                radius: 16
-                anchors.verticalCenter: parent.verticalCenter
-                color: (widgetDrawer.open || addMouse.containsMouse) ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent"
-                Behavior on color {
-                    ColorAnimation { duration: 120 }
-                }
+                rightPadding: 4
 
                 MaterialIcon {
-                    anchors.centerIn: parent
-                    name: "add"
-                    filled: widgetDrawer.open
+                    anchors.verticalCenter: parent.verticalCenter
+                    name: "edit"
+                    filled: true
                     iconSize: 16
-                    color: Colors.md3.on_surface_variant
+                    color: Colors.md3.primary
                 }
 
-                MouseArea {
-                    id: addMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: widgetDrawer.toggle()
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Localization.t("background.editing_widgets")
+                    color: Colors.md3.on_surface
+                    font.family: Config.fontFamily
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
                 }
             }
 
             Rectangle {
-                id: undoButton
-                width: 32
-                height: 32
-                radius: 16
                 anchors.verticalCenter: parent.verticalCenter
-                color: undoMouse.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent"
-                Behavior on color {
-                    ColorAnimation { duration: 120 }
-                }
-
-                MaterialIcon {
-                    anchors.centerIn: parent
-                    name: "history"
-                    iconSize: 16
-                    color: Colors.md3.on_surface_variant
-                }
-
-                MouseArea {
-                    id: undoMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: EditModeService.undoChanges()
-                }
+                width: 1
+                height: 20
+                color: Qt.alpha(Colors.md3.on_surface, 0.15)
             }
 
-            Rectangle {
-                id: doneButton
-                width: 32
-                height: 32
-                radius: 16
-                anchors.verticalCenter: parent.verticalCenter
-                color: Colors.md3.primary
+            Item {
+                width: 2
+                height: 1
+            }
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: parent.radius
-                    color: doneMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
-                    Behavior on color {
-                        ColorAnimation { duration: 120 }
-                    }
-                }
+            ToolButton {
+                icon: "add"
+                active: widgetDrawer.open
+                onActivated: widgetDrawer.toggle()
+            }
 
-                MaterialIcon {
-                    anchors.centerIn: parent
-                    name: "check"
-                    iconSize: 16
-                    color: Colors.md3.on_primary
-                }
+            ToolButton {
+                icon: "history"
+                onActivated: EditModeService.undoChanges()
+            }
 
-                MouseArea {
-                    id: doneMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: EditModeService.disable()
+            ToolButton {
+                icon: "check"
+                filled: true
+                onActivated: EditModeService.disable()
+            }
+        }
+
+        WidgetDrawer {
+            id: widgetDrawer
+            hostScreen: root.hostScreen
+            anchors.fill: parent
+        }
+
+        Connections {
+            target: widgetDrawer
+            function onOpenChanged(): void {
+                if (widgetDrawer.open) {
+                    contentToPill.stop();
+                    contentToGrid.restart();
+                } else {
+                    contentToGrid.stop();
+                    contentToPill.restart();
                 }
             }
         }
-    }
 
-    WidgetDrawer {
-        id: widgetDrawer
-        anchors.horizontalCenter: toolbar.horizontalCenter
-        anchors.top: root.barAtBottom ? undefined : toolbar.bottom
-        anchors.bottom: root.barAtBottom ? toolbar.top : undefined
-        anchors.topMargin: 10
-        anchors.bottomMargin: 10
+        SequentialAnimation {
+            id: contentToGrid
+            NumberAnimation { target: toolbarRow; property: "opacity"; to: 0; duration: 120; easing.type: Easing.OutCubic }
+            NumberAnimation { target: widgetDrawer; property: "opacity"; to: 1; duration: 180; easing.type: Easing.OutCubic }
+        }
+
+        SequentialAnimation {
+            id: contentToPill
+            NumberAnimation { target: widgetDrawer; property: "opacity"; to: 0; duration: 120; easing.type: Easing.OutCubic }
+            NumberAnimation { target: toolbarRow; property: "opacity"; to: 1; duration: 180; easing.type: Easing.OutCubic }
+        }
     }
 }

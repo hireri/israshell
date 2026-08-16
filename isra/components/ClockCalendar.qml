@@ -198,9 +198,18 @@ Item {
                     spacing: 16
 
                     MaterialIcon {
+                        visible: !Config.weather?.coloredIcons
                         name: LocaleService.weatherIconName
                         iconSize: 36
                         color: LocaleService.weatherIconColor
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    WeatherIcon {
+                        visible: Config.weather?.coloredIcons ?? false
+                        code: LocaleService.weatherCode
+                        isDay: LocaleService.weatherIsDay
+                        iconSize: 40
                         anchors.verticalCenter: parent.verticalCenter
                     }
 

@@ -12,13 +12,15 @@ SettingRow {
     property Component icon: null
 
     readonly property real smallRadius: 6
-    readonly property real fullRadius: 15
+    readonly property real fullRadius: root.compact ? 13 : 15
 
     property int heldIndex: -1
 
+    stack: root.compact
+
     Row {
         spacing: 10
-        anchors.verticalCenter: parent?.verticalCenter
+        anchors.verticalCenter: root.stack ? undefined : parent?.verticalCenter
 
         Loader {
             active: root.icon !== null
@@ -43,7 +45,7 @@ SettingRow {
                     readonly property bool isLastChip: index === root.options.length - 1
                     readonly property bool hasIcon: modelData.icon !== undefined && modelData.icon !== null
 
-                    readonly property real baseWidth: chipContent.implicitWidth + (hasIcon ? 30 : 24)
+                    readonly property real baseWidth: chipContent.implicitWidth + (hasIcon ? (root.compact ? 22 : 30) : 24)
                     readonly property real growDelta: 20
                     readonly property real shrinkDelta: root.options.length > 1 ? (growDelta / (root.options.length - 1)) : 0
 
@@ -57,7 +59,7 @@ SettingRow {
                         }
                     }
 
-                    height: 30
+                    height: root.compact ? 26 : 30
                     width: targetWidth
 
                     color: active ? Colors.md3.primary : (Config.dim(Colors.md3.surface_container_high))

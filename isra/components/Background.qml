@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Effects
 import QtMultimedia
-import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Wayland
 import qs.services
@@ -31,7 +30,6 @@ PanelWindow {
 
     readonly property bool shouldPause: root.lockPauseActive || GameModeService.active
 
-    property bool blurLoaderActive: false
     property bool lockPauseActive: false
 
     Timer {
@@ -43,24 +41,11 @@ PanelWindow {
 
     onShouldBlurChanged: {
         if (shouldBlur) {
-            blurLoaderActive = true;
             lockPauseTimer.restart();
         } else {
             lockPauseTimer.stop();
             root.lockPauseActive = false;
-            unloadDelay.restart();
         }
-    }
-
-    Timer {
-        id: unloadDelay
-        interval: 420
-        onTriggered: root.blurLoaderActive = false
-    }
-
-    Component.onCompleted: {
-        if (shouldBlur)
-            blurLoaderActive = true;
     }
 
     readonly property Item wallpaperVisual: wallpaperLoader.item ? wallpaperLoader.item.wallpaperVisual : null
@@ -376,72 +361,6 @@ PanelWindow {
         }
     }
 
-    Loader {
-        id: blurLoader
-        anchors.fill: parent
-        active: root.blurLoaderActive
-        z: 2
-
-        onLoaded: {
-            item.targetActive = root.shouldBlur;
-        }
-
-        sourceComponent: Item {
-            id: blurRoot
-            anchors.fill: parent
-
-            property bool targetActive: false
-
-            opacity: targetActive ? 1 : 0
-            Behavior on opacity {
-                NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
-            }
-
-            Component.onCompleted: {
-                Qt.callLater(() => {
-                    targetActive = root.shouldBlur;
-                });
-            }
-
-            Image {
-                id: blurSrcImg
-                anchors.fill: parent
-                source: (WallpaperService.currentWallPreview || WallpaperService.currentWall)
-                    ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall))
-                    : ""
-                fillMode: Image.PreserveAspectCrop
-                visible: false
-                layer.enabled: true
-                layer.textureSize: Qt.size(sourceSize.width, sourceSize.height)
-
-                sourceSize.width: root.screen ? Math.max(1, Math.round(root.screen.width * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 480
-                sourceSize.height: root.screen ? Math.max(1, Math.round(root.screen.height * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 270
-            }
-
-            FastBlur {
-                anchors.fill: parent
-                source: blurSrcImg
-                radius: blurRoot.targetActive && Config.blurEffects ? 64 : 0
-
-                Behavior on radius {
-                    NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: Qt.alpha(Colors.md3.surface_container, 0.65)
-            }
-
-            Connections {
-                target: root
-                function onShouldBlurChanged() {
-                    blurRoot.targetActive = root.shouldBlur;
-                }
-            }
-        }
-    }
-
     Item {
         id: editDim
         anchors.fill: parent
@@ -458,27 +377,30 @@ PanelWindow {
             color: Qt.alpha("black", 0.35)
         }
 
-        Canvas {
-            id: editGridCanvas
+        Item {
+            id: editGrid
             anchors.fill: parent
-            readonly property real spacing: 24
-            readonly property real dotRadius: 1.2
 
-            onPaint: {
-                const ctx = getContext("2d");
-                ctx.reset();
-                ctx.fillStyle = Qt.alpha(Colors.md3.primary, 0.45);
-                for (let x = 0; x <= width; x += spacing) {
-                    for (let y = 0; y <= height; y += spacing) {
-                        ctx.beginPath();
-                        ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
+            readonly property int cols: WidgetGrid.columns(root.screen)
+            readonly property int rows: WidgetGrid.rows(root.screen)
+
+            Repeater {
+                model: (EditModeService.active || editDim.visible) ? editGrid.cols * editGrid.rows : 0
+
+                Rectangle {
+                    id: dot
+                    required property int index
+
+                    width: 3
+                    height: 3
+                    radius: width / 2
+                    antialiasing: true
+                    color: Qt.alpha(Colors.md3.primary, 0.45)
+
+                    x: WidgetGrid.cellX(root.screen, dot.index % editGrid.cols) + (WidgetGrid.cellWidth(root.screen) - width) / 2
+                    y: WidgetGrid.cellY(root.screen, Math.floor(dot.index / editGrid.cols)) + (WidgetGrid.cellHeight(root.screen) - height) / 2
                 }
             }
-
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
         }
     }
 
@@ -526,3 +448,4 @@ PanelWindow {
         }
     }
 }
+

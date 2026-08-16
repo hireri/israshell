@@ -124,6 +124,8 @@ PageBase {
     Component {
         id: analogPreviewComp
         ClockAnalog {
+            readonly property real previewScale: analogSize / (Config.clock.analogSize || 200)
+
             currentTime: pageRoot.previewTime
             clockFont: Config.clock.fontFamily || Config.fontFamily
             textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
@@ -132,6 +134,8 @@ PageBase {
             showSeconds: Config.clock.showSeconds ?? false
             is12h: Config.hourFormat !== 0
             analogSize: 130
+            dateSize: (Config.clock.dateSize ?? 25) * previewScale
+            outlineWidth: (Config.clock.outlineWidth ?? 2) * previewScale
         }
     }
 

@@ -1,0 +1,161 @@
+{
+  "00-neutral": [
+    "00-neutral-fallback.webp"
+  ],
+  "01-sunny": [
+    "01-sunny-beach-reading.webp",
+    "01-sunny-beach-sandcastle.webp",
+    "01-sunny-beach-sunscreen.webp",
+    "01-sunny-citypark-sunbathing.webp",
+    "01-sunny-creek-swimming.webp",
+    "01-sunny-field-kite.webp",
+    "01-sunny-hills-sunbathing.webp",
+    "01-sunny-home-laundry.webp",
+    "01-sunny-orchard-picking.webp",
+    "01-sunny-rooftop-pinacolada.webp"
+  ],
+  "02-mostly-sunny": [
+    "02-mostly-sunny-beach-reading.webp",
+    "02-mostly-sunny-beach-sandcastle.webp",
+    "02-mostly-sunny-beach-sunscreen.webp",
+    "02-mostly-sunny-citypark-picnic.webp",
+    "02-mostly-sunny-creek-swimming.webp",
+    "02-mostly-sunny-field-kite.webp",
+    "02-mostly-sunny-hills-sunbathing.webp",
+    "02-mostly-sunny-home-laundry.webp",
+    "02-mostly-sunny-orchard-picking.webp",
+    "02-mostly-sunny-rooftop-pinacolada.webp"
+  ],
+  "03-partly-cloudy-day": [
+    "03-partly-cloudy-day-beach-shells.webp",
+    "03-partly-cloudy-day-citypark-ukelele.webp",
+    "03-partly-cloudy-day-creek-feet.webp",
+    "03-partly-cloudy-day-field-biking.webp",
+    "03-partly-cloudy-day-field-hiking.webp",
+    "03-partly-cloudy-day-hills-painting.webp",
+    "03-partly-cloudy-day-hills-reading.webp",
+    "03-partly-cloudy-day-home-flowers.webp",
+    "03-partly-cloudy-day-orchard-butterflies.webp",
+    "03-partly-cloudy-day-orchard-treeswing.webp"
+  ],
+  "04-mostly-cloudy-day": [
+    "04-mostly-cloudy-day-beach-shells.webp",
+    "04-mostly-cloudy-day-citypark-ukelele.webp",
+    "04-mostly-cloudy-day-creek-feet.webp",
+    "04-mostly-cloudy-day-field-biking.webp",
+    "04-mostly-cloudy-day-field-hiking.webp",
+    "04-mostly-cloudy-day-hills-painting.webp",
+    "04-mostly-cloudy-day-hills-reading.webp",
+    "04-mostly-cloudy-day-home-flowers.webp",
+    "04-mostly-cloudy-day-orchard-butterflies.webp",
+    "04-mostly-cloudy-day-orchard-treeswing.webp"
+  ],
+  "05-clear": [
+    "05-clear-creek-stars.webp",
+    "05-clear-field-lanterns.webp",
+    "05-clear-hills-camping.webp",
+    "05-clear-hills-telescope.webp",
+    "05-clear-home-lounging.webp",
+    "05-clear-orchard-fireflies.webp"
+  ],
+  "06-mostly-clear": [
+    "06-mostly-clear-creek-stars.webp",
+    "06-mostly-clear-field-lanterns.webp",
+    "06-mostly-clear-hills-camping.webp",
+    "06-mostly-clear-hills-telescope.webp",
+    "06-mostly-clear-home-lounging.webp",
+    "06-mostly-clear-orchard-fireflies.webp"
+  ],
+  "07-partly-cloudy-night": [
+    "07-partly-cloudy-night-creek-fireflies.webp",
+    "07-partly-cloudy-night-field-fireflies.webp",
+    "07-partly-cloudy-night-hills-smores.webp",
+    "07-partly-cloudy-night-home-inside.webp",
+    "07-partly-cloudy-night-orchard-eating.webp"
+  ],
+  "08-mostly-cloudy-night": [
+    "08-mostly-cloudy-night-creek-fireflies.webp",
+    "08-mostly-cloudy-night-field-fireflies.webp",
+    "08-mostly-cloudy-night-hills-smores.webp",
+    "08-mostly-cloudy-night-home-inside.webp",
+    "08-mostly-cloudy-night-orchard-eating.webp"
+  ],
+  "09-cloudy": [
+    "09-cloudy-hills-coffee.webp",
+    "09-cloudy-home-flowers.webp",
+    "09-cloudy-orchard-watching.webp"
+  ],
+  "10-drizzle": [
+    "10-drizzle-creek-leaf.webp",
+    "10-drizzle-field-leaf.webp",
+    "10-drizzle-hills-umbrella.webp",
+    "10-drizzle-home-laundry.webp",
+    "10-drizzle-orchard-reading.webp"
+  ],
+  "11-rain": [
+    "11-rain-creek-leaf.webp",
+    "11-rain-hills-umbrella.webp",
+    "11-rain-home-inside.webp",
+    "11-rain-home-laundry.webp",
+    "11-shower-rain-field-leaf.webp"
+  ],
+  "12-heavy-rain": [
+    "12-heavy-rain-busstop-umbrella.webp",
+    "12-heavy-rain-cafe-sitting-singing.webp",
+    "12-heavy-rain-creek-leaf.webp"
+  ],
+  "13-flurries": [
+    "13-flurries-citypark-snowman.webp",
+    "13-flurries-creek-iceskating.webp"
+  ],
+  "15-snow-showers-snow": [
+    "15-snow-showers-snow-citypark-snowman.webp",
+    "15-snow-showers-snow-creek-iceskating.webp",
+    "15-snow-showers-snow-home-shoveling.webp"
+  ],
+  "16-blowing-snow": [
+    "16-blowing-snow-field-snowman.webp"
+  ],
+  "17-heavy-snow-blizzard": [
+    "17-heavy-snow-blizzard-home-inside.webp",
+    "17-heavy-snow-blizzard-home-shoveling.webp"
+  ],
+  "19-mixed-rain-hail-rain-sleet": [
+    "19-mixed-rain-hail-rain-sleet-busstop-waiting.webp",
+    "19-mixed-rain-hail-rain-sleet-cafe-entering.webp"
+  ],
+  "20-rain-snow-wintry-mix": [
+    "20-rain-snow-wintry-mix-citypark-snowman.webp"
+  ],
+  "22-iso-thunderstorms": [
+    "22-iso-thunderstorms-busstop-newspaper.webp",
+    "22-iso-thunderstorms-cafe-looking-outside.webp",
+    "22-iso-thunderstorms-home-inside.webp"
+  ],
+  "23-scattered-thunderstorms": [
+    "23-scattered-thunderstorms-busstop-coffee.webp",
+    "23-scattered-thunderstorms-busstop-newspaper.webp",
+    "23-scattered-thunderstorms-cafe-looking-outside.webp",
+    "23-scattered-thunderstorms-home-inside.webp"
+  ],
+  "24-strong-thunderstorms": [
+    "24-strong-thunderstorms-busstop-coffee.webp",
+    "24-strong-thunderstorms-busstop-newspaper.webp",
+    "24-strong-thunderstorms-cafe-looking-outside.webp",
+    "24-strong-thunderstorms-home-inside.webp"
+  ],
+  "25-breezy-windy": [
+    "25-breezy-windy-creek-pinwheel.webp",
+    "25-breezy-windy-home-laundry.webp"
+  ],
+  "26-haze-fog-dust-smoke": [
+    "26-haze-fog-dust-smoke-bridge.webp",
+    "26-haze-fog-dust-smoke-busstop-waiting.webp",
+    "26-haze-fog-dust-smoke-field-lantern.webp",
+    "26-haze-fog-dust-smoke-fruit-stand.webp",
+    "26-haze-fog-dust-smoke-hills-cocoa.webp",
+    "26-haze-fog-dust-smoke-mountain.webp",
+    "26-haze-fog-dust-smoke-pier.webp",
+    "26-haze-fog-dust-smoke-rooftop.webp"
+  ]
+}

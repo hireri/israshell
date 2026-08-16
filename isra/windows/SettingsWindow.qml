@@ -25,10 +25,10 @@ FloatingWindow {
     readonly property int pageFloatingDock: 3
     readonly property int pageBackground: 4
     readonly property int pageClock: 5
-    
+
     readonly property int pageDisplay: 6
     readonly property int pageSound: 7
-    
+
     readonly property int pageAiAssistant:  8
     readonly property int pageLocale: 9
     readonly property int pageSystem: 10

@@ -27,8 +27,53 @@ PageBase {
             smooth: false
             mipmap: false
             fillMode: Image.Stretch
-            source: modelData ? ("file://" + Quickshell.shellDir + "/sprites/" + modelData.value + ".gif") : ""
+            source: modelData ? ("file://" + Quickshell.shellDir + "/assets/sprites/" + modelData.value + ".gif") : ""
             sourceClipRect: Qt.rect(3 * 32, 3 * 32, 32, 32)
+        }
+    }
+
+    SectionCard {
+        label: Localization.t("backgroundPage.desktop_grid")
+        Layout.fillWidth: true
+
+        function updateGrid(patch) {
+            Config.update({
+                desktopGrid: Object.assign({}, Config.desktopGrid, patch)
+            });
+        }
+
+        SettingSlider {
+            label: Localization.t("backgroundPage.grid_cell_size")
+            sublabel: Localization.t("backgroundPage.size_of_one_grid_cell")
+            from: 30
+            to: 100
+            stepSize: 2
+            unit: "px"
+            value: Config.desktopGrid?.cellSize ?? 50
+            onMoved: v => parent.updateGrid({ cellSize: Math.round(v) })
+        }
+
+        SettingSlider {
+            label: Localization.t("backgroundPage.grid_gutter")
+            sublabel: Localization.t("backgroundPage.gap_between_cells")
+            from: 0
+            to: 24
+            stepSize: 1
+            unit: "px"
+            value: Config.desktopGrid?.gutter ?? 8
+            onMoved: v => parent.updateGrid({ gutter: Math.round(v) })
+        }
+
+        SettingSlider {
+            label: Localization.t("backgroundPage.grid_margin")
+            sublabel: Localization.t("backgroundPage.space_around_the_edge_of")
+            isLast: true
+            from: 0
+            to: 96
+            stepSize: 2
+            unit: "px"
+            value: Config.desktopGrid?.margin ?? 24
+            onMoved: v => parent.updateGrid({ margin: Math.round(v) })
         }
     }
 
@@ -698,32 +743,6 @@ PageBase {
     SectionCard {
         label: Localization.t("backgroundPage.weyes")
         Layout.fillWidth: true
-
-        SettingSwitch {
-            label: Localization.t("backgroundPage.enable")
-            sublabel: CompositorService.hasCapability("cursorPosition") ? "Show wayland-weyes 👀" : "Requires Hyprland (cursor position isn't available on " + CompositorService.backendName + ")"
-            enabled: CompositorService.hasCapability("cursorPosition")
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.weyes.enabled
-            onToggled: v => Config.update({
-                    weyes: Object.assign({}, Config.weyes, {
-                        enabled: v
-                    })
-                })
-        }
-
-        SettingSwitch {
-            label: Localization.t("backgroundPage.mirror_layout")
-            sublabel: Localization.t("backgroundPage.synchronize_coords_and_size_across")
-            enabled: CompositorService.hasCapability("cursorPosition")
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.weyes.mirror
-            onToggled: v => Config.update({
-                    weyes: Object.assign({}, Config.weyes, {
-                        mirror: v
-                    })
-                })
-        }
 
         SettingSwitch {
             label: Localization.t("backgroundPage.tinted")

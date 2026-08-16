@@ -313,26 +313,63 @@ Item {
             Component.onCompleted: {
                 styleLoader.activeComponent = styleLoader.targetComponent
             }
-
-            onLoaded: {
-                item.currentTime  = Qt.binding(() => root._currentTime)
-                item.clockFont    = Qt.binding(() => clockRoot._font)
-                item.textColor    = Qt.binding(() => clockRoot._textColor)
-                item.subColor     = Qt.binding(() => clockRoot._subColor)
-                item.halign       = Qt.binding(() => clockRoot._halign)
-                item.showSeconds  = Qt.binding(() => clockRoot._showSeconds)
-                item.is12h        = Qt.binding(() => clockRoot._is12h)
-                item.analogSize   = Qt.binding(() => clockRoot._analogSize)
-            }
         }
 
         implicitWidth:  styleLoader.item?.implicitWidth  ?? 0
         implicitHeight: styleLoader.item?.implicitHeight ?? 0
 
-        Component { id: horizontalComp; ClockHorizontal {} }
-        Component { id: verticalComp;   ClockVertical   {} }
-        Component { id: wordComp;       ClockWord       {} }
-        Component { id: analogComp;     ClockAnalog     {} }
+        Component {
+            id: horizontalComp
+            ClockHorizontal {
+                currentTime: root._currentTime
+                clockFont:   clockRoot._font
+                textColor:   clockRoot._textColor
+                subColor:    clockRoot._subColor
+                halign:      clockRoot._halign
+                showSeconds: clockRoot._showSeconds
+                is12h:       clockRoot._is12h
+                analogSize:  clockRoot._analogSize
+            }
+        }
+        Component {
+            id: verticalComp
+            ClockVertical {
+                currentTime: root._currentTime
+                clockFont:   clockRoot._font
+                textColor:   clockRoot._textColor
+                subColor:    clockRoot._subColor
+                halign:      clockRoot._halign
+                showSeconds: clockRoot._showSeconds
+                is12h:       clockRoot._is12h
+                analogSize:  clockRoot._analogSize
+            }
+        }
+        Component {
+            id: wordComp
+            ClockWord {
+                currentTime: root._currentTime
+                clockFont:   clockRoot._font
+                textColor:   clockRoot._textColor
+                subColor:    clockRoot._subColor
+                halign:      clockRoot._halign
+                showSeconds: clockRoot._showSeconds
+                is12h:       clockRoot._is12h
+                analogSize:  clockRoot._analogSize
+            }
+        }
+        Component {
+            id: analogComp
+            ClockAnalog {
+                currentTime: root._currentTime
+                clockFont:   clockRoot._font
+                textColor:   clockRoot._textColor
+                subColor:    clockRoot._subColor
+                halign:      clockRoot._halign
+                showSeconds: clockRoot._showSeconds
+                is12h:       clockRoot._is12h
+                analogSize:  clockRoot._analogSize
+            }
+        }
     }
 
     readonly property real _clockVisualWidth: clockRoot.width * clockRoot.scale
@@ -346,12 +383,13 @@ Item {
         trackY: root._clockVisualY
         trackWidth: root._clockVisualWidth
         trackHeight: root._clockVisualHeight
-        label: "Clock"
+        label: Localization.t("widgetService.clock")
         interactive: (EditModeService.active || (Config.clock.manualPos ?? false)) && clockRoot.isClockEnabled
         showChrome: EditModeService.active && clockRoot.isClockEnabled
         movable: true
         resizable: EditModeService.active
         uniformScale: true
+        animateTracking: false
         cornerRadius: 16
 
         quickActions: Component {

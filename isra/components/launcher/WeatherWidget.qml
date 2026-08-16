@@ -56,7 +56,7 @@ Item {
     property string _searchedTemp: "—"
     property string _searchedHigh: "—"
     property string _searchedLow: "—"
-    property string _searchedDesc: "loading…"
+    property string _searchedDesc: "loading..."
     property string _searchedIconName: "partly-cloudy-day"
     property color _searchedIconColor: Colors.md3.on_surface_variant
     property string _searchedUvi: "—"
@@ -67,7 +67,7 @@ Item {
     property string _searchedAstroTime: "—"
     property string _searchedAstroIcon: "wb-twilight"
     property string _searchedAstroColorType: "sun"
-    property string _searchedLocation: "loading…"
+    property string _searchedLocation: "loading..."
 
     property bool _searchLoading: false
     property bool _searchError: false
@@ -108,7 +108,7 @@ Item {
         _searchedTemp = "—"
         _searchedHigh = "—"
         _searchedLow = "—"
-        _searchedDesc = "loading…"
+        _searchedDesc = "loading..."
         _searchedIconName = "partly-cloudy-day"
         _searchedIconColor = Colors.md3.on_surface_variant
         _searchedUvi = "—"
@@ -119,7 +119,7 @@ Item {
         _searchedAstroTime = "—"
         _searchedAstroIcon = "wb-twilight"
         _searchedAstroColorType = "sun"
-        _searchedLocation = "loading…"
+        _searchedLocation = "loading..."
 
         if (query.trim() !== "") {
             _searchLoading = true;

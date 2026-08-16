@@ -6,6 +6,7 @@ Singleton {
 
     property var current: null
     property var currentScreen: null
+    property var currentMode: null
 
     function opened(panel: var, screen: var): void {
         if (root.current === panel)
@@ -15,6 +16,8 @@ Singleton {
         root.currentScreen = screen ?? null;
         if (prev)
             prev.close();
+        if (root.currentMode && panel?.coexistsWithMode !== true)
+            root._closeMode();
     }
 
     function closed(panel: var): void {
@@ -24,9 +27,32 @@ Singleton {
         }
     }
 
+    function modeOpened(mode: var): void {
+        if (root.currentMode === mode)
+            return;
+        const prev = root.currentMode;
+        root.currentMode = mode;
+        if (prev)
+            prev.close();
+    }
+
+    function modeClosed(mode: var): void {
+        if (root.currentMode === mode)
+            root.currentMode = null;
+    }
+
+    function _closeMode(): void {
+        const prev = root.currentMode;
+        root.currentMode = null;
+        if (prev)
+            prev.close();
+    }
+
     function closeAll(instant): void {
         const prev = root.current;
         root.current = null;
+        root.currentScreen = null;
+        root._closeMode();
         if (!prev)
             return;
         if (instant && prev.closeInstantly)

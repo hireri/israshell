@@ -13,84 +13,97 @@ Item {
 
     property bool isLast: false
 
+    property bool compact: false
+    property bool stack: false
+
+    readonly property real sideMargin: root.compact ? 14 : 18
+    readonly property real contentWidth: root.width - root.sideMargin * 2
+
     default property alias content: trailingSlot.data
 
-    implicitHeight: Math.max(56, contentRow.implicitHeight + 20)
+    implicitHeight: Math.max(root.compact ? 44 : 56, contentCol.implicitHeight + (root.compact ? 14 : 20))
     implicitWidth: parent?.width ?? 0
 
     Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
-        anchors.leftMargin: 18
+        anchors.leftMargin: root.sideMargin
         anchors.right: parent.right
-        anchors.rightMargin: 18
+        anchors.rightMargin: root.sideMargin
         height: 1
         color: Colors.md3.outline_variant
         visible: !root.isLast
         opacity: 0.5
     }
 
-    RowLayout {
-        id: contentRow
+    ColumnLayout {
+        id: contentCol
         anchors {
             left: parent.left
             right: parent.right
-            leftMargin: 18
-            rightMargin: 18
+            leftMargin: root.sideMargin
+            rightMargin: root.sideMargin
             verticalCenter: parent.verticalCenter
         }
-        spacing: 14
+        spacing: root.stack ? 6 : 0
 
-        Rectangle {
-            width: 34
-            height: 34
-            radius: 17
-            color: root.iconBg
-            visible: root.iconSource !== ""
-            Layout.alignment: Qt.AlignVCenter
-
-            Image {
-                anchors.centerIn: parent
-                source: root.iconSource
-                width: 18
-                height: 18
-                smooth: true
-                asynchronous: true
-                cache: true
-                sourceSize: Qt.size(36, 36)
-            }
-        }
-
-        ColumnLayout {
+        RowLayout {
+            id: contentRow
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignVCenter
-            spacing: 2
-            visible: root.label !== ""
+            spacing: root.compact ? 10 : 14
 
-            Text {
-                text: root.label
-                font.family: Config.fontFamily
-                font.pixelSize: 13
-                color: Colors.md3.on_surface
-                Layout.fillWidth: true
-                elide: Text.ElideRight
+            Rectangle {
+                width: 34
+                height: 34
+                radius: 17
+                color: root.iconBg
+                visible: root.iconSource !== ""
+                Layout.alignment: Qt.AlignVCenter
+
+                Image {
+                    anchors.centerIn: parent
+                    source: root.iconSource
+                    width: 18
+                    height: 18
+                    smooth: true
+                    asynchronous: true
+                    cache: true
+                    sourceSize: Qt.size(36, 36)
+                }
             }
 
-            Text {
-                text: root.sublabel
-                font.family: Config.fontFamily
-                font.pixelSize: 11
-                color: Colors.md3.outline
-                visible: root.sublabel !== ""
+            ColumnLayout {
                 Layout.fillWidth: true
-                elide: Text.ElideRight
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 2
+                visible: root.label !== ""
+
+                Text {
+                    text: root.label
+                    font.family: Config.fontFamily
+                    font.pixelSize: root.compact ? 12 : 13
+                    color: Colors.md3.on_surface
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    text: root.sublabel
+                    font.family: Config.fontFamily
+                    font.pixelSize: root.compact ? 10 : 11
+                    color: Colors.md3.outline
+                    visible: root.sublabel !== ""
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                }
             }
         }
+    }
 
-        Row {
-            id: trailingSlot
-            Layout.alignment: Qt.AlignVCenter
-            spacing: 8
-        }
+    Row {
+        id: trailingSlot
+        parent: root.stack ? contentCol : contentRow
+        Layout.alignment: Qt.AlignVCenter
+        spacing: 8
     }
 }

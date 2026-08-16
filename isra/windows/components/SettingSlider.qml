@@ -14,6 +14,8 @@ SettingRow {
 
     signal moved(real value)
 
+    stack: root.compact
+
     function _format(v) {
         return root.decimals > 0
             ? v.toFixed(root.decimals) + root.unit
@@ -36,7 +38,8 @@ SettingRow {
 
     Row {
         spacing: 10
-        anchors.verticalCenter: parent?.verticalCenter
+        anchors.verticalCenter: root.stack ? undefined : parent?.verticalCenter
+        width: root.stack ? root.contentWidth : implicitWidth
 
         TrackSlider {
             id: slider
@@ -44,7 +47,7 @@ SettingRow {
             to: root.to
             stepSize: root.stepSize
             value: root.value
-            implicitWidth: 150
+            implicitWidth: root.stack ? Math.max(60, root.contentWidth - valueBox.width - parent.spacing) : 150
             anchors.verticalCenter: parent.verticalCenter
 
             onMoved: {
@@ -54,8 +57,9 @@ SettingRow {
         }
 
         Rectangle {
-            implicitWidth: 48
-            implicitHeight: 28
+            id: valueBox
+            implicitWidth: root.compact ? 42 : 48
+            implicitHeight: root.compact ? 24 : 28
             anchors.verticalCenter: parent.verticalCenter
             radius: 6
             color: valueField.activeFocus ? Colors.md3.surface_container_high : Qt.alpha(Colors.md3.surface_container_high, 0)
@@ -77,7 +81,7 @@ SettingRow {
                 anchors.margins: 1
                 text: root._format(root.value)
                 font.family: Config.fontMonospace
-                font.pixelSize: 11
+                font.pixelSize: root.compact ? 10 : 11
                 color: Colors.md3.on_surface
                 horizontalAlignment: TextInput.AlignHCenter
                 verticalAlignment: TextInput.AlignVCenter

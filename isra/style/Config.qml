@@ -244,13 +244,7 @@ Singleton {
             outlineWidth: 2
         })
     property var weyes: ({
-            enabled: false,
-            x: 100,
-            y: 100,
-            width: 220,
-            height: 120,
-            tinted: false,
-            mirror: true
+            tinted: false
         })
     property var neko: ({
             enabled: false,
@@ -264,8 +258,16 @@ Singleton {
             dotShape: "roundedSquare"  // "roundedSquare" | "circle" | "material"
         })
     property var clockPositions: ({})
-    property var weyesPositions: ({})
     property var desktopWidgets: []
+    property var weather: ({
+            animatedOverlays: true,
+            coloredIcons: false
+        })
+    property var desktopGrid: ({
+            cellSize: 50,
+            gutter: 8,
+            margin: 24
+        })
     property bool checkUpdates: true
     property bool checkDeps: true
     property string githubRepo: "hireri/israshell"
@@ -438,13 +440,7 @@ Singleton {
                 outlineWidth: 2
             },
             weyes: {
-                enabled: false,
-                x: 100,
-                y: 100,
-                width: 220,
-                height: 120,
-                tinted: false,
-                mirror: true
+                tinted: false
             },
             neko: {
                 enabled: false,
@@ -459,8 +455,16 @@ Singleton {
             },
             useAwww: false,
             clockPositions: {},
-            weyesPositions: {},
             desktopWidgets: [],
+            weather: {
+                animatedOverlays: true,
+                coloredIcons: false
+            },
+            desktopGrid: {
+                cellSize: 50,
+                gutter: 8,
+                margin: 24
+            },
             checkUpdates: true,
             checkDeps: true,
             githubRepo: "hireri/israshell",
@@ -515,8 +519,11 @@ Singleton {
             result.bar = WidgetService.reconcile(result.bar);
         if (result.quickSettingsTiles)
             result.quickSettingsTiles = QsTileService.reconcile(result.quickSettingsTiles);
-        if (result.desktopWidgets)
+
+        if (result.desktopWidgets) {
             result.desktopWidgets = DesktopWidgetService.reconcile(result.desktopWidgets);
+            result.weyes = { tinted: result.weyes?.tinted ?? false };
+        }
 
         if (result.notifications) {
             const rawPopupPosition = data.notifications && data.notifications.popupPosition;

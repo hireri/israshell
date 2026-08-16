@@ -5,6 +5,7 @@ Column {
     id: root
 
     property string label: ""
+    property bool compact: false
     spacing: 0
 
     Text {
@@ -61,6 +62,8 @@ Column {
                 root._trackedRows.push(row);
                 row.visibleChanged.connect(() => Qt.callLater(root._updateDividers));
             }
+            if (root.compact && row.hasOwnProperty("compact"))
+                row.compact = true;
         }
 
         const visibleRows = rows.filter(r => r.visible);

@@ -588,7 +588,7 @@ Singleton {
         root.awaitingFirstToken = false;
 
         if (Config.aiAssistant.notifyOnFinish)
-            root._notify(Localization.t("aiAssistant.notify_summary"), finalText.length > 120 ? finalText.slice(0, 120) + "…" : finalText);
+            root._notify(Localization.t("aiAssistant.notify_summary"), finalText.length > 120 ? finalText.slice(0, 120) + "..." : finalText);
 
         root.responseFinished();
     }

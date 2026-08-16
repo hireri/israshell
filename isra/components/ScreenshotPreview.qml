@@ -48,8 +48,12 @@ Item {
         margins.bottom: outer.isBottom ? 12 : 0
         color: "transparent"
 
-        implicitWidth: 400
-        implicitHeight: contentCol.implicitHeight + 16 + 16
+        readonly property real shadowBlur: 20
+        readonly property real shadowOffsetY: 4
+        readonly property real shadowMargin: shadowBlur + shadowOffsetY
+
+        implicitWidth: contentCol.implicitWidth + shadowMargin * 2
+        implicitHeight: contentCol.implicitHeight + shadowMargin * 2
 
         readonly property int maxImgW: 260
         readonly property int maxImgH: 180
@@ -187,8 +191,8 @@ Item {
 
         Column {
             id: contentCol
-            x: 16
-            y: 16
+            x: panel.shadowMargin
+            y: panel.shadowMargin
             spacing: 8
             scale: 1.0
             transformOrigin: Item.Bottom
@@ -206,9 +210,9 @@ Item {
                 RectangularShadow {
                     anchors.fill: imageFrame
                     radius: imageFrame.radius
-                    blur: 20
+                    blur: panel.shadowBlur
                     color: Qt.rgba(0, 0, 0, 0.3)
-                    offset: Qt.vector2d(0, 4)
+                    offset: Qt.vector2d(0, panel.shadowOffsetY)
                     antialiasing: true
                 }
 
@@ -283,9 +287,9 @@ Item {
                 RectangularShadow {
                     anchors.fill: pillBar
                     radius: pillBar.radius
-                    blur: 20
+                    blur: panel.shadowBlur
                     color: Qt.rgba(0, 0, 0, 0.3)
-                    offset: Qt.vector2d(0, 4)
+                    offset: Qt.vector2d(0, panel.shadowOffsetY)
                     antialiasing: true
                 }
 

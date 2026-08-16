@@ -4,6 +4,7 @@ import QtQuick.Shapes
 import Qt5Compat.GraphicalEffects
 import qs.style
 import qs.icons
+import qs.services
 
 Item {
     id: root
@@ -16,6 +17,8 @@ Item {
     property bool showSeconds
     property bool is12h
     property int analogSize
+    property real dateSize: Config.clock.dateSize ?? 25
+    property real outlineWidth: Config.clock.outlineWidth ?? 2
 
     property int    fontWeight:    Config.clock.hourWeight    ?? 600
     property real   fontWidth:     Config.clock.fontWidth     ?? 100
@@ -26,24 +29,26 @@ Item {
     readonly property var  mainAxes:         ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
     readonly property var  subAxes:          ({ "wght": root.subWeight,  "wdth": root.fontWidth,  "ROND": root.fontRoundness  })
 
+    readonly property var  qtLocale:      Qt.locale(Config.language.split("_").slice(0, 2).join("_"))
+
     readonly property real ringSides:     Config.clock.ringSides     ?? 8
     readonly property real ringAmplitude: (Config.clock.ringAmplitude ?? 6) * (root.analogSize / 200)
     readonly property int  ringPoints:    256
 
-    implicitWidth:  analogSize + Config.clock.outlineWidth
-    implicitHeight: analogSize + Config.clock.outlineWidth
+    implicitWidth:  analogSize + root.outlineWidth
+    implicitHeight: analogSize + root.outlineWidth
 
     Shape {
         id: wobblyFace
         anchors.centerIn: face
-        width:  root.analogSize + Config.clock.outlineWidth
-        height: root.analogSize + Config.clock.outlineWidth
+        width:  root.analogSize + root.outlineWidth
+        height: root.analogSize + root.outlineWidth
         visible: true
         layer.enabled: true
         layer.samples: 4
 
         ShapePath {
-            strokeWidth: Config.clock.outlineWidth
+            strokeWidth: root.outlineWidth
             strokeColor: textColor
             fillColor: Colors.md3.surface_container_high
                        ?? Colors.md3.surface_container
@@ -221,8 +226,10 @@ Item {
         }
     }
 
-    readonly property real datePillPad: 8 * ((Config.clock.dateSize ?? 25) / 25)
-    readonly property real datePillSize: Math.max(dayLbl.implicitWidth, dayLbl.implicitHeight,
+    readonly property real datePillPad: 8 * ((root.dateSize) / 25)
+    readonly property real datePillMinSize: root.dateSize * 1.8
+    readonly property real datePillSize: Math.max(root.datePillMinSize,
+                                                    dayLbl.implicitWidth, dayLbl.implicitHeight,
                                                     monthLbl.implicitWidth, monthLbl.implicitHeight)
                                           + root.datePillPad * 2
 
@@ -256,7 +263,7 @@ Item {
             id: dayLbl
             anchors.centerIn: parent
             font.family:       root.clockFont
-            font.pixelSize:    (Config.clock.dateSize ?? 25) * 1.45
+            font.pixelSize:    (root.dateSize) * 1.45
             font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
             font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
             color: Colors.md3.on_secondary_container
@@ -292,12 +299,15 @@ Item {
             id: monthLbl
             anchors.centerIn: parent
             font.family:       root.clockFont
-            font.pixelSize:    Config.clock.dateSize ?? 25
+            font.pixelSize:    root.dateSize
             font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
             font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
             color: Colors.md3.on_primary_container
                    ?? root.subColor
-            text: Qt.formatDate(root.currentTime, "MMM")
+            text: {
+                const month = root.currentTime.toLocaleDateString(root.qtLocale, "MMM");
+                return month.charAt(0).toUpperCase() + month.slice(1);
+            }
         }
     }
 }

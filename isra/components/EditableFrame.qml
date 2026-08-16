@@ -1,5 +1,6 @@
 import QtQuick
 import qs.style
+import qs.services
 
 Item {
     id: root
@@ -18,12 +19,17 @@ Item {
     property real cornerRadius: 12
     property Component quickActions: null
 
+    property string widgetId: ""
+    property var widgetScreen: null
+    readonly property bool selected: EditModeService.isSelected(root.widgetId, root.widgetScreen)
+
     signal moveStarted
     signal moveDelta(real dx, real dy)
     signal moveCommitted
     signal resizeStarted
     signal resizeDelta(real dw, real dh)
     signal resizeCommitted
+    signal contextRequested(real x, real y)
 
     x: trackX
     y: trackY
@@ -31,7 +37,34 @@ Item {
     height: trackHeight
     z: 30
 
+    property bool animateTracking: true
+
+    Behavior on x {
+        enabled: root.animateTracking
+        NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+    }
+    Behavior on y {
+        enabled: root.animateTracking
+        NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+    }
+    Behavior on width {
+        enabled: root.animateTracking
+        NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+    }
+    Behavior on height {
+        enabled: root.animateTracking
+        NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+    }
+
     readonly property bool _hovered: bodyMouse.containsMouse || resizeMouse.containsMouse || bodyMouse.pressed || resizeMouse.pressed
+
+    readonly property bool _showOutline: root.showChrome && (root.selected || root._hovered)
+    readonly property bool _showActions: root.showChrome && root.selected
+
+    function _takeSelection(): void {
+        if (root.showChrome && root.widgetId !== "")
+            EditModeService.select(root.widgetId, root.widgetScreen);
+    }
 
     Rectangle {
         id: outlineRect
@@ -40,11 +73,11 @@ Item {
         color: "transparent"
         border.width: 2
         border.color: Colors.md3.primary
-        opacity: root.showChrome ? 1 : 0
+        opacity: root._showOutline ? (root.selected ? 1 : 0.5) : 0
         visible: opacity > 0
 
         Behavior on opacity {
-            NumberAnimation { duration: 150 }
+            NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
         }
     }
 
@@ -57,7 +90,7 @@ Item {
 
         Rectangle {
             id: labelChip
-            opacity: (root.showChrome && root.label !== "") ? 1 : 0
+            opacity: (root._showOutline && root.label !== "") ? 1 : 0
             visible: opacity > 0
             radius: height / 2
             height: 22
@@ -65,7 +98,7 @@ Item {
             color: Colors.md3.primary_container
 
             Behavior on opacity {
-                NumberAnimation { duration: 150 }
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
             }
 
             Text {
@@ -81,7 +114,7 @@ Item {
 
         Rectangle {
             id: actionsChip
-            opacity: (root.showChrome && root.quickActions !== null) ? 1 : 0
+            opacity: (root._showActions && root.quickActions !== null) ? 1 : 0
             visible: opacity > 0
             radius: height / 2
             height: 22
@@ -89,7 +122,7 @@ Item {
             color: Colors.md3.surface_container_high
 
             Behavior on opacity {
-                NumberAnimation { duration: 150 }
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
             }
 
             Loader {
@@ -108,7 +141,7 @@ Item {
         enabled: root.interactive && root.movable
         hoverEnabled: true
         cursorShape: moved ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-        acceptedButtons: Qt.LeftButton
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         preventStealing: true
 
         property real pressX: 0
@@ -119,6 +152,7 @@ Item {
         property real _startY: 0
 
         onPressed: mouse => {
+            root._takeSelection();
             const scene = mapToItem(root.parent, mouse.x, mouse.y);
             pressX = scene.x;
             pressY = scene.y;
@@ -126,8 +160,15 @@ Item {
             _startX = root.trackX;
             _startY = root.trackY;
         }
+        onClicked: mouse => {
+            if (mouse.button === Qt.RightButton) {
+                root._takeSelection();
+                const scene = mapToItem(root.parent, mouse.x, mouse.y);
+                root.contextRequested(scene.x, scene.y);
+            }
+        }
         onPositionChanged: mouse => {
-            if (!pressed)
+            if (!pressed || !(pressedButtons & Qt.LeftButton))
                 return;
             const scene = mapToItem(root.parent, mouse.x, mouse.y);
             if (!moved && (Math.abs(scene.x - pressX) > slop || Math.abs(scene.y - pressY) > slop)) {
@@ -147,8 +188,8 @@ Item {
                 root.moveDelta(dx, dy);
             }
         }
-        onReleased: {
-            if (moved)
+        onReleased: mouse => {
+            if (moved && mouse.button === Qt.LeftButton)
                 root.moveCommitted();
             moved = false;
         }
@@ -156,7 +197,7 @@ Item {
 
     Item {
         id: resizeHandle
-        visible: root.showChrome && root.resizable
+        visible: root._showActions && root.resizable
         width: 16
         height: 16
         anchors.right: parent.right
@@ -171,7 +212,7 @@ Item {
             radius: 4
             color: Colors.md3.primary
             Behavior on color {
-                ColorAnimation { duration: 120 }
+                ColorAnimation { duration: 100 }
             }
         }
 
@@ -188,6 +229,7 @@ Item {
             property real pressY: 0
 
             onPressed: mouse => {
+                root._takeSelection();
                 const scene = mapToItem(root.parent, mouse.x, mouse.y);
                 pressX = scene.x;
                 pressY = scene.y;

@@ -7,177 +7,217 @@ Item {
     id: root
 
     property bool open: false
-    readonly property alias cardItem: card
-    readonly property bool barAtBottom: Config.bar.position === 1
+    property var hostScreen: null
+
+    readonly property bool coexistsWithMode: true
 
     function toggle(): void {
-        root.open = !root.open;
+        if (root.open)
+            root.close();
+        else
+            root.show();
+    }
+    function show(): void {
+        if (root.open)
+            return;
+        root.open = true;
+        PanelService.opened(root, root.hostScreen);
     }
     function close(): void {
+        if (!root.open)
+            return;
         root.open = false;
+        PanelService.closed(root);
     }
 
-    width: card.width
-    height: card.height
+    Component.onDestruction: PanelService.closed(root)
+
     visible: opacity > 0.01
-    opacity: root.open ? 1 : 0
+    opacity: 0
 
-    readonly property real cols: 2
-    readonly property real tileSize: 78
+    readonly property real cols: 3
+    readonly property real tileW: 116
+    readonly property real previewH: 82
     readonly property real gap: 8
-    readonly property real pad: 10
+    readonly property real pad: 12
 
-    readonly property bool clockOn: Config.desktopClock ?? true
-    readonly property bool weyesOn: Config.weyes.enabled ?? false
-    readonly property var musicEntry: DesktopWidgetService.firstOf("music")
-    readonly property int photoCount: DesktopWidgetService.countOf("photo")
+    readonly property real cardW: root.cols * root.tileW + (root.cols - 1) * root.gap + root.pad * 2
+    readonly property real cardH: grid.implicitHeight + root.pad * 2 + titleText.implicitHeight + 8
 
-    readonly property var catalog: [
-        { type: "clock", label: Localization.t("widgetDrawer.clock"), icon: "analog-clock", on: root.clockOn, count: 0, stackable: false },
-        { type: "weyes", label: Localization.t("widgetDrawer.weyes"), icon: "visibility", on: root.weyesOn, count: 0, stackable: false },
-        { type: "music", label: Localization.t("widgetDrawer.music"), icon: "music-note", on: root.musicEntry !== null, count: 0, stackable: false },
-        { type: "photo", label: Localization.t("widgetDrawer.photo"), icon: "image", on: root.photoCount > 0, count: root.photoCount, stackable: true }
-    ]
-
-    function activate(item) {
-        switch (item.type) {
-        case "clock":
-            Config.update({ desktopClock: !root.clockOn });
-            break;
-        case "weyes":
-            Config.update({ weyes: Object.assign({}, Config.weyes, { enabled: !root.weyesOn }) });
-            break;
-        case "music":
-            if (root.musicEntry)
-                DesktopWidgetService.removeEntry(root.musicEntry.id);
-            else
-                DesktopWidgetService.addWidget("music");
-            break;
-        case "photo":
-            DesktopWidgetService.addWidget("photo");
-            break;
+    function activate(descriptor): void {
+        const type = descriptor.type;
+        if (!WidgetCatalog.available(type))
+            return;
+        if (WidgetCatalog.toggles(type) && WidgetCatalog.present(type)) {
+            EditModeService.clearSelection();
+            WidgetCatalog.removeType(type);
+            return;
         }
+        if (!WidgetCatalog.canAdd(type))
+            return;
+        const newId = WidgetCatalog.add(type, root.hostScreen);
+        if (newId)
+            EditModeService.select(newId, root.hostScreen);
     }
 
-    Behavior on opacity {
-        NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+    MouseArea {
+        anchors.fill: parent
+        onClicked: mouse => mouse.accepted = true
     }
 
-    scale: root.open ? 1 : 0.88
-    transformOrigin: root.barAtBottom ? Item.Bottom : Item.Top
-    Behavior on scale {
-        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+    Text {
+        id: titleText
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+            margins: root.pad
+        }
+        text: Localization.t("widgetDrawer.title")
+        color: Colors.md3.on_surface_variant
+        font.family: Config.fontFamily
+        font.pixelSize: 11
+        font.weight: Font.Medium
     }
 
-    Rectangle {
-        id: card
-        width: root.cols * root.tileSize + (root.cols - 1) * root.gap + root.pad * 2
-        height: grid.implicitHeight + root.pad * 2 + titleText.implicitHeight + 6
-
-        color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-        radius: 20
-        border.width: 1
-        border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: mouse => mouse.accepted = true
+    Grid {
+        id: grid
+        anchors {
+            top: titleText.bottom
+            topMargin: 8
+            horizontalCenter: parent.horizontalCenter
         }
+        columns: root.cols
+        spacing: root.gap
 
-        Text {
-            id: titleText
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-                margins: root.pad
-            }
-            text: Localization.t("widgetDrawer.title")
-            color: Colors.md3.on_surface_variant
-            font.family: Config.fontFamily
-            font.pixelSize: 11
-            font.weight: Font.Medium
-        }
+        Repeater {
+            model: WidgetCatalog.types
 
-        Grid {
-            id: grid
-            anchors {
-                top: titleText.bottom
-                topMargin: 6
-                horizontalCenter: parent.horizontalCenter
-            }
-            columns: root.cols
-            spacing: root.gap
+            Rectangle {
+                id: tile
+                required property var modelData
 
-            Repeater {
-                model: root.catalog
+                readonly property bool available: WidgetCatalog.available(modelData.type)
+                readonly property bool present: WidgetCatalog.present(modelData.type)
+                readonly property int count: WidgetCatalog.count(modelData.type)
+                readonly property bool interactive: tile.available && (WidgetCatalog.canAdd(modelData.type) || (WidgetCatalog.toggles(modelData.type) && tile.present))
+
+                width: root.tileW
+                height: root.previewH + labelCol.implicitHeight + 14
+                radius: 16
+                opacity: tile.available ? 1 : 0.4
+
+                readonly property color hoverColor: Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity)
+                color: tileMouse.containsMouse && tile.interactive ? tile.hoverColor : Qt.alpha(tile.hoverColor, 0)
+
+                border.width: (tile.present && !tile.modelData.stackable) ? 2 : 0
+                border.color: Colors.md3.primary
+
+                Behavior on color {
+                    ColorAnimation { duration: 100 }
+                }
+
+                Item {
+                    id: previewPane
+                    anchors {
+                        top: parent.top
+                        left: parent.left
+                        right: parent.right
+                        topMargin: 8
+                        leftMargin: 6
+                        rightMargin: 6
+                    }
+                    height: root.previewH
+                    clip: true
+
+                    Loader {
+                        id: previewLoader
+                        active: tile.available
+                        sourceComponent: tile.modelData.preview
+
+                        anchors.centerIn: parent
+                        width: tile.modelData.previewFills ? Math.min(previewPane.width, previewPane.height) - 12 : previewPane.width
+                        height: tile.modelData.previewFills ? width : previewPane.height
+                    }
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: tile.modelData.icon
+                        iconSize: 26
+                        color: Colors.md3.on_surface_variant
+                        visible: !tile.available
+                    }
+                }
+
+                Column {
+                    id: labelCol
+                    anchors {
+                        top: previewPane.bottom
+                        topMargin: 5
+                        left: parent.left
+                        right: parent.right
+                        leftMargin: 8
+                        rightMargin: 8
+                    }
+                    spacing: 1
+
+                    Text {
+                        width: parent.width
+                        text: tile.modelData.label
+                        horizontalAlignment: Text.AlignHCenter
+                        font.family: Config.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        color: Colors.md3.on_surface
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        text: {
+                            if (!tile.available)
+                                return Localization.t("widgetDrawer.unavailable");
+                            if (tile.modelData.stackable)
+                                return Localization.t("widgetDrawer.add");
+                            return tile.present ? Localization.t("widgetDrawer.remove") : Localization.t("widgetDrawer.add");
+                        }
+                        font.family: Config.fontFamily
+                        font.pixelSize: 9
+                        color: tile.present ? Colors.md3.primary : Colors.md3.on_surface_variant
+                        elide: Text.ElideRight
+                    }
+                }
 
                 Rectangle {
-                    id: tile
-                    required property var modelData
-
-                    width: root.tileSize
-                    height: root.tileSize
-                    radius: 16
-                    color: tile.modelData.on
-                        ? Colors.md3.primary_container
-                        : (tileMouse.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high)
-
-                    Behavior on color {
-                        ColorAnimation { duration: 120 }
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                        margins: 4
                     }
+                    width: 18
+                    height: 18
+                    radius: 9
+                    color: Colors.md3.primary
+                    visible: tile.present && tile.modelData.stackable
 
-                    Column {
+                    Text {
                         anchors.centerIn: parent
-                        spacing: 6
-
-                        MaterialIcon {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            name: tile.modelData.icon
-                            filled: tile.modelData.on
-                            iconSize: 24
-                            color: tile.modelData.on ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant
-                        }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: tile.modelData.label
-                            font.family: Config.fontFamily
-                            font.pixelSize: 11
-                            font.weight: Font.Medium
-                            color: tile.modelData.on ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant
-                        }
+                        text: tile.count
+                        font.family: Config.fontFamily
+                        font.pixelSize: 10
+                        font.weight: Font.Bold
+                        color: Colors.md3.on_primary
                     }
+                }
 
-                    Rectangle {
-                        anchors {
-                            top: parent.top
-                            right: parent.right
-                            margins: 4
-                        }
-                        width: 16
-                        height: 16
-                        radius: 8
-                        color: Colors.md3.primary
-                        visible: tile.modelData.stackable && tile.modelData.count > 0
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: tile.modelData.count
-                            font.family: Config.fontFamily
-                            font.pixelSize: 9
-                            font.weight: Font.Bold
-                            color: Colors.md3.on_primary
-                        }
-                    }
-
-                    MouseArea {
-                        id: tileMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.activate(tile.modelData)
-                    }
+                MouseArea {
+                    id: tileMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    enabled: tile.interactive
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.activate(tile.modelData)
                 }
             }
         }

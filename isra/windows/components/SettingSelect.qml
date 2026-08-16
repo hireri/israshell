@@ -8,8 +8,11 @@ SettingRow {
     property var currentValue: null
     signal selected(var value)
 
+    stack: root.compact
+
     SelectField {
-        anchors.verticalCenter: parent?.verticalCenter
+        anchors.verticalCenter: root.stack ? undefined : parent?.verticalCenter
+        width: root.stack ? root.contentWidth : implicitWidth
         options: root.options
         currentValue: root.currentValue
         onSelected: v => root.selected(v)
