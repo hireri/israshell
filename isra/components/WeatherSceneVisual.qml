@@ -7,8 +7,6 @@ import Quickshell.Widgets
 Item {
     id: root
 
-    property string overlayName: ""
-
     readonly property real u: {
         if (root.width <= 0 || root.height <= 0)
             return 1;
@@ -49,14 +47,6 @@ Item {
                 Behavior on opacity {
                     NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                 }
-            }
-
-            WeatherOverlay {
-                anchors.fill: parent
-                code: WeatherReadout.code
-                isDay: WeatherReadout.isDay
-                overlayName: root.overlayName
-                visible: sceneImage.status === Image.Ready
             }
 
             Rectangle {

@@ -26,6 +26,7 @@ satty
 qt6-declarative
 qt6-5compat
 qt6-svg
+qt6-imageformats
 # Utilities
 clipvault
 rdap
@@ -48,4 +49,3 @@ python-gtts
 # Fonts
 inter-font
 ttf-roboto-mono
-qt6-lottie

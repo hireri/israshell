@@ -260,7 +260,6 @@ Singleton {
     property var clockPositions: ({})
     property var desktopWidgets: []
     property var weather: ({
-            animatedOverlays: true,
             coloredIcons: false
         })
     property var desktopGrid: ({
@@ -457,7 +456,6 @@ Singleton {
             clockPositions: {},
             desktopWidgets: [],
             weather: {
-                animatedOverlays: true,
                 coloredIcons: false
             },
             desktopGrid: {

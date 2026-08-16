@@ -540,17 +540,6 @@ PageBase {
         }
 
         SettingSwitch {
-            label: Localization.t("localePage.animated_weather_overlays")
-            sublabel: Localization.t("localePage.animate_rain_snow_over_weather_art")
-            checked: Config.weather?.animatedOverlays ?? true
-            onToggled: v => Config.update({
-                    weather: Object.assign({}, Config.weather, {
-                        animatedOverlays: v
-                    })
-                })
-        }
-
-        SettingSwitch {
             isLast: true
             label: Localization.t("localePage.colored_weather_icons")
             sublabel: Localization.t("localePage.use_colored_weather_icons_instead")
