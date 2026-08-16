@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import QtQuick.Shapes
 import QtQuick.Effects
-import "MaterialIconCache.js" as IconCache
+import Quickshell.Io
 
 Item {
     id: root
@@ -42,16 +42,44 @@ Item {
     onNameChanged: loadSvgs()
     Component.onCompleted: loadSvgs()
 
+    property string _currentLoadingName: ""
+    property bool _outlineLoaded: false
+    property bool _filledLoaded: false
+    property string _outlineContent: ""
+    property string _filledContent: ""
+
     function loadSvgs() {
         if (!name) {
             root._outlinePaths = [];
             root._filledPaths = [];
+            root._currentLoadingName = "";
             return;
         }
 
-        const loadingName = name.toLowerCase();
-        root._outlinePaths = IconCache.getPaths(Quickshell.shellDir + "/icons", "outline", loadingName);
-        root._filledPaths = IconCache.getPaths(Quickshell.shellDir + "/icons", "filled", loadingName);
+        let loadingName = name.toLowerCase();
+        root._currentLoadingName = loadingName;
+        root._outlineLoaded = false;
+        root._filledLoaded = false;
+
+        outlineFileView.path = Quickshell.shellDir + "/icons/outline/" + loadingName + ".svg";
+        filledFileView.path = Quickshell.shellDir + "/icons/filled/" + loadingName + ".svg";
+    }
+
+    function checkCompletion() {
+        if (root._outlineLoaded && root._filledLoaded) {
+            root._outlinePaths = root._outlineContent ? parseSvgPaths(root._outlineContent) : [];
+            root._filledPaths = root._filledContent ? parseSvgPaths(root._filledContent) : [];
+        }
+    }
+
+    function parseSvgPaths(xmlContent) {
+        let paths = [];
+        let regex = /d="([^"]+)"/g;
+        let match;
+        while ((match = regex.exec(xmlContent)) !== null) {
+            paths.push(match[1]);
+        }
+        return paths;
     }
 
     Item {
@@ -212,7 +240,7 @@ Item {
         width: root.width   
         height: root.height 
         visible: false
-        layer.enabled: root.transitionType === "circle" && root._progress > 0 && root._progress < 1
+        layer.enabled: true
         layer.samples: 4
         layer.smooth: true
 
@@ -222,6 +250,36 @@ Item {
             radius: width / 2
             anchors.centerIn: parent
             color: "black"
+        }
+    }
+
+    FileView {
+        id: outlineFileView
+        printErrors: false
+        onLoaded: {
+            root._outlineContent = text();
+            root._outlineLoaded = true;
+            checkCompletion();
+        }
+        onLoadFailed: {
+            root._outlineContent = "";
+            root._outlineLoaded = true;
+            checkCompletion();
+        }
+    }
+
+    FileView {
+        id: filledFileView
+        printErrors: false
+        onLoaded: {
+            root._filledContent = text();
+            root._filledLoaded = true;
+            checkCompletion();
+        }
+        onLoadFailed: {
+            root._filledContent = "";
+            root._filledLoaded = true;
+            checkCompletion();
         }
     }
 }

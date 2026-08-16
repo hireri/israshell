@@ -193,7 +193,7 @@ Singleton {
 
     Process {
         id: spriteListProc
-        command: ["bash", "-c", "find " + JSON.stringify(Quickshell.shellDir + "/sprites") + " -maxdepth 1 -type f -iname '*.gif' -printf '%f\\n' | sort"]
+        command: ["bash", "-c", "find " + JSON.stringify(Quickshell.shellDir + "/assets/sprites") + " -maxdepth 1 -type f -iname '*.gif' -printf '%f\\n' | sort"]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.spriteNames = text.trim().split("\n").filter(l => l.trim()).map(f => f.replace(/\.gif$/i, ""));

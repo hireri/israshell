@@ -741,25 +741,6 @@ PageBase {
     }
 
     SectionCard {
-        label: Localization.t("backgroundPage.weyes")
-        Layout.fillWidth: true
-
-        SettingSwitch {
-            label: Localization.t("backgroundPage.tinted")
-            sublabel: Localization.t("backgroundPage.match_colors_to_the_system")
-            enabled: CompositorService.hasCapability("cursorPosition")
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.weyes.tinted
-            onToggled: v => Config.update({
-                    weyes: Object.assign({}, Config.weyes, {
-                        tinted: v
-                    })
-                })
-            isLast: true
-        }
-    }
-
-    SectionCard {
         label: Localization.t("backgroundPage.neko")
         Layout.fillWidth: true
 
