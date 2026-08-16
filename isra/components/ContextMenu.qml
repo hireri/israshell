@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Widgets
 import qs.style
 import qs.icons
 import qs.services
@@ -11,6 +12,8 @@ Item {
     property real cardW: 190
 
     property bool opaque: false
+    property Item blurSource: null
+    readonly property bool blurActive: !root.opaque && root.blurSource !== null && Config.blurAllowed(true)
 
     readonly property alias cardItem: card
     readonly property bool coexistsWithMode: true
@@ -18,7 +21,8 @@ Item {
     readonly property real cardR: 16
     readonly property real itemH: 36
     readonly property real sepH: 11
-    readonly property real pad: 6
+    readonly property real pad: 3
+    readonly property real padBottom: 5
 
     anchors.fill: parent
     visible: false
@@ -34,8 +38,8 @@ Item {
     readonly property real cardOriginX: root._originRight ? 1 : 0
     readonly property real cardOriginY: root._originBottom ? 1 : 0
 
-    readonly property real mainH: mainCol.implicitHeight + pad * 2
-    readonly property real subH: subCol.implicitHeight + pad * 2
+    readonly property real mainH: mainCol.implicitHeight + pad + padBottom
+    readonly property real subH: subCol.implicitHeight + pad + padBottom
     readonly property real cardH: root.submenuOpen ? root.subH : root.mainH
 
     readonly property real activeW: root.submenuOpen ? (root.activeSubmenu?.submenuWidth ?? root.cardW) : root.cardW
@@ -49,7 +53,7 @@ Item {
     property real _targetH: 0
 
     function _measuredH(list): real {
-        let h = root.pad * 2;
+        let h = root.pad + root.padBottom;
         for (let i = 0; i < list.length; i++)
             h += (list[i].isSep ?? false) ? root.sepH : root.itemH;
         return h;
@@ -178,7 +182,7 @@ Item {
         restoreMode: Binding.RestoreNone
     }
 
-    Rectangle {
+    ClippingRectangle {
         id: card
         property bool _wiping: false
 
@@ -201,11 +205,25 @@ Item {
             }
         }
 
-        color: root.opaque ? Colors.md3.surface_container : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+        color: root.blurActive ? "transparent" : Qt.alpha(Colors.md3.surface_container, root.opaque ? 1 : Config.blurOpacity)
         radius: root.cardR
         border.width: 1
         border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
-        clip: true
+        layer.enabled: true
+
+        ShaderEffectSource {
+            anchors.fill: parent
+            visible: root.blurActive
+            sourceItem: root.blurSource
+            sourceRect: Qt.rect(card.x, card.y, card.width, card.height)
+            hideSource: false
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            visible: root.blurActive
+            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+        }
 
         transformOrigin: {
             if (root._originBottom && root._originRight)
@@ -267,7 +285,7 @@ Item {
                         fill: parent
                         topMargin: 2
                         bottomMargin: 2
-                        leftMargin: 6
+                        leftMargin: 4
                         rightMargin: 6
                     }
                     radius: 10
@@ -360,10 +378,10 @@ Item {
             visible: !row.isSep
             anchors {
                 fill: parent
-                leftMargin: 6
-                rightMargin: 6
-                topMargin: 1
-                bottomMargin: 1
+                leftMargin: 5
+                rightMargin: 7
+                topMargin: 2
+                bottomMargin: 2
             }
             radius: 10
             color: row.isDanger ? Colors.md3.error : Colors.md3.on_surface
@@ -378,7 +396,7 @@ Item {
             visible: !row.isSep
             anchors {
                 left: parent.left
-                leftMargin: 15
+                leftMargin: 12
                 verticalCenter: parent.verticalCenter
             }
             width: 16
@@ -403,9 +421,9 @@ Item {
             visible: !row.isSep
             anchors {
                 left: icon.width > 0 ? icon.right : parent.left
-                leftMargin: icon.width > 0 ? 9 : 15
+                leftMargin: icon.width > 0 ? 7 : 12
                 right: chevron.visible ? chevron.left : parent.right
-                rightMargin: 10
+                rightMargin: chevron.visible ? 8 : 14
                 verticalCenter: parent.verticalCenter
             }
             text: row.entry.text ?? ""

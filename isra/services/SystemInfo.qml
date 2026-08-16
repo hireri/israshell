@@ -155,10 +155,15 @@ Singleton {
         return (mb / 1024).toFixed(1) + " GB";
     }
 
+    property int _liveConsumers: 0
+    readonly property bool _liveMetricsActive: root._liveConsumers > 0
+    function registerLiveConsumer() { root._liveConsumers++; }
+    function unregisterLiveConsumer() { root._liveConsumers = Math.max(0, root._liveConsumers - 1); }
+
     Timer {
         id: usageTimer
         interval: root.pollInterval
-        running: true
+        running: root._liveMetricsActive
         repeat: true
         triggeredOnStart: true
         onTriggered: {

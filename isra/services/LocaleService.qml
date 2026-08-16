@@ -131,7 +131,7 @@ Singleton {
     }
 
     property var _clockTimer: Timer {
-        interval: 100
+        interval: 500
         running: true
         repeat: true
         triggeredOnStart: true

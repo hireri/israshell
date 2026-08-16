@@ -5,6 +5,9 @@ import qs.services
 Item {
     id: root
 
+    Component.onCompleted: SystemInfo.registerLiveConsumer()
+    Component.onDestruction: SystemInfo.unregisterLiveConsumer()
+
     property string metric: "cpu"
 
     property bool showReadout: true

@@ -179,11 +179,6 @@ ShellRoot {
                 modelData: screenScope.modelData
             }
 
-            DesktopWidgets {
-                id: desktopWidgetsItem
-                modelData: screenScope.modelData
-            }
-
             Loader {
                 active: Config.neko.enabled && Config.neko.onTop
                     && !(LockscreenService.locked || LockscreenService.lockAnimating || LockscreenService.lockVisualActive || LockscreenService.unlockAnimating)

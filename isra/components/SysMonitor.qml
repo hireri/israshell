@@ -9,6 +9,9 @@ import qs.services
 Item {
     id: root
 
+    Component.onCompleted: SystemInfo.registerLiveConsumer()
+    Component.onDestruction: SystemInfo.unregisterLiveConsumer()
+
     required property var panelWindow
     readonly property var metricList: [
         { id: "cpu",  label: Localization.t("sysMonitor.cpu"),  icon: "memory",          color: Colors.md3.primary },

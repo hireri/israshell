@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Widgets
 import qs.style
 import qs.icons
 import qs.services
@@ -8,6 +9,9 @@ Item {
 
     property var hostScreen: null
     readonly property bool barAtBottom: Config.bar.position === 1
+
+    property Item blurSource: null
+    readonly property bool blurActive: root.blurSource !== null && Config.blurAllowed(true)
 
     readonly property alias toolbarItem: toolbar
     readonly property alias widgetDrawerItem: widgetDrawer
@@ -70,14 +74,14 @@ Item {
         }
     }
 
-    Rectangle {
+    ClippingRectangle {
         id: toolbar
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: root.barAtBottom ? parent.top : undefined
         anchors.bottom: root.barAtBottom ? undefined : parent.bottom
         anchors.topMargin: 24
         anchors.bottomMargin: 24
-        clip: true
+        layer.enabled: true
 
         readonly property real pillW: toolbarRow.implicitWidth + 12
         readonly property real pillH: 48
@@ -99,9 +103,23 @@ Item {
             NumberAnimation { duration: 380; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
         }
 
-        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+        color: root.blurActive ? "transparent" : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
         border.width: 1
         border.color: Qt.alpha(Colors.md3.on_surface, 0.15)
+
+        ShaderEffectSource {
+            anchors.fill: parent
+            visible: root.blurActive
+            sourceItem: root.blurSource
+            sourceRect: Qt.rect(toolbar.x, toolbar.y, toolbar.width, toolbar.height)
+            hideSource: false
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            visible: root.blurActive
+            color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+        }
 
         Row {
             id: toolbarRow

@@ -14,7 +14,7 @@ PanelWindow {
     readonly property real cardW: 190
     readonly property real cardR: 16
     readonly property real itemH: 34
-    readonly property real pad: 4
+    readonly property real pad: 3
     readonly property real barGap: 3
 
     Component {
@@ -191,8 +191,8 @@ PanelWindow {
                         id: hoverBg
                         anchors {
                             fill: parent
-                            leftMargin: 6
-                            rightMargin: 8
+                            leftMargin: 5
+                            rightMargin: 7
                             topMargin: 2
                             bottomMargin: 2
                         }
