@@ -104,14 +104,25 @@ Item {
         anchors.fill: parent
         name: root.shape || "circle"
         shapeSize: parent.width
-        color: root.scheme.surfaceContainerHigh
+        color: Config.dimWidget(root.scheme.surfaceContainerHigh)
+        outlined: true
+        strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
+        strokeWidth: 1
 
         layer.enabled: true
         layer.smooth: true
+    }
 
-        Behavior on color {
-            ColorAnimation { duration: 400 }
-        }
+    MaterialShape {
+        id: frameMaskShape
+        anchors.fill: parent
+        name: root.shape || "circle"
+        shapeSize: parent.width
+        color: "white"
+        opacity: 0
+
+        layer.enabled: true
+        layer.smooth: true
     }
 
     Image {
@@ -138,7 +149,7 @@ Item {
         anchors.fill: parent
         source: photoA
         maskEnabled: true
-        maskSource: frameShape
+        maskSource: frameMaskShape
         maskThresholdMin: 0.5
         maskSpreadAtMin: 0.5
         opacity: 0
@@ -148,7 +159,7 @@ Item {
         anchors.fill: parent
         source: photoB
         maskEnabled: true
-        maskSource: frameShape
+        maskSource: frameMaskShape
         maskThresholdMin: 0.5
         maskSpreadAtMin: 0.5
         opacity: 0

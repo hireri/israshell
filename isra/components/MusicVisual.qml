@@ -28,8 +28,10 @@ Item {
 
     on_BodyShapeNameChanged: {
         bodyShape.rotationAnimates = false;
+        bodyMaskShape.rotationAnimates = false;
         root._bodyRotation = 0;
         bodyShape.rotationAnimates = true;
+        bodyMaskShape.rotationAnimates = true;
     }
 
     property int _front: 0
@@ -81,20 +83,41 @@ Item {
         backAnim.start();
     }
 
-    Item {
-        id: shapeMaskRoot
+    MaterialShape {
+        id: bodyShape
         anchors.fill: parent
+        name: root._bodyShapeName
+        shapeSize: parent.width
+        color: Config.dimWidget(Colors.md3.primary_container)
+        rotationDegrees: root._bodyRotation
+        outlined: true
+        strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
+        strokeWidth: 1
+
         layer.enabled: true
         layer.smooth: true
+    }
+
+    Item {
+        id: maskWrapper
+        anchors.fill: parent
 
         MaterialShape {
-            id: bodyShape
+            id: bodyMaskShape
             anchors.fill: parent
             name: root._bodyShapeName
             shapeSize: parent.width
-            color: Colors.md3.primary_container
+            color: "white"
             rotationDegrees: root._bodyRotation
         }
+    }
+
+    ShaderEffectSource {
+        id: bodyMaskSource
+        anchors.fill: parent
+        sourceItem: maskWrapper
+        hideSource: true
+        visible: false
     }
 
     Image {
@@ -121,7 +144,7 @@ Item {
         anchors.fill: parent
         source: artA
         maskEnabled: true
-        maskSource: shapeMaskRoot
+        maskSource: bodyMaskSource
         maskThresholdMin: 0.5
         maskSpreadAtMin: 0.5
         opacity: 0
@@ -131,7 +154,7 @@ Item {
         anchors.fill: parent
         source: artB
         maskEnabled: true
-        maskSource: shapeMaskRoot
+        maskSource: bodyMaskSource
         maskThresholdMin: 0.5
         maskSpreadAtMin: 0.5
         opacity: 0

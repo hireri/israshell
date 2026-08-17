@@ -174,6 +174,10 @@ ShellRoot {
                 return Config.bar.mode;
             }
 
+            WallpaperLayer {
+                modelData: screenScope.modelData
+            }
+
             Background {
                 id: wallpaperBackgroundItem
                 modelData: screenScope.modelData

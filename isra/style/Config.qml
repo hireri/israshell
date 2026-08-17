@@ -21,13 +21,22 @@ Singleton {
     property bool genericLauncherIcon: false
     property bool blurEffects: false
     property real blurOpacity: 1
+    property bool desktopWidgetTransparency: false
 
     function dim(color) {
         return ColorUtils.withAlpha(color, blurOpacity);
     }
 
+    function dimWidget(color) {
+        return desktopWidgetTransparency ? dim(color) : color;
+    }
+
     function blurAllowed(visible) {
         return (visible === undefined ? true : visible) && blurEffects && !GameModeService.active;
+    }
+
+    function desktopWidgetBlurAllowed(visible) {
+        return desktopWidgetTransparency && blurAllowed(visible);
     }
 
     property bool showBarWeather: true
@@ -290,7 +299,8 @@ Singleton {
             genericLauncherIcon: false,
             blurEffects: false,
             blurOpacity: 1,
-            
+            desktopWidgetTransparency: false,
+
             showBarWeather: true,
             timeFormat: "",
             dateFormat: "",

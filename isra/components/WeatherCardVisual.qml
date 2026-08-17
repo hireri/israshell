@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Widgets
 import qs.style
 import qs.services
 
@@ -23,10 +24,13 @@ Item {
     readonly property int daysHeight: root.fittingDayRows * root.dayRowHeight
     readonly property bool showDays: root.showHours && root.fittingDayRows >= 1
 
-    Rectangle {
+    ClippingRectangle {
+        id: card
         anchors.fill: parent
         radius: 22
-        color: Colors.md3.surface_container_high
+        color: Config.dimWidget(Colors.md3.surface_container_high)
+        border.width: 1
+        border.color: Qt.alpha(Colors.md3.outline, 0.5)
     }
 
     Item {

@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Widgets
 import qs.style
 import qs.services
 
@@ -79,12 +80,15 @@ Item {
 
     readonly property real _ringPad: root._disc * 0.1
 
-    Rectangle {
+    ClippingRectangle {
+        id: card
         anchors.centerIn: parent
         width: root._disc
         height: root._disc
         radius: width / 2
-        color: Colors.md3.surface_container_high
+        color: Config.dimWidget(Colors.md3.surface_container_high)
+        border.width: 1
+        border.color: Qt.alpha(Colors.md3.outline, 0.5)
     }
 
     ProgressRing {

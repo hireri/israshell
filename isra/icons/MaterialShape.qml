@@ -14,6 +14,9 @@ Item {
     property real shapeSize: 24
     property real rotationDegrees: 0
     property color color: "white"
+    property bool outlined: false
+    property color strokeColor: "white"
+    property real strokeWidth: 2
 
     implicitWidth: shapeSize
     implicitHeight: shapeSize
@@ -175,7 +178,8 @@ Item {
 
         ShapePath {
             fillColor: root.color
-            strokeWidth: -1
+            strokeColor: root.outlined ? root.strokeColor : "transparent"
+            strokeWidth: root.outlined ? root.strokeWidth : -1
             PathSvg { path: root._svgPath }
         }
     }

@@ -21,7 +21,9 @@ Item {
     ClippingRectangle {
         anchors.fill: parent
         radius: 32 * root.u
-        color: Colors.md3.surface_container_high
+        color: Config.dimWidget(Colors.md3.surface_container_high)
+        border.width: 1
+        border.color: Qt.alpha(Colors.md3.outline, 0.5)
 
         Item {
             id: band
@@ -46,17 +48,6 @@ Item {
 
                 Behavior on opacity {
                     NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
-                }
-            }
-
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                height: 46 * root.u
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Colors.md3.surface_container_high }
-                    GradientStop { position: 1.0; color: Qt.rgba(Colors.md3.surface_container_high.r, Colors.md3.surface_container_high.g, Colors.md3.surface_container_high.b, 0) }
                 }
             }
         }

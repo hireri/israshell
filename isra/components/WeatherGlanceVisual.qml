@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Widgets
 import qs.style
 import qs.services
 import qs.icons
@@ -42,20 +43,27 @@ Item {
         anchors.fill: parent
 
         MaterialShape {
+            id: pillShape
             anchors.centerIn: parent
             visible: !root.appliedWide
             width: Math.min(parent.width, parent.height)
             height: width
             name: "pill"
             shapeSize: width
-            color: Colors.md3.surface_container_high
+            color: Config.dimWidget(Colors.md3.surface_container_high)
+            outlined: true
+            strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
+            strokeWidth: 1
         }
 
-        Rectangle {
+        ClippingRectangle {
+            id: wideCard
             anchors.fill: parent
             visible: root.appliedWide
             radius: height / 2
-            color: Colors.md3.surface_container_high
+            color: Config.dimWidget(Colors.md3.surface_container_high)
+            border.width: 1
+            border.color: Qt.alpha(Colors.md3.outline, 0.5)
         }
 
         Column {
