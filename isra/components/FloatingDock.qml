@@ -43,7 +43,7 @@ PanelWindow {
     readonly property int itemGlyphSize: Config.floatingDock.iconSize
     readonly property int itemCellSize: itemGlyphSize + 12
     readonly property int itemSpacing: 8
-    readonly property int pillPadding: 9
+    readonly property int pillPadding: 6
     readonly property int pillThickness: itemCellSize + pillPadding * 2
     
     readonly property int edgeMargin: 8
@@ -136,6 +136,7 @@ PanelWindow {
 
     readonly property bool hasContent: Config.floatingDock.showLauncher
         || Config.floatingDock.showTrash
+        || Config.floatingDock.showMusicPlayer
         || dockModelImpl.viewModel.count > 0
 
     visible: Config.floatingDock.enabled && hasContent
@@ -425,8 +426,15 @@ PanelWindow {
                 }
 
                 DockSection {
-                    active: Config.floatingDock.showTrash
+                    active: Config.floatingDock.showTrash || Config.floatingDock.showMusicPlayer
                     sourceComponent: DockSeparator {}
+                }
+
+                DockSection {
+                    active: Config.floatingDock.showMusicPlayer
+                    sourceComponent: DockMusicPlayer {
+                        dockRoot: pill
+                    }
                 }
 
                 DockSection {

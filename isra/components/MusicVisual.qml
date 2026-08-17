@@ -185,6 +185,7 @@ Item {
     }
 
     onArtUrlChanged: {
+        MediaPlayerState.ensureArt(root.artUrl);
         if (root.artUrl === "") {
             clearArtDelay.restart();
         } else {
@@ -193,7 +194,10 @@ Item {
         }
     }
 
-    Component.onCompleted: root._show(root.artUrl)
+    Component.onCompleted: {
+        MediaPlayerState.ensureArt(root.artUrl);
+        root._show(root.artUrl);
+    }
 
     MaterialIcon {
         anchors.centerIn: parent

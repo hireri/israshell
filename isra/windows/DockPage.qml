@@ -68,12 +68,21 @@ PageBase {
         }
 
         SettingSwitch {
-            isLast: true
             label: Localization.t("dockPage.trash_bin")
             sublabel: Localization.t("dockPage.drag_files_onto_it_to")
             checked: Config.floatingDock.showTrash
             onToggled: v => Config.update({
                 floatingDock: Object.assign({}, Config.floatingDock, { showTrash: v })
+            })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: Localization.t("dockPage.music_player")
+            sublabel: Localization.t("dockPage.show_a_compact_music_player")
+            checked: Config.floatingDock.showMusicPlayer
+            onToggled: v => Config.update({
+                floatingDock: Object.assign({}, Config.floatingDock, { showMusicPlayer: v })
             })
         }
     }

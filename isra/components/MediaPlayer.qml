@@ -185,6 +185,7 @@ ClippingRectangle {
                 target: MediaPlayerState
                 function onDisplayPlayerChanged() {
                     pillCover.animateResetTo(0);
+                    MediaPlayerState.ensureArt(MediaPlayerState.displayPlayer?.trackArtUrl ?? "");
                 }
             }
 
@@ -193,10 +194,15 @@ ClippingRectangle {
                 function onTrackTitleChanged() {
                     pillCover.animateResetTo(0);
                 }
+                function onTrackArtUrlChanged() {
+                    MediaPlayerState.ensureArt(MediaPlayerState.displayPlayer?.trackArtUrl ?? "");
+                }
                 function onPositionChanged() {
                     pillCover.syncProgress();
                 }
             }
+
+            Component.onCompleted: MediaPlayerState.ensureArt(MediaPlayerState.displayPlayer?.trackArtUrl ?? "")
 
             Timer {
                 id: smoothPosTimer

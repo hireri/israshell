@@ -1,6 +1,7 @@
 pragma Singleton
 import Quickshell
 import Quickshell.Io
+import Quickshell.Widgets
 import Quickshell.Services.Mpris
 import QtQuick
 
@@ -23,6 +24,105 @@ Singleton {
     property var _currentPlayer: null
     property var _pinnedPlayer: null
     property var _openScreen: null
+
+    property var artCache: ({})
+    property var _artPending: ({})
+
+    function _artLocalPath(url) {
+        if (url === "")
+            return "";
+        if (url.startsWith("file://"))
+            return url;
+        if (url.startsWith("/"))
+            return "file://" + url;
+        return "";
+    }
+
+    function resolvedArt(url) {
+        const local = _artLocalPath(url);
+        if (local !== "")
+            return local;
+        return artCache[url] ?? "";
+    }
+
+    function ensureArt(url) {
+        if (url === "" || _artLocalPath(url) !== "" || artCache[url] || _artPending[url])
+            return;
+        _artPending[url] = true;
+        const file = "/tmp/qs_art_" + Qt.md5(url);
+        artFetchComponent.createObject(root, {
+            artUrl: url,
+            targetFile: file,
+            command: ["bash", "-c", `f='${file}'; t="$f.tmp"; [ -f "$f" ] || { curl -4 -sSL '${url}' -o "$t" && mv "$t" "$f"; }`],
+            running: true
+        });
+    }
+
+    Component {
+        id: artFetchComponent
+        Process {
+            property string artUrl: ""
+            property string targetFile: ""
+            onExited: code => {
+                if (code === 0)
+                    root.artCache = Object.assign({}, root.artCache, { [artUrl]: "file://" + targetFile });
+                delete root._artPending[artUrl];
+                destroy();
+            }
+        }
+    }
+
+    property var colorCache: ({})
+    property var _colorPending: ({})
+    property var _colorWanted: ({})
+
+    function resolvedColor(url) {
+        return colorCache[url] ?? null;
+    }
+
+    function ensureColors(url) {
+        if (url === "")
+            return;
+        ensureArt(url);
+        if (colorCache[url] || _colorPending[url])
+            return;
+        const local = resolvedArt(url);
+        if (local === "") {
+            _colorWanted[url] = true;
+            return;
+        }
+        delete _colorWanted[url];
+        _colorPending[url] = true;
+        colorFetchComponent.createObject(root, { artUrl: url, source: local });
+    }
+
+    onArtCacheChanged: {
+        for (const url in _colorWanted) {
+            if (resolvedArt(url) !== "")
+                ensureColors(url);
+        }
+    }
+
+    Component {
+        id: colorFetchComponent
+        ColorQuantizer {
+            id: quantizer
+            property string artUrl: ""
+            depth: 2
+            rescaleSize: 8
+            onColorsChanged: {
+                if (colors && colors.length > 0) {
+                    let best = colors[0];
+                    for (const c of colors)
+                        if (c.hslSaturation > best.hslSaturation)
+                            best = c;
+                    root.colorCache = Object.assign({}, root.colorCache, { [artUrl]: best });
+                }
+                delete root._colorPending[artUrl];
+                destroy();
+            }
+        }
+    }
 
     onPlayersChanged: {
         if (players.length === 0) {

@@ -26,7 +26,6 @@ Item {
     implicitHeight: 160
 
     readonly property string artUrl: player?.trackArtUrl ?? ""
-    property string _quantizerPath: ""
 
     onPlayerChanged: {
         snapToPosition();
@@ -38,69 +37,16 @@ Item {
         }
     }
 
-    onArtUrlChanged: {
-        if (artUrl === "" || artUrl.startsWith("file://") || artUrl.startsWith("/")) {
-            _quantizerPath = artUrl.startsWith("/") ? "file://" + artUrl : artUrl;
-            return;
-        }
-
-        const file = "/tmp/qs_art_" + Qt.md5(artUrl);
-        if (_quantizerPath === "file://" + file)
-            return;
-
-        artFetchProc.launchedUrl = artUrl;
-        artFetchProc.launchedFile = file;
-        artFetchProc.running = false;
-        artFetchProc.command = ["bash", "-c", `f='${file}'; t="$f.tmp"; [ -f "$f" ] || { curl -4 -sSL '${artUrl}' -o "$t" && mv "$t" "$f"; }`];
-        artFetchProc.running = true;
-    }
-
-    Process {
-        id: artFetchProc
-        property string launchedUrl: ""
-        property string launchedFile: ""
-        running: false
-        onExited: code => {
-            if (code === 0 && launchedUrl === root.artUrl && launchedFile !== "") {
-                root._quantizerPath = "file://" + launchedFile;
-                root._tryUpdateQuantizer();
-            }
-        }
-    }
-
-    function _tryUpdateQuantizer() {
-        if (root._quantizerPath === "") {
-            quantizer.source = "";
-            return;
-        }
-        const front = bgClip.front();
-        if (front.status === Image.Ready)
-            quantizer.source = root._quantizerPath;
-    }
-
-    ColorQuantizer {
-        id: quantizer
-        source: ""
-        depth: 2
-        rescaleSize: 8
-    }
+    onArtUrlChanged: MediaPlayerState.ensureColors(artUrl)
+    Component.onCompleted: MediaPlayerState.ensureColors(artUrl)
 
     readonly property bool darkMode: typeof Config.darkMode !== "undefined" ? Config.darkMode : true
 
-    readonly property color dominantColor: {
-        const cols = quantizer.colors;
-        if (!cols || cols.length === 0)
-            return Colors.md3.primary;
-        let best = cols[0];
-        for (const c of cols)
-            if (c.hslSaturation > best.hslSaturation)
-                best = c;
-        return best;
-    }
+    readonly property var _dominantColor: MediaPlayerState.resolvedColor(artUrl)
+    readonly property color dominantColor: _dominantColor ?? Colors.md3.primary
 
     readonly property var _scheme: {
-        const cols = quantizer.colors;
-        if (!cols || cols.length === 0 || _quantizerPath === "") {
+        if (_dominantColor === null) {
             return {
                 surface: Colors.md3.surface_container_high,
                 surfaceContainer: Colors.md3.surface_container,
@@ -284,121 +230,16 @@ CAVAEOF`]
             }
         }
 
-        ClippingRectangle {
+        CrossfadeArt {
             id: bgClip
             anchors.fill: parent
             radius: card.radius
-            color: "transparent"
-
-            BgImage {
-                id: bgA
-                opacity: 0
-            }
-            BgImage {
-                id: bgB
-                opacity: 0
-            }
-
-            NumberAnimation {
-                id: bgAnim_A
-                target: bgA
-                property: "opacity"
-                duration: 380
-                easing.type: Easing.OutCubic
-            }
-            NumberAnimation {
-                id: bgAnim_B
-                target: bgB
-                property: "opacity"
-                duration: 380
-                easing.type: Easing.OutCubic
-            }
-
-            property int frontSlot: 0
-            property string targetUrl: ""
-
-            function front() {
-                return frontSlot === 0 ? bgA : bgB;
-            }
-            function back() {
-                return frontSlot === 0 ? bgB : bgA;
-            }
-            function frontAnim() {
-                return frontSlot === 0 ? bgAnim_A : bgAnim_B;
-            }
-            function backAnim() {
-                return frontSlot === 0 ? bgAnim_B : bgAnim_A;
-            }
-
-            function showBg(path) {
-                targetUrl = path;
-
-                if (path === "") {
-                    quantizer.source = "";
-                    bgAnim_A.stop();
-                    bgAnim_B.stop();
-                    bgAnim_A.to = 0;
-                    bgAnim_B.to = 0;
-                    bgAnim_A.start();
-                    bgAnim_B.start();
-                    return;
-                }
-
-                if (front().source.toString() === path && front().status === Image.Ready)
-                    return;
-                if (back().source.toString() === path && back().status === Image.Ready) {
-                    _crossfade(1 - frontSlot);
-                    return;
-                }
-
-                back().source = path;
-
-                frontAnim().stop();
-                frontAnim().to = 1;
-                frontAnim().start();
-            }
-
-            function _crossfade(slot) {
-                var loaded = (slot === 0) ? bgA : bgB;
-
-                if (slot === frontSlot)
-                    return;
-                if (loaded.source.toString() !== targetUrl)
-                    return;
-
-                frontSlot = slot;
-
-                frontAnim().stop();
-                frontAnim().to = 1;
-                frontAnim().start();
-
-                backAnim().stop();
-                backAnim().to = 0;
-                backAnim().start();
-
-                root._tryUpdateQuantizer();
-            }
-
-            Connections {
-                target: root
-                function onArtUrlChanged() {
-                    bgClip.showBg(root.artUrl);
-                }
-            }
-            Connections {
-                target: bgA
-                function onStatusChanged() {
-                    if (bgA.status === Image.Ready)
-                        bgClip._crossfade(0);
-                }
-            }
-            Connections {
-                target: bgB
-                function onStatusChanged() {
-                    if (bgB.status === Image.Ready)
-                        bgClip._crossfade(1);
-                }
-            }
+            url: root.artUrl
+            blurEnabled: true
+            blurAmount: 1.0
+            blurMax: 30
+            renderSize: Qt.size(120, 120)
+            fadeDuration: 380
         }
 
         Rectangle {
@@ -992,21 +833,6 @@ CAVAEOF`]
                     duration: 500
                 }
             }
-        }
-    }
-
-    component BgImage: Image {
-        anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
-        opacity: 0
-        cache: true
-        asynchronous: true
-        sourceSize: Qt.size(120, 120)
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            blurEnabled: true
-            blur: 1.0
-            blurMax: 30
         }
     }
 

@@ -120,6 +120,7 @@ Singleton {
             exclusiveZone: false,
             showLauncher: true,
             showTrash: false,
+            showMusicPlayer: false,
             iconSize: 32
         };
     }
