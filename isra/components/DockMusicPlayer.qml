@@ -3,9 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
-import Quickshell
 import Quickshell.Widgets
-import Quickshell.Wayland
 import Quickshell.Services.Mpris
 
 import qs.style
@@ -21,53 +19,20 @@ Item {
     readonly property int cellSize: dockRoot.itemCellSize ?? 28
 
     readonly property var player: MediaPlayerState.displayPlayer
-    readonly property bool hasPlayer: root.player !== null
-    readonly property bool isPlaying: root.player?.playbackState === MprisPlaybackState.Playing
+    readonly property bool hasPlayer: !!root.player
+    readonly property bool isPlaying: root.hasPlayer && root.player?.playbackState === MprisPlaybackState.Playing
     readonly property string artUrl: root.player?.trackArtUrl ?? ""
 
-    function _matchesAppId(runningId, targetId) {
-        if (!runningId || !targetId)
-            return false;
-        let r = runningId.toLowerCase();
-        let t = targetId.toLowerCase();
-        if (r === t)
-            return true;
-        if (r.endsWith("." + t))
-            return true;
-        if (r.endsWith(".desktop"))
-            r = r.slice(0, -8);
-        if (t.endsWith(".desktop"))
-            t = t.slice(0, -8);
-        return r === t;
-    }
-
-    readonly property string _entryId: {
-        if (!root.player)
-            return "";
-        const de = (root.player.desktopEntry ?? "").trim();
-        const entry = de !== "" ? DesktopEntries.heuristicLookup(de) : null;
-        return entry?.id ?? de;
-    }
-
-    readonly property var _matchedToplevel: {
-        if (root._entryId === "")
-            return null;
-        const list = ToplevelManager.toplevels?.values ?? [];
-        for (const tl of list)
-            if (root._matchesAppId(tl.appId, root._entryId))
-                return tl;
-        return null;
-    }
-    readonly property bool hasWindow: root._matchedToplevel !== null
-
-    function focusMatchedWindow() {
-        const tl = root._matchedToplevel;
-        if (!tl)
+    function cyclePlayer() {
+        const list = MediaPlayerState.players;
+        if (list.length < 2)
             return;
-        if (typeof tl.activate === "function")
-            tl.activate();
-        else if (tl.address !== undefined)
-            CompositorService.focusWindow(tl.address);
+        const cur = MediaPlayerState.displayPlayer;
+        const idx = list.indexOf(cur);
+        const next = list[(idx + 1) % list.length];
+
+        MediaPlayerState.switchTo(next);
+        MediaPlayerState.pin(next);
     }
 
     readonly property int pad: 4
@@ -91,8 +56,8 @@ Item {
     readonly property color colOnSurface: _scheme?.onSurface ?? Colors.md3.on_surface
     readonly property color colOnSurfaceVariant: _scheme?.onSurfaceVariant ?? Colors.md3.on_surface_variant
 
-    implicitWidth: isVertical ? cellSize : (hasPlayer ? horizontalExtent : 0)
-    implicitHeight: isVertical ? (hasPlayer ? verticalExtent : 0) : cellSize
+    implicitWidth: isVertical ? cellSize : horizontalExtent
+    implicitHeight: isVertical ? verticalExtent : cellSize
     width: implicitWidth
     height: implicitHeight
     clip: true
@@ -112,15 +77,22 @@ Item {
         radius: 12
         color: root.cardColor
         Behavior on color {
-            ColorAnimation { duration: 400 }
+            ColorAnimation { duration: 400; easing.type: Easing.InOutQuad }
         }
         visible: root.width > 0 && root.height > 0
 
         MouseArea {
             anchors.fill: parent
-            enabled: root.hasWindow
-            cursorShape: root.hasWindow ? Qt.PointingHandCursor : Qt.ArrowCursor
-            onClicked: root.focusMatchedWindow()
+            acceptedButtons: Qt.RightButton
+            propagateComposedEvents: true
+            onClicked: (mouse) => {
+                if (mouse.button === Qt.RightButton && MediaPlayerState.players.length > 1) {
+                    root.cyclePlayer();
+                    mouse.accepted = true;
+                } else {
+                    mouse.accepted = false;
+                }
+            }
         }
 
         component TransportButton: Item {
@@ -133,7 +105,10 @@ Item {
             property bool btnEnabled: true
             signal tapped
 
-            opacity: btnEnabled ? 1.0 : 0.4
+            opacity: btnEnabled ? 1.0 : 0.35
+            Behavior on opacity {
+                NumberAnimation { duration: 150 }
+            }
 
             MaterialIcon {
                 anchors.centerIn: parent
@@ -141,14 +116,25 @@ Item {
                 filled: btn.iconFilled
                 iconSize: root.btnIconSize
                 color: root.colOnSurface
+                Behavior on color { ColorAnimation { duration: 300 } }
             }
 
             MouseArea {
                 id: ma
                 anchors.fill: parent
-                hoverEnabled: true
+                hoverEnabled: btn.btnEnabled
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 cursorShape: btn.btnEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onClicked: if (btn.btnEnabled) btn.tapped()
+                
+                onClicked: (mouse) => {
+                    if (mouse.button === Qt.RightButton) {
+                        if (MediaPlayerState.players.length > 1) {
+                            root.cyclePlayer();
+                        }
+                    } else if (btn.btnEnabled) {
+                        btn.tapped();
+                    }
+                }
             }
         }
 
@@ -163,33 +149,32 @@ Item {
             columnSpacing: root.groupGap
             rowSpacing: root.groupGap
 
-            ClippingRectangle {
-                id: cover
+            Item {
                 width: root.cellSize - root.pad * 2
                 height: width
-                radius: 9
-                color: Qt.alpha(root.colOnSurface, 0.1)
                 Layout.alignment: Qt.AlignCenter
 
-                Image {
+                CrossfadeArt {
+                    id: cover
                     anchors.fill: parent
-                    source: root.artUrl
-                    fillMode: Image.PreserveAspectCrop
-                    sourceSize: Qt.size(48, 48)
-                    asynchronous: true
-                    cache: true
-                    opacity: status === Image.Ready && root.artUrl !== "" ? 1 : 0
-                    Behavior on opacity {
-                        NumberAnimation { duration: 200 }
-                    }
+                    radius: 9
+                    color: Qt.alpha(root.colOnSurface, 0.1)
+                    url: root.artUrl
+                    visible: root.hasPlayer
                 }
 
-                MaterialIcon {
-                    anchors.centerIn: parent
-                    name: "music-note"
-                    iconSize: parent.width * 0.5
-                    color: root.colOnSurfaceVariant
-                    visible: root.artUrl === ""
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 9
+                    color: Qt.alpha(root.colOnSurface, 0.08)
+                    visible: !root.hasPlayer
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: "music-note"
+                        iconSize: Math.round(parent.width * 0.5)
+                        color: Qt.alpha(root.colOnSurface, 0.4)
+                    }
                 }
             }
 
@@ -205,21 +190,46 @@ Item {
                     spacing: 1
 
                     Text {
+                        id: titleText
                         width: parent.width
-                        text: root.player?.trackTitle ?? ""
+                        text: root.hasPlayer 
+                            ? (root.player?.trackTitle || Localization.t("mediaPlayer.unknown_track")) 
+                            : Localization.t("mediaPlayer.no_media_playing")
                         font.pixelSize: 10
+                        font.weight: root.hasPlayer ? Font.Medium : Font.Normal
                         font.family: Config.fontFamily
-                        color: root.colOnSurface
+                        color: root.hasPlayer ? root.colOnSurface : Qt.alpha(root.colOnSurface, 0.6)
                         elide: Text.ElideRight
+
+                        Behavior on text {
+                            SequentialAnimation {
+                                NumberAnimation { target: titleText; property: "opacity"; to: 0; duration: 100 }
+                                PropertyAction { target: titleText; property: "text" }
+                                NumberAnimation { target: titleText; property: "opacity"; to: 1; duration: 150 }
+                            }
+                        }
+                        Behavior on color { ColorAnimation { duration: 300 } }
                     }
 
                     Text {
+                        id: artistText
                         width: parent.width
-                        text: root.player?.trackArtist ?? ""
+                        text: root.hasPlayer 
+                            ? (root.player?.trackArtist || Localization.t("mediaPlayer.unknown_artist")) 
+                            : Localization.t("mediaPlayer.no_players")
                         font.pixelSize: 9
                         font.family: Config.fontFamily
-                        color: root.colOnSurfaceVariant
+                        color: root.hasPlayer ? root.colOnSurfaceVariant : Qt.alpha(root.colOnSurfaceVariant, 0.4)
                         elide: Text.ElideRight
+
+                        Behavior on text {
+                            SequentialAnimation {
+                                NumberAnimation { target: artistText; property: "opacity"; to: 0; duration: 100 }
+                                PropertyAction { target: artistText; property: "text" }
+                                NumberAnimation { target: artistText; property: "opacity"; to: 1; duration: 150 }
+                            }
+                        }
+                        Behavior on color { ColorAnimation { duration: 300 } }
                     }
                 }
             }
@@ -233,30 +243,73 @@ Item {
                 TransportButton {
                     icon: "play-pause"
                     iconFilled: root.isPlaying
+                    btnEnabled: root.hasPlayer
                     onTapped: root.player?.togglePlaying()
                 }
 
                 TransportButton {
                     icon: "next-prev"
                     iconFilled: true
-                    btnEnabled: root.player?.canGoNext ?? false
-                    onTapped: root.player.next()
+                    btnEnabled: root.hasPlayer && (root.player?.canGoNext ?? false)
+                    onTapped: root.player?.next()
                 }
             }
         }
 
-        Rectangle {
-            visible: root.hasWindow
-            anchors.horizontalCenter: root.isVertical ? undefined : parent.horizontalCenter
-            anchors.verticalCenter: root.isVertical ? parent.verticalCenter : undefined
-            anchors.right: root.isVertical ? parent.right : undefined
-            anchors.bottom: root.isVertical ? undefined : parent.bottom
-            anchors.rightMargin: root.isVertical ? 1 : 0
-            anchors.bottomMargin: root.isVertical ? 0 : 1
-            width: root.isVertical ? 3 : 5
-            height: root.isVertical ? 5 : 3
-            radius: 1.5
-            color: root.colOnSurfaceVariant
+        Row {
+            visible: MediaPlayerState.players.length > 0 && !root.isVertical
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 1
+            spacing: 3
+
+            Repeater {
+                model: MediaPlayerState.players
+
+                delegate: Rectangle {
+                    required property var modelData
+                    readonly property bool isCurrent: modelData === MediaPlayerState.displayPlayer
+                    width: isCurrent ? 5 : 3
+                    height: 3
+                    radius: 1.5
+                    color: isCurrent ? root.colOnSurface : root.colOnSurfaceVariant
+
+                    Behavior on width {
+                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on color {
+                        ColorAnimation { duration: 200 }
+                    }
+                }
+            }
+        }
+
+        Column {
+            visible: MediaPlayerState.players.length > 0 && root.isVertical
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            anchors.rightMargin: 1
+            spacing: 3
+
+            Repeater {
+                model: MediaPlayerState.players
+
+                delegate: Rectangle {
+                    required property var modelData
+                    readonly property bool isCurrent: modelData === MediaPlayerState.displayPlayer
+                    width: 3
+                    height: isCurrent ? 5 : 3
+                    radius: 1.5
+                    color: isCurrent ? root.colOnSurface : root.colOnSurfaceVariant
+
+                    Behavior on height {
+                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                    }
+                    Behavior on color {
+                        ColorAnimation { duration: 200 }
+                    }
+                }
+            }
         }
     }
 }
