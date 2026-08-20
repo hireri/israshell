@@ -14,6 +14,8 @@ Singleton {
     Component { id: weatherPreview; WeatherGlanceVisual {} }
     Component { id: weatherCardPreview; WeatherCardVisual {} }
     Component { id: weatherScenePreview; WeatherSceneVisual {} }
+    Component { id: pomodoroPreview; PomodoroVisual {} }
+    Component { id: githubHeatmapPreview; GithubHeatmapVisual {} }
 
     readonly property var types: [
         {
@@ -21,7 +23,6 @@ Singleton {
             label: Localization.t("widgetDrawer.photo"),
             icon: "image",
             preview: photoPreview,
-            previewFills: true,
             stackable: true
         },
         {
@@ -29,7 +30,6 @@ Singleton {
             label: Localization.t("widgetDrawer.music"),
             icon: "music-note",
             preview: musicPreview,
-            previewFills: true,
             stackable: false
         },
         {
@@ -37,7 +37,6 @@ Singleton {
             label: Localization.t("widgetDrawer.weyes"),
             icon: "visibility",
             preview: weyesPreview,
-            previewFills: true,
             stackable: false
         },
         {
@@ -45,7 +44,6 @@ Singleton {
             label: Localization.t("widgetDrawer.statring"),
             icon: "memory",
             preview: statRingPreview,
-            previewFills: true,
             stackable: true
         },
         {
@@ -53,7 +51,6 @@ Singleton {
             label: Localization.t("widgetDrawer.weather"),
             icon: "partly-cloudy-day",
             preview: weatherPreview,
-            previewFills: true,
             stackable: false
         },
         {
@@ -61,7 +58,6 @@ Singleton {
             label: Localization.t("widgetDrawer.weather_card"),
             icon: "cloudy",
             preview: weatherCardPreview,
-            previewFills: true,
             stackable: false
         },
         {
@@ -69,13 +65,35 @@ Singleton {
             label: Localization.t("widgetDrawer.weather_scene"),
             icon: "wb-sunny",
             preview: weatherScenePreview,
-            previewFills: true,
             stackable: false
+        },
+        {
+            type: "pomodoro",
+            label: Localization.t("widgetDrawer.pomodoro"),
+            icon: "analog-clock",
+            preview: pomodoroPreview,
+            stackable: false
+        },
+        {
+            type: "githubheatmap",
+            label: Localization.t("widgetDrawer.github_heatmap"),
+            icon: "calendar-month",
+            preview: githubHeatmapPreview,
+            stackable: true
         }
     ]
 
     function descriptor(type) {
         return root.types.find(t => t.type === type) ?? null;
+    }
+
+    function previewSize(type) {
+        const d = DesktopWidgetService.defaultsFor(type);
+        if (!d)
+            return Qt.size(100, 100);
+        if (d.span)
+            return Qt.size(WidgetGrid.spanWidth(null, d.span.w), WidgetGrid.spanHeight(null, d.span.h));
+        return Qt.size(d.width ?? 100, d.height ?? 100);
     }
 
     function available(type) {

@@ -30,7 +30,25 @@ Item {
         PanelService.closed(root);
     }
 
-    Component.onDestruction: PanelService.closed(root)
+    Component.onDestruction: {
+        PanelService.closed(root);
+        if (root._cursorAcquired)
+            CursorService.release();
+    }
+
+    property bool _cursorAcquired: false
+    onOpenChanged: {
+        if (root.open === root._cursorAcquired)
+            return;
+        if (root.open)
+            CursorService.acquire();
+        else
+            CursorService.release();
+        root._cursorAcquired = root.open;
+    }
+
+    readonly property real _cursorWindowX: CursorService.x - (root.hostScreen?.x ?? 0)
+    readonly property real _cursorWindowY: CursorService.y - (root.hostScreen?.y ?? 0)
 
     visible: opacity > 0.01
     opacity: 0
@@ -135,9 +153,32 @@ Item {
                         active: tile.available
                         sourceComponent: tile.modelData.preview
 
+                        readonly property size nativeSize: WidgetCatalog.previewSize(tile.modelData.type)
+                        readonly property bool isWeyes: tile.modelData.type === "weyes"
+
+                        width: previewLoader.nativeSize.width
+                        height: previewLoader.nativeSize.height
                         anchors.centerIn: parent
-                        width: tile.modelData.previewFills ? Math.min(previewPane.width, previewPane.height) - 12 : previewPane.width
-                        height: tile.modelData.previewFills ? width : previewPane.height
+                        scale: Math.min(1, (previewPane.width - 8) / width, (previewPane.height - 8) / height)
+
+                        Binding {
+                            target: previewLoader.item
+                            property: "tracking"
+                            value: root.open
+                            when: previewLoader.isWeyes && previewLoader.status === Loader.Ready && previewLoader.item && previewLoader.item.hasOwnProperty("tracking")
+                        }
+                        Binding {
+                            target: previewLoader.item
+                            property: "targetX"
+                            value: previewLoader.mapFromItem(null, root._cursorWindowX, root._cursorWindowY).x
+                            when: previewLoader.isWeyes && previewLoader.status === Loader.Ready && previewLoader.item && previewLoader.item.hasOwnProperty("targetX")
+                        }
+                        Binding {
+                            target: previewLoader.item
+                            property: "targetY"
+                            value: previewLoader.mapFromItem(null, root._cursorWindowX, root._cursorWindowY).y
+                            when: previewLoader.isWeyes && previewLoader.status === Loader.Ready && previewLoader.item && previewLoader.item.hasOwnProperty("targetY")
+                        }
                     }
 
                     MaterialIcon {

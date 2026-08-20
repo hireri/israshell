@@ -110,6 +110,14 @@ PopupWindow {
     }
     color: "transparent"
 
+    readonly property bool blurActive: Config.blurAllowed(visible)
+    BackgroundEffect.blurRegion: blurActive ? hoverBlurRegion : null
+
+    Region {
+        id: hoverBlurRegion
+        item: root.contentItem
+    }
+
     anchor.window: anchorToItem ? null : dockRoot.QsWindow.window
     anchor.item: anchorToItem ? dockRoot : null
     anchor.rect: {
@@ -517,7 +525,7 @@ PopupWindow {
             id: popupContainer
             anchors.fill: parent
             radius: 12
-            color: Colors.md3.surface_container
+            color: Config.dim(Colors.md3.surface_container)
             border.width: 1
             border.color: Qt.alpha(Colors.md3.outline, 0.2)
 

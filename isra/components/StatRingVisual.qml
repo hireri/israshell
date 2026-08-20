@@ -86,7 +86,7 @@ Item {
         width: root._disc
         height: root._disc
         radius: width / 2
-        color: Config.dimWidget(Colors.md3.surface_container_high)
+        color: Colors.md3.surface_container_high
         border.width: 1
         border.color: Qt.alpha(Colors.md3.outline, 0.5)
     }

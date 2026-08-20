@@ -21,22 +21,13 @@ Singleton {
     property bool genericLauncherIcon: false
     property bool blurEffects: false
     property real blurOpacity: 1
-    property bool desktopWidgetTransparency: false
 
     function dim(color) {
         return ColorUtils.withAlpha(color, blurOpacity);
     }
 
-    function dimWidget(color) {
-        return desktopWidgetTransparency ? dim(color) : color;
-    }
-
     function blurAllowed(visible) {
         return (visible === undefined ? true : visible) && blurEffects && !GameModeService.active;
-    }
-
-    function desktopWidgetBlurAllowed(visible) {
-        return desktopWidgetTransparency && blurAllowed(visible);
     }
 
     property bool showBarWeather: true
@@ -172,6 +163,10 @@ Singleton {
             deviceType: "desktop",
             alias: ""
         })
+    property var dns: ({
+            enabled: false,
+            provider: "cloudflare"
+        })
     property var aiAssistant: ({
             enabled: true,
             provider: "gemini",
@@ -277,6 +272,18 @@ Singleton {
             gutter: 8,
             margin: 24
         })
+    property var pomodoro: ({
+            running: false,
+            phaseIndex: 0,
+            endTimestamp: 0,
+            remainingMs: 1500000,
+            steps: [
+                { focusMinutes: 25, breakType: "short_break", breakMinutes: 5 },
+                { focusMinutes: 25, breakType: "short_break", breakMinutes: 5 },
+                { focusMinutes: 25, breakType: "short_break", breakMinutes: 5 },
+                { focusMinutes: 25, breakType: "long_break", breakMinutes: 15 }
+            ]
+        })
     property bool checkUpdates: true
     property bool checkDeps: true
     property string githubRepo: "hireri/israshell"
@@ -300,7 +307,6 @@ Singleton {
             genericLauncherIcon: false,
             blurEffects: false,
             blurOpacity: 1,
-            desktopWidgetTransparency: false,
 
             showBarWeather: true,
             timeFormat: "",
@@ -367,6 +373,10 @@ Singleton {
                 notifyOnReceive: true,
                 deviceType: "desktop",
                 alias: ""
+            },
+            dns: {
+                enabled: false,
+                provider: "cloudflare"
             },
             aiAssistant: {
                 enabled: true,
@@ -474,6 +484,18 @@ Singleton {
                 gutter: 8,
                 margin: 24
             },
+            pomodoro: {
+                running: false,
+                phaseIndex: 0,
+                endTimestamp: 0,
+                remainingMs: 1500000,
+                steps: [
+                    { focusMinutes: 25, breakType: "short_break", breakMinutes: 5 },
+                    { focusMinutes: 25, breakType: "short_break", breakMinutes: 5 },
+                    { focusMinutes: 25, breakType: "short_break", breakMinutes: 5 },
+                    { focusMinutes: 25, breakType: "long_break", breakMinutes: 15 }
+                ]
+            },
             checkUpdates: true,
             checkDeps: true,
             githubRepo: "hireri/israshell",
@@ -532,6 +554,23 @@ Singleton {
         if (result.desktopWidgets) {
             result.desktopWidgets = DesktopWidgetService.reconcile(result.desktopWidgets);
             result.weyes = { tinted: result.weyes?.tinted ?? false };
+        }
+
+        if (result.pomodoro) {
+            const rawSteps = data.pomodoro && data.pomodoro.steps;
+            if (Array.isArray(rawSteps) && rawSteps.length > 0 && rawSteps[0] && rawSteps[0].focusMinutes === undefined && rawSteps[0].type !== undefined) {
+                const migrated = [];
+                for (let i = 0; i < rawSteps.length; i += 2) {
+                    const focusPhase = rawSteps[i];
+                    const breakPhase = rawSteps[i + 1];
+                    migrated.push({
+                        focusMinutes: focusPhase ? focusPhase.minutes : 25,
+                        breakType: (breakPhase && breakPhase.type === "long_break") ? "long_break" : "short_break",
+                        breakMinutes: breakPhase ? breakPhase.minutes : 5
+                    });
+                }
+                result.pomodoro = Object.assign({}, result.pomodoro, { steps: migrated, phaseIndex: 0 });
+            }
         }
 
         if (result.notifications) {

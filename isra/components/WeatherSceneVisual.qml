@@ -21,7 +21,7 @@ Item {
     ClippingRectangle {
         anchors.fill: parent
         radius: 32 * root.u
-        color: Config.dimWidget(Colors.md3.surface_container_high)
+        color: Colors.md3.surface_container_high
         border.width: 1
         border.color: Qt.alpha(Colors.md3.outline, 0.5)
 

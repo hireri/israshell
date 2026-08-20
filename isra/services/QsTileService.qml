@@ -423,6 +423,33 @@ Singleton {
     }
 
     Component {
+        id: dnsCompactComp
+        CompactToggleTile {
+            active: DnsService.enabled
+            iconComponent: DnsProviderIcon {
+                iconSize: 20
+                provider: DnsService.enabled ? DnsService.currentProvider.id : "off"
+            }
+            onToggled: DnsService.cycle()
+            onRightClicked: DnsService.disable()
+        }
+    }
+
+    Component {
+        id: dnsWideComp
+        SimpleIconLabelTile {
+            active: DnsService.enabled
+            label: DnsService.enabled ? DnsService.currentProvider.label : Localization.t("qsTileService.dns_off")
+            iconComponent: DnsProviderIcon {
+                iconSize: 22
+                provider: DnsService.enabled ? DnsService.currentProvider.id : "off"
+            }
+            onToggled: DnsService.cycle()
+            onRightClicked: DnsService.disable()
+        }
+    }
+
+    Component {
         id: gameModeCompactComp
         CompactToggleTile {
             active: GameModeService.active
@@ -463,6 +490,7 @@ Singleton {
         { id: "powerProfile", label: Localization.t("qsTileService.power_profile"), compactComponent: powerProfileCompactComp,  wideComponent: powerProfileWideComp },
         { id: "gameMode",     label: Localization.t("qsTileService.game_mode"),     compactComponent: gameModeCompactComp,      wideComponent: gameModeWideComp },
         { id: "localsend",    label: Localization.t("qsTileService.localsend"),     compactComponent: localsendCompactComp,     wideComponent: localsendWideComp },
+        { id: "dns",          label: Localization.t("qsTileService.dns"),          compactComponent: dnsCompactComp,           wideComponent: dnsWideComp },
         { id: "screenshot",   label: Localization.t("qsTileService.screenshot"),    compactComponent: screenshotCompactComp,    wideComponent: screenshotWideComp },
         { id: "record",       label: Localization.t("qsTileService.record"),        compactComponent: recordCompactComp,        wideComponent: recordWideComp },
         { id: "colorPicker",  label: Localization.t("qsTileService.color_picker"),  compactComponent: colorPickerCompactComp,   wideComponent: colorPickerWideComp },
@@ -474,7 +502,7 @@ Singleton {
 
     readonly property var allIds: definitions.map(d => d.id)
 
-    readonly property var defaultDisabledIds: ["localsend", "screenshot", "record", "colorPicker", "cts", "ocr", "darkTheme", "mediaMini"]
+    readonly property var defaultDisabledIds: ["localsend", "screenshot", "record", "colorPicker", "cts", "ocr", "darkTheme", "mediaMini", "dns"]
 
     function _indexBy(key) {
         const m = {};

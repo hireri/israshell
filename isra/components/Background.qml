@@ -60,14 +60,6 @@ PanelWindow {
     readonly property bool anyPopupOpen: backgroundContextMenu.visible || widgetContextMenu.visible || widgetInspector.visible || EditModeService.active
     readonly property bool popupBlurNeeded: Config.blurAllowed(root.anyPopupOpen)
 
-    readonly property bool desktopWidgetBlurEnabled: Config.desktopWidgetBlurAllowed(true)
-    BackgroundEffect.blurRegion: root.desktopWidgetBlurEnabled ? desktopWidgetBlurRegion : null
-
-    Region {
-        id: desktopWidgetBlurRegion
-        item: root.contentItem
-    }
-
     MouseArea {
         id: backgroundContextCatcher
         z: 3
@@ -116,9 +108,9 @@ PanelWindow {
 
     CavaVisualizer {
         id: cavaVisualizer
-        z: 4
+        z: 6.5
         anchors.fill: parent
-        pause: LockscreenService.locked || LockscreenService.lockVisualActive || GameModeService.active
+        pause: LockscreenService.locked || GameModeService.active
         visible: Config.cava.enabled
     }
 

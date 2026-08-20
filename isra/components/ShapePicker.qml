@@ -44,10 +44,28 @@ Item {
                 width: root.cell
                 height: root.cell
                 radius: root.cell * 0.28
-                color: swatchCell.isCurrent ? Colors.md3.primary_container : Qt.alpha(Colors.md3.on_surface, swatchMouse.containsMouse ? 0.08 : 0)
+                color: "transparent"
 
-                Behavior on color {
-                    ColorAnimation { duration: 100 }
+                Rectangle {
+                    anchors.fill: parent
+                    radius: parent.radius
+                    color: Colors.md3.primary_container
+                    opacity: swatchCell.isCurrent ? 1 : 0
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 100 }
+                    }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: parent.radius
+                    color: Colors.md3.on_surface
+                    opacity: (!swatchCell.isCurrent && swatchMouse.containsMouse) ? 0.08 : 0
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 100 }
+                    }
                 }
 
                 MaterialShape {

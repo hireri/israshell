@@ -63,6 +63,7 @@ Item {
             filled: btn.active || btn.filled
             iconSize: 17
             color: btn.filled ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+            transitionType: "none"
         }
 
         MouseArea {
@@ -77,11 +78,27 @@ Item {
     ClippingRectangle {
         id: toolbar
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.top: root.barAtBottom ? parent.top : undefined
-        anchors.bottom: root.barAtBottom ? undefined : parent.bottom
+        anchors.top: parent.top
         anchors.topMargin: 24
         anchors.bottomMargin: 24
         layer.enabled: true
+
+        property bool _readyForAnim: false
+        Component.onCompleted: Qt.callLater(() => toolbar._readyForAnim = true)
+
+        states: State {
+            name: "atBottom"
+            when: !root.barAtBottom
+            AnchorChanges {
+                target: toolbar
+                anchors.top: undefined
+                anchors.bottom: toolbar.parent.bottom
+            }
+        }
+
+        transitions: Transition {
+            AnchorAnimation { duration: toolbar._readyForAnim ? 220 : 0; easing.type: Easing.OutCubic }
+        }
 
         readonly property real pillW: toolbarRow.implicitWidth + 12
         readonly property real pillH: 48
@@ -139,6 +156,7 @@ Item {
                     filled: true
                     iconSize: 16
                     color: Colors.md3.primary
+                    transitionType: "none"
                 }
 
                 Text {

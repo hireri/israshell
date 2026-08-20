@@ -8,8 +8,8 @@ import qs.components
 Singleton {
     id: root
 
-    readonly property var knownTypes: ["photo", "music", "weyes", "statring", "weather", "weathercard", "weatherscene"]
-    readonly property var singletonTypes: ["music", "weyes", "weather", "weathercard", "weatherscene"]
+    readonly property var knownTypes: ["photo", "music", "weyes", "statring", "weather", "weathercard", "weatherscene", "pomodoro", "githubheatmap"]
+    readonly property var singletonTypes: ["music", "weyes", "weather", "weathercard", "weatherscene", "pomodoro"]
 
     readonly property var _capabilityByType: ({
         weyes: "cursorPosition"
@@ -53,7 +53,9 @@ Singleton {
         statring: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 2, h: 2 }, data: { metric: "cpu" } },
         weather: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 3, h: 3 }, data: {} },
         weathercard: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 5, h: 3 }, data: {} },
-        weatherscene: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: {} }
+        weatherscene: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: {} },
+        pomodoro: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 3, h: 2 }, data: {} },
+        githubheatmap: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: { username: "" } }
     })
 
     function defaultsFor(type) {
@@ -79,6 +81,8 @@ Singleton {
     Component { id: weatherComp; WeatherGlanceWidget {} }
     Component { id: weatherCardComp; WeatherCardWidget {} }
     Component { id: weatherSceneComp; WeatherSceneWidget {} }
+    Component { id: pomodoroComp; PomodoroWidget {} }
+    Component { id: githubHeatmapComp; GithubHeatmapWidget {} }
 
     readonly property var componentMap: ({
         photo: photoComp,
@@ -87,7 +91,9 @@ Singleton {
         statring: statRingComp,
         weather: weatherComp,
         weathercard: weatherCardComp,
-        weatherscene: weatherSceneComp
+        weatherscene: weatherSceneComp,
+        pomodoro: pomodoroComp,
+        githubheatmap: githubHeatmapComp
     })
 
     property var _idList: []

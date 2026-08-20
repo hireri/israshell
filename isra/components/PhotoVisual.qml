@@ -104,7 +104,7 @@ Item {
         anchors.fill: parent
         name: root.shape || "circle"
         shapeSize: parent.width
-        color: Config.dimWidget(root.scheme.surfaceContainerHigh)
+        color: root.scheme.surfaceContainerHigh
         outlined: true
         strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
         strokeWidth: 1

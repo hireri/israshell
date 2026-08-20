@@ -279,7 +279,7 @@ PanelWindow {
             img.statusChanged.connect(handler);
         }
 
-        opacity: transitionType === "crossfade" ? _progress : 1
+        opacity: transitionType === "crossfade" ? (isFront ? _progress : 1) : 1
         scale: transitionType === "crossfade" ? _crossfadeScale : 1
         z: (transitionType === "circle" && Config.background.circleReverse)
             ? (isFront ? 0 : 1)

@@ -88,7 +88,7 @@ Item {
         anchors.fill: parent
         name: root._bodyShapeName
         shapeSize: parent.width
-        color: Config.dimWidget(Colors.md3.primary_container)
+        color: Colors.md3.primary_container
         rotationDegrees: root._bodyRotation
         outlined: true
         strokeColor: Qt.alpha(Colors.md3.outline, 0.5)

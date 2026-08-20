@@ -50,7 +50,7 @@ Item {
             height: width
             name: "pill"
             shapeSize: width
-            color: Config.dimWidget(Colors.md3.surface_container_high)
+            color: Colors.md3.surface_container_high
             outlined: true
             strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
             strokeWidth: 1
@@ -61,7 +61,7 @@ Item {
             anchors.fill: parent
             visible: root.appliedWide
             radius: height / 2
-            color: Config.dimWidget(Colors.md3.surface_container_high)
+            color: Colors.md3.surface_container_high
             border.width: 1
             border.color: Qt.alpha(Colors.md3.outline, 0.5)
         }

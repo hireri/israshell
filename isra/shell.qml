@@ -275,6 +275,11 @@ ShellRoot {
                 exclusionMode: ExclusionMode.Ignore
                 visible: true
 
+                IdleInhibitor {
+                    enabled: CaffeineService.active
+                    window: window
+                }
+
                 Item {
                     id: visualContent
                     anchors.fill: parent
