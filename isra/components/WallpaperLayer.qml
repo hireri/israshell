@@ -347,7 +347,7 @@ PanelWindow {
                     asynchronous: true
                     source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
                     fillMode: Image.PreserveAspectCrop
-                    sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1080
+                    sourceSize.width: root.screen ? Math.round(root.screen.width * root.screen.devicePixelRatio) : 1080
                     playing: slot.isFront && !slot.pause
                 }
 
