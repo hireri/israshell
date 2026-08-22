@@ -7,8 +7,10 @@ import qs.style
 Singleton {
     id: root
 
-    readonly property string baseUrl: "http://" + Config.localsend.host + ":" + Config.localsend.port
+    readonly property int port: 53317
+    readonly property string socketPath: (Quickshell.env("XDG_RUNTIME_DIR") ?? "/tmp") + "/localsendd.sock"
     property bool reachable: false
+    property bool daemonMissing: false
 
     readonly property bool widgetActive: WidgetService.allIds.includes("screencap") && !Config.bar.disabled.includes("screencap") && !Config.screencap.blacklist.includes("localsend")
 
@@ -27,6 +29,11 @@ Singleton {
     property string localDeviceType: ""
     property string localDownloadDir: ""
     property bool multicastOk: true
+    property bool discoverable: false
+    property bool encryptionOn: true
+    property var encryptionPending: null
+    readonly property bool encryptionTarget: root.encryptionPending !== null ? !!root.encryptionPending : root.encryptionOn
+    readonly property bool ready: root.reachable && root.discoverable
     property int stateSeq: -1
 
     // Clientside {name, path, size}
@@ -57,7 +64,7 @@ Singleton {
         if (root.pinRequest)
             return "pin";
         if (root.transferring)
-            return "sending";
+            return root.receiving ? "receiving" : "sending";
         if (root.awaitingPeer)
             return "waiting";
         if (root.resultIsError)
@@ -150,7 +157,7 @@ Singleton {
                 deviceType: next
             })
         });
-        _get("/api/self/v1/set-device-type?type=" + next, () => {});
+        _call("set_device_type", { type: next });
     }
 
     function setEnabled(v) {
@@ -159,6 +166,7 @@ Singleton {
                 enabled: v
             })
         });
+        _call("set_discoverable", { discoverable: !!v });
     }
 
     function setAlias(name) {
@@ -167,7 +175,35 @@ Singleton {
                 alias: name
             })
         });
-        _get("/api/self/v1/set-alias?alias=" + encodeURIComponent((name ?? "").trim()), () => {});
+        _call("set_alias", { alias: (name ?? "").trim() });
+    }
+    
+    function setEncryption(enabled) {
+        _call("set_encryption", {
+            encryption: !!enabled
+        }, (result, error) => {
+            if (error) {
+                root.notify("LocalSend", error.message || "Couldn't change encryption.", "normal", 5000);
+                return;
+            }
+            if (result?.deferred)
+                root.notify("LocalSend", "Encryption will change when the transfer finishes.", "low", 4000);
+            root._pushedEncryption = !!enabled;
+            Config.update({
+                localsend: Object.assign({}, Config.localsend, {
+                    encryption: !!enabled
+                })
+            });
+        });
+    }
+
+    function setPin(pin) {
+        Config.update({
+            localsend: Object.assign({}, Config.localsend, {
+                pin: pin
+            })
+        });
+        _call("set_pin", { pin: pin ?? "" });
     }
 
     function attachFiles(files) {
@@ -196,7 +232,7 @@ Singleton {
 
         const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
         const collector = Qt.createQmlObject('import Quickshell.Io; StdioCollector {}', proc);
-        proc.command = ["stat", "--format=%s|%n"].concat(paths);
+        proc.command = ["stat", "--format=%s|%n", "--"].concat(paths);
         proc.stdout = collector;
         collector.streamFinished.connect(() => {
             const files = collector.text.trim().split("\n").filter(l => l.length > 0).map(line => {
@@ -218,8 +254,17 @@ Singleton {
     function sendFiles(device, filePaths, pin) {
         if (!filePaths || filePaths.length === 0)
             return;
-        const ip = device?.ip ?? device?.address ?? "";
+        
+        const ip = device?.ip ?? device?.address ?? (typeof device === "string" ? device : "");
         if (!ip)
+            return;
+
+        const actualPaths = filePaths.map(p => {
+            let pathStr = typeof p === "string" ? p : (p.path ?? p.url ?? String(p));
+            return pathStr.replace(/^file:\/\//, "");
+        }).filter(p => p.length > 0);
+
+        if (actualPaths.length === 0)
             return;
 
         const who = device?.alias ?? device?.name ?? ip;
@@ -227,41 +272,41 @@ Singleton {
         root.dismissResult();
         root.lastSendRequest = {
             device: device,
-            filePaths: filePaths,
+            filePaths: actualPaths,
             pin: pin ?? ""
         };
         root.pendingSend = {
             targetIp: ip,
             targetName: who,
             deviceType: device?.deviceType ?? "desktop",
-            fileCount: filePaths.length,
-            filePaths: filePaths,
+            fileCount: actualPaths.length,
+            filePaths: actualPaths,
             pin: pin ?? ""
         };
         pendingSendWatchdog.restart();
 
-        _post("/api/self/v1/upload-batch", {
-            target: ip,
+        _call("send", {
+            to: ip,
             port: device?.port,
             protocol: device?.protocol,
             name: who,
             deviceType: device?.deviceType,
-            files: filePaths.map(p => "file://" + p),
+            files: actualPaths,
             pin: pin ?? ""
-        }, (data, status) => {
-            if (status !== null && status >= 200 && status < 300)
+        }, (result, error) => {
+            if (!error)
                 return;
             root.pendingSend = null;
             pendingSendWatchdog.stop();
             root.lastResult = {
                 id: "local-" + Date.now(),
-                kind: status === 409 ? "busy" : "local_error",
+                kind: error.code === "busy" ? "busy" : "local_error",
                 peer: who,
                 deviceType: device?.deviceType ?? "desktop",
-                count: filePaths.length,
+                count: actualPaths.length,
                 files: [],
-                code: status,
-                detail: status === 409 ? "Another transfer is already running." : (status === 400 ? "None of those files could be read." : "The LocalSend server didn't accept the request."),
+                code: error.code,
+                detail: error.message || "localsendd didn't accept the request.",
                 local: true
             };
             root._maybeNotifyResult();
@@ -292,7 +337,7 @@ Singleton {
     function cancelAll() {
         root.pendingSend = null;
         pendingSendWatchdog.stop();
-        _get("/api/self/v1/cancel", () => root.refreshState());
+        _call("cancel");
     }
 
     function dismissResult() {
@@ -300,7 +345,7 @@ Singleton {
         root.lastResult = null;
         if (!r || r.local)
             return;
-        _get("/api/self/v1/dismiss-result?id=" + encodeURIComponent(r.id ?? ""), () => {});
+        _call("dismiss_result", { id: r.id ?? "" });
     }
 
     function confirmReceive(sessionId, confirmed) {
@@ -308,51 +353,57 @@ Singleton {
             return;
         if (root.pendingIncoming?.sessionId === sessionId)
             root.pendingIncoming = null;
-        _get("/api/self/v1/confirm-recv?sessionId=" + encodeURIComponent(sessionId) + "&confirmed=" + (confirmed ? "true" : "false"), () => root.refreshState());
+        _call("confirm_receive", { sessionId: sessionId, confirmed: !!confirmed });
     }
 
     function scanNow() {
         if (!root.reachable)
             return;
-        _get("/api/self/v1/scan-now", () => refreshDelay.restart());
+        _call("scan", {}, () => refreshDelay.restart());
     }
 
-    function _request(method, path, body, onDone) {
-        const req = new XMLHttpRequest();
-        req.open(method, root.baseUrl + path);
-        if (body !== undefined && body !== null)
-            req.setRequestHeader("Content-Type", "application/json");
-        req.onreadystatechange = () => {
-            if (req.readyState !== XMLHttpRequest.DONE)
-                return;
-            const status = req.status === 0 ? null : req.status;
-            if (status === null || status < 200 || status >= 300) {
-                onDone?.(null, status);
-                return;
-            }
-            try {
-                onDone?.(req.responseText ? JSON.parse(req.responseText) : {}, status);
-            } catch (e) {
-                console.log("[LocalSend] parse error:", e);
-                onDone?.(null, status);
-            }
-        };
-        if (body !== undefined && body !== null)
-            req.send(JSON.stringify(body));
-        else
-            req.send();
+    property int _nextCallId: 0
+    property var _pendingCalls: ({})
+
+    function _call(method, params, onDone) {
+        if (!root.socketConnected) {
+            onDone?.(null, {
+                code: "unreachable",
+                message: "localsendd isn't running."
+            });
+            return;
+        }
+        root._nextCallId++;
+        const id = root._nextCallId;
+        if (onDone)
+            root._pendingCalls[id] = onDone;
+        root._socket.write(JSON.stringify({
+            id: id,
+            method: method,
+            params: params ?? {}
+        }) + "\n");
+        root._socket.flush();
     }
 
-    function _get(path, onDone) {
-        _request("GET", path, null, onDone);
+    function _failPendingCalls() {
+        const pending = root._pendingCalls;
+        root._pendingCalls = ({});
+        for (const id in pending) {
+            const cb = pending[id];
+            if (cb)
+                cb(null, {
+                    code: "unreachable",
+                    message: "localsendd went away."
+                });
+        }
     }
 
-    function _post(path, body, onDone) {
-        _request("POST", path, body ?? {}, onDone);
-    }
-
-    property int _unreachableStreak: 0
-    property bool _wasReachable: false
+    property string _daemonPath: ""
+    property var _socket: null
+    readonly property bool socketConnected: root._socket?.connected ?? false
+    property string _pushedPin: ""
+    property var _pushedDiscoverable: null
+    property var _pushedEncryption: null
     property string _instanceId: ""
     property string _lastNotifiedResultId: ""
     property string _lastNotifiedIncomingId: ""
@@ -372,7 +423,9 @@ Singleton {
         root.stateSeq = s.seq ?? 0;
 
         root.devices = s.devices ?? [];
-        root.pendingIncoming = s.incoming ?? null;
+        const inc = s.incoming ?? null;
+        if ((inc?.sessionId ?? "") !== (root.pendingIncoming?.sessionId ?? ""))
+            root.pendingIncoming = inc;
         root.activeTransfer = s.active ?? null;
 
         const wasLocal = root.lastResult?.local ?? false;
@@ -386,6 +439,9 @@ Singleton {
             root.localDeviceType = s.self.deviceType ?? "";
             root.localDownloadDir = s.self.downloadDir ?? "";
             root.multicastOk = s.self.multicast !== false;
+            root.discoverable = s.self.discoverable !== false;
+            root.encryptionOn = s.self.encryption !== false;
+            root.encryptionPending = s.self.pendingEncryption ?? null;
             root._pushIdentity();
         }
 
@@ -420,39 +476,48 @@ Singleton {
     }
 
     function refreshState() {
-        _get("/api/self/v1/state", (data, status) => {
-            root.reachable = data !== null;
-            if (data === null) {
-                root._onUnreachable();
-                return;
-            }
-            root._onReachable();
-            root._applyState(data);
+        _call("get_state", {}, (data, error) => {
+            if (!error)
+                root._applyState(data);
         });
     }
 
     function _onReachable() {
-        root._unreachableStreak = 0;
-        if (!root._wasReachable) {
-            root.stateSeq = -1;
-            eventsSocket.connected = false;
-            reconnectKick.restart();
-        }
-        root._wasReachable = true;
+        root.reachable = true;
+        root.daemonMissing = false;
+        root.stateSeq = -1;
+        root._pushedPin = "";
+        root._pushedDiscoverable = null;
+        root._pushedEncryption = null;
     }
 
     function _pushIdentity() {
         const wantType = Config.localsend.deviceType ?? "desktop";
         if (root.deviceTypes.includes(wantType) && root.localDeviceType && root.localDeviceType !== wantType)
-            _get("/api/self/v1/set-device-type?type=" + wantType, () => {});
+            _call("set_device_type", { type: wantType });
         const wantAlias = (Config.localsend.alias ?? "").trim();
         if (wantAlias && root.localAlias && root.localAlias !== wantAlias)
-            _get("/api/self/v1/set-alias?alias=" + encodeURIComponent(wantAlias), () => {});
+            _call("set_alias", { alias: wantAlias });
+        const wantPin = Config.localsend.pin ?? "";
+        if (root._pushedPin !== wantPin) {
+            root._pushedPin = wantPin;
+            _call("set_pin", { pin: wantPin });
+        }
+        const wantVisible = Config.localsend.enabled ?? false;
+        if (root._pushedDiscoverable !== wantVisible) {
+            root._pushedDiscoverable = wantVisible;
+            _call("set_discoverable", { discoverable: wantVisible });
+        }
+        const wantEncryption = Config.localsend.encryption ?? true;
+        if (root._pushedEncryption !== wantEncryption) {
+            root._pushedEncryption = wantEncryption;
+            _call("set_encryption", { encryption: wantEncryption });
+        }
     }
 
     function _onUnreachable() {
-        root._unreachableStreak++;
-        root._wasReachable = false;
+        root.reachable = false;
+        root._failPendingCalls();
         root.pendingIncoming = null;
         root.activeTransfer = null;
         root.pendingSend = null;
@@ -462,12 +527,6 @@ Singleton {
         root._instanceId = "";
         if (root.lastResult && !root.lastResult.local)
             root.lastResult = null;
-
-        if (serverProc.manageLocally && Config.localsend.enabled && root._unreachableStreak === 3) {
-            console.log("[LocalSend] server unresponsive for", root._unreachableStreak * reachabilityTimer.interval / 1000, "s — forcing restart");
-            serverProc.running = false;
-            restartKick.restart();
-        }
     }
 
     function notify(summary, body, urgency, timeout) {
@@ -542,13 +601,27 @@ Singleton {
         try {
             msg = JSON.parse(line);
         } catch (e) {
-            console.log("[LocalSend] bad message from server:", e);
+            console.log("[LocalSend] bad frame from localsendd:", e);
             return;
         }
-        if (msg.type === "state") {
-            root.reachable = true;
-            root._applyState(msg.data);
+
+        if (msg.id !== undefined && msg.id !== null) {
+            const cb = root._pendingCalls[msg.id];
+            if (!cb)
+                return;
+            delete root._pendingCalls[msg.id];
+            if (msg.ok)
+                cb(msg.result ?? {}, null);
+            else
+                cb(null, msg.error ?? {
+                    code: "unknown",
+                    message: "Request failed."
+                });
+            return;
         }
+
+        if (msg.type === "state")
+            root._applyState(msg.data);
         root.event(msg.type, msg.data ?? {});
     }
 
@@ -582,51 +655,55 @@ Singleton {
     }
 
     Process {
-        id: serverProc
-        readonly property bool manageLocally: Config.localsend.host === "127.0.0.1" || Config.localsend.host === "localhost"
-        command: ["python3", Quickshell.shellDir + "/scripts/localsend-server.py", "--port", String(Config.localsend.port), "--device-type", Config.localsend.deviceType ?? "desktop", "--alias", (Config.localsend.alias ?? "").trim()]
-        running: Config.localsend.enabled && manageLocally
-        onExited: (code, status) => console.log("[LocalSend] server exited, code:", code)
-        stdout: SplitParser {
-            onRead: line => console.log("[LocalSend/server]", line)
+        id: daemonProbe
+        command: ["sh", "-c", "command -v localsendd"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root._daemonPath = text.trim();
+                root.daemonMissing = root._daemonPath.length === 0;
+                if (root.daemonMissing)
+                    console.log("[LocalSend] localsendd not found on PATH — install with: uv tool install localsendd");
+            }
         }
-        stderr: SplitParser {
-            onRead: line => console.log("[LocalSend/server:err]", line)
+    }
+
+    Component {
+        id: socketComponent
+
+        Socket {
+            path: root.socketPath
+            connected: true
+            parser: SplitParser {
+                splitMarker: "\n"
+                onRead: data => root._handleMessage(data)
+            }
+            onConnectionStateChanged: {
+                if (connected) {
+                    root._onReachable();
+                } else {
+                    root.stateSeq = -1;
+                    root._onUnreachable();
+                }
+            }
         }
+    }
+
+    function _reopenSocket() {
+        if (root._socket) {
+            root._socket.connected = false;
+            root._socket.destroy();
+            root._socket = null;
+        }
+        root._socket = socketComponent.createObject(root);
     }
 
     Timer {
-        id: restartKick
-        interval: 300
-        onTriggered: serverProc.running = Config.localsend.enabled && serverProc.manageLocally
-    }
-
-    Socket {
-        id: eventsSocket
-        path: (Quickshell.env("XDG_RUNTIME_DIR") ?? "/tmp") + "/isra-localsend-events.sock"
-        connected: Config.localsend.enabled
-        parser: SplitParser {
-            splitMarker: "\n"
-            onRead: data => root._handleMessage(data)
-        }
-        onConnectionStateChanged: {
-            if (connected)
-                return;
-            root.stateSeq = -1;
-        }
-    }
-
-    Timer {
-        id: reconnectKick
-        interval: 400
-        onTriggered: eventsSocket.connected = Config.localsend.enabled
-    }
-
-    Timer {
-        interval: 500
+        interval: 700
         repeat: true
-        running: Config.localsend.enabled && !eventsSocket.connected
-        onTriggered: eventsSocket.connected = true
+        running: !root.socketConnected
+        triggeredOnStart: true
+        onTriggered: root._reopenSocket()
     }
 
     Process {
@@ -639,15 +716,6 @@ Singleton {
                     root.confirmReceive(sessionId, action === "accept");
             }
         }
-    }
-
-    Timer {
-        id: reachabilityTimer
-        interval: 3000
-        repeat: true
-        running: Config.localsend.enabled
-        triggeredOnStart: true
-        onTriggered: root.refreshState()
     }
 
     onWidgetActiveChanged: if (!widgetActive)

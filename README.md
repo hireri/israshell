@@ -96,6 +96,7 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"
 - **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`
 - **Python Stack**: `python`, `python-numpy`, `python-pillow`, `python-scipy`, `python-matplotlib`, `python-gtts`
 - **Fonts**: `inter-font`, `ttf-roboto-mono` (fonts are configurable)
+- **LocalSend**: [`localsendd`](https://pypi.org/project/localsendd/) — `uv tool install localsendd` or `pipx install localsendd` (not packaged, so not in the `yay -Q` line below)
 
 ```bash
 yay -Q quickshell hyprland hyprsunset matugen awww cava \

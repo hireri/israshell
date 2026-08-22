@@ -8,7 +8,7 @@ import qs.style
 Singleton {
     id: root
 
-    property string presetsDir: Quickshell.env("HOME") + "/.config/israshell"
+    property string presetsDir: Config.configDir + "/presets"
     property var entries: []      // [{ name, mtime, path }]
     property bool busy: false
     property string statusMessage: ""
@@ -44,7 +44,7 @@ Singleton {
         root.busy = true;
         root.statusMessage = "";
         const ts = Qt.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss");
-        const configPath = Quickshell.shellDir + "/config.json";
+        const configPath = Config.configPath;
         const destPath = root.presetsDir + "/preset-" + ts + ".json";
         saveProc.command = ["bash", "-c",
             "mkdir -p " + JSON.stringify(root.presetsDir) +

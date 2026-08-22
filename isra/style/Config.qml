@@ -157,11 +157,11 @@ Singleton {
         })
     property var localsend: ({
             enabled: false,
-            host: "127.0.0.1",
-            port: 53317,
             notifyOnReceive: true,
             deviceType: "desktop",
-            alias: ""
+            alias: "",
+            pin: "",
+            encryption: true
         })
     property var dns: ({
             enabled: false,
@@ -368,11 +368,11 @@ Singleton {
             },
             localsend: {
                 enabled: false,
-                host: "127.0.0.1",
-                port: 53317,
                 notifyOnReceive: true,
                 deviceType: "desktop",
-                alias: ""
+                alias: "",
+                pin: "",
+                encryption: true
             },
             dns: {
                 enabled: false,
@@ -505,6 +505,9 @@ Singleton {
     }
 
     property bool _selfWrite: false
+
+    readonly property string configDir: Quickshell.env("HOME") + "/.config/israshell"
+    readonly property string configPath: configDir + "/config.json"
 
     function __apply(data) {
         const merged = __merge(data);
@@ -649,7 +652,7 @@ Singleton {
 
     FileView {
         id: fileView
-        path: Quickshell.shellDir + "/config.json"
+        path: configRoot.configPath
         watchChanges: true
         blockLoading: true
         Component.onCompleted: __load()

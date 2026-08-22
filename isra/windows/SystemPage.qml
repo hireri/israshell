@@ -547,16 +547,11 @@ PageBase {
             Layout.fillWidth: true
 
             SettingSwitch {
-                readonly property bool manageLocally: Config.localsend.host === "127.0.0.1" || Config.localsend.host === "localhost"
                 label: Localization.t("backgroundPage.enable")
-                sublabel: LocalSendService.reachable ? Localization.t("systemPage.connected_to_host_port").arg(Config.localsend.host).arg(Config.localsend.port) : (manageLocally ? Localization.t("systemPage.starts_a_local_localsend_server") : (Config.localsend.enabled ? Localization.t("systemPage.server_not_reachable") : Localization.t("systemPage.server_not_reachable_start_it").arg(Config.localsend.host)))
-                checked: Config.localsend.enabled
-                enabled: manageLocally || LocalSendService.reachable || Config.localsend.enabled
-                onToggled: v => Config.update({
-                        localsend: Object.assign({}, Config.localsend, {
-                            enabled: v
-                        })
-                    })
+                sublabel: Localization.t("systemPage.localsend_discoverable_desc")
+                checked: LocalSendService.ready
+                enabled: LocalSendService.reachable
+                onToggled: v => LocalSendService.setEnabled(v)
             }
 
             SettingInput {
@@ -567,33 +562,20 @@ PageBase {
                 onCommitted: v => LocalSendService.setAlias(v)
             }
 
-            SettingInput {
-                label: Localization.t("systemPage.host")
-                sublabel: Localization.t("systemPage.127_0_0_1_runs")
-                value: Config.localsend.host
-                fieldWidth: 160
-                onCommitted: v => Config.update({
-                        localsend: Object.assign({}, Config.localsend, {
-                            host: v
-                        })
-                    })
+            SettingSwitch {
+                label: Localization.t("systemPage.encryption") || "Encryption"
+                sublabel: Localization.t("systemPage.localsend_encryption_desc") || "Encrypt file transfers (HTTPS)"
+                checked: LocalSendService.encryptionTarget
+                enabled: LocalSendService.reachable
+                onToggled: v => LocalSendService.setEncryption(v)
             }
 
             SettingInput {
-                label: Localization.t("systemPage.port")
-                sublabel: Localization.t("systemPage.localsend_protocol_control_api_port")
-                value: String(Config.localsend.port)
+                label: Localization.t("systemPage.pin") || "PIN"
+                sublabel: Localization.t("systemPage.localsend_pin_desc") || "Require a PIN to receive files"
+                value: Config.localsend.pin ?? ""
                 fieldWidth: 100
-                onCommitted: v => {
-                    const port = parseInt(v, 10);
-                    if (!isNaN(port) && port > 0 && port < 65536) {
-                        Config.update({
-                            localsend: Object.assign({}, Config.localsend, {
-                                port: port
-                            })
-                        });
-                    }
-                }
+                onCommitted: v => LocalSendService.setPin(v)
             }
 
             SettingSwitch {

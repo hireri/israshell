@@ -665,7 +665,7 @@ PageBase {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 hoverEnabled: true
-                onClicked: Qt.openUrlExternally("file://" + Quickshell.env("HOME") + "/.config/quickshell/isra/config.json")
+                onClicked: Qt.openUrlExternally("file://" + Config.configPath)
             }
         }
     }

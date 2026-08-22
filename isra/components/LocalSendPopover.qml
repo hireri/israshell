@@ -205,7 +205,8 @@ Item {
                                 }
 
                                 Md3Switch {
-                                    checked: Config.localsend.enabled
+                                    checked: LocalSendService.ready
+                                    enabled: LocalSendService.reachable
                                     onToggled: v => LocalSendService.setEnabled(v)
                                 }
 
@@ -1039,7 +1040,7 @@ Item {
                                         Layout.leftMargin: 30
                                         Layout.rightMargin: 30
                                         horizontalAlignment: Text.AlignHCenter
-                                        text: !LocalSendService.reachable ? Localization.t("localSend.server_not_running_yet") : (!LocalSendService.multicastOk ? Localization.t("localSend.multicast_unavailable") : Localization.t("localSend.make_sure_open_on_other_device"))
+                                        text: LocalSendService.daemonMissing ? Localization.t("localSend.daemon_not_installed") : (!LocalSendService.reachable ? Localization.t("localSend.server_not_running_yet") : (!LocalSendService.multicastOk ? Localization.t("localSend.multicast_unavailable") : Localization.t("localSend.make_sure_open_on_other_device")))
                                         font.family: Config.fontFamily
                                         font.pixelSize: 11
                                         color: Colors.md3.on_surface_variant
@@ -1057,7 +1058,7 @@ Item {
 
                                     Text {
                                         Layout.fillWidth: true
-                                        text: LocalSendService.localIp ? LocalSendService.localIp + ":" + Config.localsend.port : Localization.t("localSend.finding_address")
+                                        text: LocalSendService.localIp ? LocalSendService.localIp + ":" + LocalSendService.port : Localization.t("localSend.finding_address")
                                         font.family: Config.fontMonospace
                                         font.pixelSize: 10
                                         color: Colors.md3.on_surface_variant

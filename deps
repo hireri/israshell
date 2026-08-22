@@ -13,6 +13,7 @@ wireplumber
 pavucontrol
 # Networking
 networkmanager
+localsendd
 # Bluetooth
 bluez
 bluez-utils
