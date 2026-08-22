@@ -54,7 +54,7 @@ Singleton {
         weather: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 3, h: 3 }, data: {} },
         weathercard: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 5, h: 3 }, data: {} },
         weatherscene: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: {} },
-        pomodoro: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 3, h: 2 }, data: {} },
+        pomodoro: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 3, h: 3 }, data: {} },
         githubheatmap: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: { username: "" } }
     })
 
