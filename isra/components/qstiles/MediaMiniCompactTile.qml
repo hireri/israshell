@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Services.Mpris
+import qs.components
 import qs.style
 import qs.services
 import qs.icons
@@ -30,10 +31,11 @@ Item {
         onTriggered: root._showVolume = false
     }
 
-    MediaArtCrossfade {
+    CrossfadeArt {
         anchors.fill: parent
         visible: root.hasArt
         url: root.player?.trackArtUrl ?? ""
+        renderSize: Qt.size(width, height)
     }
 
     Rectangle {

@@ -8,8 +8,8 @@ import qs.components
 Singleton {
     id: root
 
-    readonly property var knownTypes: ["photo", "music", "weyes", "statring", "weather", "weathercard", "weatherscene", "pomodoro", "githubheatmap"]
-    readonly property var singletonTypes: ["music", "weyes", "weather", "weathercard", "weatherscene", "pomodoro"]
+    readonly property var knownTypes: ["photo", "music", "weyes", "statring", "weather", "weathercard", "weatherscene", "pomodoro", "githubheatmap", "sunmoon", "fetchcard"]
+    readonly property var singletonTypes: ["music", "weyes", "weather", "weathercard", "weatherscene", "pomodoro", "fetchcard"]
 
     readonly property var _capabilityByType: ({
         weyes: "cursorPosition"
@@ -55,7 +55,9 @@ Singleton {
         weathercard: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 5, h: 3 }, data: {} },
         weatherscene: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: {} },
         pomodoro: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 3, h: 3 }, data: {} },
-        githubheatmap: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: { username: "" } }
+        githubheatmap: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: { username: "" } },
+        sunmoon: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 6, h: 3 }, data: { mode: "both", showIllumination: true } },
+        fetchcard: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 7, h: 4 }, data: { showLogo: true, showSwatches: true } }
     })
 
     function defaultsFor(type) {
@@ -83,6 +85,8 @@ Singleton {
     Component { id: weatherSceneComp; WeatherSceneWidget {} }
     Component { id: pomodoroComp; PomodoroWidget {} }
     Component { id: githubHeatmapComp; GithubHeatmapWidget {} }
+    Component { id: sunMoonComp; SunMoonWidget {} }
+    Component { id: fetchCardComp; FetchCardWidget {} }
 
     readonly property var componentMap: ({
         photo: photoComp,
@@ -93,7 +97,9 @@ Singleton {
         weathercard: weatherCardComp,
         weatherscene: weatherSceneComp,
         pomodoro: pomodoroComp,
-        githubheatmap: githubHeatmapComp
+        githubheatmap: githubHeatmapComp,
+        sunmoon: sunMoonComp,
+        fetchcard: fetchCardComp
     })
 
     property var _idList: []

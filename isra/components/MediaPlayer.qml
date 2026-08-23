@@ -332,42 +332,33 @@ ClippingRectangle {
                 }
             }
 
-            ClippingRectangle {
+            CrossfadeArt {
+                id: pillArt
                 anchors.fill: parent
                 anchors.margins: pillCover.coverMargin
                 radius: 30
-                visible: pillArt.status === Image.Ready
-                color: "transparent"
                 antialiasing: true
+                url: MediaPlayerState.displayPlayer?.trackArtUrl ?? ""
+                renderSize: Qt.size(60, 60)
 
-                Image {
-                    id: pillArt
-                    anchors.fill: parent
-                    source: MediaPlayerState.displayPlayer?.trackArtUrl ?? ""
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
-                    sourceSize: Qt.size(60, 60)
+                property real angle: 0
+                property real velocity: pillCover.shouldSpin ? 0.5 : 0
+                rotation: angle
 
-                    property real angle: 0
-                    property real velocity: pillCover.shouldSpin ? 0.5 : 0
-                    rotation: angle
-
-                    Behavior on velocity {
-                        NumberAnimation {
-                            duration: 600
-                            easing.type: Easing.OutCubic
-                        }
+                Behavior on velocity {
+                    NumberAnimation {
+                        duration: 600
+                        easing.type: Easing.OutCubic
                     }
+                }
 
-                    Timer {
-                        interval: 16
-                        running: pillArt.visible
-                        repeat: true
-                        onTriggered: {
-                            if (Math.abs(pillArt.velocity) > 0.001)
-                                pillArt.angle = (pillArt.angle + pillArt.velocity) % 360;
-                        }
+                Timer {
+                    interval: 16
+                    running: true
+                    repeat: true
+                    onTriggered: {
+                        if (Math.abs(pillArt.velocity) > 0.001)
+                            pillArt.angle = (pillArt.angle + pillArt.velocity) % 360;
                     }
                 }
             }

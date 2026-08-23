@@ -31,8 +31,8 @@ Singleton {
     readonly property string weatherDesc: _weatherDesc
     readonly property string weatherHumid: _weatherHumid
     readonly property string weatherUvi: _weatherUvi
-    readonly property string weatherSunrise: _weatherSunrise
-    readonly property string weatherSunset: _weatherSunset
+    readonly property string weatherSunrise: (_weatherDaily.length > 0 && _weatherDaily[0].sunrise) ? _formatAstroTime(_weatherDaily[0].sunrise) : "—"
+    readonly property string weatherSunset: (_weatherDaily.length > 0 && _weatherDaily[0].sunset) ? _formatAstroTime(_weatherDaily[0].sunset) : "—"
 
     readonly property string weatherIconName: _weatherIconName
     readonly property color weatherIconColor: _colorForRole(_weatherIconColorRole)
@@ -53,6 +53,12 @@ Singleton {
 
     readonly property bool aqiLoading: _aqiLoading
     readonly property string aqiError: _aqiError
+
+    // Needed to flip the moon terminator in the southern hemisphere, and for
+    // moonrise/moonset (see components/moon-ephemeris.js). Both default to
+    // 0.0 until geolocation resolves.
+    readonly property real latitude: _lat
+    readonly property real longitude: _lon
 
     property string _liveTime: ""
     property string _liveSecs: ""
@@ -81,8 +87,6 @@ Singleton {
     property string _weatherDesc: "loading..."
     property string _weatherHumid: "—"
     property string _weatherUvi: "—"
-    property string _weatherSunrise: "—"
-    property string _weatherSunset: "—"
     property bool _weatherLoading: true
     property string _weatherError: ""
 
@@ -250,6 +254,12 @@ Singleton {
         return new Date(year, month, day, hour, minute, 0, 0);
     }
 
+    // Public wrapper so other components format a Date consistently with
+    // Config.hourFormat instead of duplicating the am/pm logic themselves.
+    function formatClockTime(date) {
+        return root._formatAstroTime(date);
+    }
+
     function _formatAstroTime(date) {
         if (!date) return "—";
         const fmt12 = Config.hourFormat !== 0;
@@ -383,7 +393,9 @@ Singleton {
                 date: _parseOpenMeteoDateTime(days[i]),
                 high: Math.round(daily.temperature_2m_max?.[i] ?? 0),
                 low: Math.round(daily.temperature_2m_min?.[i] ?? 0),
-                code: parseInt(daily.weather_code?.[i] ?? 0)
+                code: parseInt(daily.weather_code?.[i] ?? 0),
+                sunrise: _parseOpenMeteoDateTime(daily.sunrise?.[i]),
+                sunset: _parseOpenMeteoDateTime(daily.sunset?.[i])
             });
         }
 
@@ -506,9 +518,6 @@ Singleton {
             root._weatherLow = parsed.low;
             root._weatherHumid = parsed.humidity;
             root._weatherUvi = parsed.uvi;
-
-            root._weatherSunrise = parsed.sunriseDate ? _formatAstroTime(parsed.sunriseDate) : "—";
-            root._weatherSunset = parsed.sunsetDate ? _formatAstroTime(parsed.sunsetDate) : "—";
 
             root._weatherIconName = parsed.iconName;
             root._weatherIconColorRole = parsed.iconColorRole;

@@ -588,6 +588,7 @@ Item {
                 height: 44
 
                 readonly property bool showRing: leftPill.hasPlayer && (Config.bar.playerRing ?? false)
+                readonly property bool hasArt: leftPill.hasPlayer && (leftPill.player.trackArtUrl ?? "") !== ""
                 property real coverMargin: showRing ? 4 : 0
                 property real ringStrokeWidth: showRing ? 2.6 : 0
 
@@ -772,46 +773,34 @@ Item {
                     Loader {
                         anchors.centerIn: parent
                         sourceComponent: musicNoteIconComp
-                        visible: !leftPill.hasPlayer || coverArtImg.status !== Image.Ready
+                        visible: !coverArt.hasArt
                     }
                 }
 
-                ClippingRectangle {
+                CrossfadeArt {
+                    id: coverArtImg
                     anchors.fill: parent
                     anchors.margins: coverArt.coverMargin
                     radius: height / 2
-                    visible: leftPill.hasPlayer && coverArtImg.status === Image.Ready
-                    color: "transparent"
+                    antialiasing: true
+                    url: leftPill.hasPlayer ? (leftPill.player.trackArtUrl ?? "") : ""
+                    renderSize: Qt.size(72, 72)
 
-                    Image {
-                        id: coverArtImg
-                        anchors.fill: parent
-                        source: leftPill.hasPlayer ? (leftPill.player.trackArtUrl ?? "") : ""
-                        fillMode: Image.PreserveAspectCrop
-                        antialiasing: true
-                        smooth: true
-                        asynchronous: true
-                        cache: true
-                        sourceSize: Qt.size(72, 72)
-                        layer.enabled: true
-                        layer.smooth: true
+                    property real angle: 0
+                    property real velocity: leftPill.shouldSpin ? 0.5 : 0
+                    rotation: angle
 
-                        property real angle: 0
-                        property real velocity: leftPill.shouldSpin ? 0.5 : 0
-                        rotation: angle
+                    Behavior on velocity {
+                        NumberAnimation { duration: 600; easing.type: Easing.OutCubic }
+                    }
 
-                        Behavior on velocity {
-                            NumberAnimation { duration: 600; easing.type: Easing.OutCubic }
-                        }
-
-                        Timer {
-                            interval: 16
-                            running: coverArtImg.visible
-                            repeat: true
-                            onTriggered: {
-                                if (Math.abs(coverArtImg.velocity) > 0.001)
-                                    coverArtImg.angle = (coverArtImg.angle + coverArtImg.velocity) % 360;
-                            }
+                    Timer {
+                        interval: 16
+                        running: true
+                        repeat: true
+                        onTriggered: {
+                            if (Math.abs(coverArtImg.velocity) > 0.001)
+                                coverArtImg.angle = (coverArtImg.angle + coverArtImg.velocity) % 360;
                         }
                     }
                 }

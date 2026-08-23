@@ -8,9 +8,9 @@ import qs.style
 Singleton {
     id: root
 
-    property string distroName: "Arch Linux"
-    property string distroId: "arch"
-    property string logo: "archlinux-logo"
+    property string distroName: "Linux"
+    property string distroId: "linux"
+    property string logo: "distributor-logo-linux"
     property string uptime: "unknown"
     property string kernel: "unknown"
     property string username: "unknown"
@@ -33,6 +33,15 @@ Singleton {
     property string shellName: "Unknown SHELL"
     property string shellVersion: "Unknown SHELLVER"
     property string quickshellVersion: "Unknown"
+
+    property int packageCount: 0
+    property string packageManager: "unknown"
+    property int flatpakCount: 0
+
+    readonly property string packages: root.packageCount > 0
+        ? root.packageCount + " (" + root.packageManager + ")"
+          + (root.flatpakCount > 0 ? ", " + root.flatpakCount + " (flatpak)" : "")
+        : "unknown"
 
     readonly property int historyLength: 40
     readonly property int pollInterval: 2000
@@ -363,20 +372,31 @@ Singleton {
         return parts.join(" ");
     }
 
+    Component.onCompleted: {
+        identityProc.running = true;
+        kernelProc.running = true;
+        hardwareProc.running = true;
+        shellProc.running = true;
+        quickshellProc.running = true;
+        packagesProc.running = true;
+        fileOsRelease.reload();
+        fileUptime.reload();
+    }
+
     Timer {
+        id: uptimeTimer
         interval: 30000
         running: true
         repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            identityProc.running = true;
-            kernelProc.running = true;
-            hardwareProc.running = true;
-            shellProc.running = true;
-            quickshellProc.running = true;
-            fileOsRelease.reload();
-            fileUptime.reload();
-        }
+        onTriggered: fileUptime.reload()
+    }
+
+    Timer {
+        id: packagesTimer
+        interval: 600000
+        running: true
+        repeat: true
+        onTriggered: packagesProc.running = true
     }
 
     Process {
@@ -439,6 +459,19 @@ Singleton {
     }
 
     Process {
+        id: packagesProc
+        command: ["sh", "-c", "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin; " + "n=''; mgr=''; " + "if command -v pacman >/dev/null 2>&1; then n=$(pacman -Qq 2>/dev/null | wc -l); mgr=pacman; " + "elif command -v dpkg-query >/dev/null 2>&1; then n=$(dpkg-query -f '.\\n' -W 2>/dev/null | wc -l); mgr=dpkg; " + "elif command -v rpm >/dev/null 2>&1; then n=$(rpm -qa 2>/dev/null | wc -l); mgr=rpm; " + "elif command -v xbps-query >/dev/null 2>&1; then n=$(xbps-query -l 2>/dev/null | wc -l); mgr=xbps; " + "elif command -v apk >/dev/null 2>&1; then n=$(apk info 2>/dev/null | wc -l); mgr=apk; " + "fi; " + "f=0; if command -v flatpak >/dev/null 2>&1; then f=$(flatpak list --app 2>/dev/null | wc -l); fi; " + "echo \"${n:-0}|${mgr:-unknown}|${f:-0}\""]
+        stdout: SplitParser {
+            onRead: data => {
+                const parts = data.trim().split('|');
+                root.packageCount = parseInt(parts[0]) || 0;
+                root.packageManager = parts[1] || "unknown";
+                root.flatpakCount = parseInt(parts[2]) || 0;
+            }
+        }
+    }
+
+    Process {
         id: identityProc
         command: ["sh", "-c", "echo \"$(whoami)|$(hostname)\""]
         stdout: SplitParser {
@@ -450,27 +483,33 @@ Singleton {
         }
     }
 
+    function _parseOsRelease() {
+        const text = fileOsRelease.text();
+        if (!text) return;
+
+        const prettyMatch = text.match(/^PRETTY_NAME="(.+?)"/m);
+        const nameMatch = text.match(/^NAME="(.+?)"/m);
+        root.distroName = prettyMatch ? prettyMatch[1] : nameMatch ? nameMatch[1] : "Linux";
+
+        const idMatch = text.match(/^ID="?(.+?)"?$/m);
+        root.distroId = idMatch ? idMatch[1].toLowerCase() : "unknown";
+
+        const logoMatch = text.match(/^LOGO="?(.+?)"?$/m);
+        if (logoMatch && logoMatch[1].trim().length > 0) {
+            root.logo = logoMatch[1].trim();
+        } else {
+            root.logo = "distributor-logo-" + root.distroId;
+        }
+    }
+
     FileView {
         id: fileOsRelease
         path: "/etc/os-release"
-        onTextChanged: {
-            const text = fileOsRelease.text();
-            if (!text) return;
 
-            const prettyMatch = text.match(/^PRETTY_NAME="(.+?)"/m);
-            const nameMatch = text.match(/^NAME="(.+?)"/m);
-            root.distroName = prettyMatch ? prettyMatch[1] : nameMatch ? nameMatch[1] : "Linux";
+        blockLoading: true
 
-            const idMatch = text.match(/^ID="?(.+?)"?$/m);
-            root.distroId = idMatch ? idMatch[1].toLowerCase() : "unknown";
-
-            const logoMatch = text.match(/^LOGO="?(.+?)"?$/m);
-            if (logoMatch && logoMatch[1].trim().length > 0) {
-                root.logo = logoMatch[1].trim();
-            } else {
-                root.logo = "distributor-logo-" + root.distroId;
-            }
-        }
+        Component.onCompleted: root._parseOsRelease()
+        onTextChanged: root._parseOsRelease()
     }
 
     FileView {

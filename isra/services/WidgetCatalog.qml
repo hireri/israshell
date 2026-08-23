@@ -16,6 +16,8 @@ Singleton {
     Component { id: weatherScenePreview; WeatherSceneVisual {} }
     Component { id: pomodoroPreview; PomodoroVisual {} }
     Component { id: githubHeatmapPreview; GithubHeatmapVisual {} }
+    Component { id: sunMoonPreview; SunMoonVisual {} }
+    Component { id: fetchCardPreview; FetchCardVisual {} }
 
     readonly property var types: [
         {
@@ -80,6 +82,20 @@ Singleton {
             icon: "calendar-month",
             preview: githubHeatmapPreview,
             stackable: true
+        },
+        {
+            type: "sunmoon",
+            label: Localization.t("widgetDrawer.sunmoon"),
+            icon: "moon-stars",
+            preview: sunMoonPreview,
+            stackable: true
+        },
+        {
+            type: "fetchcard",
+            label: Localization.t("widgetDrawer.fetchcard"),
+            icon: "terminal",
+            preview: fetchCardPreview,
+            stackable: false
         }
     ]
 

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Widgets
 import Quickshell.Services.Mpris
+import qs.components
 import qs.style
 import qs.services
 import qs.icons
@@ -107,10 +108,11 @@ Item {
             bottomLeftRadius: 18
             color: root.hasArt ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
 
-            MediaArtCrossfade {
+            CrossfadeArt {
                 anchors.fill: parent
                 visible: root.hasArt
                 url: root.player?.trackArtUrl ?? ""
+                renderSize: Qt.size(width, height)
             }
 
             MaterialIcon {
