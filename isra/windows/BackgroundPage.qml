@@ -33,6 +33,7 @@ PageBase {
     }
 
     SectionCard {
+        id: gridCard
         label: Localization.t("backgroundPage.desktop_grid")
         Layout.fillWidth: true
 
@@ -50,7 +51,7 @@ PageBase {
             stepSize: 2
             unit: "px"
             value: Config.desktopGrid?.cellSize ?? 50
-            onMoved: v => parent.updateGrid({ cellSize: Math.round(v) })
+            onMoved: v => gridCard.updateGrid({ cellSize: Math.round(v) })
         }
 
         SettingSlider {
@@ -61,7 +62,7 @@ PageBase {
             stepSize: 1
             unit: "px"
             value: Config.desktopGrid?.gutter ?? 8
-            onMoved: v => parent.updateGrid({ gutter: Math.round(v) })
+            onMoved: v => gridCard.updateGrid({ gutter: Math.round(v) })
         }
 
         SettingSlider {
@@ -73,7 +74,7 @@ PageBase {
             stepSize: 2
             unit: "px"
             value: Config.desktopGrid?.margin ?? 24
-            onMoved: v => parent.updateGrid({ margin: Math.round(v) })
+            onMoved: v => gridCard.updateGrid({ margin: Math.round(v) })
         }
     }
 

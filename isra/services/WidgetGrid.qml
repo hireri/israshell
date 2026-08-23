@@ -18,12 +18,47 @@ Singleton {
         return screen?.height ?? 1080;
     }
 
+    function _barReservation(): real {
+        const barMode = Config.bar.transparency === 2 ? (Config.bar.mode === 2 ? 2 : 0) : Config.bar.mode;
+        if (barMode === 2)
+            return 56;
+        if (Config.bar.transparency === 2 && !GameModeService.active)
+            return 34;
+        return 44;
+    }
+
+    function _dockReservation(): real {
+        if (!Config.floatingDock.enabled || !Config.floatingDock.exclusiveZone)
+            return 0;
+        const hasContent = Config.floatingDock.showLauncher || Config.floatingDock.showTrash || Config.floatingDock.showMusicPlayer || (Config.pinnedApps ?? []).length > 0;
+        if (!hasContent)
+            return 0;
+        const iconSize = Config.floatingDock.iconSize ?? 32;
+        const itemCellSize = iconSize + 12;
+        const pillThickness = itemCellSize + 6 * 2;
+        return pillThickness + 8;
+    }
+
+    function insets(screen): var {
+        const barR = root._barReservation();
+        const dockR = root._dockReservation();
+        const dockEdge = Config.floatingDock.edge;
+        return {
+            top: root.margin + (Config.bar.position === 0 ? barR : 0) + (dockEdge === 0 ? dockR : 0),
+            bottom: root.margin + (Config.bar.position === 1 ? barR : 0) + (dockEdge === 1 ? dockR : 0),
+            left: root.margin + (dockEdge === 2 ? dockR : 0),
+            right: root.margin + (dockEdge === 3 ? dockR : 0)
+        };
+    }
+
     function columns(screen): int {
-        const usable = root._w(screen) - root.margin * 2 + root.gutter;
+        const ins = root.insets(screen);
+        const usable = root._w(screen) - ins.left - ins.right + root.gutter;
         return Math.max(1, Math.floor(usable / (root.cellSize + root.gutter)));
     }
     function rows(screen): int {
-        const usable = root._h(screen) - root.margin * 2 + root.gutter;
+        const ins = root.insets(screen);
+        const usable = root._h(screen) - ins.top - ins.bottom + root.gutter;
         return Math.max(1, Math.floor(usable / (root.cellSize + root.gutter)));
     }
 
@@ -35,10 +70,10 @@ Singleton {
     }
 
     function cellX(screen, col): real {
-        return root.margin + col * (root.cellSize + root.gutter);
+        return root.insets(screen).left + col * (root.cellSize + root.gutter);
     }
     function cellY(screen, row): real {
-        return root.margin + row * (root.cellSize + root.gutter);
+        return root.insets(screen).top + row * (root.cellSize + root.gutter);
     }
     function spanWidth(screen, w): real {
         const n = Math.max(1, w);
@@ -53,10 +88,10 @@ Singleton {
     }
 
     function nearestCol(screen, px): int {
-        return Math.round((px - root.margin) / (root.cellSize + root.gutter));
+        return Math.round((px - root.insets(screen).left) / (root.cellSize + root.gutter));
     }
     function nearestRow(screen, py): int {
-        return Math.round((py - root.margin) / (root.cellSize + root.gutter));
+        return Math.round((py - root.insets(screen).top) / (root.cellSize + root.gutter));
     }
 
     function spanFromPixels(screen, pxW, pxH): var {

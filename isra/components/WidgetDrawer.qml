@@ -53,7 +53,7 @@ Item {
     visible: opacity > 0.01
     opacity: 0
 
-    readonly property real cols: 3
+    readonly property real cols: 4
     readonly property real tileW: 116
     readonly property real previewH: 82
     readonly property real gap: 8
