@@ -71,7 +71,7 @@ Item {
         NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
     }
 
-    ClippingRectangle {
+    Rectangle {
         id: card
         anchors.fill: parent
         radius: 12
