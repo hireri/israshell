@@ -24,10 +24,10 @@ Item {
     readonly property bool selected: EditModeService.isSelected(root.widgetId, root.widgetScreen)
 
     signal moveStarted
-    signal moveDelta(real dx, real dy)
+    signal moveDelta(real dx, real dy, bool snap)
     signal moveCommitted
     signal resizeStarted
-    signal resizeDelta(real dw, real dh)
+    signal resizeDelta(real dw, real dh, bool snap)
     signal resizeCommitted
     signal contextRequested(real x, real y)
 
@@ -185,7 +185,7 @@ Item {
                     dx = Math.min(Math.max(dx, -_startX), maxX - _startX);
                     dy = Math.min(Math.max(dy, -_startY), maxY - _startY);
                 }
-                root.moveDelta(dx, dy);
+                root.moveDelta(dx, dy, (mouse.modifiers & Qt.ShiftModifier) !== 0);
             }
         }
         onReleased: mouse => {
@@ -241,11 +241,12 @@ Item {
                 const scene = mapToItem(root.parent, mouse.x, mouse.y);
                 const dx = scene.x - pressX;
                 const dy = scene.y - pressY;
+                const snap = (mouse.modifiers & Qt.ShiftModifier) !== 0;
                 if (root.uniformScale) {
                     const d = (dx + dy) / 2;
-                    root.resizeDelta(d, d);
+                    root.resizeDelta(d, d, snap);
                 } else {
-                    root.resizeDelta(dx, dy);
+                    root.resizeDelta(dx, dy, snap);
                 }
             }
             onReleased: root.resizeCommitted()

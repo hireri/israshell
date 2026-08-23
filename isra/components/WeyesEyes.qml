@@ -8,8 +8,7 @@ Item {
     property bool tracking: true
     property real targetX: 0
     property real targetY: 0
-
-    readonly property bool tinted: !!(Config.weyes && Config.weyes.tinted)
+    property bool tinted: false
 
     readonly property color socketColor: root.tinted ? (Colors.md3.surface_container_high ?? "#e8e8e8") : "#ffffff"
     readonly property color borderColor: root.tinted ? (Colors.md3.outline ?? "#888888") : "#000000"

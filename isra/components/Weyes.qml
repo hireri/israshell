@@ -39,10 +39,11 @@ DesktopWidgetShell {
     Component.onCompleted: CursorService.acquire()
     Component.onDestruction: CursorService.release()
 
-    WeyesEyes {
+    WeyesEyes { // brooo ☢️☢️
         anchors.fill: parent
         visible: shell._cursorAvailable
         tracking: shell._cursorAvailable
+        tinted: shell.entryData.tinted ?? false
 
         targetX: shell.smoothedCursorX - (shell.hostScreen?.x ?? 0) - shell.localX
         targetY: shell.smoothedCursorY - (shell.hostScreen?.y ?? 0) - shell.localY

@@ -108,7 +108,7 @@ PanelWindow {
         id: editDim
         z: 1
         anchors.fill: parent
-        opacity: EditModeService.active ? 1 : 0
+        opacity: (EditModeService.active || EditModeService.settingsOpen) ? 1 : 0
         visible: opacity > 0
 
         Behavior on opacity {

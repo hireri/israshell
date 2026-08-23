@@ -7,6 +7,7 @@ Column {
     id: root
 
     required property string entryId
+    readonly property var entryData: DesktopWidgetService.entryFor(root.entryId)?.data ?? ({})
 
     readonly property real preferredWidth: 300
 
@@ -20,8 +21,8 @@ Column {
             label: Localization.t("backgroundPage.tinted")
             sublabel: Localization.t("backgroundPage.match_colors_to_the_system")
             isLast: true
-            checked: Config.weyes.tinted ?? false
-            onToggled: v => Config.update({ weyes: Object.assign({}, Config.weyes, { tinted: v }) })
+            checked: root.entryData.tinted ?? false
+            onToggled: v => DesktopWidgetService.updateEntryData(root.entryId, { tinted: v })
         }
     }
 }

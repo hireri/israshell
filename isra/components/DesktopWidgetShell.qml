@@ -107,6 +107,7 @@ Item {
 
     property bool _dragging: false
     property bool _resizing: false
+    property bool _shiftSnap: false
 
     readonly property bool gestureActive: root._dragging || root._resizing
     property real _liveX: 0
@@ -143,14 +144,16 @@ Item {
     readonly property real _pullFloorH: WidgetGrid.spanHeight(root.hostScreen, root.minSpan.h ?? 1) * 0.72
 
     readonly property rect _gestureBox: {
-        if (root.freeform)
+        if (root.freeform && !root._shiftSnap)
             return Qt.rect(root._liveX, root._liveY, root._liveW, root._liveH);
-        return Qt.rect(root.cellBox.x, root.cellBox.y, Math.max(root._pullFloorW, root._snapW + root._pullW), Math.max(root._pullFloorH, root._snapH + root._pullH));
+        return Qt.rect(root._liveX, root._liveY, Math.max(root._pullFloorW, root._snapW + root._pullW), Math.max(root._pullFloorH, root._snapH + root._pullH));
     }
 
     function _updatePull(): void {
         const t = root.targetPlacement;
-        const box = t ? root._fitBox(WidgetGrid.cellRect(root.hostScreen, t.col, t.row, t.w, t.h)) : root.cellBox;
+        // resize targets carry no real grid cell (only w/h) — col/row default to 0 here,
+        // but that's fine since only .width/.height of the box are ever read below
+        const box = t ? root._fitBox(WidgetGrid.cellRect(root.hostScreen, t.col ?? 0, t.row ?? 0, t.w, t.h)) : root.cellBox;
         const spanW = t ? t.w : root.placement.w;
         const spanH = t ? t.h : root.placement.h;
 
@@ -191,14 +194,26 @@ Item {
         onFinished: {
             root._resizing = false;
             root._interacting = false;
+            root._shiftSnap = false;
         }
     }
 
     readonly property real localSize: Math.min(root.bodyWidth, root.bodyHeight)
 
     readonly property var targetPlacement: {
-        if (root.freeform)
+        if (root.freeform) {
+            if (!root._shiftSnap)
+                return null;
+            if (root._dragging)
+                return { col: WidgetGrid.nearestCol(root.hostScreen, root._liveX), row: WidgetGrid.nearestRow(root.hostScreen, root._liveY), w: 0, h: 0 };
+            if (root._resizing) {
+                // no real grid cell for a resize — position stays wherever it was, only size snaps
+                const raw = WidgetGrid.spanFromPixels(root.hostScreen, root._liveW, root._liveH);
+                const span = root._clampSpan(raw.w, raw.h);
+                return { w: span.w, h: span.h };
+            }
             return null;
+        }
         if (root._dragging) {
             const want = WidgetGrid.clampCell(root.hostScreen, WidgetGrid.nearestCol(root.hostScreen, root._liveX), WidgetGrid.nearestRow(root.hostScreen, root._liveY), root.placement.w, root.placement.h);
             const free = WidgetGrid.nearestFreeCell(root.hostScreen, want.col, want.row, root.placement.w, root.placement.h, root.entryId);
@@ -386,6 +401,10 @@ Item {
         if (root._resizing)
             return root._gestureBox;
         const t = root.targetPlacement;
+        if (t && root.freeform) {
+            // a resize target has no grid cell (t.col is undefined) — position stays put, only size comes from the target
+            return t.col !== undefined ? Qt.rect(WidgetGrid.cellX(root.hostScreen, t.col), WidgetGrid.cellY(root.hostScreen, t.row), root.bodyWidth, root.bodyHeight) : Qt.rect(root.localX, root.localY, root.bodyWidth, root.bodyHeight);
+        }
         if (t)
             return root._fitBox(WidgetGrid.cellRect(root.hostScreen, t.col, t.row, t.w, t.h));
 
@@ -516,7 +535,7 @@ Item {
         movable: true
         resizable: true
         uniformScale: root.aspectLocked
-        animateTracking: !root.freeform && !root._resizing
+        animateTracking: root._placementSettled && !root._resizing && (!root.freeform || root._shiftSnap)
         cornerRadius: root.frameCornerRadius
 
         property real _startX: 0
@@ -635,30 +654,37 @@ Item {
         onMoveStarted: {
             root._interacting = true;
             root._releaseFromAutoPlacement();
+            root._shiftSnap = false;
             _startX = root.cellBox.x;
             _startY = root.cellBox.y;
             root._liveX = _startX;
             root._liveY = _startY;
             root._dragging = true;
         }
-        onMoveDelta: (dx, dy) => {
+        onMoveDelta: (dx, dy, snap) => {
+            root._shiftSnap = snap;
             root._liveX = editFrame._startX + dx;
             root._liveY = editFrame._startY + dy;
         }
         onMoveCommitted: {
             const target = root.targetPlacement;
-            if (root.freeform)
-                root._commitFreeform(root.localX, root.localY, root.bodyWidth, root.bodyHeight);
-            else if (target)
+            if (root.freeform) {
+                if (target)
+                    root._commitFreeform(WidgetGrid.cellX(root.hostScreen, target.col), WidgetGrid.cellY(root.hostScreen, target.row), root.bodyWidth, root.bodyHeight);
+                else
+                    root._commitFreeform(root.localX, root.localY, root.bodyWidth, root.bodyHeight);
+            } else if (target)
                 root._commitPlacement(target.col, target.row, target.w, target.h);
             root._dragging = false;
             root._interacting = false;
+            root._shiftSnap = false;
         }
 
         onResizeStarted: {
             pullSettle.stop();
             root._interacting = true;
             root._releaseFromAutoPlacement();
+            root._shiftSnap = false;
             _startX = root.cellBox.x;
             _startY = root.cellBox.y;
             root._liveX = _startX;
@@ -674,11 +700,13 @@ Item {
             root._snapW = _startWidth;
             root._snapH = _startHeight;
             root._snapInstant = false;
-            root._pullSpanW = root.placement.w;
-            root._pullSpanH = root.placement.h;
+            const startSpan = WidgetGrid.spanFromPixels(root.hostScreen, _startWidth, _startHeight);
+            root._pullSpanW = startSpan.w;
+            root._pullSpanH = startSpan.h;
             root._resizing = true;
         }
-        onResizeDelta: (dw, dh) => {
+        onResizeDelta: (dw, dh, snap) => {
+            root._shiftSnap = snap;
             let w = editFrame._startWidth + dw;
             let h = editFrame._startHeight + dh;
             if (root.aspectLocked) {
@@ -690,15 +718,25 @@ Item {
             const floorH = root.freeform ? root.minHeight : WidgetGrid.cellHeight(root.hostScreen) * 0.4;
             root._liveW = Math.max(floorW, w);
             root._liveH = Math.max(floorH, h);
-            if (!root.freeform)
+            if (!root.freeform || root._shiftSnap)
                 root._updatePull();
         }
         onResizeCommitted: {
             const target = root.targetPlacement;
             if (root.freeform) {
+                if (root._shiftSnap && target) {
+                    const w = WidgetGrid.spanWidth(root.hostScreen, target.w);
+                    const h = WidgetGrid.spanHeight(root.hostScreen, target.h);
+                    root._commitFreeform(root.localX, root.localY, w, h);
+                    root._snapW = w;
+                    root._snapH = h;
+                    pullSettle.restart();
+                    return;
+                }
                 root._commitFreeform(root.localX, root.localY, root.bodyWidth, root.bodyHeight);
                 root._resizing = false;
                 root._interacting = false;
+                root._shiftSnap = false;
                 return;
             }
             if (target)

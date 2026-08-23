@@ -9,7 +9,7 @@ Singleton {
     id: root
 
     readonly property var knownTypes: ["photo", "music", "weyes", "statring", "weather", "weathercard", "weatherscene", "pomodoro", "githubheatmap", "sunmoon", "fetchcard"]
-    readonly property var singletonTypes: ["music", "weyes", "weather", "weathercard", "weatherscene", "pomodoro", "fetchcard"]
+    readonly property var singletonTypes: ["music", "weather", "weathercard", "weatherscene", "pomodoro", "fetchcard"]
 
     readonly property var _capabilityByType: ({
         weyes: "cursorPosition"
@@ -49,7 +49,7 @@ Singleton {
     readonly property var _defaultsByType: ({
         photo: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 2, h: 2 }, data: { imagePath: "", shape: "circle" } },
         music: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 2, h: 2 }, data: { buttonScale: 0.28 } },
-        weyes: { enabled: true, mirror: true, x: 100, y: 100, width: 220, height: 120, positions: {}, data: {} },
+        weyes: { enabled: true, mirror: true, x: 100, y: 100, width: 220, height: 120, positions: {}, data: { tinted: false } },
         statring: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 2, h: 2 }, data: { metric: "cpu" } },
         weather: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 3, h: 3 }, data: {} },
         weathercard: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 5, h: 3 }, data: {} },
@@ -209,11 +209,21 @@ Singleton {
 
         let entry;
         if (root.isFreeformType(type)) {
-            entry = Object.assign({}, defaults, base, { positions: {} });
+            const cascade = root.countOf(type) * 24;
+            const ref = root.referenceScreen;
+            const baseX = ref ? Math.round((ref.width - (defaults.width ?? 220)) / 2) : defaults.x;
+            const baseY = ref ? Math.round((ref.height - (defaults.height ?? 120)) / 2) : defaults.y;
+            entry = Object.assign({}, defaults, base, {
+                x: baseX + cascade,
+                y: baseY + cascade,
+                positions: {}
+            });
         } else {
             const target = screen ?? root.referenceScreen;
             const span = defaults.span ?? { w: 2, h: 2 };
-            const cell = WidgetGrid.firstFreeCell(target, span.w, span.h, null);
+            const centerCol = Math.floor((WidgetGrid.columns(target) - span.w) / 2);
+            const centerRow = Math.floor((WidgetGrid.rows(target) - span.h) / 2);
+            const cell = WidgetGrid.nearestFreeCell(target, centerCol, centerRow, span.w, span.h, null) ?? WidgetGrid.firstFreeCell(target, span.w, span.h, null);
             entry = Object.assign({}, defaults, base, {
                 screen: target?.name ?? null,
                 cell: { col: cell.col, row: cell.row },

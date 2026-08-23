@@ -39,7 +39,7 @@ Singleton {
             label: Localization.t("widgetDrawer.weyes"),
             icon: "visibility",
             preview: weyesPreview,
-            stackable: false
+            stackable: true
         },
         {
             type: "statring",

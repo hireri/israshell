@@ -248,9 +248,6 @@ Singleton {
             ringAmplitude: 4,
             outlineWidth: 2
         })
-    property var weyes: ({
-            tinted: false
-        })
     property var neko: ({
             enabled: false,
             size: 32,
@@ -459,9 +456,6 @@ Singleton {
                 ringAmplitude: 4,
                 outlineWidth: 2
             },
-            weyes: {
-                tinted: false
-            },
             neko: {
                 enabled: false,
                 size: 32,
@@ -555,8 +549,13 @@ Singleton {
             result.quickSettingsTiles = QsTileService.reconcile(result.quickSettingsTiles);
 
         if (result.desktopWidgets) {
-            result.desktopWidgets = DesktopWidgetService.reconcile(result.desktopWidgets);
-            result.weyes = { tinted: result.weyes?.tinted ?? false };
+            const legacyTinted = data.weyes?.tinted ?? false;
+            const migrated = result.desktopWidgets.map(w => {
+                if (!w || w.type !== "weyes" || (w.data && w.data.tinted !== undefined))
+                    return w;
+                return Object.assign({}, w, { data: Object.assign({}, w.data, { tinted: legacyTinted }) });
+            });
+            result.desktopWidgets = DesktopWidgetService.reconcile(migrated);
         }
 
         if (result.pomodoro) {

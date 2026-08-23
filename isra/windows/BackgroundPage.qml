@@ -14,6 +14,8 @@ PageBase {
     title: Localization.t("settingsWindow.background")
     subtitle: Localization.t("settingsWindow.effects_wallpaper_widgets")
 
+    Component.onDestruction: if (gridHover.hovered) EditModeService.settingsPanelClosed()
+
     function titleCase(str) {
         return str.split(/[-_ ]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
     }
@@ -75,6 +77,11 @@ PageBase {
             unit: "px"
             value: Config.desktopGrid?.margin ?? 24
             onMoved: v => gridCard.updateGrid({ margin: Math.round(v) })
+        }
+
+        HoverHandler {
+            id: gridHover
+            onHoveredChanged: gridHover.hovered ? EditModeService.settingsPanelOpened() : EditModeService.settingsPanelClosed()
         }
     }
 
