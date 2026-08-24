@@ -517,108 +517,19 @@ PageBase {
                 Layout.fillWidth: true
                 spacing: 16
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 0
-                    spacing: 6
-
-                    Text {
-                        text: Localization.t("backgroundPage.main_color")
-                        font.family: Config.fontFamily
-                        font.pixelSize: 11
-                        font.weight: Font.Medium
-                        color: Colors.md3.outline
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
-
-                        Repeater {
-                            model: ["primary", "secondary", "tertiary", "on_surface"]
-                            delegate: Rectangle {
-                                required property string modelData
-                                required property int index
-
-                                readonly property int  lastIndex:  3
-                                readonly property bool isFirst:    index === 0
-                                readonly property bool isLast:     index === lastIndex
-                                readonly property bool isSelected: Config.clock.colorRole === modelData
-
-                                Layout.fillWidth: true
-                                height: 28
-                                color: Colors.md3[modelData] ?? Colors.md3.primary
-
-                                topLeftRadius:     isFirst    ? 14 : (isSelected ? 14 : 6)
-                                topRightRadius:    isLast     ? 14 : (isSelected ? 14 : 6)
-                                bottomLeftRadius:  isFirst    ? 14 : (isSelected ? 14 : 6)
-                                bottomRightRadius: isLast     ? 14 : (isSelected ? 14 : 6)
-
-                                Behavior on topLeftRadius     { NumberAnimation { duration: 150 } }
-                                Behavior on topRightRadius    { NumberAnimation { duration: 150 } }
-                                Behavior on bottomLeftRadius  { NumberAnimation { duration: 150 } }
-                                Behavior on bottomRightRadius { NumberAnimation { duration: 150 } }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: updateClock({ colorRole: modelData })
-                                }
-                            }
-                        }
-                    }
+                ColorRoleStrip {
+                    label: Localization.t("backgroundPage.main_color")
+                    roles: ["primary", "secondary", "tertiary", "on_surface"]
+                    selected: Config.clock.colorRole
+                    onPicked: role => updateClock({ colorRole: role })
                 }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 0
-                    spacing: 6
-
-                    Text {
-                        text: Localization.t("backgroundPage.accent_color")
-                        font.family: Config.fontFamily
-                        font.pixelSize: 11
-                        font.weight: Font.Medium
-                        color: Colors.md3.outline
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
-
-                        Repeater {
-                            model: ["primary", "secondary", "tertiary", "on_surface"]
-                            delegate: Rectangle {
-                                required property string modelData
-                                required property int index
-
-                                readonly property int  lastIndex:  3
-                                readonly property bool isFirst:    index === 0
-                                readonly property bool isLast:     index === lastIndex
-                                readonly property bool isSelected: Config.clock.subColorRole === modelData
-
-                                Layout.fillWidth: true
-                                height: 28
-                                color: Colors.md3[modelData] ?? Colors.md3.secondary
-
-                                topLeftRadius:     isFirst    ? 14 : (isSelected ? 14 : 6)
-                                topRightRadius:    isLast     ? 14 : (isSelected ? 14 : 6)
-                                bottomLeftRadius:  isFirst    ? 14 : (isSelected ? 14 : 6)
-                                bottomRightRadius: isLast     ? 14 : (isSelected ? 14 : 6)
-
-                                Behavior on topLeftRadius     { NumberAnimation { duration: 150 } }
-                                Behavior on topRightRadius    { NumberAnimation { duration: 150 } }
-                                Behavior on bottomLeftRadius  { NumberAnimation { duration: 150 } }
-                                Behavior on bottomRightRadius { NumberAnimation { duration: 150 } }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: updateClock({ subColorRole: modelData })
-                                }
-                            }
-                        }
-                    }
+                ColorRoleStrip {
+                    label: Localization.t("backgroundPage.accent_color")
+                    roles: ["primary", "secondary", "tertiary", "on_surface"]
+                    selected: Config.clock.subColorRole
+                    fallback: Colors.md3.secondary
+                    onPicked: role => updateClock({ subColorRole: role })
                 }
             }
         }

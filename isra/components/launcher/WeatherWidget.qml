@@ -4,6 +4,7 @@ import Quickshell
 import qs.style
 import qs.icons
 import qs.services
+import qs.components
 
 Item {
     id: root
@@ -246,180 +247,38 @@ Item {
             }
         }
 
-        Grid {
-            id: weatherGrid
+        WeatherStatGrid {
             width: parent.width
-            columns: 3
-            spacing: 4
+            fontSize: root.type.bodySmall
+            cornerSmall: root.shape.extraSmall
+            cornerLarge: root.shape.medium
 
-            readonly property real cellWidth: (width - spacing * 2) / 3
-            readonly property real cellHeight: 26
+            iconFor: key => ({
+                    uvi: "heat",
+                    humidity: "water-drop",
+                    aqi: "air",
+                    feelsLike: "thermostat",
+                    rain: "umbrella",
+                    astro: root.weatherData.astroIcon
+                })[key]
 
-            Rectangle {
-                width: weatherGrid.cellWidth
-                height: weatherGrid.cellHeight
-                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                radius: root.shape.extraSmall
-                topLeftRadius: root.shape.medium
+            iconColorFor: key => ({
+                    uvi: root.weatherColor.heat,
+                    humidity: root.weatherColor.humidity,
+                    aqi: root.weatherColor.air,
+                    feelsLike: Colors.md3.primary,
+                    rain: root.weatherColor.rain,
+                    astro: root.weatherData.astroColor
+                })[key]
 
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 6
-
-                    MaterialIcon {
-                        name: "heat"
-                        iconSize: 14
-                        color: root.weatherColor.heat
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: Localization.t("weather.uvi_value").arg(root.weatherData.uvi)
-                        color: Colors.md3.on_surface_variant
-                        font.family: Config.fontFamily
-                        font.pixelSize: root.type.bodySmall
-                        font.weight: Font.Medium
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-            }
-
-            Rectangle {
-                width: weatherGrid.cellWidth
-                height: weatherGrid.cellHeight
-                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                radius: root.shape.extraSmall
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 6
-
-                    MaterialIcon {
-                        name: "water-drop"
-                        iconSize: 14
-                        color: root.weatherColor.humidity
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: root.weatherData.humidity
-                        color: Colors.md3.on_surface_variant
-                        font.family: Config.fontFamily
-                        font.pixelSize: root.type.bodySmall
-                        font.weight: Font.Medium
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-            }
-
-            Rectangle {
-                width: weatherGrid.cellWidth
-                height: weatherGrid.cellHeight
-                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                radius: root.shape.extraSmall
-                topRightRadius: root.shape.medium
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 6
-
-                    MaterialIcon {
-                        name: "air"
-                        iconSize: 14
-                        color: root.weatherColor.air
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: Localization.t("weather.aqi_value").arg(root.weatherData.aqi)
-                        color: Colors.md3.on_surface_variant
-                        font.family: Config.fontFamily
-                        font.pixelSize: root.type.bodySmall
-                        font.weight: Font.Medium
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-            }
-
-            Rectangle {
-                width: weatherGrid.cellWidth
-                height: weatherGrid.cellHeight
-                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                radius: root.shape.extraSmall
-                bottomLeftRadius: root.shape.medium
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 6
-
-                    MaterialIcon {
-                        name: "thermostat"
-                        iconSize: 14
-                        color: Colors.md3.primary
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: Localization.t("weather.feels_like_value").arg(root.weatherData.feelsLike)
-                        color: Colors.md3.on_surface_variant
-                        font.family: Config.fontFamily
-                        font.pixelSize: root.type.bodySmall
-                        font.weight: Font.Medium
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-            }
-
-            Rectangle {
-                width: weatherGrid.cellWidth
-                height: weatherGrid.cellHeight
-                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                radius: root.shape.extraSmall
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 6
-
-                    MaterialIcon {
-                        name: "umbrella"
-                        iconSize: 14
-                        color: root.weatherColor.rain
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: root.weatherData.rainChance
-                        color: Colors.md3.on_surface_variant
-                        font.family: Config.fontFamily
-                        font.pixelSize: root.type.bodySmall
-                        font.weight: Font.Medium
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-            }
-
-            Rectangle {
-                width: weatherGrid.cellWidth
-                height: weatherGrid.cellHeight
-                color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                radius: root.shape.extraSmall
-                bottomRightRadius: root.shape.medium
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 6
-
-                    MaterialIcon {
-                        name: root.weatherData.astroIcon
-                        iconSize: 14
-                        color: root.weatherData.astroColor
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    Text {
-                        text: root.weatherData.astroTime
-                        color: Colors.md3.on_surface_variant
-                        font.family: Config.fontFamily
-                        font.pixelSize: root.type.bodySmall
-                        font.weight: Font.Medium
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-            }
+            textFor: key => ({
+                    uvi: Localization.t("weather.uvi_value").arg(root.weatherData.uvi),
+                    humidity: root.weatherData.humidity,
+                    aqi: Localization.t("weather.aqi_value").arg(root.weatherData.aqi),
+                    feelsLike: Localization.t("weather.feels_like_value").arg(root.weatherData.feelsLike),
+                    rain: root.weatherData.rainChance,
+                    astro: root.weatherData.astroTime
+                })[key]
         }
     }
 }

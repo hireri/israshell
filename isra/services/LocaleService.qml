@@ -54,9 +54,6 @@ Singleton {
     readonly property bool aqiLoading: _aqiLoading
     readonly property string aqiError: _aqiError
 
-    // Needed to flip the moon terminator in the southern hemisphere, and for
-    // moonrise/moonset (see components/moon-ephemeris.js). Both default to
-    // 0.0 until geolocation resolves.
     readonly property real latitude: _lat
     readonly property real longitude: _lon
 
@@ -254,8 +251,6 @@ Singleton {
         return new Date(year, month, day, hour, minute, 0, 0);
     }
 
-    // Public wrapper so other components format a Date consistently with
-    // Config.hourFormat instead of duplicating the am/pm logic themselves.
     function formatClockTime(date) {
         return root._formatAstroTime(date);
     }

@@ -8,17 +8,14 @@ import qs.components
 Singleton {
     id: root
 
-    readonly property var knownTypes: ["photo", "music", "weyes", "statring", "weather", "weathercard", "weatherscene", "pomodoro", "githubheatmap", "sunmoon", "fetchcard"]
     readonly property var singletonTypes: ["music", "weather", "weathercard", "weatherscene", "pomodoro", "fetchcard"]
 
     readonly property var _capabilityByType: ({
         weyes: "cursorPosition"
     })
 
-    readonly property var freeformTypes: ["weyes"]
-
     function isFreeformType(type) {
-        return root.freeformTypes.indexOf(type) !== -1;
+        return type === "weyes";
     }
 
     function isFreeform(entry) {
@@ -37,7 +34,7 @@ Singleton {
     }
 
     function canAddInstance(type) {
-        if (root.knownTypes.indexOf(type) === -1)
+        if (!root.defaultsFor(type))
             return false;
         if (!root.isAvailable(type))
             return false;
@@ -349,7 +346,7 @@ Singleton {
         for (const raw of list) {
             if (!raw || typeof raw !== "object")
                 continue;
-            if (root.knownTypes.indexOf(raw.type) === -1)
+            if (!root.defaultsFor(raw.type))
                 continue;
             if (root.isSingleton(raw.type)) {
                 if (seenSingletonTypes.has(raw.type))

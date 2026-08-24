@@ -62,10 +62,7 @@ Item {
     }
 
     Component.onCompleted: Qt.callLater(() => {
-        if (root.registry && root.panelWindow?.screen)
-            root.registry[root.panelWindow.screen.name] = root;
-        if (root.controllerRegistry)
-            root.controllerRegistry[root.panelType] = root;
+        PanelService.register(root, root.controllerRegistry, root.registry, root.panelWindow?.screen?.name ?? "");
     })
 
     Rectangle {

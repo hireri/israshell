@@ -36,7 +36,7 @@ notify-send -u low -i software-update-available -a "QuickShell" -t 4000 \
 
 setsid bash -c '
     sleep 0.5
-    kill $(pidof quickshell) 2>/dev/null || true
+    qs kill -c isra 2>/dev/null || true
     sleep 0.2
     qs -n -c isra
 ' >/dev/null 2>&1 &

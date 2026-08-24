@@ -3,7 +3,7 @@
 finds the least busy wallpaper region for the clock widget
 
 Usage:
-leastbusy.py <image> --monitor NAME:WxH [--monitor NAME:WxH ...] [--clock-w N] [--clock-h N] [--visualize]
+leastbusy.py <image> --monitor NAME:WxH [--monitor NAME:WxH ...] [--clock-w N] [--clock-h N]
 
 Output (stdout, one line per monitor):
 DP-2=1847,112
@@ -69,7 +69,7 @@ def score_image(image_path, brightness_weight: float = 0.5, mode: str = "dark"):
     pad = np.zeros((small_h + 1, small_w + 1), dtype=np.float32)
     pad[1:, 1:] = integ
 
-    return small_w, small_h, scores, pad
+    return small_w, small_h, pad
 
 
 def best_center(pad, small_w, small_h, screen_w, screen_h, clock_w, clock_h):
@@ -85,40 +85,6 @@ def best_center(pad, small_w, small_h, screen_w, screen_h, clock_w, clock_h):
     cx = int((bc + box_w / 2) / small_w * screen_w)
     cy = int((br + box_h / 2) / small_h * screen_h)
     return cx, cy
-
-
-def _debug(image_path, scores, small_w, small_h, results, clock_w, clock_h):
-    try:
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as patches
-    except ImportError:
-        print("# visualize requires matplotlib", file=sys.stderr)
-        return
-    img = Image.open(image_path).convert(
-        "RGB").resize((small_w, small_h), Image.BOX)
-    box_w = max(1, int(clock_w * small_w / results[0][2]))
-    box_h = max(1, int(clock_h * small_h / results[0][3]))
-    fig, ax = plt.subplots(1, 2, figsize=(14, 5))
-    fig.suptitle("Clock placement thing chart")
-    ax[0].imshow(img)
-    ax[0].set_title("Original")
-    ax[0].axis("off")
-    ax[1].imshow(img, alpha=0.55)
-    ax[1].imshow(scores, cmap="hot", alpha=0.45)
-    for name, cx_s, sw, sh in results:
-        cx_s2 = int(cx_s / sw * small_w)
-        cy_s2 = int(results[0][1] / sh * small_h)
-        ax[1].add_patch(patches.Rectangle((cx_s2 - box_w//2, cy_s2 - box_h//2),
-                        box_w, box_h, lw=2, edgecolor="cyan", facecolor="none"))
-        ax[1].annotate(name, (cx_s2, cy_s2), color="cyan",
-                       fontsize=8, ha="center")
-    ax[1].set_title("Score + spots")
-    ax[1].axis("off")
-    out = Path(image_path).with_suffix(".clock_debug.png")
-    plt.tight_layout()
-    plt.savefig(out, dpi=120, bbox_inches="tight")
-    plt.close(fig)
-    print(f"# debug 👉 {out}", file=sys.stderr)
 
 
 def get_monitors():
@@ -157,7 +123,6 @@ def main():
                    help="Override monitor list (NAME:WxH). Defaults to hyprctl monitors.")
     p.add_argument("--clock-w", type=int, default=200)
     p.add_argument("--clock-h", type=int, default=80)
-    p.add_argument("--visualize", action="store_true")
     p.add_argument("--mode", choices=["dark", "light"], default="dark",
                    help="Mode: 'dark' avoids bright spots, 'light' avoids dark spots.")
     p.add_argument("--brightness-weight", type=float, default=0.5,
@@ -183,19 +148,13 @@ def main():
     else:
         monitors = get_monitors()
 
-    small_w, small_h, scores, pad = score_image(
+    small_w, small_h, pad = score_image(
         a.image, a.brightness_weight, a.mode)
 
-    debug_results = []
     for name, sw, sh in monitors:
         cx, cy = best_center(pad, small_w, small_h, sw,
                              sh, a.clock_w, a.clock_h)
         print(f"{name}={cx},{cy}")
-        debug_results.append((name, cx, sw, sh))
-
-    if a.visualize:
-        _debug(a.image, scores, small_w, small_h,
-               debug_results, a.clock_w, a.clock_h)
 
 
 if __name__ == "__main__":

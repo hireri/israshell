@@ -45,7 +45,6 @@ songrec
 python-numpy
 python-pillow
 python-scipy
-python-matplotlib
 python-gtts
 # Fonts
 inter-font

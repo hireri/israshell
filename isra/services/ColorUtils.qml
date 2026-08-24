@@ -5,11 +5,6 @@ import QtQuick
 Singleton {
     id: root
 
-    function withAlpha(color, alpha) {
-        const c = Qt.color(color);
-        return Qt.rgba(c.r, c.g, c.b, Math.max(0, Math.min(1, alpha)));
-    }
-
     function hueShift(color, degrees) {
         const c = Qt.color(color);
         let h = c.hslHue + degrees / 360.0;

@@ -9,7 +9,6 @@ Singleton {
     property bool showSeconds: false
     property int hourFormat: 0
     property int dateOrder: 0
-    property bool stackedSliders: false
     property int carouselSpeed: 30
     property string fontFamily: "Inter"
     property string fontMonospace: "Roboto Mono"
@@ -23,7 +22,7 @@ Singleton {
     property real blurOpacity: 1
 
     function dim(color) {
-        return ColorUtils.withAlpha(color, blurOpacity);
+        return Qt.alpha(color, Math.max(0, Math.min(1, blurOpacity)));
     }
 
     function blurAllowed(visible) {
@@ -290,7 +289,6 @@ Singleton {
     function __defaults() {
         return {
             showSeconds: false,
-            stackedSliders: false,
             hourFormat: 0,
             dateOrder: 0,
             carouselSpeed: 30,

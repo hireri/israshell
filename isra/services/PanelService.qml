@@ -29,6 +29,13 @@ Singleton {
         }
     }
 
+    function register(panel: var, controllerRegistry: var, screenRegistry: var, screenName: string): void {
+        if (screenRegistry && screenName)
+            screenRegistry[screenName] = panel;
+        if (controllerRegistry && panel.panelType)
+            controllerRegistry[panel.panelType] = panel;
+    }
+
     function modeOpened(mode: var): void {
         if (root.currentMode === mode)
             return;

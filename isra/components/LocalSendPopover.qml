@@ -32,10 +32,7 @@ Item {
         filePicker.open();
     }
 
-    Component.onCompleted: {
-        if (root.controllerRegistry)
-            root.controllerRegistry[root.panelType] = root;
-    }
+    Component.onCompleted: PanelService.register(root, root.controllerRegistry, null, "")
 
     Labs.FileDialog {
         id: filePicker

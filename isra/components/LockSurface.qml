@@ -600,168 +600,17 @@ Item {
                     NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
                 }
 
-                property real displayProgress: 0
-                readonly property var displayPlayer: leftPill.player
-
-                function syncProgress() {
-                    if (trackResetAnim.running) return;
-                    const p = displayPlayer;
-                    if (!p || !p.length || p.length <= 0) {
-                        displayProgress = 0;
-                        return;
-                    }
-                    const target = Math.min(1.0, Math.max(0.0, p.position / p.length));
-                    if (target < displayProgress - 0.05) {
-                        animateResetTo(target);
-                    } else {
-                        displayProgress = target;
-                    }
+                MprisProgress {
+                    id: coverProgress
+                    player: leftPill.player
+                    active: root.visible
                 }
 
-                function animateResetTo(targetVal) {
-                    trackResetAnim.stop();
-                    trackResetAnim.to = targetVal;
-                    trackResetAnim.start();
-                }
-
-                NumberAnimation {
-                    id: trackResetAnim
-                    target: coverArt
-                    property: "displayProgress"
-                    duration: 380
-                    easing.type: Easing.OutCubic
-                }
-
-                Connections {
-                    target: MediaPlayerState
-                    function onDisplayPlayerChanged() {
-                        coverArt.animateResetTo(0);
-                    }
-                }
-
-                Connections {
-                    target: leftPill.player ?? null
-                    function onTrackTitleChanged() {
-                        coverArt.animateResetTo(0);
-                    }
-                    function onPositionChanged() {
-                        coverArt.syncProgress();
-                    }
-                }
-
-                Timer {
-                    id: smoothPosTimer
-                    interval: 16
-                    repeat: true
-                    running: root.visible && coverArt.displayPlayer !== null && coverArt.displayPlayer.playbackState === MprisPlaybackState.Playing && !trackResetAnim.running
-                    onTriggered: {
-                        if (coverArt.displayPlayer) {
-                            coverArt.displayPlayer.positionChanged();
-                            coverArt.syncProgress();
-                        }
-                    }
-                }
-
-                Canvas {
-                    id: progressRing
+                ProgressRing {
                     anchors.fill: parent
-                    antialiasing: true
-
-                    readonly property real progress: coverArt.displayProgress
-
-                    onProgressChanged: requestPaint()
-
-                    Connections {
-                        target: coverArt
-                        function onRingStrokeWidthChanged() {
-                            progressRing.requestPaint();
-                        }
-                    }
-
-                    onPaint: {
-                        const ctx = getContext("2d");
-                        ctx.reset();
-                        const strokeWidth = coverArt.ringStrokeWidth;
-                        if (strokeWidth <= 0.01) return;
-
-                        const centerX = width / 2;
-                        const centerY = height / 2;
-                        const radius = (Math.min(width, height) - strokeWidth) / 2;
-
-                        if (radius <= 0) return;
-
-                        const activeColor = Colors.md3.primary;
-                        const trackColor = Qt.alpha(Colors.md3.primary, 0.25);
-
-                        const topAngle = -Math.PI / 2;
-                        const fullGap = 10 * (Math.PI / 180);
-                        const halfFullGap = fullGap / 2;
-
-                        const p = Math.max(0, Math.min(1, progress));
-                        const pMin = 0.03;
-                        const minArcAngle = 0.04;
-
-                        const activeAlpha = Math.min(1.0, Math.max(0.0, p / pMin));
-                        const remainingAlpha = Math.min(1.0, Math.max(0.0, (1 - p) / pMin));
-
-                        let dynamicGap = fullGap;
-                        if (p < pMin) {
-                            dynamicGap = fullGap * (p / pMin);
-                        } else if (p > 1 - pMin) {
-                            dynamicGap = fullGap * ((1 - p) / pMin);
-                        }
-                        const halfDynamicGap = dynamicGap / 2;
-
-                        const progressAngle = p * 2 * Math.PI;
-
-                        if (activeAlpha > 0) {
-                            ctx.save();
-                            ctx.globalAlpha = activeAlpha;
-
-                            const activeStart = topAngle + halfFullGap;
-                            let activeEnd = topAngle + progressAngle - halfDynamicGap;
-
-                            if (p >= 0.995) {
-                                activeEnd = topAngle + 2 * Math.PI - halfFullGap;
-                            } else if (activeEnd - activeStart < minArcAngle) {
-                                activeEnd = activeStart + minArcAngle;
-                            }
-
-                            if (activeEnd > activeStart) {
-                                ctx.beginPath();
-                                ctx.arc(centerX, centerY, radius, activeStart, activeEnd);
-                                ctx.strokeStyle = activeColor;
-                                ctx.lineWidth = strokeWidth;
-                                ctx.lineCap = "round";
-                                ctx.stroke();
-                            }
-                            ctx.restore();
-                        }
-
-                        if (remainingAlpha > 0) {
-                            ctx.save();
-                            ctx.globalAlpha = remainingAlpha;
-
-                            let remainingStart = topAngle + progressAngle + halfDynamicGap;
-                            const remainingEnd = topAngle + 2 * Math.PI - halfFullGap;
-
-                            if (p <= 0.005) {
-                                remainingStart = topAngle + halfFullGap;
-                            } else if (remainingEnd - remainingStart < minArcAngle) {
-                                remainingStart = remainingEnd - minArcAngle;
-                            }
-
-                            if (remainingEnd > remainingStart) {
-                                ctx.beginPath();
-                                ctx.arc(centerX, centerY, radius, remainingStart, remainingEnd);
-                                ctx.strokeStyle = trackColor;
-                                ctx.lineWidth = strokeWidth;
-                                ctx.lineCap = "round";
-                                ctx.stroke();
-                            }
-                            ctx.restore();
-                        }
-                    }
+                    progress: coverProgress.progress
+                    strokeWidth: coverArt.ringStrokeWidth
+                    gapDegrees: 10
                 }
 
                 ClippingRectangle {

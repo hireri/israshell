@@ -121,7 +121,7 @@ Item {
                 exclusionMode: ExclusionMode.Ignore
                 WlrLayershell.layer: WlrLayer.Overlay
                 WlrLayershell.namespace: "quickshell:aiassistant"
-                WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+                WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
                 readonly property bool blurEnabled: Config.blurAllowed()
 

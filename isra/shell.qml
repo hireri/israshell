@@ -268,7 +268,7 @@ ShellRoot {
 
                 WlrLayershell.namespace: "quickshell:bar"
                 WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
-                WlrLayershell.keyboardFocus: ownsOpenMergedPanel ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+                WlrLayershell.keyboardFocus: ownsOpenMergedPanel ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
                 BackgroundEffect.blurRegion: Config.blurAllowed() ? fullBlurRegion : null
 

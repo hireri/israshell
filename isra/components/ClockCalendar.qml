@@ -263,210 +263,39 @@ Item {
                     }
                 }
 
-                Grid {
-                    id: weatherGrid
+                WeatherStatGrid {
                     width: parent.width
-                    columns: 3
-                    spacing: 4
+                    fontSize: root.type.bodySmall
+                    cornerSmall: root.shape.extraSmall
+                    cornerLarge: root.shape.medium
+                    colorDuration: root.motion.short4
 
-                    readonly property real cellWidth: (width - spacing * 2) / 3
-                    readonly property real cellHeight: 26
+                    iconFor: key => ({
+                            uvi: "heat",
+                            humidity: "water-drop",
+                            aqi: "air",
+                            feelsLike: "thermostat",
+                            rain: "umbrella",
+                            astro: LocaleService.activeAstroMaterialIcon
+                        })[key]
 
-                    Rectangle {
-                        width: weatherGrid.cellWidth
-                        height: weatherGrid.cellHeight
-                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                        radius: root.shape.extraSmall
-                        topLeftRadius: root.shape.medium
+                    iconColorFor: key => ({
+                            uvi: root.weatherColor.heat,
+                            humidity: root.weatherColor.humidity,
+                            aqi: root.weatherColor.air,
+                            feelsLike: Colors.md3.primary,
+                            rain: root.weatherColor.rain,
+                            astro: LocaleService.activeAstroColorType === "moon" ? Colors.md3.primary : root.weatherColor.sun
+                        })[key]
 
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            MaterialIcon {
-                                name: "heat"
-                                iconSize: 14
-                                color: root.weatherColor.heat
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            Text {
-                                text: Localization.t("weather.uvi_value").arg(LocaleService.weatherUvi)
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: root.type.bodySmall
-                                font.weight: Font.Medium
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: root.motion.short4
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        width: weatherGrid.cellWidth
-                        height: weatherGrid.cellHeight
-                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                        radius: root.shape.extraSmall
-
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            MaterialIcon {
-                                name: "water-drop"
-                                iconSize: 14
-                                color: root.weatherColor.humidity
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            Text {
-                                text: LocaleService.weatherHumid
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: root.type.bodySmall
-                                font.weight: Font.Medium
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: root.motion.short4
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        width: weatherGrid.cellWidth
-                        height: weatherGrid.cellHeight
-                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                        radius: root.shape.extraSmall
-                        topRightRadius: root.shape.medium
-
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            MaterialIcon {
-                                name: "air"
-                                iconSize: 14
-                                color: root.weatherColor.air
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            Text {
-                                text: Localization.t("weather.aqi_value").arg(LocaleService.weatherAqi)
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: root.type.bodySmall
-                                font.weight: Font.Medium
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: root.motion.short4
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        width: weatherGrid.cellWidth
-                        height: weatherGrid.cellHeight
-                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                        radius: root.shape.extraSmall
-                        bottomLeftRadius: root.shape.medium
-
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            MaterialIcon {
-                                name: "thermostat"
-                                iconSize: 14
-                                color: Colors.md3.primary
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            Text {
-                                text: Localization.t("weather.feels_like_value").arg(LocaleService.weatherFeelsLike)
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: root.type.bodySmall
-                                font.weight: Font.Medium
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: root.motion.short4
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        width: weatherGrid.cellWidth
-                        height: weatherGrid.cellHeight
-                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                        radius: root.shape.extraSmall
-
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            MaterialIcon {
-                                name: "umbrella"
-                                iconSize: 14
-                                color: root.weatherColor.rain
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            Text {
-                                text: LocaleService.weatherRainChance
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: root.type.bodySmall
-                                font.weight: Font.Medium
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: root.motion.short4
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        width: weatherGrid.cellWidth
-                        height: weatherGrid.cellHeight
-                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                        radius: root.shape.extraSmall
-                        bottomRightRadius: root.shape.medium
-
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            MaterialIcon {
-                                name: LocaleService.activeAstroMaterialIcon
-                                iconSize: 14
-                                color: LocaleService.activeAstroColorType === "moon" ? Colors.md3.primary : root.weatherColor.sun
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            Text {
-                                text: LocaleService.activeAstroTime.replace(" AM", "").replace(" PM", "").replace(" am", "").replace(" pm", "")
-                                color: Colors.md3.on_surface_variant
-                                font.family: Config.fontFamily
-                                font.pixelSize: root.type.bodySmall
-                                font.weight: Font.Medium
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: root.motion.short4
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    textFor: key => ({
+                            uvi: Localization.t("weather.uvi_value").arg(LocaleService.weatherUvi),
+                            humidity: LocaleService.weatherHumid,
+                            aqi: Localization.t("weather.aqi_value").arg(LocaleService.weatherAqi),
+                            feelsLike: Localization.t("weather.feels_like_value").arg(LocaleService.weatherFeelsLike),
+                            rain: LocaleService.weatherRainChance,
+                            astro: LocaleService.activeAstroTime.replace(" AM", "").replace(" PM", "").replace(" am", "").replace(" pm", "")
+                        })[key]
                 }
             }
 
