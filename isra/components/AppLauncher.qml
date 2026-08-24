@@ -1,26 +1,19 @@
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
-import Quickshell.Widgets
 import QtQuick
-import QtQuick.Effects
-import qs.components.launcher
-import qs.style
 import qs.services
 
 Scope {
     id: root
 
     readonly property bool isLauncher: true
-
+    readonly property string panelType: "launcher"
     property bool isOpen: false
     property bool _opening: false
-    property bool _animating: false
     property var _targetScreen: null
+    property string _pendingPrefix: ""
 
     onIsOpenChanged: isOpen ? PanelService.opened(root, root._targetScreen) : PanelService.closed(root)
-
-    readonly property var _visual: visualLoader.item
 
     function _findFocusedScreen() {
         const hm = CompositorService.focusedMonitor;
@@ -432,13 +425,15 @@ Scope {
         }
     }
 
+    function _reloadClipboard() {
+        clipLoader.running = false;
+        clipLoader.running = true;
+    }
+
     onModeChanged: {
-        const v = _visual;
-        if (v) v.launcherList.resetToTop();
         if (mode === "clipboard") {
             _clipEntries = [];
-            clipLoader.running = false;
-            clipLoader.running = true;
+            _reloadClipboard();
         }
         if (mode === "emoji" && !root._emojiLoaded)
             emojiLoader.running = true;
@@ -448,6 +443,8 @@ Scope {
         if (widgetType === "kaomoji" && !root._kaomojiLoaded)
             kaomojiLoader.running = true;
     }
+
+    property alias unifiedModel: unifiedModel
 
     ScriptModel {
         id: unifiedModel
@@ -597,40 +594,19 @@ Scope {
 
     function open(prefix) {
         _targetScreen = _findFocusedScreen();
-        _animating = false;
         _opening = true;
-        isOpen = true;
-
-        Qt.callLater(() => {
-            const v = _visual;
-            if (!v) return;
-            v.closeAnim.stop();
-            v.stack.opacity = 1.0;
-            v.stack.scale = 1.0;
-            v.launcherInput.reset();
-            if (prefix !== "")
-                v.launcherInput.prefill(prefix);
-            Qt.callLater(() => {
-                const v2 = _visual;
-                if (!v2) return;
-                v2.launcherInput.forceInputFocus();
-                v2.launcherList.resetToTop();
-            });
-        });
+        _pendingPrefix = prefix;
+        if (root.isOpen)
+            PanelService.opened(root, root._targetScreen);
+        else
+            isOpen = true;
         openGuard.restart();
     }
 
     function close() {
-        if (_animating)
+        if (!root.isOpen)
             return;
-        _animating = true;
-        const v = _visual;
-        if (v)
-            v.closeAnim.start();
-        else {
-            isOpen = false;
-            _animating = false;
-        }
+        isOpen = false;
     }
 
     Timer {
@@ -642,7 +618,7 @@ Scope {
     IpcHandler {
         target: "launcher"
         function toggle(): void {
-            if (root.isOpen)
+            if (root.isOpen && root._targetScreen === root._findFocusedScreen())
                 root.close();
             else
                 root.open("");
@@ -652,440 +628,11 @@ Scope {
                 ";": "clipboard",
                 ":": "emoji"
             };
-            if (root.isOpen && root.mode === (m[prefix] ?? "apps"))
+            if (root.isOpen && root.mode === (m[prefix] ?? "apps") && root._targetScreen === root._findFocusedScreen())
                 root.close();
             else
                 root.open(prefix);
         }
     }
 
-    Loader {
-        id: visualLoader
-        active: root.isOpen || root._animating
-        asynchronous: false
-
-        sourceComponent: Component {
-            Item {
-                id: loaderRoot
-
-                property alias panel:       _panel
-                property alias stack:       _stack
-                property alias closeAnim:   _closeAnim
-                property alias launcherInput: _launcherInput
-                property alias launcherList:  _launcherList
-
-                readonly property var activeWidget: {
-                    switch (root.widgetType) {
-                        case "math":      return mathWidget;
-                        case "translate": return translateWidget;
-                        case "color":     return colorWidget;
-                        case "timestamp": return timestampWidget;
-                        case "define":    return defineWidget;
-                        case "whois":     return whoisWidget;
-                        case "kaomoji":   return kaomojiWidget;
-                        case "password":  return passwordWidget;
-                        case "weather":   return weatherWidget;
-                        case "wolfram":   return wolframWidget;
-                        default:          return null;
-                    }
-                }
-
-                readonly property bool widgetShown: activeWidget !== null && activeWidget.hasResult
-
-                Variants {
-                    model: Quickshell.screens.filter(s => s !== root._targetScreen)
-                    PanelWindow {
-                        required property var modelData
-                        screen: modelData
-                        visible: root.isOpen || root._animating
-                        color: "transparent"
-                        WlrLayershell.layer: WlrLayer.Overlay
-                        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-                        WlrLayershell.namespace: "quickshell:launcherOverlay"
-                        exclusionMode: ExclusionMode.Ignore
-                        anchors {
-                            top: true
-                            bottom: true
-                            left: true
-                            right: true
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: root.close()
-                        }
-                    }
-                }
-
-                PanelWindow {
-                    id: _panel
-                    visible: root.isOpen
-                    focusable: true
-                    color: "transparent"
-                    WlrLayershell.layer: WlrLayer.Overlay
-                    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-                    WlrLayershell.namespace: "quickshell:launcher"
-                    exclusionMode: ExclusionMode.Ignore
-                    screen: root._targetScreen ?? Quickshell.screens[0]
-
-                    readonly property bool blurEnabled: Config.blurAllowed(_panel.visible)
-                    BackgroundEffect.blurRegion: blurEnabled ? launcherBlurRegion : null
-
-                    Region {
-                        id: launcherBlurRegion
-                        Region { item: _launcherInput }
-                        Region { item: widgetCard }
-                        Region { item: listCard }
-                    }
-                    anchors {
-                        top: true
-                        bottom: true
-                        left: true
-                        right: true
-                    }
-
-                    onVisibleChanged: {
-                        if (visible && _launcherList)
-                            Qt.callLater(() => _launcherList.resetToTop());
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: root.close()
-                    }
-
-                    Item {
-                        id: _stack
-                        anchors.horizontalCenter: parent.horizontalCenter
-
-                        readonly property real _restFraction: 0.3
-                        y: Math.round(_panel.height * _restFraction)
-
-                        width: {
-                            if (root.mode === "apps") {
-                                if (root.widgetType === "kaomoji")
-                                    return 480;
-                                if (root.widgetType === "wolfram") {
-                                    const len = activeWidget?.answerLength ?? 0;
-                                    if (len > 140)
-                                        return 640;
-                                    if (len > 45)
-                                        return 520;
-                                    return 420;
-                                }
-                                return 420;
-                            }
-                            if (root.mode === "emoji")
-                                return 480;
-                            return 520;
-                        }
-
-                        Behavior on width {
-                            enabled: !root._opening
-                            NumberAnimation {
-                                duration: 200
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-
-                        height: listCard.y + listCard.height
-                        transformOrigin: Item.Center
-
-                        opacity: 1.0
-                        scale: 1.0
-
-                        ParallelAnimation {
-                            id: _closeAnim
-                            NumberAnimation {
-                                target: _stack
-                                property: "opacity"
-                                to: 0.0
-                                duration: 100
-                                easing.type: Easing.InCubic
-                            }
-                            NumberAnimation {
-                                target: _stack
-                                property: "scale"
-                                to: 0.80
-                                duration: 200
-                                easing.type: Easing.OutSine
-                            }
-                            onFinished: {
-                                root._query = "";
-                                _launcherList.resetToTop();
-
-                                root.isOpen = false;
-                                root._animating = false;
-                                _stack.opacity = 1.0;
-                                _stack.scale = 1.0;
-                            }
-                        }
-
-                        readonly property int gap: 8
-
-                        LauncherInput {
-                            id: _launcherInput
-                            anchors {
-                                top: parent.top
-                                left: parent.left
-                                right: parent.right
-                            }
-                            mode: root.mode
-                            widgetType: root.widgetType
-                            onQueryChanged: q => {
-                                _launcherList.resetToTop();
-                                root._query = q;
-                            }
-                            onEscapePressed: root.close()
-                            onUpPressed: _launcherList.moveUp()
-                            onDownPressed: _launcherList.moveDown()
-                            onEnterPressed: _launcherList.activateCurrent()
-                            onTabPressed: _launcherList.moveDown()
-                        }
-
-                        ClippingRectangle {
-                            id: widgetCard
-                            anchors {
-                                top: _launcherInput.bottom
-                                topMargin: _stack.gap
-                                left: parent.left
-                                right: parent.right
-                            }
-                            radius: 20
-                            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-                            clip: true
-
-                            height: loaderRoot.widgetShown ? (widgetInner.implicitHeight + 32) : 0
-                            opacity: loaderRoot.widgetShown ? 1.0 : 0.0
-                            scale: loaderRoot.widgetShown ? 1.0 : 0.80
-                            transformOrigin: Item.Top
-
-                            border.width: 1
-                            border.color: Colors.md3.outline_variant
-
-                            Behavior on height {
-                                enabled: !root._opening
-                                NumberAnimation {
-                                    duration: 240
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-                            Behavior on opacity {
-                                enabled: !root._opening
-                                NumberAnimation {
-                                    duration: 180
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-                            Behavior on scale {
-                                enabled: !root._opening
-                                NumberAnimation {
-                                    duration: 280
-                                    easing.type: Easing.OutExpo
-                                }
-                            }
-
-                            Item {
-                                id: widgetInner
-                                anchors {
-                                    top: parent.top
-                                    left: parent.left
-                                    right: parent.right
-                                    margins: 16
-                                }
-                                implicitHeight: loaderRoot.activeWidget ? loaderRoot.activeWidget.implicitHeight : 0
-
-                                MathWidget {
-                                    id: mathWidget
-                                    anchors {
-                                        top: parent.top
-                                        left: parent.left
-                                        right: parent.right
-                                    }
-                                    visible: root.widgetType === "math"
-                                    query: root.modeQuery
-                                    onCopyResult: root.copyToClipboard
-                                    onSwapRequested: q => {
-                                        _launcherInput.prefill(q);
-                                    }
-                                }
-
-                                TranslateWidget {
-                                    id: translateWidget
-                                    anchors {
-                                        top: parent.top
-                                        left: parent.left
-                                        right: parent.right
-                                    }
-                                    visible: root.widgetType === "translate"
-                                    sourceText: root.modeQuery
-                                    targetLang: root.translateTarget
-                                    onCopyResult: root.copyToClipboard
-                                }
-
-                                ColorWidget {
-                                    id: colorWidget
-                                    anchors {
-                                        top: parent.top
-                                        left: parent.left
-                                        right: parent.right
-                                    }
-                                    visible: root.widgetType === "color"
-                                    query: root._query.trim()
-                                    onCopyResult: root.copyToClipboard
-                                }
-
-                                TimestampWidget {
-                                    id: timestampWidget
-                                    anchors {
-                                        top: parent.top
-                                        left: parent.left
-                                        right: parent.right
-                                    }
-                                    visible: root.widgetType === "timestamp"
-                                    query: root._query.trim()
-                                    onCopyResult: root.copyToClipboard
-                                }
-
-                                DefineWidget {
-                                    id: defineWidget
-                                    anchors {
-                                        top: parent.top
-                                        left: parent.left
-                                        right: parent.right
-                                    }
-                                    visible: root.widgetType === "define"
-                                    word: root.widgetQuery
-                                    onCopyResult: root.copyToClipboard
-                                }
-
-                                WhoisWidget {
-                                    id: whoisWidget
-                                    anchors {
-                                        top: parent.top
-                                        left: parent.left
-                                        right: parent.right
-                                    }
-                                    visible: root.widgetType === "whois"
-                                    subject: root.widgetQuery
-                                    onCopyResult: root.copyToClipboard
-                                }
-
-                                KaomojiWidget {
-                                    id: kaomojiWidget
-                                    anchors {
-                                        top: parent.top
-                                        left: parent.left
-                                        right: parent.right
-                                    }
-                                    visible: root.widgetType === "kaomoji"
-                                    entries: root._kaomojiData
-                                    query: root.widgetQuery
-                                    onCopyResult: root.copyToClipboard
-                                    onCategoryRequested: tag => {
-                                        _launcherInput.prefill("kao " + tag);
-                                    }
-                                }
-
-                                PasswordWidget {
-                                    id: passwordWidget
-                                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                                    visible: root.widgetType === "password"
-                                    query: root.modeQuery
-                                    onCopyResult: root.copyToClipboard
-                                }
-
-                                WeatherWidget {
-                                    id: weatherWidget
-                                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                                    visible: root.widgetType === "weather"
-                                    query: root.widgetQuery
-                                }
-
-                                WolframWidget {
-                                    id: wolframWidget
-                                    anchors { top: parent.top; left: parent.left; right: parent.right }
-                                    visible: root.widgetType === "wolfram"
-                                    question: root.widgetQuery
-                                    onCopyResult: root.copyToClipboard
-                                }
-                            }
-                        }
-
-                        ClippingRectangle {
-                            id: listCard
-                            anchors {
-                                top: widgetCard.bottom
-                                topMargin: _stack.gap
-                                left: parent.left
-                                right: parent.right
-                            }
-                            radius: 20
-                            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-                            clip: true
-
-                            border.width: 1
-                            border.color: Colors.md3.outline_variant
-
-                            readonly property int _max: root.mode === "clipboard" ? 600 : 400
-                            height: _launcherList.count === 0 ? 220 : Math.min(_max, Math.max(60, _launcherList.listContentHeight + 40))
-
-                            Behavior on height {
-                                enabled: !root._opening
-                                NumberAnimation {
-                                    duration: 220
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-
-                            Column {
-                                anchors.fill: parent
-
-                                LauncherHeader {
-                                    id: listHeader
-                                    width: parent.width
-                                    mode: root.mode
-                                    count: unifiedModel.values.length
-                                    sortAlpha: root._sortAlpha
-                                    onClearRequested: {
-                                        clearProc.running = true;
-                                        clearClipboardProc.running = true;
-                                        root._clipEntries = [];
-                                    }
-                                    onSortToggled: {
-                                        root._sortAlpha = !root._sortAlpha;
-                                        _launcherList.resetToTop();
-                                    }
-                                    onSkinToneChanged: index => _launcherList.skinToneIndex = index
-                                }
-
-                                Process {
-                                    id: clearProc
-                                    command: ["clipvault", "clear"]
-                                    running: false
-                                    onRunningChanged: if (!running)
-                                        clipLoader.running = true
-                                }
-
-                                Process {
-                                    id: clearClipboardProc
-                                    command: ["wl-copy", "--clear"]
-                                    running: false
-                                }
-
-                                LauncherList {
-                                    id: _launcherList
-                                    width: parent.width
-                                    height: parent.height - listHeader.height
-                                    model: unifiedModel
-                                    mode: root.mode
-                                    onItemActivated: entry => root._handleActivation(entry)
-                                    onActionActivated: root.close()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

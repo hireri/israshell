@@ -243,7 +243,6 @@ Item {
 
     BarTooltip {
         id: tooltip
-        screen: root.panelWindow.screen
         panelWindow: root.panelWindow
         yOffset: 4
 

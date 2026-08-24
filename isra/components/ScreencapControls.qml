@@ -10,6 +10,7 @@ Rectangle {
     id: root
 
     required property var panelWindow
+    property var controllerRegistry: null
 
     readonly property bool wallpaperOpen: WallpaperService.isOpen && WallpaperService.openWindow === root.panelWindow
 
@@ -109,7 +110,6 @@ Rectangle {
 
     BarTooltip {
         id: tooltipWindow
-        screen: root.panelWindow.screen
         panelWindow: root.panelWindow
         yOffset: 4
     }
@@ -496,6 +496,7 @@ Rectangle {
                 id: lsPopover
                 panelWindow: root.panelWindow
                 widgetItem: lsItem
+                controllerRegistry: root.controllerRegistry
             }
 
             Connections {

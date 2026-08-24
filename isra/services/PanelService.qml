@@ -9,8 +9,10 @@ Singleton {
     property var currentMode: null
 
     function opened(panel: var, screen: var): void {
-        if (root.current === panel)
+        if (root.current === panel) {
+            root.currentScreen = screen ?? null;
             return;
+        }
         const prev = root.current;
         root.current = panel;
         root.currentScreen = screen ?? null;

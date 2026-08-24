@@ -11,6 +11,7 @@ import qs.style
 Item {
     id: root
     required property var panelWindow
+    property var controllerRegistry: null
 
     readonly property bool hasItems: (SystemTray.items?.values.length ?? 0) > 0
     readonly property real contentW: trayRow.implicitWidth
@@ -38,7 +39,6 @@ Item {
 
     BarTooltip {
         id: tooltip
-        screen: root.panelWindow.screen
         panelWindow: root.panelWindow
         yOffset: 4
     }
@@ -46,6 +46,7 @@ Item {
     TrayMenuWindow {
         id: menu
         panelWindow: root.panelWindow
+        controllerRegistry: root.controllerRegistry
     }
 
     Rectangle {

@@ -1,7 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import Quickshell
-import Quickshell.Wayland
 import qs.style
 import qs.icons
 import qs.services
@@ -10,12 +8,14 @@ Item {
     id: root
 
     required property var panelWindow
+    property var controllerRegistry: null
+
+    readonly property string panelType: "calendar"
 
     implicitWidth: clockRoot.implicitWidth
     implicitHeight: clockRoot.implicitHeight
 
     property bool isOpen: false
-    property bool _calVisible: false
 
     function close(): void {
         isOpen = false;
@@ -23,25 +23,15 @@ Item {
 
     onIsOpenChanged: {
         if (isOpen) {
-            _calVisible = true;
             PanelService.opened(root, root.panelWindow.screen);
         } else {
-            calCloseTimer.restart();
             PanelService.closed(root);
         }
     }
 
-    Timer {
-        id: calCloseTimer
-        interval: 380
-        onTriggered: if (!root.isOpen)
-            root._calVisible = false
-    }
-
-    TransformWatcher {
-        id: pillTransform
-        a: root
-        b: root.panelWindow.contentItem
+    Component.onCompleted: {
+        if (root.controllerRegistry)
+            root.controllerRegistry[root.panelType] = root;
     }
 
     Rectangle {
@@ -52,7 +42,7 @@ Item {
                 Colors.md3.secondary_container
             } else if (Config.bar.transparentPills) {
                 Qt.alpha(Colors.md3.secondary_container, 0)
-            } else { 
+            } else {
                 Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
             }
         }
@@ -164,117 +154,6 @@ Item {
         TapHandler {
             cursorShape: Qt.PointingHandCursor
             onTapped: root.isOpen = !root.isOpen
-        }
-    }
-
-    LazyLoader {
-        id: calLoader
-        active: root._calVisible
-
-        Variants {
-            id: calVariants
-            model: Quickshell.screens
-
-            PanelWindow {
-                id: panel
-
-                required property ShellScreen modelData
-                screen: modelData
-
-                readonly property bool isOwnScreen: modelData === root.panelWindow?.screen
-
-                visible: root._calVisible
-
-                anchors {
-                    top: true
-                    bottom: true
-                    left: true
-                    right: true
-                }
-
-                exclusionMode: ExclusionMode.Ignore
-
-                WlrLayershell.layer: WlrLayer.Overlay
-                WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-                WlrLayershell.namespace: "quickshell:clockOverlay"
-
-                readonly property bool blurEnabled: panel.isOwnScreen && Config.blurAllowed(panel.visible)
-                BackgroundEffect.blurRegion: blurEnabled ? clockBlurRegion : null
-
-                Region {
-                    id: clockBlurRegion
-                    item: calContent.cardItem
-                }
-
-                color: "transparent"
-
-                Item {
-                    id: keyHandler
-                    anchors.fill: parent
-                    focus: true
-
-                    Component.onCompleted: forceActiveFocus()
-
-                    Keys.onEscapePressed: event => {
-                        event.accepted = true;
-                        root.isOpen = false;
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: root.isOpen = false
-                }
-
-                Item {
-                    id: wrapper
-                    visible: panel.isOwnScreen
-                    width: calContent.implicitWidth
-                    height: calContent.implicitHeight
-
-                    readonly property real screenEdgeMargin: 12
-
-                    anchors {
-                        top: Config.bar.position === 0 ? parent.top : undefined
-                        bottom: Config.bar.position === 1 ? parent.bottom : undefined
-                        topMargin: Config.bar.position === 0 ? root.panelWindow.implicitHeight + 8 : 0
-                        bottomMargin: Config.bar.position === 1 ? root.panelWindow.implicitHeight + 8 : 0
-                    }
-
-                    function _clamp(value, min, max) {
-                        return max >= min ? Math.max(min, Math.min(max, value)) : min;
-                    }
-
-                    function _screenWidth() {
-                        return (root.panelWindow.screen && root.panelWindow.screen.width > 0) ? root.panelWindow.screen.width : panel.width;
-                    }
-
-                    x: {
-                        pillTransform.transform;
-                        const pillCenterLocal = root.width / 2;
-                        const mappedPoint = root.mapToItem(root.panelWindow.contentItem, pillCenterLocal, 0);
-                        const idealX = mappedPoint.x - (calContent.implicitWidth / 2);
-
-                        const screenWidth = wrapper._screenWidth();
-                        return Math.round(wrapper._clamp(idealX, screenEdgeMargin, screenWidth - calContent.implicitWidth - screenEdgeMargin));
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {}
-                    }
-
-                    ClockCalendar {
-                        id: calContent
-                        anchors.fill: parent
-                        isOpen: root.isOpen
-                        edgeMargin: root.panelWindow.implicitHeight
-
-                        onCalendarRequested: root.isOpen = false
-                        onSettingsRequested: root.isOpen = false
-                    }
-                }
-            }
         }
     }
 }

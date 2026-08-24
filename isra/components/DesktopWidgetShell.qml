@@ -151,8 +151,6 @@ Item {
 
     function _updatePull(): void {
         const t = root.targetPlacement;
-        // resize targets carry no real grid cell (only w/h) — col/row default to 0 here,
-        // but that's fine since only .width/.height of the box are ever read below
         const box = t ? root._fitBox(WidgetGrid.cellRect(root.hostScreen, t.col ?? 0, t.row ?? 0, t.w, t.h)) : root.cellBox;
         const spanW = t ? t.w : root.placement.w;
         const spanH = t ? t.h : root.placement.h;
@@ -207,7 +205,6 @@ Item {
             if (root._dragging)
                 return { col: WidgetGrid.nearestCol(root.hostScreen, root._liveX), row: WidgetGrid.nearestRow(root.hostScreen, root._liveY), w: 0, h: 0 };
             if (root._resizing) {
-                // no real grid cell for a resize — position stays wherever it was, only size snaps
                 const raw = WidgetGrid.spanFromPixels(root.hostScreen, root._liveW, root._liveH);
                 const span = root._clampSpan(raw.w, raw.h);
                 return { w: span.w, h: span.h };
@@ -402,7 +399,6 @@ Item {
             return root._gestureBox;
         const t = root.targetPlacement;
         if (t && root.freeform) {
-            // a resize target has no grid cell (t.col is undefined) — position stays put, only size comes from the target
             return t.col !== undefined ? Qt.rect(WidgetGrid.cellX(root.hostScreen, t.col), WidgetGrid.cellY(root.hostScreen, t.row), root.bodyWidth, root.bodyHeight) : Qt.rect(root.localX, root.localY, root.bodyWidth, root.bodyHeight);
         }
         if (t)

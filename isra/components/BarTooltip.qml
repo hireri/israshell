@@ -1,46 +1,10 @@
 import QtQuick
-import Quickshell
-import Quickshell.Wayland
 import qs.style
 
-PanelWindow {
+Item {
     id: root
 
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-    exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.namespace: "quickshell:tooltip"
-    color: "transparent"
-    mask: Region {}
-
     property bool open: false
-
-    visible: false
-
-    onOpenChanged: {
-        if (open) {
-            closeTimer.stop();
-            visible = true;
-            tooltipContent.opacity = 1;
-            tooltipContent.scale = 1.0;
-        } else {
-            tooltipContent.opacity = 0;
-            tooltipContent.scale = 0.95;
-            closeTimer.restart();
-        }
-    }
-
-    Timer {
-        id: closeTimer
-        interval: 220
-        onTriggered: root.visible = false
-    }
-
     property string tipTitle: ""
     property var panelWindow: null
 
@@ -52,22 +16,33 @@ PanelWindow {
     property int padding: 10
     property real edgeMargin: 12
 
-    readonly property bool blurEnabled: Config.blurAllowed(root.visible)
-    BackgroundEffect.blurRegion: blurEnabled ? tooltipBlurRegion : null
+    width: 0
+    height: 0
 
-    Region {
-        id: tooltipBlurRegion
-        x: tooltipContent.x
-        y: tooltipContent.y
-        width: tooltipContent.width
-        height: tooltipContent.height
-        radius: tooltipContent.radius
+    property bool _shown: false
+    onOpenChanged: {
+        if (open) {
+            closeTimer.stop();
+            _shown = true;
+        } else {
+            closeTimer.restart();
+        }
+    }
+
+    Timer {
+        id: closeTimer
+        interval: 220
+        onTriggered: root._shown = false
     }
 
     Rectangle {
         id: tooltipContent
 
-        readonly property real barHeight: root.panelWindow ? root.panelWindow.implicitHeight : 0
+        parent: root.panelWindow?.contentItem ?? null
+        z: 100
+        visible: root._shown
+
+        readonly property real barHeight: root.panelWindow?.barHeight ?? 0
 
         implicitWidth: (root.hasCustomContent ? contentHolder.implicitWidth : tooltipText.implicitWidth) + root.padding * 2
         implicitHeight: (root.hasCustomContent ? contentHolder.implicitHeight : tooltipText.implicitHeight) + root.padding * 2
@@ -75,15 +50,17 @@ PanelWindow {
         height: implicitHeight
 
         y: Config.bar.position === 1
-            ? (root.height - barHeight - height - root.yOffset)
+            ? ((root.panelWindow?.height ?? 0) - barHeight - height - root.yOffset)
             : (barHeight + root.yOffset)
 
         x: {
-            const raw = (root.targetPos.x - (root.screen ? root.screen.x : 0)) - (width / 2);
-            return Math.round(Math.max(root.edgeMargin, Math.min(raw, root.width - width - root.edgeMargin)));
+            const winW = root.panelWindow?.width ?? 0;
+            const raw = (root.targetPos.x - (root.panelWindow?.screen?.x ?? 0)) - (width / 2);
+            return Math.round(Math.max(root.edgeMargin, Math.min(raw, winW - width - root.edgeMargin)));
         }
-        opacity: 0
-        scale: 0.9
+
+        opacity: root.open ? 1 : 0
+        scale: root.open ? 1 : 0.9
         color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
         radius: 8
         border.width: 1

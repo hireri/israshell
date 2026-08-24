@@ -27,12 +27,13 @@ ShellRoot {
     NotificationPopup {}
     VolumeOSD {}
 
-    AppLauncher {}
+    AppLauncher { id: appLauncher }
     Screenshot {}
     AiAssistant {}
 
     property var wallpaperPanels: ({})
     property var quickSettingsPanels: ({})
+    readonly property var appLauncherController: appLauncher
 
     IpcHandlers {
         settingsLoader: settingsLoader
@@ -60,11 +61,6 @@ ShellRoot {
 
     Logout {}
 
-    Loader {
-        active: Config.screenCorners
-        sourceComponent: ScreenCorners {}
-    }
-
     component BarZone: Row {
         id: zone
         property var itemNames: []
@@ -91,11 +87,10 @@ ShellRoot {
                 required property int index
                 implicitWidth: row.implicitWidth
                 implicitHeight: row.implicitHeight
-                readonly property bool isOpen: slotLoader.item && (slotLoader.item.isOpen === true || slotLoader.item.popupWindowVisible === true)
+                readonly property bool isOpen: slotLoader.item && slotLoader.item.isOpen === true
 
                 Row {
                     id: row
-                    spacing: spacing
 
                     Loader {
                         id: slotLoader
@@ -129,34 +124,6 @@ ShellRoot {
                     }
                 }
             }
-        }
-    }
-
-    component HuggingCornerBlock: Item {
-        id: block
-        property int type: 0
-        property string cornerColor
-        property int radiusSize: 16
-        property bool flipped: Config.bar.position === 1
-
-        property var panelScreen
-        property int windowHeight: 44
-
-        width: radiusSize
-        height: radiusSize
-        clip: true
-
-        Rectangle {
-            width: block.radiusSize * 4
-            height: block.radiusSize * 4
-            radius: block.radiusSize * 2
-            color: "transparent"
-
-            border.width: block.radiusSize
-            border.color: GameModeService.active ? "transparent" : block.cornerColor
-
-            x: (block.type === 1) ? -block.radiusSize * 2 : -block.radiusSize
-            y: block.flipped ? -block.radiusSize * 2 : -block.radiusSize
         }
     }
 
@@ -195,6 +162,7 @@ ShellRoot {
             WallpaperPicker {
                 panelWindow: window
                 registry: rootShell.wallpaperPanels
+                controllerRegistry: screenScope.panelControllers
             }
 
             Loader {
@@ -203,11 +171,11 @@ ShellRoot {
             }
 
             Component { id: workspacesComponent; Workspaces { panelWindow: window } }
-            Component { id: mediaComponent; MediaPlayer { panelScreen: screenScope.modelData } }
-            Component { id: clockComponent; BarClock { panelWindow: window } }
-            Component { id: screencapComponent; ScreencapControls { panelWindow: window } }
-            Component { id: trayComponent; TrayWidget { panelWindow: window } }
-            Component { id: quicksettingsComponent; QuickSettings { panelWindow: window; registry: rootShell.quickSettingsPanels } }
+            Component { id: mediaComponent; MediaPlayer { panelScreen: screenScope.modelData; panelWindow: window; controllerRegistry: screenScope.panelControllers } }
+            Component { id: clockComponent; BarClock { panelWindow: window; controllerRegistry: screenScope.panelControllers } }
+            Component { id: screencapComponent; ScreencapControls { panelWindow: window; controllerRegistry: screenScope.panelControllers } }
+            Component { id: trayComponent; TrayWidget { panelWindow: window; controllerRegistry: screenScope.panelControllers } }
+            Component { id: quicksettingsComponent; QuickSettings { panelWindow: window; registry: rootShell.quickSettingsPanels; controllerRegistry: screenScope.panelControllers } }
             Component { id: sysMonitorComponent; SysMonitor { panelWindow: window } }
 
             readonly property var barWidgetComponents: Object.assign({}, WidgetService.componentMap, {
@@ -218,6 +186,28 @@ ShellRoot {
                     tray: trayComponent,
                     quicksettings: quicksettingsComponent,
                     sysMonitor: sysMonitorComponent
+                })
+
+            property var panelControllers: ({})
+
+            Component { id: calendarContentComponent; CalendarContent {} }
+            Component { id: quickSettingsContentComponent; QuickSettingsContent {} }
+            Component { id: mediaContentComponent; MediaPlayerContent {} }
+            Component { id: wallpaperContentComponent; WallpaperPickerContent {} }
+            Component { id: localSendContentComponent; LocalSendContent {} }
+            Component { id: barMenuContentComponent; BarMenuContent {} }
+            Component { id: trayMenuContentComponent; TrayMenuContent {} }
+            Component { id: appLauncherContentComponent; AppLauncherContent {} }
+
+            readonly property var panelContentComponents: ({
+                    calendar: calendarContentComponent,
+                    quicksettings: quickSettingsContentComponent,
+                    media: mediaContentComponent,
+                    wallpaper: wallpaperContentComponent,
+                    localsend: localSendContentComponent,
+                    barMenu: barMenuContentComponent,
+                    trayMenu: trayMenuContentComponent,
+                    launcher: appLauncherContentComponent
                 })
 
             function isWidgetDisabled(id) {
@@ -239,7 +229,7 @@ ShellRoot {
                 return false;
             }
 
-            readonly property int barExclusiveZone: ((barMode === 2) ? 56 : Config.bar.transparency === 2 & !GameModeService.active ? 34 : 44)
+            readonly property int barExclusiveZone: ((barMode === 2) ? 56 : (Config.bar.transparency === 2 && !GameModeService.active) ? 34 : 44)
 
             readonly property var visibleBarLeft: Config.bar.left.filter(id => !isWidgetDisabled(id))
             readonly property var visibleBarRight: Config.bar.right.filter(id => !isWidgetDisabled(id))
@@ -250,27 +240,57 @@ ShellRoot {
                 property var modelData: screenScope.modelData
                 screen: modelData
 
-                property bool isMenuOpen: (leftZone.anyMenuOpen || rightZone.anyMenuOpen || centerAutoZone.anyMenuOpen || centerBeforeZone.anyMenuOpen || centerAfterZone.anyMenuOpen || (centerAnchorLoader.item && centerAnchorLoader.item.isOpen === true) || (PanelService.current !== null && PanelService.current.excludeFromBarOverlay !== true && (PanelService.currentScreen === null || PanelService.currentScreen === modelData)) || PanelService.currentMode !== null) || false
+                property bool isMenuOpen: (leftZone.anyMenuOpen || rightZone.anyMenuOpen || centerAutoZone.anyMenuOpen || centerBeforeZone.anyMenuOpen || centerAfterZone.anyMenuOpen || (centerAnchorLoader.item && centerAnchorLoader.item.isOpen === true) || (PanelService.current !== null && PanelService.current.excludeFromBarOverlay !== true && (anyMergedPanelOpen || PanelService.currentScreen === null || PanelService.currentScreen === modelData)) || PanelService.currentMode !== null) || false
 
                 property bool shouldHide: LockscreenService.lockAnimating || LockscreenService.locked
 
-                WlrLayershell.namespace: "quickshell:bar"
-                WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
+                readonly property bool huggingCornersVisible: screenScope.barMode === 0 && Config.bar.transparency !== 2
 
-                readonly property bool blurEnabled: Config.blurAllowed() && (Config.bar.transparency === 1 || (Config.bar.transparency === 2 && !Config.bar.transparentPills))
-                BackgroundEffect.blurRegion: blurEnabled ? barBlurRegion : null
+                readonly property string currentPanelType: ((PanelService.current?.panelType ?? "") !== "" && PanelService.currentScreen === modelData) ? PanelService.current.panelType : ""
+                readonly property bool ownsOpenMergedPanel: currentPanelType !== ""
+                readonly property bool anyMergedPanelOpen: (PanelService.current?.panelType ?? "") !== ""
 
-                Region {
-                    id: barBlurRegion
-                    item: barContainer
+                function _hasMountedType(type) {
+                    for (let i = 0; i < mountedPanelTypes.count; i++) {
+                        if (mountedPanelTypes.get(i).type === type)
+                            return true;
+                    }
+                    return false;
                 }
 
-                anchors.top: Config.bar.position === 0
-                anchors.bottom: Config.bar.position === 1
+                function _syncMountedPanel() {
+                    const t = window.currentPanelType;
+                    if (t !== "" && !window._hasMountedType(t))
+                        mountedPanelTypes.append({ type: t });
+                }
+
+                onCurrentPanelTypeChanged: Qt.callLater(window._syncMountedPanel)
+
+                WlrLayershell.namespace: "quickshell:bar"
+                WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
+                WlrLayershell.keyboardFocus: ownsOpenMergedPanel ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+                BackgroundEffect.blurRegion: Config.blurAllowed() ? fullBlurRegion : null
+
+                Region {
+                    id: fullBlurRegion
+                    width: window.width
+                    height: window.height
+                }
+
+                Region {
+                    id: barOnlyMask
+                    item: barContainer
+                }
+                mask: anyMergedPanelOpen ? null : barOnlyMask
+
+                anchors.top: true
+                anchors.bottom: true
                 anchors.left: true
                 anchors.right: true
 
-                implicitHeight: ((screenScope.barMode === 2) ? 56 : 44)
+                implicitHeight: (screenScope.barMode === 2) ? 56 : 44
+                readonly property real barHeight: implicitHeight
                 color: "transparent"
                 exclusionMode: ExclusionMode.Ignore
                 visible: true
@@ -282,11 +302,15 @@ ShellRoot {
 
                 Item {
                     id: visualContent
-                    anchors.fill: parent
+                    z: 1
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: window.barHeight
+                    y: Config.bar.position === 0
+                        ? ((screenScope.barMode === 2) ? 10 : 0)
+                        : (parent.height - height - ((screenScope.barMode === 2) ? 10 : 0))
                     anchors.leftMargin: (screenScope.barMode === 2) ? 12 : 0
                     anchors.rightMargin: (screenScope.barMode === 2) ? 12 : 0
-                    anchors.topMargin: (screenScope.barMode === 2) && Config.bar.position === 0 ? 10 : 0
-                    anchors.bottomMargin: (screenScope.barMode === 2) && Config.bar.position === 1 ? 10 : 0
                     clip: screenScope.barMode === 3
 
                     opacity: window.shouldHide ? 0 : 1
@@ -360,6 +384,7 @@ ShellRoot {
                             BarMenu {
                                 id: barContextMenu
                                 panelWindow: window
+                                controllerRegistry: screenScope.panelControllers
                             }
 
                             MouseArea {
@@ -432,6 +457,106 @@ ShellRoot {
                         }
                     }
                 }
+
+                Loader {
+                    z: 2
+                    anchors.fill: parent
+                    active: Config.screenCorners
+                    sourceComponent: ScreenCorners { screen: screenScope.modelData }
+                }
+
+                Item {
+                    id: overlayContent
+                    anchors.fill: parent
+
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: window.anyMergedPanelOpen
+                        onClicked: {
+                            if (PanelService.current)
+                                PanelService.current.close();
+                        }
+                    }
+
+                    Item {
+                        id: huggingCornersWrapper
+                        visible: window.huggingCornersVisible
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        y: Config.bar.position === 0 ? window.barHeight : (parent.height - window.barHeight - huggingCornerRadius)
+                        height: huggingCornerRadius
+
+                        readonly property int huggingCornerRadius: 26
+                        property string barColor: GameModeService.active ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+
+                        opacity: window.shouldHide ? 0 : 1
+                        Behavior on opacity {
+                            NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
+                        }
+
+                        CornerBlock {
+                            type: Config.bar.position === 1 ? 2 : 0
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            cornerColor: huggingCornersWrapper.barColor
+                            cornerRadius: huggingCornersWrapper.huggingCornerRadius
+                        }
+
+                        CornerBlock {
+                            type: Config.bar.position === 1 ? 3 : 1
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            cornerColor: huggingCornersWrapper.barColor
+                            cornerRadius: huggingCornersWrapper.huggingCornerRadius
+                        }
+                    }
+
+                    ListModel {
+                        id: mountedPanelTypes
+                    }
+
+                    Repeater {
+                        id: panelSlotRepeater
+                        model: mountedPanelTypes
+
+                        Loader {
+                            id: panelSlotLoader
+                            required property string type
+                            anchors.fill: parent
+                            active: true
+                            sourceComponent: screenScope.panelContentComponents[type] ?? null
+
+                            onLoaded: {
+                                item.controller = (panelSlotLoader.type === "launcher" ? rootShell.appLauncherController : screenScope.panelControllers[panelSlotLoader.type]) ?? null;
+                            }
+
+                            readonly property bool owned: panelSlotLoader.type === window.currentPanelType
+                            onOwnedChanged: {
+                                if (panelSlotLoader.owned)
+                                    unmountTimer.stop();
+                                else
+                                    unmountTimer.restart();
+                            }
+                            Component.onCompleted: {
+                                if (!panelSlotLoader.owned)
+                                    unmountTimer.restart();
+                            }
+
+                            Timer {
+                                id: unmountTimer
+                                interval: (panelSlotLoader.item && panelSlotLoader.item.controller === PanelService.current) ? 0 : 450
+                                onTriggered: {
+                                    for (let i = 0; i < mountedPanelTypes.count; i++) {
+                                        if (mountedPanelTypes.get(i).type === panelSlotLoader.type) {
+                                            mountedPanelTypes.remove(i);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             PanelWindow {
@@ -453,76 +578,6 @@ ShellRoot {
                 color: "transparent"
                 mask: Region {}
                 visible: true
-            }
-
-            PanelWindow {
-                id: huggingWindow
-                screen: modelData
-
-                visible: screenScope.barMode === 0 && Config.bar.transparency !== 2
-
-                anchors.top: Config.bar.position === 0
-                anchors.bottom: Config.bar.position === 1
-                anchors.left: true
-                anchors.right: true
-
-                margins.top: Config.bar.position === 0 ? window.implicitHeight : 0
-                margins.bottom: Config.bar.position === 1 ? window.implicitHeight : 0
-
-                property int cornerRadius: 26
-                implicitHeight: cornerRadius
-
-                color: "transparent"
-                exclusionMode: ExclusionMode.Ignore
-
-                WlrLayershell.namespace: "quickshell:huggingCorners"
-                WlrLayershell.layer: window.isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
-
-                mask: Region {}
-
-                property string barColor: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-
-                readonly property bool blurEnabled: Config.blurAllowed(huggingWindow.visible)
-                BackgroundEffect.blurRegion: blurEnabled ? huggingBlurRegion : null
-
-                Region {
-                    id: huggingBlurRegion
-                    Region { item: leftCorner }
-                    Region { item: rightCorner }
-                }
-
-                Item {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: parent.height
-
-                    opacity: window.shouldHide ? 0 : 1
-                    Behavior on opacity {
-                        NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
-                    }
-
-                    HuggingCornerBlock {
-                        id: leftCorner
-                        type: 0
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        cornerColor: huggingWindow.barColor
-                        radiusSize: huggingWindow.cornerRadius
-                        panelScreen: screenScope.modelData
-                        windowHeight: window.implicitHeight
-                    }
-
-                    HuggingCornerBlock {
-                        id: rightCorner
-                        type: 1
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        cornerColor: huggingWindow.barColor
-                        radiusSize: huggingWindow.cornerRadius
-                        panelScreen: screenScope.modelData
-                        windowHeight: window.implicitHeight
-                    }
-                }
             }
         }
     }
