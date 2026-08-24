@@ -43,7 +43,7 @@ Singleton {
         id: wifiCompactComp
         CompactToggleTile {
             iconComponent: WifiIcon {
-                iconSize: 16
+                iconSize: 22
                 mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
                 strength: NetworkService.wifiSignal
                 secured: {
@@ -101,7 +101,7 @@ Singleton {
         id: bluetoothCompactComp
         CompactToggleTile {
             iconComponent: BluetoothIcon {
-                iconSize: 16
+                iconSize: 22
                 enabled: BluetoothService.enabled
                 discovering: BluetoothService.discovering
                 connected: BluetoothService.connectedDevices.length > 0

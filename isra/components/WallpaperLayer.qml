@@ -117,7 +117,7 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            color: Qt.alpha("black", 0.35)
+            color: Qt.alpha(Colors.md3.surface_container, 0.65)
         }
 
         Item {
