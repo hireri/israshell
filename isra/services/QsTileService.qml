@@ -222,7 +222,7 @@ Singleton {
         CompactToggleTile {
             active: Config.localsend.enabled
             iconComponent: MaterialIcon {
-                name: "wifi-tethering"
+                name: (Config.localsend.enabled && !LocalSendService.reachable) ? "wifi-tethering-error" : "wifi-tethering"
                 iconSize: 22
             }
             onToggled: LocalSendService.setEnabled(!Config.localsend.enabled)
@@ -247,7 +247,7 @@ Singleton {
                 return Localization.t("qsTileService.ready");
             }
             iconComponent: MaterialIcon {
-                name: "wifi-tethering"
+                name: (Config.localsend.enabled && !LocalSendService.reachable) ? "wifi-tethering-error" : "wifi-tethering"
                 iconSize: 22
             }
             onToggled: LocalSendService.setEnabled(!Config.localsend.enabled)

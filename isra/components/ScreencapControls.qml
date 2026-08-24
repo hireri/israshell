@@ -374,7 +374,11 @@ Rectangle {
         id: screenshotComp
         ToolButton {
             tooltip: Localization.t("qsTileService.screenshot")
-            onClicked: screenshotScript.startDetached()
+            onClicked: {
+                if (PanelService.current)
+                    PanelService.current.close();
+                screenshotScript.startDetached();
+            }
             MaterialIcon {
                 name: "screenshot"
                 iconSize: 18
@@ -388,7 +392,11 @@ Rectangle {
         id: ctsComp
         ToolButton {
             tooltip: Localization.t("qsTileService.circle_to_search")
-            onClicked: ctsScript.startDetached()
+            onClicked: {
+                if (PanelService.current)
+                    PanelService.current.close();
+                ctsScript.startDetached();
+            }
             MaterialIcon {
                 name: "image-search"
                 iconSize: 18
@@ -402,7 +410,11 @@ Rectangle {
         id: ocrComp
         ToolButton {
             tooltip: Localization.t("qsTileService.ocr_text")
-            onClicked: ocrScript.startDetached()
+            onClicked: {
+                if (PanelService.current)
+                    PanelService.current.close();
+                ocrScript.startDetached();
+            }
             MaterialIcon {
                 name: "ocr"
                 iconSize: 18
@@ -416,7 +428,11 @@ Rectangle {
         id: colorpickerComp
         ToolButton {
             tooltip: Localization.t("qsTileService.color_picker")
-            onClicked: colorPickerScript.startDetached()
+            onClicked: {
+                if (PanelService.current)
+                    PanelService.current.close();
+                colorPickerScript.startDetached();
+            }
             MaterialIcon {
                 name: "colorize"
                 iconSize: 18
@@ -582,7 +598,9 @@ Rectangle {
                         case "error":
                             return "sentiment-frustrated";
                         default:
-                            return Config.localsend.enabled ? "wifi-tethering" : "wifi-tethering-off";
+                            if (!Config.localsend.enabled)
+                                return "wifi-tethering-off";
+                            return LocalSendService.reachable ? "wifi-tethering" : "wifi-tethering-error";
                         }
                     }
                     iconSize: 18
@@ -729,6 +747,8 @@ Rectangle {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
+                    if (PanelService.current)
+                        PanelService.current.close();
                     if (srItem.fileRecognizing) {
                         songrecFileScript.running = false;
                         srItem.fileRecognizing = false;
@@ -833,7 +853,11 @@ Rectangle {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: recordScript.startDetached()
+                onClicked: {
+                    if (PanelService.current)
+                        PanelService.current.close();
+                    recordScript.startDetached();
+                }
                 onEntered: {
                     var yPos = Config.bar.position === 1 ? 0 : height;
                     tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);

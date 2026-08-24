@@ -985,14 +985,14 @@ Item {
                             }
                             MaterialIcon {
                                 anchors.centerIn: parent
-                                name: "question-mark"
+                                name: LocalSendService.reachable ? "question-mark" : "wifi-tethering-error"
                                 iconSize: 18
                                 color: Colors.md3.on_surface_variant
                             }
                         }
                         Text {
                             Layout.alignment: Qt.AlignHCenter
-                            text: Localization.t("localSendPopover.no_devices_nearby")
+                            text: LocalSendService.reachable ? Localization.t("localSendPopover.no_devices_nearby") : Localization.t("localSendPopover.localsend_unavailable")
                             font.family: Config.fontFamily
                             font.pixelSize: 13
                             color: Colors.md3.on_surface

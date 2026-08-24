@@ -386,6 +386,7 @@
   "localSendPopover.drop_files_here_or_click": "Drop files here or click to choose",
   "localSendPopover.flip_the_switch_above_to": "Flip the switch above to start the server and become visible to nearby devices.",
   "localSendPopover.localsend_is_off": "LocalSend is off",
+  "localSendPopover.localsend_unavailable": "LocalSend unavailable",
   "localSendPopover.no_devices_nearby": "No devices nearby",
   "localSendPopover.retry": "retry",
   "localSendPopover.scan": "scan",
