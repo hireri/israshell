@@ -74,7 +74,11 @@ Item {
 
     onWidthChanged: updatePosition()
     onHeightChanged: updatePosition()
-    onIsOpenChanged: updatePosition()
+    onIsOpenChanged: {
+        updatePosition();
+        if (isOpen)
+            Qt.callLater(() => escHandler.forceActiveFocus());
+    }
 
     Component.onCompleted: {
         updatePosition();
@@ -124,6 +128,7 @@ Item {
         }
 
         Item {
+            id: escHandler
             anchors.fill: parent
             focus: root.isOpen
             Keys.onEscapePressed: if (root.controller)

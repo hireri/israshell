@@ -78,6 +78,8 @@ Item {
         }
     }
 
+    onIsOpenChanged: if (isOpen) Qt.callLater(() => keyHandler.forceActiveFocus())
+
     Item {
         id: wrapper
         width: root.cardW

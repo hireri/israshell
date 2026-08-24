@@ -9,7 +9,23 @@ import "Shapes.js" as Shapes
 Scope {
     id: root
 
-    readonly property var capabilities: ["cursorPosition"]
+    readonly property var capabilities: ["cursorPosition", "panelFocusGrab"]
+
+    signal panelFocusCleared()
+
+    HyprlandFocusGrab {
+        id: focusGrab
+        onCleared: root.panelFocusCleared()
+    }
+
+    function grabPanelFocus(windows: var): void {
+        focusGrab.windows = windows;
+        focusGrab.active = windows.length > 0;
+    }
+
+    function releasePanelFocus(): void {
+        focusGrab.active = false;
+    }
 
     property var activeWindow: _windowShape(null)
     property var focusedMonitor: _monitorShape(null)

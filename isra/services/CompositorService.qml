@@ -29,6 +29,21 @@ Singleton {
     Component { id: hyprlandBackendComp; HyprlandBackend {} }
     Component { id: niriBackendComp; NiriBackend {} }
 
+    signal panelFocusCleared()
+
+    Connections {
+        target: root.backend
+        function onPanelFocusCleared() { root.panelFocusCleared(); }
+    }
+
+    function grabPanelFocus(windows: var): void {
+        backend?.grabPanelFocus(windows);
+    }
+
+    function releasePanelFocus(): void {
+        backend?.releasePanelFocus();
+    }
+
     readonly property var activeWindow: backend?.activeWindow ?? { address: "", title: "", appId: "", workspace: -1, fullscreen: false }
     readonly property var focusedMonitor: backend?.focusedMonitor ?? { name: "", id: -1, activeWorkspaceId: -1, activeWorkspaceHasFullscreen: false }
     readonly property var workspaces: backend?.workspaces ?? []

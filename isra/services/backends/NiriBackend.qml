@@ -10,6 +10,12 @@ Scope {
 
     readonly property var capabilities: []
 
+    signal panelFocusCleared()
+
+    function grabPanelFocus(windows: var): void {}
+
+    function releasePanelFocus(): void {}
+
     property var activeWindow: _windowShape(null)
     property var focusedMonitor: _monitorShape(null)
     property var workspaces: []

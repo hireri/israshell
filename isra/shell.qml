@@ -35,6 +35,23 @@ ShellRoot {
     property var quickSettingsPanels: ({})
     readonly property var appLauncherController: appLauncher
 
+    property var currentOwningWindow: null
+
+    onCurrentOwningWindowChanged: {
+        if (currentOwningWindow)
+            CompositorService.grabPanelFocus([currentOwningWindow]);
+        else
+            CompositorService.releasePanelFocus();
+    }
+
+    Connections {
+        target: CompositorService
+        function onPanelFocusCleared() {
+            if (PanelService.current)
+                PanelService.current.close();
+        }
+    }
+
     IpcHandlers {
         settingsLoader: settingsLoader
         wallpaperPanels: rootShell.wallpaperPanels
@@ -250,6 +267,13 @@ ShellRoot {
                 readonly property bool ownsOpenMergedPanel: currentPanelType !== ""
                 readonly property bool anyMergedPanelOpen: (PanelService.current?.panelType ?? "") !== ""
 
+                onOwnsOpenMergedPanelChanged: {
+                    if (ownsOpenMergedPanel)
+                        rootShell.currentOwningWindow = window;
+                    else if (rootShell.currentOwningWindow === window)
+                        rootShell.currentOwningWindow = null;
+                }
+
                 function _hasMountedType(type) {
                     for (let i = 0; i < mountedPanelTypes.count; i++) {
                         if (mountedPanelTypes.get(i).type === type)
@@ -268,7 +292,7 @@ ShellRoot {
 
                 WlrLayershell.namespace: "quickshell:bar"
                 WlrLayershell.layer: isMenuOpen ? WlrLayer.Overlay : WlrLayer.Top
-                WlrLayershell.keyboardFocus: ownsOpenMergedPanel ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+                WlrLayershell.keyboardFocus: ownsOpenMergedPanel ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
                 BackgroundEffect.blurRegion: Config.blurAllowed() ? fullBlurRegion : null
 
