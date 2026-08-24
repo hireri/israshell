@@ -471,7 +471,9 @@ PageBase {
             Rectangle {
                 Layout.fillWidth: true
                 height: 34
-                radius: 8
+                radius: 17
+                topLeftRadius: 8
+                bottomLeftRadius: 8
                 color: wallhavenMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high))
                 Behavior on color {
                     ColorAnimation {
@@ -517,60 +519,6 @@ PageBase {
                     cursorShape: Qt.PointingHandCursor
                     hoverEnabled: true
                     onClicked: WallpaperService.randomizeWallhaven()
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                height: 34
-                radius: 17
-                topLeftRadius: 8
-                bottomLeftRadius: 8
-                color: redditMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high))
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 120
-                    }
-                }
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    spacing: 6
-
-                    Text {
-                        text: "󰒝"
-                        font.pixelSize: 14
-                        color: redditMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 120
-                            }
-                        }
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        text: Localization.t("overviewPage.from_reddit")
-                        font.family: Config.fontFamily
-                        font.pixelSize: 12
-                        font.weight: Font.Medium
-                        color: redditMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 120
-                            }
-                        }
-                        elide: Text.ElideRight
-                    }
-                }
-
-                MouseArea {
-                    id: redditMouse
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    hoverEnabled: true
-                    onClicked: WallpaperService.randomizeReddit()
                 }
             }
         }

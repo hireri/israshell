@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 
 import qs.style
+import qs.services.wallpaperProviders
 
 Singleton {
     id: root
@@ -153,54 +154,160 @@ Singleton {
         selectWall(walls[Math.floor(Math.random() * walls.length)].path);
     }
 
-    function _startDownload(url, dest) {
-        downloadProc.url = url;
-        downloadProc.dest = dest;
+    readonly property string savedDir: Quickshell.env("HOME") + "/Pictures/Saved"
+    readonly property string randomDir: Quickshell.env("HOME") + "/Pictures/Random"
+
+    property var pendingDownloads: ({})
+    property var savedItems: ({})
+
+    property var _dlQueue: []
+    property bool _dlBusy: false
+
+    function _setFlag(mapName, id, value) {
+        const next = Object.assign({}, root[mapName]);
+        if (value === undefined)
+            delete next[id];
+        else
+            next[id] = value;
+        root[mapName] = next;
+    }
+
+    function saveBrowseItem(item, sourceKey, applyAfter, destDir) {
+        const id = String(item.id || item.full || "");
+        if (!id || root.pendingDownloads[id])
+            return;
+        root._setFlag("pendingDownloads", id, true);
+        root._dlQueue.push({
+            id: id,
+            url: item.full,
+            sourceKey: sourceKey,
+            applyAfter: applyAfter === true,
+            dir: destDir || root.savedDir
+        });
+        root._pumpDownloads();
+    }
+
+    function _pumpDownloads() {
+        if (root._dlBusy || root._dlQueue.length === 0)
+            return;
+        root._dlBusy = true;
+        const job = root._dlQueue.shift();
+        const ext = job.url.split(".").pop().split("?")[0];
+        downloadProc.jobId = job.id;
+        downloadProc.applyAfter = job.applyAfter;
+        downloadProc.url = job.url;
+        downloadProc.dir = job.dir;
+        downloadProc.dest = job.dir + "/" + job.sourceKey.toLowerCase() + "_" + Date.now() + "." + ext;
         downloadProc.running = false;
         downloadProc.running = true;
     }
 
-    function _fetchRandomFromApi(sourceName, apiUrl, extractUrl) {
-        if (applying || loading)
-            return;
-        const req = new XMLHttpRequest();
-        req.open("GET", apiUrl);
-        req.onreadystatechange = () => {
-            if (req.readyState !== XMLHttpRequest.DONE)
-                return;
-            if (req.status !== 200) {
-                console.log("[Wallpaper] " + sourceName + " fetch failed:", req.status);
-                return;
-            }
-            try {
-                const url = extractUrl(JSON.parse(req.responseText));
-                if (!url)
-                    return;
-                const ext = url.split(".").pop().split("?")[0];
-                const dest = Quickshell.env("HOME") + "/Pictures/Random/" + sourceName.toLowerCase() + "_" + Date.now() + "." + ext;
-                _startDownload(url, dest);
-            } catch (e) {
-                console.log("[Wallpaper] " + sourceName + " parse error:", e);
-            }
-        };
-        req.send();
+    function _downloadFrom(sourceName, url) {
+        saveBrowseItem({
+            full: url
+        }, sourceName, true, root.randomDir);
     }
 
     function randomizeWallhaven() {
-        const purity = Config.allowNsfw ? "110" : "100";
-        _fetchRandomFromApi("Wallhaven", "https://wallhaven.cc/api/v1/search?sorting=random&purity=" + purity, res => (res.data && res.data.length > 0) ? res.data[0].path : null);
+        if (applying || loading)
+            return;
+        WallhavenProvider.fetchRandomUrl(Config.allowNsfw, url => _downloadFrom("wallhaven", url), err => console.log("[Wallpaper] Wallhaven fetch failed:", err));
     }
 
     function randomizeKonachan() {
-        _fetchRandomFromApi("Konachan", "https://konachan.net/post.json?limit=1&tags=order:random+" + (Config.allowNsfw ? "rating:e" : "rating:s"), posts => (posts && posts.length > 0) ? posts[0].file_url : null);
+        if (applying || loading)
+            return;
+        KonachanProvider.fetchRandomUrl(Config.allowNsfw, url => _downloadFrom("konachan", url), err => console.log("[Wallpaper] Konachan fetch failed:", err));
     }
 
-    function randomizeReddit() {
-        if (applying || loading || redditFetchProc.running)
+    property ListModel browseModel: ListModel {}
+    property bool browseLoading: false
+    property bool browseError: false
+    property bool browseHasMore: true
+
+    property string browseSort: "top"
+
+    function _providerFor(sourceKey) {
+        return sourceKey === "konachan" ? KonachanProvider : sourceKey === "wallhaven" ? WallhavenProvider : null;
+    }
+
+    function providerName(sourceKey) {
+        const p = _providerFor(sourceKey);
+        return p ? p.name : "";
+    }
+
+    function randomizeFrom(sourceKey) {
+        if (sourceKey === "konachan")
+            randomizeKonachan();
+        else if (sourceKey === "wallhaven")
+            randomizeWallhaven();
+        else
+            randomize();
+    }
+
+    function resetBrowse() {
+        browseModel.clear();
+        browseError = false;
+        browseHasMore = true;
+    }
+
+    property int _browseToken: 0
+
+    function searchProvider(sourceKey, query, page) {
+        const provider = _providerFor(sourceKey);
+        if (!provider)
             return;
-        const subreddits = ["wallpaper", "ImaginaryLandscapes", "EarthPorn", "SpacePorn"];
-        redditFetchProc.subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
-        redditFetchProc.running = true;
+        if (browseLoading && page > 1)
+            return;
+
+        const token = ++root._browseToken;
+        browseLoading = true;
+        provider.search(query, page, Config.allowNsfw, root.browseSort, result => {
+            if (token !== root._browseToken)
+                return;
+            browseLoading = false;
+            if (page === 1)
+                browseModel.clear();
+            for (const it of result.items)
+                browseModel.append(it);
+            browseHasMore = result.hasMore;
+        }, err => {
+            if (token !== root._browseToken)
+                return;
+            browseLoading = false;
+            browseError = true;
+            console.log("[Wallpaper] " + sourceKey + " search failed:", err);
+        });
+    }
+
+    function downloadBrowseItem(item, sourceKey) {
+        saveBrowseItem(item, sourceKey, true);
+    }
+
+    readonly property var fixedDirs: [Quickshell.env("HOME"), Quickshell.env("HOME") + "/Pictures", root.savedDir]
+
+    readonly property var userPins: (Config.pinnedWallpaperDirs ?? []).filter(p => root.fixedDirs.indexOf(p) < 0)
+
+    function isFixedDir(path) {
+        return root.fixedDirs.indexOf(path) >= 0;
+    }
+
+    function isPinned(path) {
+        return root.isFixedDir(path) || (Config.pinnedWallpaperDirs ?? []).indexOf(path) >= 0;
+    }
+
+    function togglePin(path) {
+        if (!path || root.isFixedDir(path))
+            return;
+        const list = (Config.pinnedWallpaperDirs ?? []).slice();
+        const i = list.indexOf(path);
+        if (i >= 0)
+            list.splice(i, 1);
+        else
+            list.push(path);
+        Config.update({
+            pinnedWallpaperDirs: list
+        });
     }
 
     function openFolder() {
@@ -525,57 +632,27 @@ Singleton {
     Process {
         id: downloadProc
         property string url: ""
+        property string dir: ""
         property string dest: ""
-        command: ["bash", "-c", "mkdir -p " + JSON.stringify(Quickshell.env("HOME") + "/Pictures/Random") + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
+        property string jobId: ""
+        property bool applyAfter: true
+        command: ["bash", "-c", "mkdir -p " + JSON.stringify(dir) + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
         running: false
         onExited: (code, _) => {
-            if (code === 0 && downloadProc.dest !== "")
-                selectWall(downloadProc.dest);
-            else
-                console.log("[Wallpaper] Download failed, code:", code);
-        }
-    }
+            root._dlBusy = false;
+            root._setFlag("pendingDownloads", downloadProc.jobId, undefined);
 
-    Process {
-        id: redditFetchProc
-        property string subreddit: ""
-        property string outputBuffer: ""
-
-        command: ["curl", "-s", "-H", "User-Agent: WallpaperPicker/1.0 (by /u/brian518)", "-H", "Accept: application/json", "https://www.reddit.com/r/" + subreddit + "/hot.json?limit=30"]
-
-        stdout: SplitParser {
-            splitMarker: ""
-            onRead: data => redditFetchProc.outputBuffer += data
-        }
-
-        onRunningChanged: {
-            if (running) {
-                outputBuffer = "";
+            if (code === 0 && downloadProc.dest !== "") {
+                root._setFlag("savedItems", downloadProc.jobId, downloadProc.dest);
+                if (downloadProc.applyAfter)
+                    root.selectWall(downloadProc.dest);
+                else if (root.currentDir === downloadProc.dir)
+                    root._runList();
             } else {
-                try {
-                    const response = JSON.parse(outputBuffer);
-                    const posts = response.data.children;
-                    const validPosts = posts.filter(post => {
-                        const p = post.data;
-                        return !p.is_self && !p.is_video && p.post_hint === "image" && p.url_overridden_by_dest;
-                    });
-
-                    if (validPosts.length === 0) {
-                        console.log("No valid images found in r/" + subreddit);
-                        return;
-                    }
-
-                    const randomPost = validPosts[Math.floor(Math.random() * validPosts.length)].data;
-                    const finalUrl = (randomPost.url_overridden_by_dest || randomPost.url).replace(/&amp;/g, '&');
-                    const ext = finalUrl.split('.').pop().split(/[?#]/)[0] || "jpg";
-                    const dest = Quickshell.env("HOME") + "/Pictures/Random/reddit_" + Date.now() + "." + ext;
-
-                    _startDownload(finalUrl, dest);
-                } catch (e) {
-                    console.error("Reddit JSON parse error:", e);
-                    console.error("Buffer preview:", outputBuffer.substring(0, 300));
-                }
+                console.log("[Wallpaper] Download failed, code:", code);
             }
+
+            root._pumpDownloads();
         }
     }
 

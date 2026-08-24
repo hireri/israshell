@@ -286,6 +286,12 @@ Singleton {
     property bool allowNsfw: false
     property var pinnedApps: ["helium", "kitty", "dolphin"]
 
+    function __pinnedWallpaperDirDefaults() {
+        const home = Quickshell.env("HOME");
+        return [home + "/Downloads"];
+    }
+    property var pinnedWallpaperDirs: __pinnedWallpaperDirDefaults()
+
     function __defaults() {
         return {
             showSeconds: false,
@@ -492,7 +498,8 @@ Singleton {
             checkDeps: true,
             githubRepo: "hireri/israshell",
             allowNsfw: false,
-            pinnedApps: ["helium", "kitty", "dolphin"]
+            pinnedApps: ["helium", "kitty", "dolphin"],
+            pinnedWallpaperDirs: __pinnedWallpaperDirDefaults()
         };
     }
 

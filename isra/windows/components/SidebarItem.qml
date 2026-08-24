@@ -15,6 +15,9 @@ Rectangle {
     property real topRadius: 18
     property real bottomRadius: 18
 
+    property color restColor: Config.dim(Colors.md3.surface_container)
+    property color hoverColor: Config.dim(Colors.md3.surface_container_high)
+
     default property alias iconChild: iconSlot.data
 
     signal clicked
@@ -22,7 +25,7 @@ Rectangle {
     implicitHeight: 54
     Layout.fillWidth: true
 
-    color: root.active ? Colors.md3.secondary_container : (hover.containsMouse ? (Config.dim(Colors.md3.surface_container_high)) : (Config.dim(Colors.md3.surface_container)))
+    color: root.active ? Colors.md3.secondary_container : (hover.containsMouse ? root.hoverColor : root.restColor)
 
     topLeftRadius: root.topRadius
     topRightRadius: root.topRadius

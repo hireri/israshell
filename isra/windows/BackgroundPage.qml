@@ -153,7 +153,6 @@ PageBase {
         }
 
         SettingSwitch {
-            isLast: true
             label: Localization.t("backgroundPage.reverse_circle_wipe")
             sublabel: Localization.t("backgroundPage.shrink_the_old_wallpaper_away_instead_of_growing_the_new_one_in")
             enabled: Config.background.transitionType === "circle" || Config.background.transitionType === "random"
@@ -162,6 +161,14 @@ PageBase {
             onToggled: v => Config.update({
                 background: Object.assign({}, Config.background, { circleReverse: v })
             })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: Localization.t("backgroundPage.allow_nsfw")
+            sublabel: Localization.t("backgroundPage.allow_nsfw_sub")
+            checked: Config.allowNsfw
+            onToggled: v => Config.update({ allowNsfw: v })
         }
     }
 

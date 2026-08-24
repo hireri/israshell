@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
 import Quickshell.Io
@@ -8,6 +9,7 @@ import Quickshell.Io
 import qs.style
 import qs.services
 import qs.icons
+import qs.windows.components
 
 Item {
     id: root
@@ -19,7 +21,10 @@ Item {
     anchors.fill: parent
 
     property bool _ready: false
-    Component.onCompleted: Qt.callLater(() => root._ready = true)
+    Component.onCompleted: {
+        Qt.callLater(() => root._ready = true);
+        root.syncUserPins();
+    }
 
     onIsOpenChanged: {
         if (isOpen) {
@@ -28,23 +33,72 @@ Item {
         }
     }
 
-    Component {
-        id: videoIconComp
-        MaterialIcon {
-            name: "video"
-            iconSize: 16
+    readonly property string homeDir: Quickshell.env("HOME")
+
+    readonly property string activePlace: {
+        if (!panel.isLocal)
+            return "";
+        const dir = WallpaperService.currentDir;
+        let best = "";
+        for (const p of WallpaperService.fixedDirs.concat(WallpaperService.userPins)) {
+            if ((dir === p || dir.startsWith(p + "/")) && p.length > best.length)
+                best = p;
+        }
+        return best;
+    }
+
+    ListModel {
+        id: userPinModel
+    }
+
+    function syncUserPins() {
+        const list = WallpaperService.userPins;
+        for (let i = userPinModel.count - 1; i >= 0; i--) {
+            if (list.indexOf(userPinModel.get(i).path) < 0)
+                userPinModel.remove(i);
+        }
+        for (let i = 0; i < list.length; i++) {
+            if (i >= userPinModel.count)
+                userPinModel.append({
+                    path: list[i]
+                });
+            else if (userPinModel.get(i).path !== list[i])
+                userPinModel.insert(i, {
+                    path: list[i]
+                });
         }
     }
-    Component {
-        id: imageIconComp
-        MaterialIcon {
-            name: "image"
-            iconSize: 16
-        }
+
+    function pinLabel(path) {
+        if (path === root.homeDir)
+            return Localization.t("wallpaperPicker.place_home");
+        const base = path.replace(/\/+$/, "").split("/").pop();
+        return base || path;
+    }
+
+    function pinSublabel(path) {
+        return path.startsWith(root.homeDir) ? "~" + path.slice(root.homeDir.length) : path;
+    }
+
+    function pinIcon(path) {
+        if (path === root.homeDir)
+            return "home";
+        if (path === WallpaperService.randomDir)
+            return "casino";
+        if (path === WallpaperService.savedDir || path === root.homeDir + "/Downloads")
+            return "download-for-offline";
+        if (path === root.homeDir + "/Pictures")
+            return "image";
+        if (/wallpaper/i.test(path))
+            return "panorama";
+        return "folder";
     }
 
     Connections {
         target: WallpaperService
+        function onUserPinsChanged() {
+            root.syncUserPins();
+        }
         function onCurrentDirChanged() {
             breadcrumbs.updatePath(WallpaperService.currentDir);
         }
@@ -54,20 +108,15 @@ Item {
         function onSortModeChanged() {
             panel.rebuildModel(panel.searchQuery, WallpaperService.entries);
         }
+        function onBrowseSortChanged() {
+            panel.refetch();
+        }
     }
 
-    Item {
-        id: keyHandler
-
-        Keys.onEscapePressed: event => {
-            event.accepted = true;
-            WallpaperService.close();
-        }
-        Keys.onPressed: event => {
-            if (event.key === Qt.Key_Slash) {
-                searchInput.forceActiveFocus();
-                event.accepted = true;
-            }
+    Connections {
+        target: Config
+        function onAllowNsfwChanged() {
+            panel.refetch();
         }
     }
 
@@ -77,7 +126,7 @@ Item {
         width: 1100
         height: 600
         radius: 20
-        color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+        color: Config.dim(Colors.md3.surface_container_low)
         border.width: 1
         border.color: Colors.md3.outline_variant
 
@@ -112,10 +161,17 @@ Item {
         }
 
         readonly property int outerPad: 6
+        readonly property int topInset: 0
         readonly property int headerH: 52
+        readonly property int railWidth: 200
+        readonly property int railPad: 12
+
+        function thumbWidth(cellW) {
+            return Math.ceil((cellW - panel.cardMargin * 2 - panel.imageInset * 2) / 32) * 32;
+        }
         readonly property int gridPad: 8
         readonly property int cardMargin: 4
-        readonly property int cols: 5
+        readonly property int cols: 4
         readonly property int innerRadius: 16
         readonly property int scrollbarWidth: 8
         readonly property int imageInset: 4
@@ -125,6 +181,86 @@ Item {
 
         property string searchQuery: ""
         property ListModel gridModel: ListModel {}
+
+        property string mode: "local"
+        readonly property bool isLocal: panel.mode === "local"
+        property int browsePage: 1
+
+        onModeChanged: {
+            if (searchInput.text !== "")
+                searchInput.text = "";
+            searchDebounce.stop();
+            panel.searchQuery = "";
+            grid.positionViewAtBeginning();
+            WallpaperService.resetBrowse();
+            panel.browsePage = 1;
+            if (panel.mode !== "local")
+                WallpaperService.searchProvider(panel.mode, "", 1);
+        }
+
+        property real contentOpacity: 1
+        property string _pendingMode: ""
+        property string _pendingDir: ""
+
+        property bool headerFades: false
+
+        function requestMode(m, dir) {
+            const targetDir = dir ?? "";
+            if (m === panel.mode && (targetDir === "" || targetDir === WallpaperService.currentDir))
+                return;
+            panel.headerFades = (m === "local") !== (panel.mode === "local");
+            panel._pendingMode = m;
+            panel._pendingDir = targetDir;
+            modeSwap.restart();
+        }
+
+        function _applyPending() {
+            const m = panel._pendingMode;
+            const d = panel._pendingDir;
+            panel._pendingMode = "";
+            panel._pendingDir = "";
+            if (m && m !== panel.mode)
+                panel.mode = m;
+            if (d)
+                inner.navigateTo(d);
+        }
+
+        SequentialAnimation {
+            id: modeSwap
+            NumberAnimation {
+                target: panel
+                property: "contentOpacity"
+                to: 0
+                duration: 130
+                easing.type: Easing.InCubic
+            }
+            ScriptAction {
+                script: panel._applyPending()
+            }
+            NumberAnimation {
+                target: panel
+                property: "contentOpacity"
+                to: 1
+                duration: 190
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        function refetch() {
+            if (panel.mode === "local")
+                return;
+            WallpaperService.resetBrowse();
+            panel.browsePage = 1;
+            grid.positionViewAtBeginning();
+            WallpaperService.searchProvider(panel.mode, searchInput.text, 1);
+        }
+
+        function formatSize(bytes) {
+            if (!bytes)
+                return "";
+            const mb = bytes / 1048576;
+            return mb >= 1 ? mb.toFixed(1) + " MB" : Math.round(bytes / 1024) + " KB";
+        }
 
         readonly property string thumbScript: "
             set -e
@@ -193,7 +329,7 @@ Item {
                 }
             });
 
-            const key = sorted.map(e => e.path).join("");
+            const key = sorted.map(e => e.path).join("");
             if (key === panel._lastRebuildKey)
                 return;
             panel._lastRebuildKey = key;
@@ -219,25 +355,213 @@ Item {
         }
 
         onSearchQueryChanged: rebuildModel(panel.searchQuery, WallpaperService.entries)
+
+        Item {
+            id: rail
+            anchors {
+                left: parent.left
+                top: parent.top
+                bottom: parent.bottom
+                leftMargin: panel.railPad
+                topMargin: panel.topInset
+                bottomMargin: panel.outerPad
+            }
+            width: panel.railWidth - panel.railPad * 2
+
+            Item {
+                id: railHeader
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: parent.top
+                }
+                height: panel.headerH
+                clip: true
+
+                Text {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        leftMargin: 6
+                        rightMargin: 6
+                        verticalCenter: parent.verticalCenter
+                    }
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
+                    text: Localization.t("wallpaperPicker.title")
+                    font.family: Config.fontFamily
+                    font.pixelSize: 18
+                    font.weight: Font.Bold
+                    renderType: Text.NativeRendering
+                    color: Colors.md3.on_secondary_container
+                }
+            }
+
+            Flickable {
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: railHeader.bottom
+                    bottom: parent.bottom
+                }
+                contentWidth: width
+                contentHeight: railContent.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AsNeeded
+                }
+
+                ColumnLayout {
+                    id: railContent
+                    width: parent.width
+                    spacing: 0
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: 8
+                        spacing: 3
+
+                        Repeater {
+                            model: WallpaperService.fixedDirs
+
+                            SidebarItem {
+                                required property var modelData
+                                required property int index
+
+                                label: root.pinLabel(modelData)
+                                sublabel: root.pinSublabel(modelData)
+                                active: root.activePlace === modelData
+                                topRadius: index === 0 ? 18 : 6
+                                bottomRadius: index === WallpaperService.fixedDirs.length - 1 ? 18 : 6
+                                onClicked: panel.requestMode("local", modelData)
+
+                                MaterialIcon {
+                                    name: root.pinIcon(modelData)
+                                }
+                            }
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: 8
+                        spacing: 3
+                        visible: userPinModel.count > 0
+
+                        Repeater {
+                            model: userPinModel
+
+                            SidebarItem {
+                                required property string path
+                                required property int index
+
+                                label: root.pinLabel(path)
+                                sublabel: root.pinSublabel(path)
+                                active: root.activePlace === path
+                                topRadius: index === 0 ? 18 : 6
+                                bottomRadius: index === userPinModel.count - 1 ? 18 : 6
+                                onClicked: panel.requestMode("local", path)
+
+                                MaterialIcon {
+                                    name: root.pinIcon(path)
+                                }
+                            }
+                        }
+                    }
+
+                    SidebarGroup {
+                        Layout.fillWidth: true
+                        currentPage: panel.isLocal ? -1 : (panel.mode === "konachan" ? 0 : 1)
+
+                        SidebarItem {
+                            page: 0
+                            label: Localization.t("wallpaperPicker.konachan")
+                            sublabel: Localization.t("wallpaperPicker.konachan_sub")
+                            onClicked: panel.requestMode("konachan")
+                            MaterialIcon {
+                                name: "okonomiyaki"
+                            }
+                        }
+                        SidebarItem {
+                            page: 1
+                            label: Localization.t("wallpaperPicker.wallhaven")
+                            sublabel: Localization.t("wallpaperPicker.wallhaven_sub")
+                            onClicked: panel.requestMode("wallhaven")
+                            MaterialIcon {
+                                name: "panorama"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Item {
             id: topBar
             anchors {
                 top: parent.top
-                left: parent.left
+                left: rail.right
                 right: parent.right
+                leftMargin: panel.railPad
+                topMargin: panel.topInset
             }
             height: panel.headerH
 
-            BreadCrumbBar {
-                id: breadcrumbs
+            Item {
+                id: headerContext
                 anchors {
                     left: parent.left
-                    leftMargin: 14
-                    verticalCenter: parent.verticalCenter
+                    right: localActions.left
+                    top: parent.top
+                    bottom: parent.bottom
+                    leftMargin: 10
+                    rightMargin: 8
                 }
-                height: 32
-                navigateCallback: function (path) {
-                    inner.navigateTo(path);
+                opacity: panel.headerFades ? panel.contentOpacity : 1
+
+                BreadCrumbBar {
+                    id: breadcrumbs
+                    anchors {
+                        left: parent.left
+                        verticalCenter: parent.verticalCenter
+                    }
+                    height: 24
+                    visible: panel.isLocal
+                    navigateCallback: function (path) {
+                        panel.requestMode("local", path);
+                    }
+                }
+
+                SettingChips {
+                    id: sortChips
+                    anchors {
+                        left: parent.left
+                        leftMargin: -14
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: 210
+                    compact: true
+                    stack: false
+                    isLast: true
+                    visible: !panel.isLocal
+                    options: [
+                        {
+                            label: Localization.t("wallpaperPicker.sort_top"),
+                            value: "top"
+                        },
+                        {
+                            label: Localization.t("wallpaperPicker.sort_new"),
+                            value: "new"
+                        },
+                        {
+                            label: Localization.t("wallpaperPicker.sort_random"),
+                            value: "random"
+                        }
+                    ]
+                    currentValue: WallpaperService.browseSort
+                    onSelected: v => WallpaperService.browseSort = v
                 }
             }
 
@@ -245,25 +569,15 @@ Item {
                 id: rightActions
                 anchors {
                     right: parent.right
-                    rightMargin: 8
+                    rightMargin: panel.railPad - 2
                     verticalCenter: parent.verticalCenter
                 }
                 spacing: 6
 
-                SortBtn {
-                    onBtnClicked: WallpaperService.cycleSortMode()
-                }
-                IconBtn {
-                    btnIcon: "folder-open"
-                    onBtnClicked: {
-                        WallpaperService.openFolder();
-                        WallpaperService.close();
-                    }
-                }
                 IconBtn {
                     btnIcon: "settings"
                     onBtnClicked: {
-                        Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"])
+                        Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"]);
                         WallpaperService.close();
                     }
                 }
@@ -272,17 +586,52 @@ Item {
                     onBtnClicked: WallpaperService.close()
                 }
             }
+
+            Row {
+                id: localActions
+                anchors {
+                    right: rightActions.left
+                    rightMargin: 6
+                    verticalCenter: parent.verticalCenter
+                }
+                spacing: 6
+                opacity: panel.isLocal ? (panel.headerFades ? panel.contentOpacity : 1) : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 140
+                    }
+                }
+
+                SortBtn {
+                    onBtnClicked: WallpaperService.cycleSortMode()
+                }
+                IconBtn {
+                    btnIcon: "keep"
+                    btnFilled: WallpaperService.isPinned(WallpaperService.currentDir)
+                    btnEnabled: !WallpaperService.isFixedDir(WallpaperService.currentDir)
+                    onBtnClicked: WallpaperService.togglePin(WallpaperService.currentDir)
+                }
+                IconBtn {
+                    btnIcon: "folder-open"
+                    onBtnClicked: {
+                        WallpaperService.openFolder();
+                        WallpaperService.close();
+                    }
+                }
+            }
         }
 
         Rectangle {
             id: inner
             anchors {
                 top: topBar.bottom
-                left: parent.left
+                left: rail.right
                 right: parent.right
                 bottom: parent.bottom
-                margins: panel.outerPad
-                topMargin: panel.outerPad
+                leftMargin: panel.railPad
+                rightMargin: panel.outerPad
+                bottomMargin: panel.outerPad
             }
             radius: panel.innerRadius
             color: Qt.alpha(Colors.md3.surface_container_lowest, Config.blurOpacity)
@@ -298,12 +647,18 @@ Item {
             Timer {
                 id: searchDebounce
                 interval: 200
-                onTriggered: panel.searchQuery = searchInput.text
+                onTriggered: {
+                    if (panel.isLocal)
+                        panel.searchQuery = searchInput.text;
+                    else
+                        panel.refetch();
+                }
             }
 
             Item {
                 id: gridWrapper
                 anchors.fill: parent
+                opacity: panel.contentOpacity
 
                 GridView {
                     id: grid
@@ -328,38 +683,90 @@ Item {
                     boundsBehavior: Flickable.DragOverBounds
                     pixelAligned: true
                     reuseItems: true
-                    model: panel.gridModel
+                    model: panel.isLocal ? panel.gridModel : WallpaperService.browseModel
+
+                    onAtYEndChanged: {
+                        if (atYEnd && !panel.isLocal && WallpaperService.browseModel.count > 0 && WallpaperService.browseHasMore && !WallpaperService.browseLoading) {
+                            panel.browsePage++;
+                            WallpaperService.searchProvider(panel.mode, searchInput.text, panel.browsePage);
+                        }
+                    }
 
                     footer: Item {
-                        width: 1
-                        height: panel.pillH + panel.pillMargin + panel.gridPad
+                        id: gridFooter
+                        width: grid.width
+
+                        readonly property bool showSpinner: !panel.isLocal && WallpaperService.browseLoading && WallpaperService.browseModel.count > 0
+
+                        height: panel.pillH + panel.pillMargin + panel.gridPad + (gridFooter.showSpinner ? 48 : 0)
+                        Behavior on height {
+                            NumberAnimation {
+                                duration: 200
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        LoadingSpinner {
+                            anchors {
+                                top: parent.top
+                                topMargin: 12
+                                horizontalCenter: parent.horizontalCenter
+                            }
+                            running: gridFooter.showSpinner
+                            visible: running
+                            size: 24
+                        }
                     }
 
                     Column {
+                        id: emptyCol
                         anchors.centerIn: parent
                         spacing: 20
-                        visible: panel.gridModel.count === 0
+                        visible: panel.isLocal ? panel.gridModel.count === 0 : WallpaperService.browseModel.count === 0
 
-                        Rectangle {
+                        readonly property bool loading: panel.isLocal ? WallpaperService.loading : WallpaperService.browseLoading
+
+                        Item {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            implicitWidth: kaoLbl.implicitWidth + 36
+                            width: 70
                             height: 70
-                            radius: 35
-                            color: Colors.md3.primary_container
 
-                            Text {
-                                id: kaoLbl
+                            LoadingSpinner {
                                 anchors.centerIn: parent
-                                text: WallpaperService.loading ? "(╭_•́)" : "(ᵕ—ᴗ—)?"
-                                color: Colors.md3.primary
-                                font.pixelSize: 38
-                                renderType: Text.NativeRendering
+                                visible: emptyCol.loading
+                                running: emptyCol.loading
+                                size: 64
+                                background: true
+                            }
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                visible: !emptyCol.loading
+                                width: kaoLbl.implicitWidth + 36
+                                height: 70
+                                radius: 35
+                                color: Colors.md3.primary_container
+
+                                Text {
+                                    id: kaoLbl
+                                    anchors.centerIn: parent
+                                    text: "(ᵕ—ᴗ—)?"
+                                    color: Colors.md3.primary
+                                    font.pixelSize: 38
+                                    renderType: Text.NativeRendering
+                                }
                             }
                         }
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: WallpaperService.loading ? Localization.t("wallpaperPicker.loading") : (panel.searchQuery !== "" ? Localization.t("wallpaperPicker.no_results") : Localization.t("wallpaperPicker.no_wallpapers_found"))
+                            text: {
+                                if (emptyCol.loading)
+                                    return Localization.t("wallpaperPicker.loading");
+                                if (!panel.isLocal && WallpaperService.browseError)
+                                    return Localization.t("wallpaperPicker.browse_error");
+                                return panel.searchQuery !== "" || searchInput.text !== "" ? Localization.t("wallpaperPicker.no_results") : Localization.t("wallpaperPicker.no_wallpapers_found");
+                            }
                             color: Colors.md3.on_surface_variant
                             font.pixelSize: 16
                             font.family: Config.fontFamily
@@ -368,15 +775,25 @@ Item {
                         }
                     }
 
-                    delegate: EntryCard {
-                        required property var modelData
-                        required property int index
-                        entry: modelData
-                        entryIndex: index
-                        navigateCallback: function (path) {
-                            inner.navigateTo(path);
+                    Component {
+                        id: localDelegateComp
+                        EntryCard {
+                            required property var modelData
+                            required property int index
+                            entry: modelData
+                            entryIndex: index
+                            navigateCallback: function (path) {
+                                panel.requestMode("local", path);
+                            }
                         }
                     }
+
+                    Component {
+                        id: browseDelegateComp
+                        BrowseCard {}
+                    }
+
+                    delegate: panel.isLocal ? localDelegateComp : browseDelegateComp
 
                     ScrollBar.vertical: ScrollBar {
                         id: vBar
@@ -414,8 +831,8 @@ Item {
                 Row {
                     id: pillLeftBtns
                     anchors {
-                        left: parent.left
-                        leftMargin: 9
+                        right: parent.right
+                        rightMargin: 9
                         verticalCenter: parent.verticalCenter
                     }
                     spacing: 6
@@ -491,7 +908,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: WallpaperService.randomize()
+                            onClicked: WallpaperService.randomizeFrom(panel.mode)
                         }
                     }
                 }
@@ -499,9 +916,9 @@ Item {
                 Rectangle {
                     id: inputPill
                     anchors {
-                        left: pillLeftBtns.right
+                        left: parent.left
                         leftMargin: 9
-                        right: parent.right
+                        right: pillLeftBtns.left
                         rightMargin: 9
                         verticalCenter: parent.verticalCenter
                     }
@@ -527,14 +944,16 @@ Item {
 
                         MaterialIcon {
                             anchors.verticalCenter: parent.verticalCenter
-                            name: "search"
+                            name: panel.isLocal ? "search" : "image-search"
                             iconSize: 15
                             color: Colors.md3.on_surface_variant
                         }
 
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
-                            text: Localization.t("wallpaperPicker.search")
+                            text: panel.isLocal
+                                ? Localization.t("wallpaperPicker.filter")
+                                : Localization.t("wallpaperPicker.search") + " " + WallpaperService.providerName(panel.mode) + "..."
                             font.pixelSize: 13
                             font.family: Config.fontFamily
                             renderType: Text.NativeRendering
@@ -622,6 +1041,7 @@ Item {
         }
     }
 
+
     component SortBtn: Rectangle {
         id: sBtn
         signal btnClicked
@@ -682,11 +1102,14 @@ Item {
     component IconBtn: Rectangle {
         id: iBtn
         property string btnIcon: ""
+        property bool btnFilled: false
+        property bool btnEnabled: true
         signal btnClicked
 
         width: 34
         height: 34
         radius: 17
+        opacity: iBtn.btnEnabled ? 1 : 0.45
         color: iBtnMA.containsMouse ? Qt.alpha(Colors.md3.on_surface_variant, 0.15) : Qt.alpha(Colors.md3.on_surface_variant, 0.06)
         Behavior on color {
             ColorAnimation {
@@ -698,7 +1121,8 @@ Item {
             anchors.centerIn: parent
             name: iBtn.btnIcon
             iconSize: 18
-            color: iBtnMA.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant
+            filled: iBtn.btnFilled
+            color: iBtn.btnFilled ? Colors.md3.primary : (iBtnMA.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
             Behavior on color {
                 ColorAnimation {
                     duration: 100
@@ -709,6 +1133,7 @@ Item {
         MouseArea {
             id: iBtnMA
             anchors.fill: parent
+            enabled: iBtn.btnEnabled
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
             onClicked: iBtn.btnClicked()
@@ -717,10 +1142,10 @@ Item {
 
     component BreadCrumbBar: Item {
         id: bar
-        readonly property int spacing: 3
+        readonly property int spacing: 2
         clip: true
         implicitWidth: bar._contentWidth
-        implicitHeight: 32
+        implicitHeight: 24
 
         property var pathItems: []
         property int activeIndex: -1
@@ -790,10 +1215,8 @@ Item {
                 structCommon++;
 
             for (let i = 0; i < structCommon; i++) {
-                if (i < children.length) {
+                if (i < children.length)
                     children[i].updateActive(i === newActiveIndex);
-                    children[i].updateRightmost(i === nextItems.length - 1);
-                }
             }
             for (let i = bar.pathItems.length - 1; i >= structCommon; i--) {
                 if (i < children.length)
@@ -803,7 +1226,6 @@ Item {
                 crumbComponent.createObject(bar, {
                     crumbData: nextItems[i],
                     isActive: i === newActiveIndex,
-                    isRightmost: i === nextItems.length - 1,
                     indexInBar: i
                 });
             }
@@ -815,80 +1237,34 @@ Item {
         Component {
             id: crumbComponent
 
-            Rectangle {
-                id: chip
+            Item {
+                id: crumb
                 property var crumbData
                 property bool isActive: false
-                property bool isRightmost: false
                 property int indexInBar: 0
 
                 property bool _removing: false
                 property real targetX: 0
 
                 readonly property bool hasIcon: !!crumbData?.icon
+                readonly property bool showSeparator: indexInBar > 0
+                readonly property color tone: crumb.isActive ? Colors.md3.on_surface : (crumbMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
 
-                height: 32
-                width: hasIcon ? height : Math.max(isActive ? 48 : 38, chipLabel.implicitWidth + (isActive ? 24 : 16))
-                y: (bar.height - height) / 2
+                height: bar.height
+                width: crumbRow.implicitWidth
+                y: 0
                 x: targetX
                 opacity: 0
-                scale: 0.82
-
-                readonly property real innerRadius: 6
-
-                topLeftRadius: isActive || indexInBar === 0 ? height / 2 : innerRadius
-                bottomLeftRadius: isActive || indexInBar === 0 ? height / 2 : innerRadius
-                topRightRadius: isActive || isRightmost ? height / 2 : innerRadius
-                bottomRightRadius: isActive || isRightmost ? height / 2 : innerRadius
-
-                color: isActive ? Colors.md3.primary : (chipMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
+                scale: 0.92
+                transformOrigin: Item.Left
 
                 onWidthChanged: bar.relayout()
-
-                Behavior on topLeftRadius {
-                    NumberAnimation {
-                        duration: 180
-                        easing.type: Easing.OutCubic
-                    }
-                }
-                Behavior on bottomLeftRadius {
-                    NumberAnimation {
-                        duration: 180
-                        easing.type: Easing.OutCubic
-                    }
-                }
-                Behavior on topRightRadius {
-                    NumberAnimation {
-                        duration: 180
-                        easing.type: Easing.OutCubic
-                    }
-                }
-                Behavior on bottomRightRadius {
-                    NumberAnimation {
-                        duration: 180
-                        easing.type: Easing.OutCubic
-                    }
-                }
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 200
-                    }
-                }
-                Behavior on width {
-                    NumberAnimation {
-                        duration: 180
-                        easing.type: Easing.OutCubic
-                    }
-                }
 
                 function updateActive(active) {
                     isActive = active;
                 }
-                function updateRightmost(rightmost) {
-                    isRightmost = rightmost;
-                }
                 function animateOut() {
-                    chip._removing = true;
+                    crumb._removing = true;
                     bar.relayout();
                     outAnim.start();
                 }
@@ -902,17 +1278,17 @@ Item {
                 ParallelAnimation {
                     id: inAnim
                     NumberAnimation {
-                        target: chip
+                        target: crumb
                         property: "opacity"
                         to: 1
-                        duration: 160
+                        duration: 140
                         easing.type: Easing.OutCubic
                     }
                     NumberAnimation {
-                        target: chip
+                        target: crumb
                         property: "scale"
                         to: 1
-                        duration: 200
+                        duration: 160
                         easing.type: Easing.OutCubic
                     }
                 }
@@ -920,62 +1296,77 @@ Item {
                     id: outAnim
                     ParallelAnimation {
                         NumberAnimation {
-                            target: chip
+                            target: crumb
                             property: "opacity"
                             to: 0
-                            duration: 150
+                            duration: 120
                         }
                         NumberAnimation {
-                            target: chip
+                            target: crumb
                             property: "scale"
-                            to: 0.75
-                            duration: 150
+                            to: 0.85
+                            duration: 120
                         }
                     }
                     ScriptAction {
-                        script: chip.destroy()
+                        script: crumb.destroy()
                     }
                 }
 
-                MaterialIcon {
-                    visible: chip.hasIcon
-                    anchors.centerIn: parent
-                    name: chip.crumbData?.icon ?? ""
-                    iconSize: 16
-                    color: chip.isActive ? Colors.md3.on_primary : Colors.md3.on_surface_variant
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 200
+                Row {
+                    id: crumbRow
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 5
+
+                    MaterialIcon {
+                        visible: crumb.showSeparator
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: "chevron-right"
+                        iconSize: 13
+                        transitionType: "none"
+                        color: Colors.md3.outline
+                    }
+
+                    MaterialIcon {
+                        visible: crumb.hasIcon
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: crumb.crumbData?.icon ?? ""
+                        iconSize: 15
+                        color: crumb.tone
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 140
+                            }
                         }
                     }
-                }
 
-                Text {
-                    id: chipLabel
-                    visible: !chip.hasIcon
-                    anchors.centerIn: parent
-                    text: chip.hasIcon ? "" : (chip.crumbData?.label ?? "")
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
-                    font.family: Config.fontFamily
-                    renderType: Text.NativeRendering
-                    elide: Text.ElideRight
-                    maximumLineCount: 1
-                    color: chip.isActive ? Colors.md3.on_primary : Colors.md3.on_surface_variant
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 200
+                    Text {
+                        id: crumbLabel
+                        visible: !crumb.hasIcon
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: crumb.hasIcon ? "" : (crumb.crumbData?.label ?? "")
+                        font.pixelSize: 12
+                        font.weight: crumb.isActive ? Font.DemiBold : Font.Medium
+                        font.family: Config.fontFamily
+                        renderType: Text.NativeRendering
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                        color: crumb.tone
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 140
+                            }
                         }
                     }
                 }
 
                 MouseArea {
-                    id: chipMouse
+                    id: crumbMouse
                     anchors.fill: parent
                     hoverEnabled: true
-                    cursorShape: chip.isActive ? Qt.ArrowCursor : Qt.PointingHandCursor
-                    enabled: !chip.isActive
-                    onClicked: bar.navigateCallback(chip.crumbData.path)
+                    cursorShape: crumb.isActive ? Qt.ArrowCursor : Qt.PointingHandCursor
+                    enabled: !crumb.isActive
+                    onClicked: bar.navigateCallback(crumb.crumbData.path)
                 }
             }
         }
@@ -1019,7 +1410,6 @@ Item {
                 thumbProc.running = true;
             });
         }
-
 
         Timer {
             interval: 100
@@ -1141,8 +1531,8 @@ Item {
                     }
                     fillMode: Image.PreserveAspectCrop
 
-                    sourceSize.width: Math.round((grid.cellWidth - panel.cardMargin * 2) - panel.imageInset * 2)
-                    sourceSize.height: Math.round(((grid.cellWidth - panel.cardMargin * 2) - panel.imageInset * 2) * 9 / 16)
+                    sourceSize.width: panel.thumbWidth(grid.cellWidth)
+                    sourceSize.height: Math.round(panel.thumbWidth(grid.cellWidth) * 9 / 16)
 
                     asynchronous: true
                     smooth: false
@@ -1160,13 +1550,13 @@ Item {
                     anchors.fill: parent
                     color: Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity)
 
-                    Loader {
+                    MaterialIcon {
                         anchors.centerIn: parent
-                        sourceComponent: card.isVideo ? videoIconComp : imageIconComp
+                        name: card.isVideo ? "video" : "image"
+                        iconSize: 22
+                        transitionType: "none"
+                        color: Colors.md3.on_surface_variant
                         opacity: 0.25
-                        onLoaded: {
-                            if (item) item.iconSize = 22;
-                        }
                     }
                 }
 
@@ -1183,12 +1573,12 @@ Item {
                     color: Qt.alpha(Colors.md3.surface_container_lowest, 0.85)
                     z: 2
 
-                    Loader {
+                    MaterialIcon {
                         anchors.centerIn: parent
-                        sourceComponent: videoIconComp
-                        onLoaded: {
-                            if (item) item.iconSize = 12;
-                        }
+                        name: "video"
+                        iconSize: 12
+                        transitionType: "none"
+                        color: Colors.md3.on_surface_variant
                     }
                 }
 
@@ -1260,6 +1650,184 @@ Item {
                         WallpaperService.selectWall(card.entryPath);
                     }
                 }
+            }
+        }
+    }
+
+    component BrowseCard: Item {
+        id: bcard
+        required property var modelData
+
+        readonly property string itemId: String(bcard.modelData?.id ?? "")
+        readonly property bool hovered: bcardMA.containsMouse || saveMA.containsMouse
+        readonly property bool pending: WallpaperService.pendingDownloads[bcard.itemId] === true
+        readonly property bool saved: WallpaperService.savedItems[bcard.itemId] !== undefined
+        readonly property int imgW: bcard.modelData?.width ?? 0
+        readonly property int imgH: bcard.modelData?.height ?? 0
+
+        width: grid.cellWidth
+        height: grid.cellHeight
+
+        Rectangle {
+            id: bcardBody
+            anchors {
+                fill: parent
+                margins: panel.cardMargin
+            }
+            radius: 12
+            color: bcard.hovered ? Qt.alpha(Colors.md3.surface_container, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_lowest, Config.blurOpacity)
+            Behavior on color {
+                ColorAnimation {
+                    duration: 80
+                }
+            }
+
+            ClippingRectangle {
+                id: bimageClip
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                    topMargin: panel.imageInset
+                    leftMargin: panel.imageInset
+                    rightMargin: panel.imageInset
+                }
+                height: Math.round(width * 9 / 16)
+                radius: 8
+                color: "transparent"
+
+                Image {
+                    id: bwallImg
+                    anchors.fill: parent
+                    source: bcard.modelData?.thumb ?? ""
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    smooth: false
+                    cache: true
+                    opacity: status === Image.Ready ? 1 : 0
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
+                        }
+                    }
+                }
+
+                Rectangle {
+                    visible: bwallImg.status !== Image.Ready
+                    anchors.fill: parent
+                    color: Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity)
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: "image"
+                        iconSize: 22
+                        transitionType: "none"
+                        color: Colors.md3.on_surface_variant
+                        opacity: 0.25
+                    }
+                }
+
+                Rectangle {
+                    id: saveBtn
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                        margins: 6
+                    }
+                    width: 24
+                    height: 24
+                    radius: 12
+                    z: 3
+                    opacity: (bcard.saved || bcard.hovered) && !bcard.pending ? 1 : 0
+                    visible: opacity > 0
+                    color: bcard.saved
+                        ? Colors.md3.primary
+                        : (saveMA.containsMouse ? Colors.md3.surface_container_highest : Qt.alpha(Colors.md3.surface_container_lowest, 0.88))
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 120
+                        }
+                    }
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 120
+                        }
+                    }
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: bcard.saved ? "check" : "arrow-downward"
+                        iconSize: 14
+                        transitionType: "crossfade-scale"
+                        color: bcard.saved ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                    }
+
+                    MouseArea {
+                        id: saveMA
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        enabled: !bcard.saved && !bcard.pending
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: WallpaperService.saveBrowseItem(bcard.modelData, panel.mode, false)
+                    }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    z: 4
+                    visible: bcard.pending
+                    color: Qt.alpha(Colors.md3.surface_container_lowest, 0.65)
+
+                    LoadingSpinner {
+                        anchors.centerIn: parent
+                        running: bcard.pending
+                        size: 40
+                        background: true
+                    }
+                }
+            }
+
+            Item {
+                anchors {
+                    top: bimageClip.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+
+                Text {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: 6
+                        rightMargin: 6
+                    }
+                    text: {
+                        if (bcard.imgW <= 0 || bcard.imgH <= 0)
+                            return "";
+                        const size = panel.formatSize(bcard.modelData?.size ?? 0);
+                        return bcard.imgW + " × " + bcard.imgH + (size ? "  ·  " + size : "");
+                    }
+                    font.pixelSize: 11
+                    font.family: Config.fontFamily
+                    renderType: Text.NativeRendering
+                    elide: Text.ElideRight
+                    horizontalAlignment: Text.AlignHCenter
+                    color: Colors.md3.on_surface_variant
+                    opacity: 0.7
+                }
+            }
+
+            MouseArea {
+                id: bcardMA
+                anchors.fill: parent
+                z: -1
+                cursorShape: Qt.PointingHandCursor
+                hoverEnabled: true
+                enabled: !bcard.pending && !WallpaperService.applying
+                onClicked: WallpaperService.saveBrowseItem(bcard.modelData, panel.mode, true)
             }
         }
     }
