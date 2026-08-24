@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Effects
 
 import qs.components
+import qs.services
 import qs.style
 
 Item {
@@ -135,6 +136,8 @@ Item {
 
                         onClicked: mouse => {
                             if (mouse.button === Qt.LeftButton) {
+                                if (PanelService.current)
+                                    PanelService.current.close();
                                 cell.modelData?.activate();
                             } else if (mouse.button === Qt.RightButton) {
                                 tooltip.open = false;

@@ -448,6 +448,8 @@ Rectangle {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
+                                if (PanelService.current)
+                                    PanelService.current.close();
                                 if (root.isNiri) {
                                     CompositorService.focusWorkspace(wsItem.wsRef, root.currentMonitorName);
                                 } else {

@@ -87,6 +87,8 @@ Item {
             propagateComposedEvents: true
             onClicked: (mouse) => {
                 if (mouse.button === Qt.RightButton && MediaPlayerState.players.length > 1) {
+                    if (PanelService.current)
+                        PanelService.current.close();
                     root.cyclePlayer();
                     mouse.accepted = true;
                 } else {
@@ -127,6 +129,8 @@ Item {
                 cursorShape: btn.btnEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 
                 onClicked: (mouse) => {
+                    if (PanelService.current)
+                        PanelService.current.close();
                     if (mouse.button === Qt.RightButton) {
                         if (MediaPlayerState.players.length > 1) {
                             root.cyclePlayer();

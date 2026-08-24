@@ -541,6 +541,10 @@ Item {
     MouseArea {
         anchors.fill: pillsRow
         hoverEnabled: true
+        onClicked: {
+            if (PanelService.current)
+                PanelService.current.close();
+        }
         onEntered: {
             var yPos = Config.bar.position === 1 ? 0 : height;
             tooltip.targetPos = root.mapToGlobal(width / 2, yPos);

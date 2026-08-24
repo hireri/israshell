@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services
 import qs.style
 
 Item {
@@ -19,13 +20,21 @@ Item {
     width: 0
     height: 0
 
+    readonly property bool panelOpen: PanelService.current !== null
+
     property bool _shown: false
     onOpenChanged: {
-        if (open) {
+        if (open && !panelOpen) {
             closeTimer.stop();
             _shown = true;
         } else {
             closeTimer.restart();
+        }
+    }
+    onPanelOpenChanged: {
+        if (panelOpen) {
+            closeTimer.stop();
+            _shown = false;
         }
     }
 
@@ -40,7 +49,7 @@ Item {
 
         parent: root.panelWindow?.contentItem ?? null
         z: 100
-        visible: root._shown
+        visible: root._shown && !root.panelOpen
 
         readonly property real barHeight: root.panelWindow?.barHeight ?? 0
 

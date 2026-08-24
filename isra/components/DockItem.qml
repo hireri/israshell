@@ -218,6 +218,8 @@ Item {
                 suppressNextClick = false;
                 return;
             }
+            if (PanelService.current)
+                PanelService.current.close();
             if (mouse.button === Qt.LeftButton) {
                 if (root.isRunning) {
                     if (root.toplevels.length === 1) {
