@@ -362,7 +362,7 @@ Singleton {
         CompactToggleTile {
             active: ScreencapService.isRecording
             accentColor: Colors.md3.error
-            onAccentColor: Colors.md3.on_error
+            accentContentColor: Colors.md3.on_error
             iconComponent: MaterialIcon {
                 name: "record"
                 iconSize: 22
@@ -378,7 +378,7 @@ Singleton {
             active: ScreencapService.isRecording
             label: Localization.t("qsTileService.record")
             accentColor: Colors.md3.error
-            onAccentColor: Colors.md3.on_error
+            accentContentColor: Colors.md3.on_error
             sublabelForOn: on => on ? ScreencapService.recordingTime : null
             iconComponent: MaterialIcon {
                 name: "record"

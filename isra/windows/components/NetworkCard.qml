@@ -7,7 +7,7 @@ Rectangle {
 
     property bool enabled: false
     property color tint: Colors.md3.surface_container
-    property color onTint: Colors.md3.on_surface
+    property color tintColor: Colors.md3.on_surface
 
     property Component iconComponent: null
 
@@ -67,7 +67,7 @@ Rectangle {
                 font.family: Config.fontFamily
                 font.pixelSize: 14
                 font.weight: Font.Medium
-                color: root.enabled ? root.onTint : Colors.md3.on_surface
+                color: root.enabled ? root.tintColor : Colors.md3.on_surface
                 Layout.fillWidth: true
                 elide: Text.ElideRight
                 Behavior on color {
@@ -81,7 +81,7 @@ Rectangle {
                 text: root.subtitle
                 font.family: Config.fontFamily
                 font.pixelSize: 12
-                color: root.enabled ? root.onTint : Colors.md3.outline
+                color: root.enabled ? root.tintColor : Colors.md3.outline
                 opacity: 0.75
                 Layout.fillWidth: true
                 elide: Text.ElideRight

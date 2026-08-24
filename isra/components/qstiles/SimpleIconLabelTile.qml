@@ -12,7 +12,7 @@ Item {
     property bool active: false
     property bool forceOff: false
     property color accentColor: Colors.md3.primary
-    property color onAccentColor: Colors.md3.on_primary
+    property color accentContentColor: Colors.md3.on_primary
     signal toggled
     signal rightClicked
 
@@ -41,7 +41,7 @@ Item {
             Binding {
                 target: iconLoader.item
                 property: "color"
-                value: root._on ? root.onAccentColor : Colors.md3.on_surface_variant
+                value: root._on ? root.accentContentColor : Colors.md3.on_surface_variant
                 when: iconLoader.status === Loader.Ready && iconLoader.item && iconLoader.item.hasOwnProperty("color")
             }
             Binding {
@@ -62,7 +62,7 @@ Item {
                 font.family: Config.fontFamily
                 font.pixelSize: 13
                 font.weight: Font.Medium
-                color: root._on ? root.onAccentColor : Colors.md3.on_surface
+                color: root._on ? root.accentContentColor : Colors.md3.on_surface
                 elide: Text.ElideRight
                 renderType: Text.NativeRendering
             }
@@ -73,7 +73,7 @@ Item {
                 font.pixelSize: 11
                 font.family: Config.fontFamily
                 font.features: ({ "tnum": 1 })
-                color: root._on ? Qt.alpha(root.onAccentColor, 0.85) : Colors.md3.on_surface_variant
+                color: root._on ? Qt.alpha(root.accentContentColor, 0.85) : Colors.md3.on_surface_variant
                 elide: Text.ElideRight
                 visible: root._effectiveSublabel !== ""
                 renderType: Text.NativeRendering

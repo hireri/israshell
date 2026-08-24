@@ -154,7 +154,7 @@ PageBase {
         Layout.fillWidth: true
         enabled: NetworkService.ethConnected
         tint: Colors.md3.tertiary_container
-        onTint: Colors.md3.on_tertiary_container
+        tintColor: Colors.md3.on_tertiary_container
         iconComponent: ethIconComp
         title: Localization.t("networkPage.ethernet")
         subtitle: NetworkService.ethConnected ? Localization.t("networkPage.connected") : Localization.t("networkPage.not_connected")
@@ -168,7 +168,7 @@ PageBase {
         Layout.fillWidth: true
         enabled: NetworkService.wifiEnabled
         tint: Colors.md3.primary_container
-        onTint: Colors.md3.on_primary_container
+        tintColor: Colors.md3.on_primary_container
         iconComponent: wifiIconComp
         title: NetworkService.wifiConnected ? NetworkService.wifiSsid : Localization.t("qsTileService.wifi")
         subtitle: NetworkService.wifiConnecting ? Localization.t("networkPage.connecting") : NetworkService.wifiConnected ? Localization.t("networkPage.strength_percent").arg(NetworkService.wifiSignal) : NetworkService.wifiEnabled ? Localization.t("networkPage.not_connected") : Localization.t("networkPage.off")
@@ -437,7 +437,7 @@ PageBase {
         Layout.fillWidth: true
         enabled: BluetoothService.enabled
         tint: Colors.md3.secondary_container
-        onTint: Colors.md3.on_secondary_container
+        tintColor: Colors.md3.on_secondary_container
         iconComponent: btCardIcon()
         title: BluetoothService.firstConnected?.name ?? Localization.t("qsTileService.bluetooth")
         subtitle: !BluetoothService.enabled ? Localization.t("networkPage.off") : BluetoothService.connectedDevices.length > 0 ? (BluetoothService.firstConnected?.batteryAvailable ? Localization.t("networkPage.connected_battery").arg(BluetoothService.batteryIcon(Math.round(BluetoothService.firstConnected.battery * 100))).arg(Math.round(BluetoothService.firstConnected.battery * 100)) : Localization.t("networkPage.connected")) : Localization.t("networkPage.no_devices_connected")

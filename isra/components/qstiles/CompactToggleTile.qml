@@ -8,7 +8,7 @@ Item {
     property bool active: false
     property bool forceOff: false
     property color accentColor: Colors.md3.primary
-    property color onAccentColor: Colors.md3.on_primary
+    property color accentContentColor: Colors.md3.on_primary
     signal toggled
     signal rightClicked
 
@@ -31,7 +31,7 @@ Item {
         Binding {
             target: iconLoader.item
             property: "color"
-            value: root._on ? root.onAccentColor : Colors.md3.on_surface_variant
+            value: root._on ? root.accentContentColor : Colors.md3.on_surface_variant
             when: iconLoader.status === Loader.Ready && iconLoader.item && iconLoader.item.hasOwnProperty("color")
         }
         Binding {
