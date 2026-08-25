@@ -69,11 +69,26 @@ Singleton {
         return root.cellSize;
     }
 
+    function _originX(screen): real {
+        const ins = root.insets(screen);
+        const usable = root._w(screen) - ins.left - ins.right;
+        const cols = root.columns(screen);
+        const gridW = cols * root.cellSize + (cols - 1) * root.gutter;
+        return ins.left + Math.max(0, usable - gridW) / 2;
+    }
+    function _originY(screen): real {
+        const ins = root.insets(screen);
+        const usable = root._h(screen) - ins.top - ins.bottom;
+        const rws = root.rows(screen);
+        const gridH = rws * root.cellSize + (rws - 1) * root.gutter;
+        return ins.top + Math.max(0, usable - gridH) / 2;
+    }
+
     function cellX(screen, col): real {
-        return root.insets(screen).left + col * (root.cellSize + root.gutter);
+        return root._originX(screen) + col * (root.cellSize + root.gutter);
     }
     function cellY(screen, row): real {
-        return root.insets(screen).top + row * (root.cellSize + root.gutter);
+        return root._originY(screen) + row * (root.cellSize + root.gutter);
     }
     function spanWidth(screen, w): real {
         const n = Math.max(1, w);
@@ -88,10 +103,10 @@ Singleton {
     }
 
     function nearestCol(screen, px): int {
-        return Math.round((px - root.insets(screen).left) / (root.cellSize + root.gutter));
+        return Math.round((px - root._originX(screen)) / (root.cellSize + root.gutter));
     }
     function nearestRow(screen, py): int {
-        return Math.round((py - root.insets(screen).top) / (root.cellSize + root.gutter));
+        return Math.round((py - root._originY(screen)) / (root.cellSize + root.gutter));
     }
 
     function spanFromPixels(screen, pxW, pxH): var {
