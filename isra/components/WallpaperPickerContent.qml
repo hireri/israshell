@@ -1660,8 +1660,8 @@ Item {
 
         readonly property string itemId: String(bcard.modelData?.id ?? "")
         readonly property bool hovered: bcardMA.containsMouse || saveMA.containsMouse
-        readonly property bool pending: WallpaperService.pendingDownloads[bcard.itemId] === true
-        readonly property bool saved: WallpaperService.savedItems[bcard.itemId] !== undefined
+        readonly property bool pending: WallpaperService.isPending(bcard.itemId)
+        readonly property bool saved: WallpaperService.savedPath(bcard.itemId) !== undefined
         readonly property int imgW: bcard.modelData?.width ?? 0
         readonly property int imgH: bcard.modelData?.height ?? 0
 

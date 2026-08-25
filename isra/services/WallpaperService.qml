@@ -67,6 +67,12 @@ Singleton {
 
     Component.onCompleted: {
         root._handleAwwwDaemonState();
+        root.rescanSaved();
+    }
+
+    function rescanSaved() {
+        savedScanProc.running = false;
+        savedScanProc.running = true;
     }
 
     function _handleAwwwDaemonState() {
@@ -82,6 +88,7 @@ Singleton {
     function openFor(_panelWindow) {
         openWindow = _panelWindow;
         isOpen = true;
+        root.rescanSaved();
         if (currentWall) {
             const wallDir = currentWall.substring(0, currentWall.lastIndexOf("/"));
             if (wallDir && wallDir !== currentDir) {
@@ -172,10 +179,34 @@ Singleton {
         root[mapName] = next;
     }
 
+    // Stable, reversible filename key so a redownload can be recognised on disk.
+    function fileKey(id) {
+        let s = String(id ?? "");
+        if (!s)
+            return "";
+        if (s.indexOf("://") >= 0)
+            s = s.split("?")[0].split("/").pop().replace(/\.[^.]*$/, "");
+        return s.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 80);
+    }
+
+    function savedPath(id) {
+        return root.savedItems[root.fileKey(id)];
+    }
+
+    function isPending(id) {
+        return root.pendingDownloads[root.fileKey(id)] === true;
+    }
+
     function saveBrowseItem(item, sourceKey, applyAfter, destDir) {
-        const id = String(item.id || item.full || "");
+        const id = root.fileKey(item.id || item.full || "");
         if (!id || root.pendingDownloads[id])
             return;
+        const have = root.savedItems[id];
+        if (have) {
+            if (applyAfter === true)
+                root.selectWall(have);
+            return;
+        }
         root._setFlag("pendingDownloads", id, true);
         root._dlQueue.push({
             id: id,
@@ -197,7 +228,7 @@ Singleton {
         downloadProc.applyAfter = job.applyAfter;
         downloadProc.url = job.url;
         downloadProc.dir = job.dir;
-        downloadProc.dest = job.dir + "/" + job.sourceKey.toLowerCase() + "_" + Date.now() + "." + ext;
+        downloadProc.dest = job.dir + "/" + job.id + "." + ext;
         downloadProc.running = false;
         downloadProc.running = true;
     }
@@ -653,6 +684,26 @@ Singleton {
             }
 
             root._pumpDownloads();
+        }
+    }
+
+    Process {
+        id: savedScanProc
+        command: ["bash", "-c", "find " + JSON.stringify(root.savedDir) + " " + JSON.stringify(root.randomDir) + " -maxdepth 1 -type f -printf '%p\\n' 2>/dev/null"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const next = {};
+                for (const line of text.trim().split("\n")) {
+                    const path = line.trim();
+                    if (!path)
+                        continue;
+                    const key = path.split("/").pop().replace(/\.[^.]*$/, "");
+                    if (key)
+                        next[key] = path;
+                }
+                root.savedItems = next;
+            }
         }
     }
 
