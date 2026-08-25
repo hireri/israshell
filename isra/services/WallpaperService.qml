@@ -179,7 +179,6 @@ Singleton {
         root[mapName] = next;
     }
 
-    // Stable, reversible filename key so a redownload can be recognised on disk.
     function fileKey(id) {
         let s = String(id ?? "");
         if (!s)
@@ -224,11 +223,14 @@ Singleton {
         root._dlBusy = true;
         const job = root._dlQueue.shift();
         const ext = job.url.split(".").pop().split("?")[0];
+        const isUgoira = ext.toLowerCase() === "zip";
         downloadProc.jobId = job.id;
         downloadProc.applyAfter = job.applyAfter;
         downloadProc.url = job.url;
         downloadProc.dir = job.dir;
-        downloadProc.dest = job.dir + "/" + job.id + "." + ext;
+        downloadProc.isUgoira = isUgoira;
+        downloadProc.dest = job.dir + "/" + job.id + (isUgoira ? ".mp4" : "." + ext);
+        downloadProc.tmpZip = job.dir + "/" + job.id + ".zip";
         downloadProc.running = false;
         downloadProc.running = true;
     }
@@ -251,6 +253,12 @@ Singleton {
         KonachanProvider.fetchRandomUrl(Config.allowNsfw, url => _downloadFrom("konachan", url), err => console.log("[Wallpaper] Konachan fetch failed:", err));
     }
 
+    function randomizeDanbooru() {
+        if (applying || loading)
+            return;
+        DanbooruProvider.fetchRandomUrl(Config.allowNsfw, url => _downloadFrom("danbooru", url), err => console.log("[Wallpaper] Danbooru fetch failed:", err));
+    }
+
     property ListModel browseModel: ListModel {}
     property bool browseLoading: false
     property bool browseError: false
@@ -259,7 +267,7 @@ Singleton {
     property string browseSort: "top"
 
     function _providerFor(sourceKey) {
-        return sourceKey === "konachan" ? KonachanProvider : sourceKey === "wallhaven" ? WallhavenProvider : null;
+        return sourceKey === "konachan" ? KonachanProvider : sourceKey === "wallhaven" ? WallhavenProvider : sourceKey === "danbooru" ? DanbooruProvider : null;
     }
 
     function providerName(sourceKey) {
@@ -272,6 +280,8 @@ Singleton {
             randomizeKonachan();
         else if (sourceKey === "wallhaven")
             randomizeWallhaven();
+        else if (sourceKey === "danbooru")
+            randomizeDanbooru();
         else
             randomize();
     }
@@ -299,8 +309,15 @@ Singleton {
             browseLoading = false;
             if (page === 1)
                 browseModel.clear();
-            for (const it of result.items)
+            const seen = new Set();
+            for (let i = 0; i < browseModel.count; i++)
+                seen.add(browseModel.get(i).id);
+            for (const it of result.items) {
+                if (seen.has(it.id))
+                    continue;
+                seen.add(it.id);
                 browseModel.append(it);
+            }
             browseHasMore = result.hasMore;
         }, err => {
             if (token !== root._browseToken)
@@ -665,9 +682,13 @@ Singleton {
         property string url: ""
         property string dir: ""
         property string dest: ""
+        property string tmpZip: ""
         property string jobId: ""
         property bool applyAfter: true
-        command: ["bash", "-c", "mkdir -p " + JSON.stringify(dir) + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
+        property bool isUgoira: false
+        command: isUgoira
+            ? ["bash", "-c", "set -e; mkdir -p " + JSON.stringify(dir) + "; curl -fsSL -o " + JSON.stringify(tmpZip) + " " + JSON.stringify(url) + "; trap 'rm -f " + JSON.stringify(tmpZip) + "' EXIT; " + JSON.stringify(Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/ugoira-to-video.sh") + " " + JSON.stringify(tmpZip) + " " + JSON.stringify(dest)]
+            : ["bash", "-c", "mkdir -p " + JSON.stringify(dir) + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
         running: false
         onExited: (code, _) => {
             root._dlBusy = false;

@@ -164,11 +164,35 @@ PageBase {
         }
 
         SettingSwitch {
-            isLast: true
             label: Localization.t("backgroundPage.allow_nsfw")
             sublabel: Localization.t("backgroundPage.allow_nsfw_sub")
             checked: Config.allowNsfw
             onToggled: v => Config.update({ allowNsfw: v })
+        }
+
+        SettingSwitch {
+            label: Localization.t("backgroundPage.video_sound")
+            sublabel: Localization.t("backgroundPage.video_sound_sub")
+            checked: Config.background.videoSound
+            onToggled: v => Config.update({
+                background: Object.assign({}, Config.background, { videoSound: v })
+            })
+        }
+
+        SettingSlider {
+            isLast: true
+            label: Localization.t("backgroundPage.video_volume")
+            sublabel: Localization.t("backgroundPage.video_volume_sub")
+            enabled: Config.background.videoSound
+            opacity: enabled ? 1.0 : 0.4
+            from: 0
+            to: 100
+            stepSize: 5
+            unit: "%"
+            value: Math.round((Config.background.videoVolume ?? 0.5) * 100)
+            onMoved: v => Config.update({
+                background: Object.assign({}, Config.background, { videoVolume: Math.round(v) / 100 })
+            })
         }
     }
 

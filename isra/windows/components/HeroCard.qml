@@ -93,7 +93,7 @@ Rectangle {
     Component.onCompleted: deferSync.restart()
 
     function _syncIcon() {
-        IconSlotSync.syncIconSlot(iconSlot.children, 24, Colors.md3.on_surface, root.checked);
+        IconSlotSync.syncIconSlot(iconSlot.children, 24, () => Colors.md3.on_surface, root.checked);
     }
 
     onCheckedChanged: _syncIcon()

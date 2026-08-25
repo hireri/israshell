@@ -97,7 +97,7 @@ Rectangle {
     onActiveChanged: _syncIcon()
 
     function _syncIcon() {
-        IconSlotSync.syncIconSlot(iconSlot.children, 20, root.active ? Colors.md3.on_secondary_container : Colors.md3.outline, root.active);
+        IconSlotSync.syncIconSlot(iconSlot.children, 20, () => root.active ? Colors.md3.on_secondary_container : Colors.md3.outline, root.active);
     }
 
     MouseArea {

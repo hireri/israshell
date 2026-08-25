@@ -9,46 +9,58 @@ import QtQuick.Layouts
 import qs.style
 import qs.services
 
-PopupWindow {
+Item {
     id: root
 
     required property Item dockRoot
     property DockModel dockModel: null
 
+    width: 0
+    height: 0
+
+    readonly property Item host: root.dockRoot.QsWindow.window?.contentItem ?? null
+
+    property bool isOpen: false
+
+    readonly property rect maskRect: isOpen
+        ? Qt.rect(popupContent.x, popupContent.y, popupContent.width, popupContent.height)
+        : Qt.rect(0, 0, 0, 0)
+
+    Binding {
+        target: root.dockRoot.QsWindow.window
+        property: "dockHoverRect"
+        value: root.maskRect
+        when: root.host !== null
+    }
+
     property Item targetButton: null
     property string targetKey: ""
 
+    property real latchedDockX: 0
+    property real latchedDockY: 0
     property real latchedDockWidth: 0
     property real latchedDockHeight: 0
     property real latchedCentreX: 0
     property real latchedCentreY: 0
-    property real latchedWindowCentreX: 0
-    property real latchedDockWindowX: 0
-    property real latchedDockWindowY: 0
 
     function relayout(): void {
-        if (!dockRoot) return;
+        if (!dockRoot || !host) return;
 
+        const dockTopLeft = dockRoot.mapToItem(host, 0, 0);
+        latchedDockX = dockTopLeft.x;
+        latchedDockY = dockTopLeft.y;
         latchedDockWidth = dockRoot.width;
         latchedDockHeight = dockRoot.height;
 
-        const win = dockRoot.QsWindow.window;
-        if (win && win.contentItem) {
-            const dockTopLeft = dockRoot.mapToItem(win.contentItem, 0, 0);
-            latchedDockWindowX = dockTopLeft.x;
-            latchedDockWindowY = dockTopLeft.y;
-        }
-
         if (!targetButton) return;
 
-        latchedCentreX = targetButton.mapToItem(dockRoot, targetButton.width / 2, 0).x;
-        latchedCentreY = targetButton.mapToItem(dockRoot, 0, targetButton.height / 2).y;
-        if (win && win.contentItem)
-            latchedWindowCentreX = targetButton.mapToItem(win.contentItem, targetButton.width / 2, 0).x;
+        const centre = targetButton.mapToItem(host, targetButton.width / 2, targetButton.height / 2);
+        latchedCentreX = centre.x;
+        latchedCentreY = centre.y;
     }
 
     onTargetButtonChanged: relayout()
-    onVisibleChanged: if (visible) relayout()
+    onIsOpenChanged: if (isOpen) relayout()
 
     Timer {
         id: pinTrackTimer
@@ -75,7 +87,7 @@ PopupWindow {
 
     onAppToplevelsChanged: {
         syncCardModel();
-        if (visible && (!appToplevels || appToplevels.length === 0)) {
+        if (isOpen && (!appToplevels || appToplevels.length === 0)) {
             hide();
         }
     }
@@ -85,60 +97,9 @@ PopupWindow {
     readonly property bool barOnTop: dockEdge === 0
     readonly property int gap: 8
 
-    property bool anchorToItem: false
-
     readonly property real contentHeight: 137 + 14
     readonly property real maxContentWidth: 868
-
-    readonly property int itemEdges: {
-        switch (dockEdge) {
-        case 0: return Edges.Bottom;
-        case 2: return Edges.Right;
-        case 3: return Edges.Left;
-        default: return Edges.Top;
-        }
-    }
-
-    visible: false
-    implicitWidth: {
-        if (!anchorToItem) return 900;
-        return sideEdge ? (cappedContentWidth + gap) : (latchedDockWidth + cappedContentWidth + gap * 2);
-    }
-    implicitHeight: {
-        if (!anchorToItem) return 260;
-        return sideEdge ? (latchedDockHeight + contentHeight + gap * 2) : (contentHeight + gap);
-    }
-    color: "transparent"
-
-    readonly property bool blurActive: Config.blurAllowed(visible)
-    BackgroundEffect.blurRegion: blurActive ? hoverBlurRegion : null
-
-    Region {
-        id: hoverBlurRegion
-        item: root.contentItem
-    }
-
-    anchor.window: anchorToItem ? null : dockRoot.QsWindow.window
-    anchor.item: anchorToItem ? dockRoot : null
-    anchor.rect: {
-        if (anchorToItem)
-            return Qt.rect(0, 0, latchedDockWidth, latchedDockHeight);
-
-        return Qt.rect(
-            latchedDockWindowX - implicitWidth / 2 + latchedDockWidth / 2,
-            latchedDockWindowY + (barOnTop ? latchedDockHeight + gap : -gap - implicitHeight),
-            implicitWidth,
-            implicitHeight
-        );
-    }
-    anchor.edges: anchorToItem ? itemEdges : (Edges.Top | Edges.Left)
-
-    Binding {
-        target: root.anchor
-        property: "gravity"
-        value: root.itemEdges
-        when: root.anchorToItem
-    }
+    readonly property int edgeMargin: 8
 
     property bool animateIn: false
     property bool containsMouse: popupHover.hovered
@@ -180,7 +141,7 @@ PopupWindow {
             root.contentVisible = true;
         }
 
-        if (visible) {
+        if (isOpen) {
             show(button);
         } else {
             openTimer.stop();
@@ -210,7 +171,7 @@ PopupWindow {
             targetButton = null;
             targetKey = "";
             animateIn = false;
-            visible = false;
+            isOpen = false;
         }
     }
 
@@ -245,7 +206,7 @@ PopupWindow {
 
     function show(button: Item): void {
         if (!button) return;
-        let wasOpen = visible;
+        let wasOpen = isOpen;
         
         if (wasOpen && targetButton === button) {
             return;
@@ -282,7 +243,7 @@ PopupWindow {
             targetKey = button.itemKey;
             contentVisible = true;
             
-            visible = true;
+            isOpen = true;
             animateIn = false;
             revealFallbackTimer.restart();
             revealIfReady();
@@ -313,7 +274,7 @@ PopupWindow {
             Qt.callLater(() => { animateIn = true; });
         }
     }
-    onAllCardsReadyChanged: if (visible) revealIfReady()
+    onAllCardsReadyChanged: if (isOpen) revealIfReady()
 
     Timer {
         id: revealFallbackTimer
@@ -339,7 +300,7 @@ PopupWindow {
         interval: 180
         repeat: false
         onTriggered: {
-            root.visible = false;
+            root.isOpen = false;
             root.targetButton = null;
             root.targetKey = "";
             root.contentVisible = true;
@@ -358,35 +319,29 @@ PopupWindow {
         return count > 0 ? Math.max(0, count * 180 + (count - 1) * 10) : 0;
     }
 
-    readonly property real cappedContentWidth: anchorToItem
-        ? Math.min(targetWidth + 14, maxContentWidth)
-        : Math.min(targetWidth + 14, root.implicitWidth - 32)
+    readonly property real cappedContentWidth: Math.min(
+        targetWidth + 14,
+        maxContentWidth,
+        Math.max(180, (host ? host.width : 900) - edgeMargin * 2))
 
-    readonly property real targetX: {
-        if (!targetButton) return 0;
-        let rawX = latchedWindowCentreX - anchor.rect.x - cappedContentWidth / 2;
-
-        let minX = 8;
-        let maxX = Math.max(minX, root.implicitWidth - 8 - cappedContentWidth);
-        return Math.max(minX, Math.min(maxX, rawX));
+    readonly property real cardX: {
+        if (!host) return 0;
+        if (sideEdge)
+            return dockEdge === 2
+                ? (latchedDockX + latchedDockWidth + gap)
+                : (latchedDockX - gap - cappedContentWidth);
+        const raw = latchedCentreX - cappedContentWidth / 2;
+        return Math.round(Math.max(edgeMargin, Math.min(raw, host.width - cappedContentWidth - edgeMargin)));
     }
 
-    readonly property real trackX: {
-        if (!anchorToItem || sideEdge || !targetButton) return 0;
-        const surfaceLeftInDock = (latchedDockWidth - implicitWidth) / 2;
-        const raw = latchedCentreX - surfaceLeftInDock - cappedContentWidth / 2;
-        const minX = 8;
-        const maxX = Math.max(minX, implicitWidth - 8 - cappedContentWidth);
-        return Math.max(minX, Math.min(maxX, raw));
-    }
-
-    readonly property real trackY: {
-        if (!anchorToItem || !sideEdge || !targetButton) return 0;
-        const surfaceTopInDock = (latchedDockHeight - implicitHeight) / 2;
-        const raw = latchedCentreY - surfaceTopInDock - contentHeight / 2;
-        const minY = 8;
-        const maxY = Math.max(minY, implicitHeight - 8 - contentHeight);
-        return Math.max(minY, Math.min(maxY, raw));
+    readonly property real cardY: {
+        if (!host) return 0;
+        if (!sideEdge)
+            return barOnTop
+                ? (latchedDockY + latchedDockHeight + gap)
+                : (latchedDockY - gap - contentHeight);
+        const raw = latchedCentreY - contentHeight / 2;
+        return Math.round(Math.max(edgeMargin, Math.min(raw, host.height - contentHeight - edgeMargin)));
     }
 
     readonly property bool allCardsReady: {
@@ -478,31 +433,29 @@ PopupWindow {
     Item {
         id: popupContent
 
+        parent: root.host
+        z: 100
+        visible: root.isOpen
+
         implicitWidth: root.targetWidth + 14
-        implicitHeight: 137 + 14
+        implicitHeight: root.contentHeight
         width: root.cappedContentWidth
         height: implicitHeight
 
-        x: {
-            if (!root.anchorToItem) return root.targetX;
-            return root.sideEdge ? (root.dockEdge === 2 ? root.gap : 0) : root.trackX;
-        }
-        y: {
-            if (!root.anchorToItem) return root.barOnTop ? 0 : (root.implicitHeight - implicitHeight);
-            return root.sideEdge ? root.trackY : (root.dockEdge === 0 ? root.gap : 0);
-        }
+        x: root.cardX
+        y: root.cardY
 
         Behavior on width {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
 
         Behavior on x {
-            enabled: root.visible && root.animateIn
+            enabled: root.isOpen && root.animateIn
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
 
         Behavior on y {
-            enabled: root.visible && root.animateIn && root.sideEdge
+            enabled: root.isOpen && root.animateIn
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
 

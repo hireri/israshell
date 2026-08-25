@@ -16,8 +16,6 @@ PanelWindow {
     required property var modelData
     screen: modelData
 
-    property bool overlayLayer: false
-
     component DockSection: Loader {
         visible: active
         Layout.alignment: Qt.AlignCenter
@@ -36,7 +34,29 @@ PanelWindow {
         }
     }
 
-    readonly property int edge: Config.floatingDock.edge
+    readonly property int configEdge: Config.floatingDock.edge
+    property int activeEdge: 1
+    property bool edgeSwapping: false
+
+    Component.onCompleted: activeEdge = Config.floatingDock.edge
+
+    onConfigEdgeChanged: {
+        if (configEdge === activeEdge)
+            return;
+        edgeSwapping = true;
+        edgeSwapTimer.restart();
+    }
+
+    Timer {
+        id: edgeSwapTimer
+        interval: 260
+        onTriggered: {
+            dockRoot.activeEdge = dockRoot.configEdge;
+            dockRoot.edgeSwapping = false;
+        }
+    }
+
+    readonly property int edge: activeEdge
     readonly property bool isVerticalEdge: edge === 2 || edge === 3
     readonly property int orientation: isVerticalEdge ? 1 : 0
 
@@ -48,7 +68,6 @@ PanelWindow {
     
     readonly property int edgeMargin: 8
     readonly property int sensorThickness: 6
-    readonly property int windowThickness: pillThickness + edgeMargin
 
     readonly property bool pinned: Config.floatingDock.exclusiveZone
     readonly property bool smartHide: Config.floatingDock.smartHide
@@ -86,7 +105,7 @@ PanelWindow {
         onTriggered: dockRoot.hoverLatched = false
     }
 
-    readonly property bool interactionHold: dockModelImpl.draggingKey !== "" || hoverPopup.visible || trashBusy
+    readonly property bool interactionHold: dockModelImpl.draggingKey !== "" || hoverPopup.isOpen || trashBusy
         || fileDragOverSensor || trashFileHovering
     property bool trashBusy: false
     property bool trashFileHovering: false
@@ -95,22 +114,6 @@ PanelWindow {
 
     readonly property bool revealed: !forceHidden
         && (pinned || hoverLatched || interactionHold || (smartHide && !hasWindowsUnderneath))
-
-    property bool blurHoldActive: revealed
-    onRevealedChanged: {
-        if (revealed) {
-            blurCloseDelay.stop();
-            blurHoldActive = true;
-        } else {
-            blurCloseDelay.restart();
-        }
-    }
-
-    Timer {
-        id: blurCloseDelay
-        interval: 260
-        onTriggered: dockRoot.blurHoldActive = false
-    }
 
     DockModel {
         id: dockModelImpl
@@ -142,33 +145,47 @@ PanelWindow {
     visible: Config.floatingDock.enabled && hasContent
     color: "transparent"
 
-    readonly property bool blurEnabled: Config.blurAllowed(blurHoldActive)
-    BackgroundEffect.blurRegion: blurEnabled ? dockBlurRegion : null
+    BackgroundEffect.blurRegion: Config.blurAllowed() ? fullBlurRegion : null
 
     Region {
-        id: dockBlurRegion
-        item: pill
+        id: fullBlurRegion
+        width: dockRoot.width
+        height: dockRoot.height
     }
 
+    property rect dockHoverRect: Qt.rect(0, 0, 0, 0)
+
     WlrLayershell.namespace: "quickshell:floatingDock"
-    WlrLayershell.layer: overlayLayer ? WlrLayer.Overlay : WlrLayer.Top
+    WlrLayershell.layer: WlrLayer.Top
 
-    exclusionMode: (pinned && hasContent) ? ExclusionMode.Normal : ExclusionMode.Ignore
-    exclusiveZone: (pinned && hasContent) ? windowThickness : 0
+    exclusionMode: ExclusionMode.Ignore
 
-    anchors.top: edge === 0 || isVerticalEdge
-    anchors.bottom: edge === 1 || isVerticalEdge
-    anchors.left: edge === 2 || !isVerticalEdge
-    anchors.right: edge === 3 || !isVerticalEdge
+    anchors.top: true
+    anchors.bottom: true
+    anchors.left: true
+    anchors.right: true
 
-    implicitWidth: isVerticalEdge ? windowThickness : 0
-    implicitHeight: isVerticalEdge ? 0 : windowThickness
-
-    mask: revealed ? null : hiddenMask
+    mask: revealed ? revealedMask : hiddenMask
 
     Region {
         id: hiddenMask
         item: sensorStrip
+    }
+
+    Region {
+        id: revealedMask
+        item: pill
+
+        Region {
+            item: sensorStrip
+        }
+
+        Region {
+            x: dockRoot.dockHoverRect.x
+            y: dockRoot.dockHoverRect.y
+            width: dockRoot.dockHoverRect.width
+            height: dockRoot.dockHoverRect.height
+        }
     }
 
     Item {
@@ -215,7 +232,7 @@ PanelWindow {
             clip: true
 
             readonly property int slideSign: (dockRoot.edge === 0 || dockRoot.edge === 2) ? -1 : 1
-            readonly property real hiddenOffset: dockRoot.windowThickness
+            readonly property real hiddenOffset: dockRoot.pillThickness + dockRoot.edgeMargin * 2
 
             readonly property real restX: {
                 if (!dockRoot.isVerticalEdge) return (parent.width - width) / 2;
@@ -226,14 +243,16 @@ PanelWindow {
                 return dockRoot.edge === 0 ? dockRoot.edgeMargin : (parent.height - height - dockRoot.edgeMargin);
             }
 
-            property real slideOffset: dockRoot.revealed ? 0 : slideSign * hiddenOffset
-            Behavior on slideOffset {
+            property real slideProgress: (dockRoot.revealed && !dockRoot.edgeSwapping) ? 0 : 1
+            Behavior on slideProgress {
                 NumberAnimation {
                     duration: 260
                     easing.type: Easing.BezierSpline
                     easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
                 }
             }
+
+            readonly property real slideOffset: slideSign * hiddenOffset * slideProgress
 
             x: restX + (dockRoot.isVerticalEdge ? slideOffset : 0)
             y: restY + (dockRoot.isVerticalEdge ? 0 : slideOffset)
@@ -489,6 +508,5 @@ PanelWindow {
         dockRoot: pill
         dockModel: dockModelImpl
         dockEdge: dockRoot.edge
-        anchorToItem: true
     }
 }

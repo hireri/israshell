@@ -39,7 +39,9 @@ Singleton {
             transitionDuration: 550,     // ms; converted to seconds for awww
             wipeAngle: 0,                // degrees; direction both wallpapers move during a wipe
             circleReverse: false,        // false = new wallpaper grows in; true = old wallpaper shrinks away
-            transitionDisplacement: 20   // percent; how far the wallpapers drift/scale during a transition
+            transitionDisplacement: 20,  // percent; how far the wallpapers drift/scale during a transition
+            videoSound: false,           // play audio for video wallpapers
+            videoVolume: 0.5             // 0..1
         })
     property var cava: ({
             enabled: false,
@@ -115,6 +117,8 @@ Singleton {
         };
     }
     property var floatingDock: __floatingDockDefaults()
+
+    readonly property int floatingDockThickness: floatingDock.iconSize + 32
 
     function __barDockEdgeConflict() {
         if (!floatingDock.enabled) return false;
@@ -319,7 +323,9 @@ Singleton {
                 transitionDuration: 550,
                 wipeAngle: 0,
                 circleReverse: false,
-                transitionDisplacement: 20
+                transitionDisplacement: 20,
+                videoSound: false,
+                videoVolume: 0.5
             },
             cava: {
                 enabled: false,

@@ -368,6 +368,10 @@ PanelWindow {
                                 id: player
                                 source: slot.path ? ("file://" + slot.path) : ""
                                 videoOutput: vo
+                                audioOutput: AudioOutput {
+                                    muted: !Config.background.videoSound
+                                    volume: Config.background.videoVolume ?? 0.5
+                                }
                                 loops: MediaPlayer.Infinite
                                 onSourceChanged: videoRoot.ready = false
                                 onMediaStatusChanged: {

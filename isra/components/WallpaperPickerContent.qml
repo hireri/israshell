@@ -262,6 +262,18 @@ Item {
             return mb >= 1 ? mb.toFixed(1) + " MB" : Math.round(bytes / 1024) + " KB";
         }
 
+        function formatDuration(seconds) {
+            const s = Math.round(seconds ?? 0);
+            if (!s || s <= 0)
+                return "";
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const sec = s % 60;
+            const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
+            const ss = String(sec).padStart(2, "0");
+            return h > 0 ? h + ":" + mm + ":" + ss : mm + ":" + ss;
+        }
+
         readonly property string thumbScript: "
             set -e
             video=\"$1\"
@@ -270,8 +282,22 @@ Item {
             mtime=$(stat -c '%Y' \"$video\" 2>/dev/null || echo 0)
             key=$(printf '%s:%s' \"$video\" \"$mtime\" | sha256sum | cut -d' ' -f1)
             frame=\"$cache_dir/$key.png\"
-            if [ -s \"$frame\" ]; then printf '%s' \"$frame\"; exit 0; fi
-            ffmpeg -y -i \"$video\" -vf \"thumbnail,scale=320:-1\" -frames:v 1 \"$frame\" -loglevel error >/dev/null 2>&1 && printf '%s' \"$frame\"
+            dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"$video\" 2>/dev/null | cut -d. -f1)
+            if [ -s \"$frame\" ]; then printf '%s\\n%s' \"$frame\" \"$dur\"; exit 0; fi
+            ffmpeg -y -i \"$video\" -vf \"thumbnail,scale=320:-1\" -frames:v 1 \"$frame\" -loglevel error >/dev/null 2>&1 && printf '%s\\n%s' \"$frame\" \"$dur\"
+        "
+
+        readonly property string remoteThumbScript: "
+            set -e
+            url=\"$1\"
+            cache_dir=\"$HOME/.cache/isra/wallpaper-thumbs\"
+            mkdir -p \"$cache_dir\"
+            key=$(printf '%s' \"$url\" | sha256sum | cut -d' ' -f1)
+            ext=$(printf '%s' \"$url\" | sed -n 's/.*\\.\\([A-Za-z0-9]*\\)\\(\\?.*\\)\\?$/\\1/p')
+            [ -z \"$ext\" ] && ext=jpg
+            dest=\"$cache_dir/$key.$ext\"
+            if [ -s \"$dest\" ]; then printf '%s' \"$dest\"; exit 0; fi
+            curl -fsSL -o \"$dest\" \"$url\" && printf '%s' \"$dest\"
         "
 
         QtObject {
@@ -473,7 +499,7 @@ Item {
 
                     SidebarGroup {
                         Layout.fillWidth: true
-                        currentPage: panel.isLocal ? -1 : (panel.mode === "konachan" ? 0 : 1)
+                        currentPage: panel.isLocal ? -1 : (panel.mode === "konachan" ? 0 : (panel.mode === "wallhaven" ? 1 : 2))
 
                         SidebarItem {
                             page: 0
@@ -491,6 +517,15 @@ Item {
                             onClicked: panel.requestMode("wallhaven")
                             MaterialIcon {
                                 name: "panorama"
+                            }
+                        }
+                        SidebarItem {
+                            page: 2
+                            label: Localization.t("wallpaperPicker.danbooru")
+                            sublabel: Localization.t("wallpaperPicker.danbooru_sub")
+                            onClicked: panel.requestMode("danbooru")
+                            MaterialIcon {
+                                name: "inventory-2"
                             }
                         }
                     }
@@ -1384,8 +1419,10 @@ Item {
         readonly property string entryName: entry?.name ?? ""
         readonly property bool isCurrent: !isDir && entryPath === WallpaperService.currentWall
         readonly property bool isVideo: !isDir && panel.isVideoPath(entryPath)
+        readonly property bool applying: card.isCurrent && WallpaperService.applying
 
         property string thumbPath: ""
+        property real videoDuration: 0
         property bool thumbRequested: false
         property int thumbAttempts: 0
         property string _thumbTargetPath: ""
@@ -1393,6 +1430,7 @@ Item {
         GridView.onReused: {
             card.thumbRequested = false;
             card.thumbPath = "";
+            card.videoDuration = 0;
             card.thumbAttempts = 0;
             card._thumbTargetPath = "";
         }
@@ -1428,7 +1466,11 @@ Item {
                         thumbQueue.release();
                         return;
                     }
-                    const p = thumbCollector.text.trim();
+                    const lines = thumbCollector.text.trim().split("\n");
+                    const p = (lines[0] ?? "").trim();
+                    const dur = parseFloat(lines[1]);
+                    if (!isNaN(dur))
+                        card.videoDuration = dur;
                     if (p) {
                         card.thumbPath = p;
                     } else if (card.thumbAttempts < 1) {
@@ -1561,24 +1603,42 @@ Item {
                 }
 
                 Rectangle {
+                    id: localDurationBadge
                     visible: card.isVideo
                     anchors {
                         top: parent.top
                         left: parent.left
                         margins: 6
                     }
-                    width: 22
+                    readonly property string durationText: panel.formatDuration(card.videoDuration)
+                    width: durationRow.implicitWidth + (durationText ? 14 : 8)
                     height: 22
                     radius: 11
                     color: Qt.alpha(Colors.md3.surface_container_lowest, 0.85)
                     z: 2
 
-                    MaterialIcon {
+                    Row {
+                        id: durationRow
                         anchors.centerIn: parent
-                        name: "video"
-                        iconSize: 12
-                        transitionType: "none"
-                        color: Colors.md3.on_surface_variant
+                        spacing: 3
+
+                        MaterialIcon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: "video"
+                            iconSize: 12
+                            transitionType: "none"
+                            color: Colors.md3.on_surface_variant
+                        }
+
+                        Text {
+                            visible: localDurationBadge.durationText !== ""
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: localDurationBadge.durationText
+                            font.pixelSize: 10
+                            font.family: Config.fontFamily
+                            renderType: Text.NativeRendering
+                            color: Colors.md3.on_surface_variant
+                        }
                     }
                 }
 
@@ -1600,6 +1660,20 @@ Item {
                         name: "check"
                         iconSize: 14
                         color: Colors.md3.on_primary
+                    }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    z: 3
+                    visible: card.applying
+                    color: Qt.alpha(Colors.md3.surface_container_lowest, 0.65)
+
+                    LoadingSpinner {
+                        anchors.centerIn: parent
+                        running: card.applying
+                        size: 40
+                        background: true
                     }
                 }
             }
@@ -1664,6 +1738,49 @@ Item {
         readonly property bool saved: WallpaperService.savedPath(bcard.itemId) !== undefined
         readonly property int imgW: bcard.modelData?.width ?? 0
         readonly property int imgH: bcard.modelData?.height ?? 0
+        readonly property bool isVideo: bcard.modelData?.isVideo ?? false
+        readonly property string durationText: panel.formatDuration(bcard.modelData?.duration)
+        readonly property bool applying: WallpaperService.applying
+            && bcard.saved
+            && WallpaperService.savedPath(bcard.itemId) === WallpaperService.currentWall
+
+        readonly property bool needsProxyThumb: panel.mode === "danbooru"
+        property string proxiedThumbPath: ""
+        property string _proxyTargetUrl: ""
+
+        function ensureProxiedThumb() {
+            const url = bcard.modelData?.thumb ?? "";
+            if (!bcard.needsProxyThumb || !url || url === bcard._proxyTargetUrl)
+                return;
+            bcard._proxyTargetUrl = url;
+            bcard.proxiedThumbPath = "";
+            thumbQueue.request(() => {
+                remoteThumbProc.targetUrl = url;
+                remoteThumbProc.running = true;
+            });
+        }
+
+        onItemIdChanged: bcard.ensureProxiedThumb()
+        Component.onCompleted: bcard.ensureProxiedThumb()
+
+        Process {
+            id: remoteThumbProc
+            property string targetUrl: ""
+            command: ["bash", "-c", panel.remoteThumbScript, "_", targetUrl]
+            stdout: StdioCollector {
+                id: remoteThumbCollector
+                onStreamFinished: {
+                    if (remoteThumbProc.targetUrl !== bcard._proxyTargetUrl) {
+                        thumbQueue.release();
+                        return;
+                    }
+                    const p = remoteThumbCollector.text.trim();
+                    if (p)
+                        bcard.proxiedThumbPath = p;
+                    thumbQueue.release();
+                }
+            }
+        }
 
         width: grid.cellWidth
         height: grid.cellHeight
@@ -1699,7 +1816,9 @@ Item {
                 Image {
                     id: bwallImg
                     anchors.fill: parent
-                    source: bcard.modelData?.thumb ?? ""
+                    source: bcard.needsProxyThumb
+                        ? (bcard.proxiedThumbPath ? ("file://" + bcard.proxiedThumbPath) : "")
+                        : (bcard.modelData?.thumb ?? "")
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     smooth: false
@@ -1724,6 +1843,45 @@ Item {
                         transitionType: "none"
                         color: Colors.md3.on_surface_variant
                         opacity: 0.25
+                    }
+                }
+
+                Rectangle {
+                    id: browseDurationBadge
+                    visible: bcard.isVideo
+                    anchors {
+                        top: parent.top
+                        left: parent.left
+                        margins: 6
+                    }
+                    width: bDurationRow.implicitWidth + (bcard.durationText ? 14 : 8)
+                    height: 22
+                    radius: 11
+                    color: Qt.alpha(Colors.md3.surface_container_lowest, 0.85)
+                    z: 2
+
+                    Row {
+                        id: bDurationRow
+                        anchors.centerIn: parent
+                        spacing: 3
+
+                        MaterialIcon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: "video"
+                            iconSize: 12
+                            transitionType: "none"
+                            color: Colors.md3.on_surface_variant
+                        }
+
+                        Text {
+                            visible: bcard.durationText !== ""
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: bcard.durationText
+                            font.pixelSize: 10
+                            font.family: Config.fontFamily
+                            renderType: Text.NativeRendering
+                            color: Colors.md3.on_surface_variant
+                        }
                     }
                 }
 
@@ -1776,12 +1934,12 @@ Item {
                 Rectangle {
                     anchors.fill: parent
                     z: 4
-                    visible: bcard.pending
+                    visible: bcard.pending || bcard.applying
                     color: Qt.alpha(Colors.md3.surface_container_lowest, 0.65)
 
                     LoadingSpinner {
                         anchors.centerIn: parent
-                        running: bcard.pending
+                        running: bcard.pending || bcard.applying
                         size: 40
                         background: true
                     }

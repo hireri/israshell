@@ -183,6 +183,7 @@ ShellRoot {
             }
 
             Loader {
+                id: floatingDockLoader
                 active: Config.floatingDock.enabled
                 sourceComponent: FloatingDock { modelData: screenScope.modelData }
             }
@@ -303,12 +304,21 @@ ShellRoot {
                     height: window.height
                 }
 
+                property rect dockHoverRect: Qt.rect(0, 0, 0, 0)
+
                 Region {
                     id: barOnlyMask
                     x: visualContent.x + barContainer.x
                     y: visualContent.y + barContainer.y
                     width: barContainer.width
                     height: barContainer.height
+
+                    Region {
+                        x: window.dockHoverRect.x
+                        y: window.dockHoverRect.y
+                        width: window.dockHoverRect.width
+                        height: window.dockHoverRect.height
+                    }
                 }
                 mask: anyMergedPanelOpen ? null : barOnlyMask
 
@@ -333,9 +343,6 @@ ShellRoot {
                     z: 1
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    // barHeight is the reserved slot (== barSpacer's exclusive zone, what panels
-                    // anchor against). In floating mode the visible bar is shorter than the slot
-                    // so the gap + bar together fit inside the space windows already avoid.
                     readonly property real edgeGap: (screenScope.barMode === 2) ? screenScope.floatingGap : 0
                     height: window.barHeight - edgeGap
                     anchors.leftMargin: (screenScope.barMode === 2) ? 12 : 0
@@ -346,7 +353,8 @@ ShellRoot {
                     readonly property real bottomY: parent.height - height - edgeGap
 
                     function rebindY() {
-                        y = Qt.binding(() => state === "top" ? topY : bottomY);
+                        const side = state;
+                        y = Qt.binding(() => side === "top" ? visualContent.topY : visualContent.bottomY);
                     }
 
                     state: Config.bar.position === 0 ? "top" : "bottom"
@@ -368,12 +376,6 @@ ShellRoot {
                                     NumberAnimation { target: visualContent; property: "y"; to: visualContent.bottomY; duration: 150; easing.type: Easing.OutCubic }
                                     NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: 0; duration: 150; easing.type: Easing.OutCubic }
                                 }
-                                // the animations above assign visualContent.y directly each frame, which
-                                // breaks the state's PropertyChanges binding - rebind so later barMode/topY
-                                // changes (e.g. toggling floating mode) keep moving the bar without needing
-                                // another top/bottom transition to re-enter the state. callLater is required:
-                                // the state machine writes the PropertyChanges end value as a plain number
-                                // once the transition completes, clobbering a binding installed inline here.
                                 ScriptAction { script: Qt.callLater(visualContent.rebindY) }
                             }
                         },
@@ -653,6 +655,35 @@ ShellRoot {
                             }
                         }
                     }
+                }
+            }
+
+            Loader {
+                active: Config.floatingDock.exclusiveZone && (floatingDockLoader.item?.hasContent ?? false)
+                sourceComponent: PanelWindow {
+                    screen: screenScope.modelData
+
+                    readonly property int dockEdge: Config.floatingDock.edge
+                    readonly property bool sideEdge: dockEdge === 2 || dockEdge === 3
+                    readonly property int thickness: Config.floatingDockThickness
+
+                    WlrLayershell.namespace: "quickshell:floatingDockSpacer"
+                    WlrLayershell.layer: WlrLayer.Bottom
+
+                    anchors.top: dockEdge === 0 || sideEdge
+                    anchors.bottom: dockEdge === 1 || sideEdge
+                    anchors.left: dockEdge === 2 || !sideEdge
+                    anchors.right: dockEdge === 3 || !sideEdge
+
+                    implicitWidth: sideEdge ? thickness : 0
+                    implicitHeight: sideEdge ? 0 : thickness
+
+                    exclusionMode: ExclusionMode.Normal
+                    exclusiveZone: thickness
+
+                    color: "transparent"
+                    mask: Region {}
+                    visible: true
                 }
             }
 
