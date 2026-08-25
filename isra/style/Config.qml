@@ -20,6 +20,7 @@ Singleton {
     property bool genericLauncherIcon: false
     property bool blurEffects: false
     property real blurOpacity: 1
+    property bool desktopWidgetsBlur: false
 
     function dim(color) {
         return Qt.alpha(color, Math.max(0, Math.min(1, blurOpacity)));
@@ -28,6 +29,8 @@ Singleton {
     function blurAllowed(visible) {
         return (visible === undefined ? true : visible) && blurEffects && !GameModeService.active;
     }
+
+    readonly property bool desktopWidgetsBlurActive: desktopWidgetsBlur && blurAllowed(true)
 
     property bool showBarWeather: true
     property string timeFormat: ""
@@ -312,6 +315,7 @@ Singleton {
             genericLauncherIcon: false,
             blurEffects: false,
             blurOpacity: 1,
+            desktopWidgetsBlur: false,
 
             showBarWeather: true,
             timeFormat: "",

@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
+import QtQuick.Effects
 import Quickshell.Widgets
 import qs.style
 import qs.services
@@ -57,38 +58,6 @@ Item {
 
     readonly property bool _canShowBoth: root.height > 0 && (root.width / root.height) >= 1.6
 
-    function _markerInfo(rise, set) {
-        const t = root.now.getTime();
-        if (!rise || !set)
-            return ({
-                hasArc: false,
-                up: false,
-                p: 0
-            });
-
-        const rTime = rise.getTime();
-        const sTime = set.getTime();
-
-        if (t >= rTime && t < sTime) {
-            const p = Math.max(0, Math.min(1, (t - rTime) / Math.max(1, sTime - rTime)));
-            return ({
-                hasArc: true,
-                up: true,
-                p: p
-            });
-        }
-
-        const isPastSet = t >= sTime;
-        return ({
-            hasArc: true,
-            up: false,
-            p: isPastSet ? 1 : 0
-        });
-    }
-
-    readonly property var _sunMarker: root._markerInfo(root._sunrise, root._sunset)
-    readonly property var _moonMarker: root._markerInfo(root._moonRise, root._moonSet)
-
     component SunMoonCard: Item {
         id: card
 
@@ -100,9 +69,9 @@ Item {
         property bool mirrored: false
         required property string riseLabel
         required property string setLabel
-        required property bool hasArc
-        required property bool markerUp
-        required property real markerP
+        required property var riseTime
+        required property var setTime
+        required property date now
 
         readonly property real u: card.width > 0 && card.height > 0 ? Math.max(0.6, Math.min(1.3, Math.min(card.width / 150, card.height / 150))) : 1
         readonly property real cardRadius: 20
@@ -110,13 +79,33 @@ Item {
         readonly property real curveBaseY: card.baseY
         readonly property real topY: Math.min(30 * card.u, card.height * 0.28)
         readonly property real dayAmp: Math.max(12, Math.min(card.curveBaseY - card.topY, 70) * 0.8)
+        readonly property real edgeDip: 10 * card.u
 
-        function bump(t) {
-            return (1 - Math.cos(2 * Math.PI * t)) / 2;
+        readonly property bool hasArc: !!card.riseTime && !!card.setTime
+        readonly property real _dayMs: 86400000
+        readonly property real _riseT: card.riseTime ? card.riseTime.getTime() : 0
+        readonly property real _setT: card.setTime ? card.setTime.getTime() : 0
+        readonly property real _upLen: card.hasArc ? (((card._setT - card._riseT) % card._dayMs) + card._dayMs) % card._dayMs : 0
+        readonly property real _dt: card.hasArc ? (((card.now.getTime() - card._riseT) % card._dayMs) + card._dayMs) % card._dayMs : 0
+
+        readonly property bool markerUp: card.hasArc && card._dt < card._upLen
+        readonly property real markerP: {
+            if (!card.hasArc)
+                return 0;
+            if (card.markerUp)
+                return card._upLen > 0 ? Math.max(0, Math.min(1, card._dt / card._upLen)) : 0;
+            const downLen = card._dayMs - card._upLen;
+            return (card._dt - card._upLen) < downLen / 2 ? 1 : 0;
+        }
+
+        function bump(p) {
+            return Math.sin(Math.PI * p);
         }
 
         function hillY(p) {
-            return card.curveBaseY - card.dayAmp * card.bump(p);
+            if (!card.hasArc)
+                return card.curveBaseY;
+            return card.curveBaseY + card.edgeDip - (card.dayAmp + card.edgeDip) * card.bump(p);
         }
 
         function fillPoly() {
@@ -135,9 +124,17 @@ Item {
             id: frame
             anchors.fill: parent
             radius: Math.min(card.cardRadius, Math.min(width, height) / 2)
-            color: Colors.md3.surface_container_lowest
+            color: Config.desktopWidgetsBlurActive ? Config.dim(Colors.md3.surface_container_lowest) : Colors.md3.surface_container_lowest
             border.width: 1
             border.color: Qt.alpha(Colors.md3.outline, 0.5)
+
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                shadowEnabled: !Config.desktopWidgetsBlurActive
+                shadowBlur: 0.5
+                shadowColor: Qt.alpha("black", 0.2)
+                shadowVerticalOffset: 4
+            }
 
             Shape {
                 anchors.fill: parent
@@ -301,9 +298,9 @@ Item {
             isMoon: false
             riseLabel: root._sunriseLabel
             setLabel: root._sunsetLabel
-            hasArc: root._sunMarker.hasArc
-            markerUp: root._sunMarker.up
-            markerP: root._sunMarker.p
+            riseTime: root._sunrise
+            setTime: root._sunset
+            now: root.now
         }
 
         SunMoonCard {
@@ -317,9 +314,9 @@ Item {
             mirrored: root._mirror
             riseLabel: root._moonriseLabel
             setLabel: root._moonsetLabel
-            hasArc: root._moonMarker.hasArc
-            markerUp: root._moonMarker.up
-            markerP: root._moonMarker.p
+            riseTime: root._moonRise
+            setTime: root._moonSet
+            now: root.now
         }
     }
 
@@ -338,8 +335,8 @@ Item {
         mirrored: root._mirror
         riseLabel: showMoon ? root._moonriseLabel : root._sunriseLabel
         setLabel: showMoon ? root._moonsetLabel : root._sunsetLabel
-        hasArc: showMoon ? root._moonMarker.hasArc : root._sunMarker.hasArc
-        markerUp: showMoon ? root._moonMarker.up : root._sunMarker.up
-        markerP: showMoon ? root._moonMarker.p : root._sunMarker.p
+        riseTime: showMoon ? root._moonRise : root._sunrise
+        setTime: showMoon ? root._moonSet : root._sunset
+        now: root.now
     }
 }

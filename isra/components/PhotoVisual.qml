@@ -104,13 +104,19 @@ Item {
         anchors.fill: parent
         name: root.shape || "circle"
         shapeSize: parent.width
-        color: root.scheme.surfaceContainerHigh
+        color: Config.desktopWidgetsBlurActive ? Config.dim(root.scheme.surfaceContainerHigh) : root.scheme.surfaceContainerHigh
         outlined: true
         strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
         strokeWidth: 1
 
         layer.enabled: true
         layer.smooth: true
+        layer.effect: MultiEffect {
+            shadowEnabled: !Config.desktopWidgetsBlurActive
+            shadowBlur: 0.5
+            shadowColor: Qt.alpha("black", 0.2)
+            shadowVerticalOffset: 4
+        }
     }
 
     MaterialShape {

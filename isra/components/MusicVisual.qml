@@ -88,7 +88,7 @@ Item {
         anchors.fill: parent
         name: root._bodyShapeName
         shapeSize: parent.width
-        color: Colors.md3.primary_container
+        color: Config.desktopWidgetsBlurActive ? Config.dim(Colors.md3.primary_container) : Colors.md3.primary_container
         rotationDegrees: root._bodyRotation
         outlined: true
         strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
@@ -96,6 +96,12 @@ Item {
 
         layer.enabled: true
         layer.smooth: true
+        layer.effect: MultiEffect {
+            shadowEnabled: !Config.desktopWidgetsBlurActive
+            shadowBlur: 0.5
+            shadowColor: Qt.alpha("black", 0.2)
+            shadowVerticalOffset: 4
+        }
     }
 
     Item {

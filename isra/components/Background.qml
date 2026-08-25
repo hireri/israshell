@@ -59,7 +59,7 @@ PanelWindow {
 
     readonly property bool anyPopupOpen: backgroundContextMenu.visible || widgetContextMenu.visible || widgetInspector.visible || EditModeService.active
 
-    BackgroundEffect.blurRegion: (root.anyPopupOpen && Config.blurAllowed(true)) ? popupBlurRegion : null
+    BackgroundEffect.blurRegion: ((root.anyPopupOpen && Config.blurAllowed(true)) || Config.desktopWidgetsBlurActive) ? popupBlurRegion : null
 
     Region {
         id: popupBlurRegion

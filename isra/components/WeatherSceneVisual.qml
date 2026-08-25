@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import qs.style
 import qs.services
 import qs.icons
@@ -21,9 +22,17 @@ Item {
     ClippingRectangle {
         anchors.fill: parent
         radius: 32 * root.u
-        color: Colors.md3.surface_container_high
+        color: Config.desktopWidgetsBlurActive ? Config.dim(Colors.md3.surface_container_high) : Colors.md3.surface_container_high
         border.width: 1
         border.color: Qt.alpha(Colors.md3.outline, 0.5)
+
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: !Config.desktopWidgetsBlurActive
+            shadowBlur: 0.5
+            shadowColor: Qt.alpha("black", 0.2)
+            shadowVerticalOffset: 4
+        }
 
         Item {
             id: band

@@ -121,6 +121,17 @@ PageBase {
             onMoved: v => Config.update({
                     blurOpacity: v
                 })
+        }
+
+        SettingSwitch {
+            label: Localization.t("displayPage.desktop_widget_blur")
+            sublabel: Localization.t("displayPage.apply_blur_effect_to_desktop_widgets")
+            enabled: Config.blurEffects
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.desktopWidgetsBlur
+            onToggled: v => Config.update({
+                    desktopWidgetsBlur: v
+                })
             isLast: true
         }
     }
