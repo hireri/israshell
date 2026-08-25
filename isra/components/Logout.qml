@@ -285,6 +285,7 @@ Scope {
                                     iconSize: 48
                                     filled: true
                                     color: modelData.contentColor
+                                    transitionType: "none"
                                 }
 
                                 MouseArea {
