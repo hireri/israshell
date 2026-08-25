@@ -1,12 +1,13 @@
 import QtQuick
 
-// 0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right
 Item {
     id: block
 
     property int type: 0
     property int cornerRadius: 26
     property string cornerColor: "black"
+
+    property real maskProgress: 0
 
     width: cornerRadius
     height: cornerRadius
@@ -18,7 +19,7 @@ Item {
         radius: block.cornerRadius * 2
         color: "transparent"
 
-        border.width: block.cornerRadius
+        border.width: block.cornerRadius * (1 + block.maskProgress)
         border.color: block.cornerColor
 
         x: (block.type === 1 || block.type === 3) ? -block.cornerRadius * 2 : -block.cornerRadius

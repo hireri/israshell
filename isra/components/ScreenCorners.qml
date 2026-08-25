@@ -1,5 +1,6 @@
 import QtQuick
 import qs.services
+import qs.style
 
 Item {
     id: root
@@ -20,7 +21,11 @@ Item {
         return CompositorService.windows.some(w => w.workspace === activeWs.id && w.fullscreen);
     }
 
-    visible: !isFullscreen && !GameModeService.active
+    readonly property bool masked: Config.screenCorners && !isFullscreen && !GameModeService.active
+    property real maskProgress: masked ? 0 : -1
+    Behavior on maskProgress {
+        NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
+    }
 
     Repeater {
         model: 4
@@ -28,6 +33,7 @@ Item {
             required property int index
             type: index
             cornerRadius: root.cornerRadius
+            maskProgress: root.maskProgress
             anchors.top: index < 2 ? parent.top : undefined
             anchors.bottom: index < 2 ? undefined : parent.bottom
             anchors.left: (index % 2 === 0) ? parent.left : undefined

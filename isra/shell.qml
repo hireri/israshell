@@ -246,6 +246,7 @@ ShellRoot {
                 return false;
             }
 
+            readonly property int floatingGap: 10
             readonly property int barExclusiveZone: ((barMode === 2) ? 56 : (Config.bar.transparency === 2 && !GameModeService.active) ? 34 : 44)
 
             readonly property var visibleBarLeft: Config.bar.left.filter(id => !isWidgetDisabled(id))
@@ -304,7 +305,10 @@ ShellRoot {
 
                 Region {
                     id: barOnlyMask
-                    item: barContainer
+                    x: visualContent.x + barContainer.x
+                    y: visualContent.y + barContainer.y
+                    width: barContainer.width
+                    height: barContainer.height
                 }
                 mask: anyMergedPanelOpen ? null : barOnlyMask
 
@@ -329,13 +333,67 @@ ShellRoot {
                     z: 1
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: window.barHeight
-                    y: Config.bar.position === 0
-                        ? ((screenScope.barMode === 2) ? 10 : 0)
-                        : (parent.height - height - ((screenScope.barMode === 2) ? 10 : 0))
+                    // barHeight is the reserved slot (== barSpacer's exclusive zone, what panels
+                    // anchor against). In floating mode the visible bar is shorter than the slot
+                    // so the gap + bar together fit inside the space windows already avoid.
+                    readonly property real edgeGap: (screenScope.barMode === 2) ? screenScope.floatingGap : 0
+                    height: window.barHeight - edgeGap
                     anchors.leftMargin: (screenScope.barMode === 2) ? 12 : 0
                     anchors.rightMargin: (screenScope.barMode === 2) ? 12 : 0
                     clip: screenScope.barMode === 3
+
+                    readonly property real topY: edgeGap
+                    readonly property real bottomY: parent.height - height - edgeGap
+
+                    function rebindY() {
+                        y = Qt.binding(() => state === "top" ? topY : bottomY);
+                    }
+
+                    state: Config.bar.position === 0 ? "top" : "bottom"
+                    states: [
+                        State { name: "top"; PropertyChanges { visualContent.y: visualContent.topY } },
+                        State { name: "bottom"; PropertyChanges { visualContent.y: visualContent.bottomY } }
+                    ]
+                    transitions: [
+                        Transition {
+                            from: "top"; to: "bottom"
+                            SequentialAnimation {
+                                ParallelAnimation {
+                                    NumberAnimation { target: visualContent; property: "y"; to: -visualContent.height; duration: 150; easing.type: Easing.InCubic }
+                                    NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: -1; duration: 150; easing.type: Easing.InCubic }
+                                }
+                                PropertyAction { target: visualContent; property: "y"; value: window.height }
+                                PropertyAction { target: huggingCornersWrapper; property: "activeSide"; value: 1 }
+                                ParallelAnimation {
+                                    NumberAnimation { target: visualContent; property: "y"; to: visualContent.bottomY; duration: 150; easing.type: Easing.OutCubic }
+                                    NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: 0; duration: 150; easing.type: Easing.OutCubic }
+                                }
+                                // the animations above assign visualContent.y directly each frame, which
+                                // breaks the state's PropertyChanges binding - rebind so later barMode/topY
+                                // changes (e.g. toggling floating mode) keep moving the bar without needing
+                                // another top/bottom transition to re-enter the state. callLater is required:
+                                // the state machine writes the PropertyChanges end value as a plain number
+                                // once the transition completes, clobbering a binding installed inline here.
+                                ScriptAction { script: Qt.callLater(visualContent.rebindY) }
+                            }
+                        },
+                        Transition {
+                            from: "bottom"; to: "top"
+                            SequentialAnimation {
+                                ParallelAnimation {
+                                    NumberAnimation { target: visualContent; property: "y"; to: window.height; duration: 150; easing.type: Easing.InCubic }
+                                    NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: -1; duration: 150; easing.type: Easing.InCubic }
+                                }
+                                PropertyAction { target: visualContent; property: "y"; value: -visualContent.height }
+                                PropertyAction { target: huggingCornersWrapper; property: "activeSide"; value: 0 }
+                                ParallelAnimation {
+                                    NumberAnimation { target: visualContent; property: "y"; to: visualContent.topY; duration: 150; easing.type: Easing.OutCubic }
+                                    NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: 0; duration: 150; easing.type: Easing.OutCubic }
+                                }
+                                ScriptAction { script: Qt.callLater(visualContent.rebindY) }
+                            }
+                        }
+                    ]
 
                     opacity: window.shouldHide ? 0 : 1
 
@@ -485,7 +543,7 @@ ShellRoot {
                 Loader {
                     z: 2
                     anchors.fill: parent
-                    active: Config.screenCorners
+                    active: true
                     sourceComponent: ScreenCorners { screen: screenScope.modelData }
                 }
 
@@ -504,13 +562,26 @@ ShellRoot {
 
                     Item {
                         id: huggingCornersWrapper
-                        visible: window.huggingCornersVisible
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        y: Config.bar.position === 0 ? window.barHeight : (parent.height - window.barHeight - huggingCornerRadius)
                         height: huggingCornerRadius
 
+                        y: activeSide === 0
+                            ? (visualContent.y + visualContent.height)
+                            : (visualContent.y - huggingCornerRadius)
+
                         readonly property int huggingCornerRadius: 26
+
+                        property real swapMaskProgress: 0
+                        property real modeMaskProgress: window.huggingCornersVisible ? 0 : -1
+                        Behavior on modeMaskProgress {
+                            NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
+                        }
+                        readonly property real maskProgress: Math.max(-1, swapMaskProgress + modeMaskProgress)
+
+                        property int activeSide: 0
+                        Component.onCompleted: activeSide = Config.bar.position
+
                         property string barColor: GameModeService.active ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
 
                         opacity: window.shouldHide ? 0 : 1
@@ -519,19 +590,21 @@ ShellRoot {
                         }
 
                         CornerBlock {
-                            type: Config.bar.position === 1 ? 2 : 0
+                            type: huggingCornersWrapper.activeSide === 1 ? 2 : 0
                             anchors.left: parent.left
                             anchors.top: parent.top
                             cornerColor: huggingCornersWrapper.barColor
                             cornerRadius: huggingCornersWrapper.huggingCornerRadius
+                            maskProgress: huggingCornersWrapper.maskProgress
                         }
 
                         CornerBlock {
-                            type: Config.bar.position === 1 ? 3 : 1
+                            type: huggingCornersWrapper.activeSide === 1 ? 3 : 1
                             anchors.right: parent.right
                             anchors.top: parent.top
                             cornerColor: huggingCornersWrapper.barColor
                             cornerRadius: huggingCornersWrapper.huggingCornerRadius
+                            maskProgress: huggingCornersWrapper.maskProgress
                         }
                     }
 
