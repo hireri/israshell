@@ -613,7 +613,7 @@ Item {
                     gapDegrees: 10
                 }
 
-                ClippingRectangle {
+                Rectangle {
                     anchors.fill: parent
                     anchors.margins: coverArt.coverMargin
                     radius: height / 2

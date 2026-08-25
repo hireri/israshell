@@ -114,7 +114,7 @@ PageBase {
                             Repeater {
                                 model: WallpaperService.sourceColorCandidates
 
-                                ClippingRectangle {
+                                Rectangle {
                                     id: chip
                                     required property var modelData
                                     required property int index

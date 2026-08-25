@@ -80,7 +80,7 @@ Item {
 
     readonly property real _ringPad: root._disc * 0.1
 
-    ClippingRectangle {
+    Rectangle {
         id: card
         anchors.centerIn: parent
         width: root._disc

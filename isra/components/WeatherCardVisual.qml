@@ -24,7 +24,7 @@ Item {
     readonly property int daysHeight: root.fittingDayRows * root.dayRowHeight
     readonly property bool showDays: root.showHours && root.fittingDayRows >= 1
 
-    ClippingRectangle {
+    Rectangle {
         id: card
         anchors.fill: parent
         radius: 22

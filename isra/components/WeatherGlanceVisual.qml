@@ -56,7 +56,7 @@ Item {
             strokeWidth: 1
         }
 
-        ClippingRectangle {
+        Rectangle {
             id: wideCard
             anchors.fill: parent
             visible: root.appliedWide

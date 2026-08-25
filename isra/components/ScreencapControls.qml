@@ -787,7 +787,7 @@ Rectangle {
             height: 32
             width: recordBg.width
 
-            ClippingRectangle {
+            Rectangle {
                 id: recordBg
                 anchors.verticalCenter: parent.verticalCenter
                 readonly property int textWidth: ScreencapService.recordingTime.length > 5 ? 57 : 38

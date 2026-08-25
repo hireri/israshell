@@ -77,7 +77,7 @@ Item {
         return root._levelColor(level);
     }
 
-    ClippingRectangle {
+    Rectangle {
         anchors.fill: parent
         radius: 20
         color: Colors.md3.surface_container_high

@@ -152,7 +152,7 @@ ClippingRectangle {
                 strokeWidth: pillCover.ringStrokeWidth
             }
 
-            ClippingRectangle {
+            Rectangle {
                 anchors.fill: parent
                 anchors.margins: pillCover.coverMargin
                 radius: 30
