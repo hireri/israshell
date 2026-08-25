@@ -12,8 +12,7 @@ Item {
     property real cardW: 190
 
     property bool opaque: false
-    property Item blurSource: null
-    readonly property bool blurActive: !root.opaque && root.blurSource !== null && Config.blurAllowed(true)
+    readonly property bool blurActive: !root.opaque && Config.blurAllowed(true)
 
     readonly property alias cardItem: card
     readonly property bool coexistsWithMode: true
@@ -210,14 +209,6 @@ Item {
         border.width: 1
         border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
         layer.enabled: true
-
-        ShaderEffectSource {
-            anchors.fill: parent
-            visible: root.blurActive
-            sourceItem: root.blurSource
-            sourceRect: Qt.rect(card.x, card.y, card.width, card.height)
-            hideSource: false
-        }
 
         Rectangle {
             anchors.fill: parent

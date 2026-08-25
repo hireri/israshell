@@ -58,7 +58,14 @@ PanelWindow {
     readonly property bool shouldBlur: LockscreenService.locked || LockscreenService.lockVisualActive
 
     readonly property bool anyPopupOpen: backgroundContextMenu.visible || widgetContextMenu.visible || widgetInspector.visible || EditModeService.active
-    readonly property bool popupBlurNeeded: Config.blurAllowed(root.anyPopupOpen)
+
+    BackgroundEffect.blurRegion: (root.anyPopupOpen && Config.blurAllowed(true)) ? popupBlurRegion : null
+
+    Region {
+        id: popupBlurRegion
+        width: root.width
+        height: root.height
+    }
 
     MouseArea {
         id: backgroundContextCatcher
@@ -97,13 +104,6 @@ PanelWindow {
         sourceComponent: ActivateLinux {
             modelData: root.modelData
         }
-    }
-
-    PopupBlurBackdrop {
-        id: popupBlurBackdrop
-        z: 3
-        hostScreen: root.modelData
-        active: root.popupBlurNeeded
     }
 
     CavaVisualizer {
@@ -230,7 +230,6 @@ PanelWindow {
         id: backgroundContextMenu
         hostScreen: root.modelData
         widgetDrawer: editModeOverlayLoader.item?.widgetDrawerItem ?? null
-        blurSource: popupBlurBackdrop.texture
         z: 8
     }
 
@@ -241,14 +240,12 @@ PanelWindow {
         z: 9
         sourceComponent: EditModeOverlay {
             hostScreen: root.modelData
-            blurSource: popupBlurBackdrop.texture
         }
     }
 
     WidgetInspector {
         id: widgetInspector
         hostScreen: root.modelData
-        blurSource: popupBlurBackdrop.texture
         z: 10
         onClosed: escapeHandler.forceActiveFocus()
     }
@@ -256,7 +253,6 @@ PanelWindow {
     ContextMenu {
         id: widgetContextMenu
         hostScreen: root.modelData
-        blurSource: popupBlurBackdrop.texture
         z: 11
     }
 

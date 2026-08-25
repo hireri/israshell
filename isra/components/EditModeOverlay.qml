@@ -10,8 +10,7 @@ Item {
     property var hostScreen: null
     readonly property bool barAtBottom: Config.bar.position === 1
 
-    property Item blurSource: null
-    readonly property bool blurActive: root.blurSource !== null && Config.blurAllowed(true)
+    readonly property bool blurActive: Config.blurAllowed(true)
 
     readonly property alias toolbarItem: toolbar
     readonly property alias widgetDrawerItem: widgetDrawer
@@ -123,14 +122,6 @@ Item {
         color: root.blurActive ? "transparent" : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
         border.width: 1
         border.color: Qt.alpha(Colors.md3.on_surface, 0.15)
-
-        ShaderEffectSource {
-            anchors.fill: parent
-            visible: root.blurActive
-            sourceItem: root.blurSource
-            sourceRect: Qt.rect(toolbar.x, toolbar.y, toolbar.width, toolbar.height)
-            hideSource: false
-        }
 
         Rectangle {
             anchors.fill: parent

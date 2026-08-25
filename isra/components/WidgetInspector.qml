@@ -24,8 +24,7 @@ Item {
     property var panel: null
     property rect anchorRect: Qt.rect(0, 0, 0, 0)
 
-    property Item blurSource: null
-    readonly property bool blurActive: root.blurSource !== null && Config.blurAllowed(true)
+    readonly property bool blurActive: Config.blurAllowed(true)
 
     property bool _originRight: false
     readonly property real cardOriginX: root._originRight ? 1 : 0
@@ -188,14 +187,6 @@ Item {
         border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
         layer.enabled: true
         transformOrigin: root._originRight ? Item.TopRight : Item.TopLeft
-
-        ShaderEffectSource {
-            anchors.fill: parent
-            visible: root.blurActive
-            sourceItem: root.blurSource
-            sourceRect: Qt.rect(card.x, card.y, card.width, card.height)
-            hideSource: false
-        }
 
         Rectangle {
             anchors.fill: parent
