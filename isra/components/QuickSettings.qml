@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Widgets
-import Quickshell.Services.UPower
 
 import qs.style
 import qs.services
@@ -154,7 +153,7 @@ Item {
             Item {
                 width: liveBatteryWidget.width + 4
                 height: liveBatteryWidget.height
-                visible: UPower.displayDevice && UPower.displayDevice.isLaptopBattery
+                visible: BatteryService.hasBattery
 
                 readonly property int marginLeft: 4
                 readonly property int marginRight: 6

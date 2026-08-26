@@ -4,7 +4,6 @@ import Quickshell.Widgets
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
-import Quickshell.Services.UPower
 
 import qs.services
 import qs.style
@@ -261,10 +260,12 @@ Item {
                     hiddenPasswordInput.text = LockscreenService.currentText
             }
             function onUnlocked() {
+                SoundService.unlock();
                 hiddenPasswordInput.text = ""
             }
             function onShowFailureChanged() {
                 if (LockscreenService.showFailure) {
+                    SoundService.unlockFail();
                     shakeAnimation.start()
                     hiddenPasswordInput.text = ""
                 }
@@ -310,7 +311,7 @@ Item {
         return sec !== "" && sec !== "--";
     }
 
-    readonly property bool hasBattery: UPower.displayDevice && UPower.displayDevice.isLaptopBattery
+    readonly property bool hasBattery: BatteryService.hasBattery
 
     Rectangle {
         id: centerPill

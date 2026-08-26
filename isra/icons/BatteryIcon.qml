@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Shapes
 import Quickshell
 import Quickshell.Widgets
-import Quickshell.Services.UPower
 
 import qs.style
 import qs.services 
@@ -14,11 +13,8 @@ Item {
     height: 24
     property real cornerRadius: 4
 
-    readonly property real currentPercentage: UPower.displayDevice
-        ? Math.round(UPower.displayDevice.percentage * 100) : 0
-
-    readonly property bool currentCharging: UPower.displayDevice
-        ? (UPower.displayDevice.state === UPowerDeviceState.Charging) : false
+    readonly property real currentPercentage: BatteryService.percentage
+    readonly property bool currentCharging: BatteryService.charging
 
     readonly property string currentPowerMode: PowerProfileService.activeProfile
     readonly property color colorBackground: Colors.md3.surface_container_high

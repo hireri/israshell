@@ -66,12 +66,15 @@ Singleton {
         })
     property var sounds: ({
             enabled: true,
+            theme: "freedesktop",
             volume: 0.7,
             notifications: true,
             volumeChange: true,
             screenshot: true,
             lockUnlock: true,
-            startup: true
+            startup: true,
+            muteDuringMedia: true,
+            silentApps: ["discord"]
         })
     property var battery: ({
             lowBatteryNotify: true,
@@ -367,12 +370,15 @@ Singleton {
             },
             sounds: {
                 enabled: true,
+                theme: "freedesktop",
                 volume: 0.7,
                 notifications: true,
                 volumeChange: true,
                 screenshot: true,
                 lockUnlock: true,
-                startup: true
+                startup: true,
+                muteDuringMedia: true,
+                silentApps: ["discord"]
             },
             battery: {
                 lowBatteryNotify: true,

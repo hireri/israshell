@@ -528,6 +528,41 @@ PageBase {
         }
 
         SectionCard {
+            label: Localization.t("systemPage.battery")
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                label: Localization.t("systemPage.low_battery_notify")
+                sublabel: Localization.t("systemPage.warn_when_battery_is_low")
+                enabled: BatteryService.hasBattery
+                opacity: enabled ? 1.0 : 0.4
+                checked: Config.battery.lowBatteryNotify
+                onToggled: v => Config.update({
+                    battery: Object.assign({}, Config.battery, {
+                        lowBatteryNotify: v
+                    })
+                })
+            }
+
+            SettingSlider {
+                isLast: true
+                label: Localization.t("systemPage.low_battery_threshold")
+                enabled: BatteryService.hasBattery && Config.battery.lowBatteryNotify
+                opacity: enabled ? 1.0 : 0.4
+                from: 5
+                to: 50
+                stepSize: 1
+                unit: "%"
+                value: Config.battery.lowBatteryThreshold
+                onMoved: v => Config.update({
+                    battery: Object.assign({}, Config.battery, {
+                        lowBatteryThreshold: v
+                    })
+                })
+            }
+        }
+
+        SectionCard {
             label: Localization.t("systemPage.license")
             Layout.fillWidth: true
 
