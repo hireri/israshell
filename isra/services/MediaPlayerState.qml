@@ -167,6 +167,8 @@ Singleton {
         return players[0] ?? null;
     }
 
+    readonly property bool isPlaying: displayPlayer !== null && displayPlayer.playbackState === MprisPlaybackState.Playing
+
     signal playerSwitched(var oldPlayer, var newPlayer)
     signal playerChangedSilently(var newPlayer)
 

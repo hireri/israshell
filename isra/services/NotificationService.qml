@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Notifications
 import qs.services
+import qs.style
 
 Item {
     id: root
@@ -61,6 +62,14 @@ Item {
         onNotification: notification => {
             notification.tracked = true;
 
+            console.log("[Notification]", JSON.stringify({
+                appName: notification.appName,
+                summary: notification.summary,
+                body: notification.body,
+                urgency: notification.urgency?.toString(),
+                hints: notification.hints
+            }, null, 2));
+
             const appName = notification.appName || "Unknown";
             const groupSummary = notification.summary || "";
             const gKey = appName + "|" + groupSummary;
@@ -94,6 +103,12 @@ Item {
             root.groups = gs;
 
             const isCritical = notification.urgency?.toString() === "2";
+
+            const hints = notification.hints || {};
+            const isSilencedApp = Config.sounds.silentApps.some(a => a.toLowerCase() === appName.toLowerCase());
+            if (!hints["suppress-sound"] && !isSilencedApp && (!root.dnd || isCritical))
+                SoundService.notification(isCritical);
+
             if ((!root.dnd || isCritical) && !root.suppressPopups)
                 root._ensureGroupInModel(popupGroupModel, appName, groupSummary, gKey);
             root._ensureGroupInModel(qsGroupModel, appName, groupSummary, gKey);

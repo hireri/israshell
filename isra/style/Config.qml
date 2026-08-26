@@ -64,6 +64,19 @@ Singleton {
             height: 150,
             opacity: 0.3
         })
+    property var sounds: ({
+            enabled: true,
+            volume: 0.7,
+            notifications: true,
+            volumeChange: true,
+            screenshot: true,
+            lockUnlock: true,
+            startup: true
+        })
+    property var battery: ({
+            lowBatteryNotify: true,
+            lowBatteryThreshold: 20
+        })
     property var workspaces: ({
         compact: false,
         useIcons: true,
@@ -351,6 +364,19 @@ Singleton {
                 useIcons: true,
                 alwaysShowNumbers: false,
                 style: 0
+            },
+            sounds: {
+                enabled: true,
+                volume: 0.7,
+                notifications: true,
+                volumeChange: true,
+                screenshot: true,
+                lockUnlock: true,
+                startup: true
+            },
+            battery: {
+                lowBatteryNotify: true,
+                lowBatteryThreshold: 20
             },
             sysMonitor: {
                 style: 0,

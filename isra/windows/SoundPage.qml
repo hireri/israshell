@@ -528,6 +528,163 @@ PageBase {
     }
 
     SectionCard {
+        label: Localization.t("soundPage.sounds")
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: Localization.t("soundPage.enable_sounds")
+            sublabel: Localization.t("soundPage.master_toggle_for_ui_sound_effects")
+            iconBg: Colors.md3.secondary_container
+            checked: Config.sounds.enabled
+            onToggled: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        enabled: v
+                    })
+                })
+        }
+        SettingSwitch {
+            label: Localization.t("soundPage.mute_during_media")
+            sublabel: Localization.t("soundPage.silence_system_sounds_while_media_plays")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.sounds.muteDuringMedia
+            onToggled: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        muteDuringMedia: v
+                    })
+                })
+        }
+        SettingSelect {
+            label: Localization.t("soundPage.sound_theme")
+            sublabel: Localization.t("soundPage.which_installed_sound_theme_to_use")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+            options: SoundService.availableThemes.map(name => ({
+                    label: name.charAt(0).toUpperCase() + name.slice(1),
+                    value: name
+                }))
+            currentValue: Config.sounds.theme
+            onSelected: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        theme: v
+                    })
+                })
+        }
+        SettingSlider {
+            label: Localization.t("soundPage.sound_volume")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+            from: 0
+            to: 100
+            stepSize: 1
+            unit: "%"
+            value: Config.sounds.volume * 100
+            onMoved: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        volume: v / 100
+                    })
+                })
+        }
+        SettingSwitch {
+            label: Localization.t("soundPage.notification_sound")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.sounds.notifications
+            onToggled: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        notifications: v
+                    })
+                })
+        }
+        SettingSwitch {
+            label: Localization.t("soundPage.volume_sound")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.sounds.volumeChange
+            onToggled: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        volumeChange: v
+                    })
+                })
+        }
+        SettingSwitch {
+            label: Localization.t("soundPage.screenshot_sound")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.sounds.screenshot
+            onToggled: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        screenshot: v
+                    })
+                })
+        }
+        SettingSwitch {
+            label: Localization.t("soundPage.lock_unlock_sound")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.sounds.lockUnlock
+            onToggled: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        lockUnlock: v
+                    })
+                })
+        }
+        SettingSwitch {
+            label: Localization.t("soundPage.startup_sound")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.sounds.startup
+            onToggled: v => Config.update({
+                    sounds: Object.assign({}, Config.sounds, {
+                        startup: v
+                    })
+                })
+        }
+        SettingRow {
+            isLast: true
+            label: Localization.t("soundPage.silenced_apps")
+            sublabel: Localization.t("soundPage.dont_play_a_sound_for_these_apps")
+            enabled: Config.sounds.enabled
+            opacity: enabled ? 1.0 : 0.4
+
+            Flow {
+                width: 220
+                spacing: 6
+
+                Repeater {
+                    model: Config.sounds.silentApps
+
+                    InputChip {
+                        required property string modelData
+                        label: modelData
+                        onRemoved: {
+                            const updated = Config.sounds.silentApps.filter(x => x !== modelData);
+                            Config.update({
+                                sounds: Object.assign({}, Config.sounds, {
+                                    silentApps: updated
+                                })
+                            });
+                        }
+                    }
+                }
+
+                ChipAdd {
+                    placeholder: Localization.t("soundPage.app_name")
+                    onCommitted: v => {
+                        if (!Config.sounds.silentApps.includes(v)) {
+                            Config.update({
+                                sounds: Object.assign({}, Config.sounds, {
+                                    silentApps: [...Config.sounds.silentApps, v]
+                                })
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    SectionCard {
         label: Localization.t("soundPage.notifications")
         Layout.fillWidth: true
 

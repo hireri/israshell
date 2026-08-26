@@ -5,6 +5,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Widgets
 
 import qs.icons
+import qs.services
 import qs.style
 
 Scope {
@@ -22,9 +23,11 @@ Scope {
         target: Pipewire.defaultAudioSink?.audio ?? null
 
         function onVolumeChanged() {
+            SoundService.volumeChange();
             root.showOsd();
         }
         function onMutedChanged() {
+            SoundService.volumeChange();
             root.showOsd();
         }
     }

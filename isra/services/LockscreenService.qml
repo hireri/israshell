@@ -25,10 +25,7 @@ Singleton {
     signal unlockAnimationStart()
 
     onCurrentTextChanged: showFailure = false
-    Component.onCompleted: {
-        if (Config.startLocked)
-            sessionCheckProcess.running = true
-    }
+    Component.onCompleted: sessionCheckProcess.running = true
 
     function lock(isFresh = false): void {
         if (root.locked || root.lockAnimating) return
@@ -235,8 +232,11 @@ Singleton {
         command: ["sh", "-c", `[ ! -f /run/user/$(id -u)/israshell/session ] && echo "fresh"`]
         stdout: SplitParser {
             onRead: data => {
-                if (data.trim() === "fresh")
-                    root.lock(true)
+                if (data.trim() === "fresh") {
+                    SoundService.startup()
+                    if (Config.startLocked)
+                        root.lock(true)
+                }
             }
         }
         onExited: markerWriteProcess.running = true

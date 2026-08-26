@@ -321,6 +321,7 @@ Item {
         }
         onExited: {
             if (root.activeTool === "screenshot" && root._capturedPath !== "") {
+                SoundService.screenshot();
                 screenshotPreview.show(root._capturedPath);
                 root._capturedPath = "";
             }
