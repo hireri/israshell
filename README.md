@@ -35,7 +35,7 @@ A Quickshell shell for Hyprland 0.55+. Uses matugen colors, smart desktop clock 
 ## Features
 
 - **Top bar** — Workspaces, window title, media controls, tray. Floating or hugging layout.
-- **Quick settings** — NetworkManager, Pipewire volume, hyprsunset night light, caffeine toggle.
+- **Quick settings** — NetworkManager, Pipewire volume, brightness, night light, caffeine toggle.
 - **Launcher** — App search, emoji picker (`:`), clipboard (`;`). Context widgets for math, translation, colors, whois, unit conversions...
 - **Desktop clock** — Horizontal, vertical, analog, or word (text) layouts. Auto positions finding the least busy spot for itself.
 - **Wallpaper picker** — Directory browser with breadcrumb and image preview.
@@ -85,6 +85,13 @@ hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs -c isra ipc call screensh
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs -c isra ipc call screenshot activate"))
 
 hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"))
+
+bindl = , XF86MonBrightnessUp, exec, qs -c isra ipc call brightness increment
+bindl = , XF86MonBrightnessDown, exec, qs -c isra ipc call brightness decrement
+
+# hook these into hypridle so brightness doesn't get confused by DPMS
+# on-screen-off: qs -c isra ipc call brightness sleepBegin
+# on-screen-on: qs -c isra ipc call brightness restoreAfterWake
 ```
 
 ## Dependencies
@@ -93,7 +100,8 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"
 - **Visuals**: `matugen`, `awww`, `cava`
 - **Services**: `networkmanager`, `pipewire`, `wireplumber`, `bluez`, `bluez-utils`, `nvtop`
 - **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
-- **Utilities**: `clipvault`, `rdap`, `kakasi`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`
+- **Utilities**: `clipvault`, `rdap`, `kakasi`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`, `brightnessctl`
+- **Optional**: `ddcutil` — only if you want brightness control over external monitors
 - **Python Stack**: `python`, `python-numpy`, `python-pillow`, `python-scipy`, `python-matplotlib`, `python-gtts`
 - **Fonts**: `inter-font`, `ttf-roboto-mono` (fonts are configurable)
 - **LocalSend**: [`localsendd`](https://pypi.org/project/localsendd/) — `uv tool install localsendd` or `pipx install localsendd` (not packaged, so not in the `yay -Q` line below)
@@ -104,6 +112,7 @@ yay -Q quickshell hyprland hyprsunset matugen awww cava \
         qt6-declarative qt6-5compat qt6-svg clipvault rdap kakasi \
         wl-clipboard xdg-utils pavucontrol inter-font \
         python python-numpy python-pillow python-scipy python-matplotlib python-gtts ttf-roboto-mono \
-        songrec wl-screenrec slurp grim hyprpicker tesseract ffmpeg libnotify jq satty file
+        songrec wl-screenrec slurp grim hyprpicker tesseract ffmpeg libnotify jq satty file \
+        brightnessctl
 ```
 i might have missed some. lmk.

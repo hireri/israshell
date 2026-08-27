@@ -236,6 +236,7 @@ Singleton {
     property bool weekMonday: true
     property bool useFahrenheit: false
     property bool verticalQSSliders: false
+    property bool linkMonitorBrightness: false
     property bool startLocked: false
     property bool useHyprlock: false
     property int osdPosition: 1
@@ -480,6 +481,7 @@ Singleton {
             weekMonday: true,
             useFahrenheit: false,
             verticalQSSliders: false,
+            linkMonitorBrightness: false,
             startLocked: false,
             useHyprlock: false,
             osdPosition: 1,

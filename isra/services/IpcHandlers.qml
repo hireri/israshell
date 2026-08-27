@@ -74,6 +74,22 @@ Item {
     }
 
     IpcHandler {
+        target: "brightness"
+        function increment(): void {
+            BrightnessService.increaseBrightness();
+        }
+        function decrement(): void {
+            BrightnessService.decreaseBrightness();
+        }
+        function sleepBegin(): void {
+            BrightnessService.sleepBegin();
+        }
+        function restoreAfterWake(): void {
+            BrightnessService.restoreAfterWake();
+        }
+    }
+
+    IpcHandler {
         target: "editmode"
         function enable(): void {
             EditModeService.enable();

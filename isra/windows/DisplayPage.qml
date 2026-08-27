@@ -97,6 +97,21 @@ PageBase {
     }
 
     SectionCard {
+        label: Localization.t("displayPage.brightness")
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            isLast: true
+            label: Localization.t("displayPage.link_monitor_brightness")
+            sublabel: Localization.t("displayPage.link_monitor_brightness_sub")
+            checked: Config.linkMonitorBrightness
+            onToggled: v => Config.update({
+                linkMonitorBrightness: v
+            })
+        }
+    }
+
+    SectionCard {
         label: Localization.t("displayPage.blur_transparency")
         Layout.fillWidth: true
 
