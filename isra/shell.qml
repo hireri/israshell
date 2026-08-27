@@ -25,7 +25,7 @@ ShellRoot {
     }
 
     NotificationPopup {}
-    VolumeOSD {}
+    Osd {}
 
     AppLauncher { id: appLauncher }
     Screenshot {}
