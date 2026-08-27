@@ -2,8 +2,8 @@ pragma ComponentBehavior: Bound
 
 import Quickshell
 import Quickshell.Widgets
-import Qt5Compat.GraphicalEffects
 import QtQuick
+import Qt5Compat.GraphicalEffects
 
 import qs.style
 import qs.services

@@ -1,6 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import qs.services
@@ -38,11 +38,13 @@ Item {
                 onTriggered: lockSurface.forceShow = true
             }
 
-            FastBlur {
+            MultiEffect {
                 id: lockBlur
                 anchors.fill: lockWallImg
                 source: lockWallImg
-                radius: Config.blurEffects ? 64 : 0
+                blurEnabled: true
+                blurMax: 64
+                blur: Config.blurEffects ? 1.0 : 0.0
 
                 opacity: (lockWallImg.settled || lockSurface.forceShow) ? 1 : 0
 

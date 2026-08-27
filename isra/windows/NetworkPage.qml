@@ -10,6 +10,7 @@ import qs.style
 import qs.services
 import qs.icons
 import qs.windows.components
+import "../services/ShellQuote.js" as ShellQuote
 
 PageBase {
     id: page
@@ -35,7 +36,7 @@ PageBase {
     }
 
     function editConnection(ssid) {
-        editProc.command = ["bash", "-c", "nm-connection-editor --edit=\"$(nmcli -g uuid,name connection show | grep " + JSON.stringify(ssid) + " | head -1 | cut -d: -f1)\""];
+        editProc.command = ["bash", "-c", `nm-connection-editor --edit="$(nmcli -g uuid,name connection show | grep ${ShellQuote.shQuote(ssid)} | head -1 | cut -d: -f1)"`];
         editProc.running = false;
         editProc.running = true;
     }

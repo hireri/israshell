@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.style
+import "ShellQuote.js" as ShellQuote
 
 Singleton {
     id: root
@@ -86,7 +87,8 @@ Singleton {
         wifiConnecting = true;
         awaitingPassword = false;
         pendingPasswordSsid = "";
-        changePasswordProc.command = ["pkexec", "bash", "-c", `nmcli connection modify "${ssid}" wifi-sec.psk "${password}" && nmcli dev wifi connect "${ssid}"`];
+        const qSsid = ShellQuote.shQuote(ssid);
+        changePasswordProc.command = ["pkexec", "bash", "-c", `nmcli connection modify ${qSsid} wifi-sec.psk ${ShellQuote.shQuote(password)} && nmcli dev wifi connect ${qSsid}`];
         changePasswordProc.running = false;
         changePasswordProc.running = true;
     }

@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import qs.style
 import qs.services
 import qs.icons
@@ -25,12 +25,12 @@ Item {
         fontSize: 15
 
         layer.enabled: markdown.visible
-        layer.effect: DropShadow {
-            radius: 6
-            samples: 13
-            horizontalOffset: 0
-            verticalOffset: 2
-            color: Qt.alpha(Colors.md3.background, 0.95)
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowBlur: 0.5
+            shadowHorizontalOffset: 0
+            shadowVerticalOffset: 2
+            shadowColor: Qt.alpha(Colors.md3.background, 0.95)
         }
     }
 

@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Widgets
 import Quickshell.Services.Mpris
 import QtQuick
+import "ShellQuote.js" as ShellQuote
 
 Singleton {
     id: root
@@ -53,7 +54,7 @@ Singleton {
         artFetchComponent.createObject(root, {
             artUrl: url,
             targetFile: file,
-            command: ["bash", "-c", `f='${file}'; t="$f.tmp"; [ -f "$f" ] || { curl -4 -sSL '${url}' -o "$t" && mv "$t" "$f"; }`],
+            command: ["bash", "-c", `f=${ShellQuote.shQuote(file)}; t="$f.tmp"; [ -f "$f" ] || { curl -4 -sSL ${ShellQuote.shQuote(url)} -o "$t" && mv "$t" "$f"; }`],
             running: true
         });
     }

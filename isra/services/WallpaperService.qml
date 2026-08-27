@@ -5,6 +5,7 @@ import Quickshell.Io
 
 import qs.style
 import qs.services.wallpaperProviders
+import "ShellQuote.js" as ShellQuote
 
 Singleton {
     id: root
@@ -687,8 +688,8 @@ Singleton {
         property bool applyAfter: true
         property bool isUgoira: false
         command: isUgoira
-            ? ["bash", "-c", "set -e; mkdir -p " + JSON.stringify(dir) + "; curl -fsSL -o " + JSON.stringify(tmpZip) + " " + JSON.stringify(url) + "; trap 'rm -f " + JSON.stringify(tmpZip) + "' EXIT; " + JSON.stringify(Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/ugoira-to-video.sh") + " " + JSON.stringify(tmpZip) + " " + JSON.stringify(dest)]
-            : ["bash", "-c", "mkdir -p " + JSON.stringify(dir) + " && curl -fsSL -o " + JSON.stringify(dest) + " " + JSON.stringify(url)]
+            ? ["bash", "-c", "set -e; mkdir -p " + ShellQuote.shQuote(dir) + "; curl -fsSL -o " + ShellQuote.shQuote(tmpZip) + " " + ShellQuote.shQuote(url) + "; trap 'rm -f " + ShellQuote.shQuote(tmpZip) + "' EXIT; " + ShellQuote.shQuote(Quickshell.env("HOME") + "/.config/quickshell/isra/scripts/ugoira-to-video.sh") + " " + ShellQuote.shQuote(tmpZip) + " " + ShellQuote.shQuote(dest)]
+            : ["bash", "-c", "mkdir -p " + ShellQuote.shQuote(dir) + " && curl -fsSL -o " + ShellQuote.shQuote(dest) + " " + ShellQuote.shQuote(url)]
         running: false
         onExited: (code, _) => {
             root._dlBusy = false;

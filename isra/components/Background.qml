@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Window
 import QtMultimedia
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import qs.services
@@ -194,12 +194,14 @@ PanelWindow {
                 sourceSize.height: root.screen ? Math.max(1, Math.round(root.screen.height * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 270
             }
 
-            FastBlur {
+            MultiEffect {
                 anchors.fill: parent
                 source: blurSrcImg
-                radius: blurRoot.targetActive && Config.blurEffects ? 64 : 0
+                blurEnabled: true
+                blurMax: 64
+                blur: blurRoot.targetActive && Config.blurEffects ? 1.0 : 0.0
 
-                Behavior on radius {
+                Behavior on blur {
                     NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }
                 }
             }

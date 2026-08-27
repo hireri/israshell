@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
-import Qt5Compat.GraphicalEffects
 import qs.style
 import qs.icons
 import qs.services

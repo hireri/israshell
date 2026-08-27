@@ -1,9 +1,9 @@
 import Quickshell
 import Quickshell.Widgets
 import Quickshell.Services.SystemTray
-import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Effects
+import Qt5Compat.GraphicalEffects
 
 import qs.components
 import qs.services
