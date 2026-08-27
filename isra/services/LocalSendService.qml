@@ -13,7 +13,7 @@ Singleton {
     property bool reachable: false
     property bool daemonMissing: false
 
-    readonly property bool widgetActive: WidgetService.allIds.includes("screencap") && !Config.bar.disabled.includes("screencap") && !Config.screencap.blacklist.includes("localsend")
+    readonly property bool widgetActive: PanelService.current?.panelType === "localsend"
 
     signal event(string type, var data)
 
@@ -530,9 +530,9 @@ Singleton {
             root.lastResult = null;
     }
 
-    function notify(summary, body, urgency, timeout) {
+    function notify(summary, body, urgency, timeout, deviceType) {
         const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        proc.command = ["notify-send", "-u", urgency ?? "normal", "-a", "LocalSend", "-t", String(timeout ?? 5000), "-h", "boolean:suppress-sound:true", summary, body ?? ""];
+        proc.command = ["notify-send", "-u", urgency ?? "normal", "-a", "LocalSend", "-t", String(timeout ?? 5000), "-h", "boolean:suppress-sound:true", "-h", "string:x-material-icon:" + root.deviceTypeIcon(deviceType ?? "desktop"), summary, body ?? ""];
         proc.onExited.connect(() => proc.destroy());
         proc.running = true;
     }
@@ -563,18 +563,24 @@ Singleton {
 
         root.event("result", r);
 
-        if (root.widgetActive || !Config.localsend.notifyOnReceive)
+        if (!Config.localsend.notifyOnReceive)
+            return;
+        if (r.kind === "sent")
+            SoundService.localSendDone();
+        else if (r.kind === "received")
+            SoundService.localSendDone();
+        else if (root.resultIsError)
+            SoundService.localSendError();
+
+        if (root.widgetActive)
             return;
         const names = root._fileListPreview(r.files);
         if (r.kind === "sent") {
-            root.notify("LocalSend", "Sent " + (names || root.plural(r.count, "file")) + " to " + r.peer, "low", 5000);
-            SoundService.localSendDone();
+            root.notify("LocalSend", "Sent " + (names || root.plural(r.count, "file")) + " to " + r.peer, "low", 5000, r.deviceType);
         } else if (r.kind === "received") {
-            root.notify("LocalSend", "Received " + (names || root.plural(r.count, "file")) + " from " + r.peer, "low", 5000);
-            SoundService.localSendDone();
+            root.notify("LocalSend", "Received " + (names || root.plural(r.count, "file")) + " from " + r.peer, "low", 5000, r.deviceType);
         } else if (root.resultIsError) {
-            root.notify("LocalSend", root.resultTitle(r) + " — " + root.resultDetail(r), "critical", 6000);
-            SoundService.localSendError();
+            root.notify("LocalSend", root.resultTitle(r) + " — " + root.resultDetail(r), "critical", 6000, r.deviceType);
         }
     }
 
@@ -589,13 +595,16 @@ Singleton {
         root._lastNotifiedIncomingId = inc.sessionId;
         root.event("incoming", inc);
 
-        if (root.widgetActive || !Config.localsend.notifyOnReceive)
+        if (!Config.localsend.notifyOnReceive)
+            return;
+        SoundService.localSendIncoming();
+
+        if (root.widgetActive)
             return;
         root._pendingConfirmSessionId = inc.sessionId;
         const fc = inc.fileCount ?? (inc.files?.length ?? 0);
-        confirmPromptProc.command = ["notify-send", "--action=accept=Accept", "--action=reject=Decline", "-u", "normal", "-a", "LocalSend", "-t", "0", "-h", "boolean:suppress-sound:true", (inc.from ?? "A device") + " wants to send " + root.plural(fc, "file"), root._fileListPreview(inc.files)];
+        confirmPromptProc.command = ["notify-send", "--action=accept=Accept", "--action=reject=Decline", "-u", "normal", "-a", "LocalSend", "-t", "0", "-h", "boolean:suppress-sound:true", "-h", "string:x-material-icon:" + root.deviceTypeIcon(inc.deviceType), (inc.from ?? "A device") + " wants to send " + root.plural(fc, "file"), root._fileListPreview(inc.files)];
         confirmPromptProc.running = true;
-        SoundService.localSendIncoming();
     }
 
     function plural(n, noun) {

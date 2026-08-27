@@ -518,7 +518,7 @@ Rectangle {
             Connections {
                 target: LocalSendService
                 function onPendingIncomingChanged() {
-                    if (!isEnabled("localsend") || !LocalSendService.pendingIncoming || lsPopover.isOpen)
+                    if (!isEnabled("localsend") || !LocalSendService.pendingIncoming || lsPopover.isOpen || !Config.localsend.notifyOnReceive)
                         return;
                     const focused = CompositorService.focusedMonitor?.name ?? "";
                     if (focused && root.panelWindow.screen?.name !== focused)
