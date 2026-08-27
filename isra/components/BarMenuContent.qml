@@ -65,6 +65,7 @@ Item {
                 root.controller.close();
         }
     }
+    onIsOpenChanged: if (isOpen) Qt.callLater(() => keyHandler.forceActiveFocus())
 
     property bool _ready: false
     Component.onCompleted: Qt.callLater(() => root._ready = true)
