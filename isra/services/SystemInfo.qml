@@ -252,34 +252,11 @@ Singleton {
 
     Process {
         id: tempProc
-        command: ["sh", "-c", "cat /sys/class/thermal/thermal_zone*/type 2>/dev/null | paste -sd'|' -; echo '---'; cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | paste -sd'|' -"]
-        property var _lines: []
+        command: ["sh", "-c", "for hw in /sys/class/hwmon/hwmon*; do n=$(cat \"$hw/name\" 2>/dev/null); if [ \"$n\" = k10temp ] || [ \"$n\" = coretemp ]; then for l in \"$hw\"/temp*_label; do [ -f \"$l\" ] || continue; lbl=$(cat \"$l\"); case \"$lbl\" in Tctl|Tdie|Package*|Tccd1) b=${l%_label}; cat \"${b}_input\"; exit 0;; esac; done; [ -f \"$hw/temp1_input\" ] && cat \"$hw/temp1_input\" && exit 0; fi; done; for hw in /sys/class/hwmon/hwmon*; do n=$(cat \"$hw/name\" 2>/dev/null); [ \"$n\" = acpitz ] && continue; [ -f \"$hw/temp1_input\" ] && cat \"$hw/temp1_input\" && exit 0; done; cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null"]
         stdout: SplitParser {
-            onRead: data => tempProc._lines.push(data)
-        }
-        onRunningChanged: {
-            if (running) {
-                tempProc._lines = [];
-                return;
-            }
-            const lines = tempProc._lines;
-            const sepIdx = lines.indexOf("---");
-            if (sepIdx === -1) return;
-            const types = lines.slice(0, sepIdx).join("").split("|").filter(Boolean);
-            const temps = lines.slice(sepIdx + 1).join("").split("|").filter(Boolean).map(Number);
-
-            let chosen = -1;
-            for (let i = 0; i < types.length; i++) {
-                const t = types[i].toLowerCase();
-                if (t.includes("x86_pkg_temp") || t.includes("cpu") || t.includes("tctl") || t.includes("tdie")) {
-                    chosen = temps[i];
-                    break;
-                }
-            }
-            if (chosen === -1 && temps.length > 0) chosen = temps[0];
-
-            if (chosen !== -1 && !isNaN(chosen)) {
-                root._stageCpuTemp = chosen > 1000 ? chosen / 1000 : chosen;
+            onRead: data => {
+                const val = parseFloat(data.trim());
+                if (!isNaN(val)) root._stageCpuTemp = val > 1000 ? val / 1000 : val;
             }
         }
     }
