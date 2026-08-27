@@ -18,6 +18,21 @@ PageBase {
     Component.onCompleted: AudioService.startMicMeter()
     Component.onDestruction: AudioService.stopMicMeter()
 
+    component SoundSwitch: SettingSwitch {
+        id: sw
+        property string key
+        enabled: Config.sounds.enabled
+        opacity: enabled ? 1.0 : 0.4
+        checked: Config.sounds[sw.key]
+        onToggled: v => {
+            const patch = {};
+            patch[sw.key] = v;
+            Config.update({
+                sounds: Object.assign({}, Config.sounds, patch)
+            });
+        }
+    }
+
     SectionCard {
         label: Localization.t("soundPage.output")
         Layout.fillWidth: true
@@ -400,9 +415,23 @@ PageBase {
         label: Localization.t("soundPage.apps")
         Layout.fillWidth: true
 
+        Item {
+            visible: streamRepeater.count === 0
+            implicitWidth: parent?.width ?? 0
+            implicitHeight: 56
+
+            Text {
+                anchors.centerIn: parent
+                text: Localization.t("soundPage.no_apps_playing_audio")
+                font.family: Config.fontFamily
+                font.pixelSize: 13
+                color: Colors.md3.outline
+            }
+        }
+
         Repeater {
             id: streamRepeater
-            model: AudioService.nodes.filter(n => n.audio && n.isStream && n.isSink)
+            model: AudioService.nodes.filter(n => n.audio && n.isStream && n.isSink && n.name !== "quickshell")
 
             delegate: Item {
                 required property var modelData
@@ -542,17 +571,10 @@ PageBase {
                     })
                 })
         }
-        SettingSwitch {
+        SoundSwitch {
             label: Localization.t("soundPage.mute_during_media")
             sublabel: Localization.t("soundPage.silence_system_sounds_while_media_plays")
-            enabled: Config.sounds.enabled
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.sounds.muteDuringMedia
-            onToggled: v => Config.update({
-                    sounds: Object.assign({}, Config.sounds, {
-                        muteDuringMedia: v
-                    })
-                })
+            key: "muteDuringMedia"
         }
         SettingSelect {
             label: Localization.t("soundPage.sound_theme")
@@ -569,6 +591,7 @@ PageBase {
                         theme: v
                     })
                 })
+            onAboutToOpen: SoundService.rescanThemes()
         }
         SettingSlider {
             label: Localization.t("soundPage.sound_volume")
@@ -585,60 +608,45 @@ PageBase {
                     })
                 })
         }
-        SettingSwitch {
+        SoundSwitch {
             label: Localization.t("soundPage.notification_sound")
-            enabled: Config.sounds.enabled
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.sounds.notifications
-            onToggled: v => Config.update({
-                    sounds: Object.assign({}, Config.sounds, {
-                        notifications: v
-                    })
-                })
+            key: "notifications"
         }
-        SettingSwitch {
+        SoundSwitch {
             label: Localization.t("soundPage.volume_sound")
-            enabled: Config.sounds.enabled
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.sounds.volumeChange
-            onToggled: v => Config.update({
-                    sounds: Object.assign({}, Config.sounds, {
-                        volumeChange: v
-                    })
-                })
+            key: "volumeChange"
         }
-        SettingSwitch {
+        SoundSwitch {
             label: Localization.t("soundPage.screenshot_sound")
-            enabled: Config.sounds.enabled
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.sounds.screenshot
-            onToggled: v => Config.update({
-                    sounds: Object.assign({}, Config.sounds, {
-                        screenshot: v
-                    })
-                })
+            key: "screenshot"
         }
-        SettingSwitch {
-            label: Localization.t("soundPage.lock_unlock_sound")
-            enabled: Config.sounds.enabled
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.sounds.lockUnlock
-            onToggled: v => Config.update({
-                    sounds: Object.assign({}, Config.sounds, {
-                        lockUnlock: v
-                    })
-                })
+        SoundSwitch {
+            label: Localization.t("soundPage.unlock_sound")
+            key: "unlock"
         }
-        SettingSwitch {
+        SoundSwitch {
             label: Localization.t("soundPage.startup_sound")
-            enabled: Config.sounds.enabled
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.sounds.startup
-            onToggled: v => Config.update({
-                    sounds: Object.assign({}, Config.sounds, {
-                        startup: v
-                    })
-                })
+            key: "startup"
+        }
+        SoundSwitch {
+            label: Localization.t("soundPage.lock_sound")
+            key: "lock"
+        }
+        SoundSwitch {
+            label: Localization.t("soundPage.charger_sound")
+            key: "chargerPlug"
+        }
+        SoundSwitch {
+            label: Localization.t("soundPage.battery_low_sound")
+            key: "batteryLow"
+        }
+        SoundSwitch {
+            label: Localization.t("soundPage.localsend_sound")
+            key: "localsend"
+        }
+        SoundSwitch {
+            label: Localization.t("soundPage.bluetooth_sound")
+            key: "bluetooth"
         }
         SettingRow {
             isLast: true

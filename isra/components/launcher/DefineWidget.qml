@@ -1,6 +1,6 @@
-import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
+import qs.services
 import qs.style
 
 Item {
@@ -94,27 +94,8 @@ Item {
         xhr.send();
     }
 
-    Process {
-        id: speakProc
-        running: false
-        onRunningChanged: {
-            if (!running && exitCode !== 0)
-                fallbackProc.running = true;
-        }
-    }
-
-    Process {
-        id: fallbackProc
-        running: false
-    }
-
     function _speak(text) {
-        fallbackProc.running = false;
-        fallbackProc.command = ["espeak-ng", text];
-
-        speakProc.running = false;
-        speakProc.command = ["bash", "-c", "TMP=$(mktemp /tmp/qs-dict-XXXXXX.mp3); " + "gtts-cli " + JSON.stringify(text) + " -l en -o \"$TMP\" 2>/dev/null && " + "mpv --no-terminal --no-config --keep-open=no --force-window=no \"$TMP\" 2>/dev/null; " + "rm -f \"$TMP\""];
-        speakProc.running = true;
+        SoundService.speak(text, "en");
     }
 
     ColumnLayout {

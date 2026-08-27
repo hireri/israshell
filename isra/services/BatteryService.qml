@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
+import qs.services
 import qs.style
 
 Singleton {
@@ -15,7 +16,10 @@ Singleton {
     property bool _alerted: false
 
     onPercentageChanged: _check()
-    onChargingChanged: _check()
+    onChargingChanged: {
+        SoundService.chargerPlug(charging);
+        _check();
+    }
 
     function _check() {
         if (!hasBattery || !Config.battery.lowBatteryNotify)
@@ -30,7 +34,8 @@ Singleton {
             return;
         _alerted = true;
 
-        notifyProc.command = ["notify-send", "-u", "critical", "-a", "QuickShell", "-i", "battery-low", Localization.t("systemPage.low_battery"), Localization.t("systemPage.percent_remaining").arg(percentage)];
+        SoundService.lowBattery();
+        notifyProc.command = ["notify-send", "-u", "critical", "-a", "QuickShell", "-i", "battery-low", "-h", "boolean:suppress-sound:true", Localization.t("systemPage.low_battery"), Localization.t("systemPage.percent_remaining").arg(percentage)];
         notifyProc.running = true;
     }
 

@@ -3,7 +3,10 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Bluetooth
+import qs.services
+import qs.style
 
 Singleton {
     id: root
@@ -60,6 +63,15 @@ Singleton {
         return a.name.localeCompare(b.name);
     }
 
+    function _notifyDevice(device, connected) {
+        const name = device.name || Localization.t("sysNotify.device");
+        const text = Localization.t(connected ? "sysNotify.connected" : "sysNotify.disconnected").arg(name);
+        notifyProc.command = ["notify-send", "-u", "low", "-a", "Bluetooth", "-t", "4000", "-h", "boolean:suppress-sound:true", text];
+        notifyProc.running = false;
+        notifyProc.running = true;
+        SoundService.bluetoothConnect(connected);
+    }
+
     function batteryIcon(level) {
         if (level >= 90)
             return "󰁹";
@@ -80,5 +92,22 @@ Singleton {
         if (level >= 10)
             return "󰁻";
         return "󰁺";
+    }
+
+    Process {
+        id: notifyProc
+    }
+
+    Instantiator {
+        model: Bluetooth.devices
+        delegate: Connections {
+            id: watcher
+            required property var modelData
+            target: watcher.modelData
+            function onConnectedChanged() {
+                if (watcher.modelData)
+                    root._notifyDevice(watcher.modelData, watcher.modelData.connected);
+            }
+        }
     }
 }

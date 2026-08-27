@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.services
 import qs.style
 
 Singleton {
@@ -531,7 +532,7 @@ Singleton {
 
     function notify(summary, body, urgency, timeout) {
         const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        proc.command = ["notify-send", "-u", urgency ?? "normal", "-a", "LocalSend", "-t", String(timeout ?? 5000), summary, body ?? ""];
+        proc.command = ["notify-send", "-u", urgency ?? "normal", "-a", "LocalSend", "-t", String(timeout ?? 5000), "-h", "boolean:suppress-sound:true", summary, body ?? ""];
         proc.onExited.connect(() => proc.destroy());
         proc.running = true;
     }
@@ -565,12 +566,16 @@ Singleton {
         if (root.widgetActive || !Config.localsend.notifyOnReceive)
             return;
         const names = root._fileListPreview(r.files);
-        if (r.kind === "sent")
+        if (r.kind === "sent") {
             root.notify("LocalSend", "Sent " + (names || root.plural(r.count, "file")) + " to " + r.peer, "low", 5000);
-        else if (r.kind === "received")
+            SoundService.localSendDone();
+        } else if (r.kind === "received") {
             root.notify("LocalSend", "Received " + (names || root.plural(r.count, "file")) + " from " + r.peer, "low", 5000);
-        else if (root.resultIsError)
+            SoundService.localSendDone();
+        } else if (root.resultIsError) {
             root.notify("LocalSend", root.resultTitle(r) + " — " + root.resultDetail(r), "critical", 6000);
+            SoundService.localSendError();
+        }
     }
 
     function _maybeNotifyIncoming() {
@@ -588,8 +593,9 @@ Singleton {
             return;
         root._pendingConfirmSessionId = inc.sessionId;
         const fc = inc.fileCount ?? (inc.files?.length ?? 0);
-        confirmPromptProc.command = ["notify-send", "--action=accept=Accept", "--action=reject=Decline", "-u", "normal", "-a", "LocalSend", "-t", "0", (inc.from ?? "A device") + " wants to send " + root.plural(fc, "file"), root._fileListPreview(inc.files)];
+        confirmPromptProc.command = ["notify-send", "--action=accept=Accept", "--action=reject=Decline", "-u", "normal", "-a", "LocalSend", "-t", "0", "-h", "boolean:suppress-sound:true", (inc.from ?? "A device") + " wants to send " + root.plural(fc, "file"), root._fileListPreview(inc.files)];
         confirmPromptProc.running = true;
+        SoundService.localSendIncoming();
     }
 
     function plural(n, noun) {

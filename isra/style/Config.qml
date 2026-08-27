@@ -71,8 +71,13 @@ Singleton {
             notifications: true,
             volumeChange: true,
             screenshot: true,
-            lockUnlock: true,
+            unlock: true,
             startup: true,
+            lock: true,
+            chargerPlug: true,
+            batteryLow: true,
+            localsend: true,
+            bluetooth: true,
             muteDuringMedia: true,
             silentApps: ["discord"]
         })
@@ -375,8 +380,13 @@ Singleton {
                 notifications: true,
                 volumeChange: true,
                 screenshot: true,
-                lockUnlock: true,
+                unlock: true,
                 startup: true,
+                lock: true,
+                chargerPlug: true,
+                batteryLow: true,
+                localsend: true,
+                bluetooth: true,
                 muteDuringMedia: true,
                 silentApps: ["discord"]
             },
@@ -632,6 +642,9 @@ Singleton {
                 popupPosition: (rawPopupPosition === 1 || rawPopupPosition === 2) ? rawPopupPosition : 1
             });
         }
+
+        if (result.sounds && data.sounds && data.sounds.lockUnlock !== undefined && data.sounds.unlock === undefined)
+            result.sounds = Object.assign({}, result.sounds, { unlock: data.sounds.lockUnlock });
 
         if (result.aiAssistant)
             result.aiAssistant = Object.assign({}, result.aiAssistant, {

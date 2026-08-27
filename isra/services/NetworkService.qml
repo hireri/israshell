@@ -4,6 +4,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.style
 
 Singleton {
     id: root
@@ -21,6 +22,17 @@ Singleton {
 
     property string pendingPasswordSsid: ""
     property bool awaitingPassword: false
+
+    property bool _netReady: false
+    onWifiConnectedChanged: if (root._netReady) root._notifyNet(Localization.t("sysNotify.wifi"), root.wifiConnected)
+    onEthConnectedChanged: if (root._netReady) root._notifyNet(Localization.t("networkPage.ethernet"), root.ethConnected)
+
+    function _notifyNet(label, connected) {
+        const text = Localization.t(connected ? "sysNotify.connected" : "sysNotify.disconnected").arg(label);
+        netNotifyProc.command = ["notify-send", "-u", "low", "-a", "Network", "-t", "4000", text];
+        netNotifyProc.running = false;
+        netNotifyProc.running = true;
+    }
 
     readonly property var networks: []
     readonly property var activeNetwork: networks.find(n => n.active) ?? null
@@ -180,8 +192,13 @@ Singleton {
                 root.ethConnected = eth;
                 root.ethAvailable = lines.some(l => l.split(":")[0] === "ethernet");
                 root.wifiConnected = wifi;
+                root._netReady = true;
             }
         }
+    }
+
+    Process {
+        id: netNotifyProc
     }
 
     Process {

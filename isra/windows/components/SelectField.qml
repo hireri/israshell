@@ -10,6 +10,7 @@ Control {
     property var options: []
     property var currentValue: null
     signal selected(var value)
+    signal aboutToOpen()
 
     implicitWidth: combo.optimalWidth
     implicitHeight: 36
@@ -320,6 +321,7 @@ Control {
         }
 
         onAboutToShow: {
+            combo.aboutToOpen();
             reposition();
         }
 

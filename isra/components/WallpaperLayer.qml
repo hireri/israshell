@@ -19,6 +19,21 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Background
     anchors { top: true; bottom: true; left: true; right: true }
 
+    property int audioEpoch: 0
+
+    Connections {
+        target: AudioService
+        function onSinkChanged() {
+            sinkSettleTimer.restart();
+        }
+    }
+
+    Timer {
+        id: sinkSettleTimer
+        interval: 350
+        onTriggered: root.audioEpoch++
+    }
+
     readonly property string activeWallPath: {
         const isVid = /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(WallpaperService.currentWall);
         if (GameModeService.active && isVid && WallpaperService.currentWallPreview) {
@@ -364,14 +379,28 @@ PanelWindow {
                             readonly property alias videoOutput: vo
                             property bool ready: false
 
+                            Component {
+                                id: audioOutComp
+                                AudioOutput {
+                                    muted: !Config.background.videoSound || root.screen !== Quickshell.screens[0]
+                                    volume: Config.background.videoVolume ?? 0.5
+                                }
+                            }
+
+                            Connections {
+                                target: root
+                                function onAudioEpochChanged() {
+                                    const old = player.audioOutput;
+                                    player.audioOutput = audioOutComp.createObject(player);
+                                    if (old)
+                                        old.destroy();
+                                }
+                            }
+
                             MediaPlayer {
                                 id: player
                                 source: slot.path ? ("file://" + slot.path) : ""
                                 videoOutput: vo
-                                audioOutput: AudioOutput {
-                                    muted: !Config.background.videoSound
-                                    volume: Config.background.videoVolume ?? 0.5
-                                }
                                 loops: MediaPlayer.Infinite
                                 onSourceChanged: videoRoot.ready = false
                                 onMediaStatusChanged: {
@@ -379,6 +408,7 @@ PanelWindow {
                                         videoRoot.ready = true;
                                     }
                                 }
+                                Component.onCompleted: audioOutput = audioOutComp.createObject(player)
                             }
 
                             VideoOutput {

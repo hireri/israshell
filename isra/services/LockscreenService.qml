@@ -94,6 +94,7 @@ Singleton {
         onTriggered: {
             root.lockAnimating = false
             root.locked = true
+            SoundService.lock()
         }
     }
 

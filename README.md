@@ -93,7 +93,7 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"
 - **Visuals**: `matugen`, `awww`, `cava`
 - **Services**: `networkmanager`, `pipewire`, `wireplumber`, `bluez`, `bluez-utils`, `nvtop`
 - **Qt6 Modules**: `qt6-declarative`, `qt6-5compat`, `qt6-svg`
-- **Utilities**: `clipvault`, `rdap`, `kakasi`, `mpv`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`
+- **Utilities**: `clipvault`, `rdap`, `kakasi`, `wl-clipboard`, `xdg-utils`, `pavucontrol`, `songrec`, `wl-screenrec`, `slurp`, `grim`, `hyprpicker`, `tesseract`, `ffmpeg`, `libnotify`, `jq`, `satty`, `file`
 - **Python Stack**: `python`, `python-numpy`, `python-pillow`, `python-scipy`, `python-matplotlib`, `python-gtts`
 - **Fonts**: `inter-font`, `ttf-roboto-mono` (fonts are configurable)
 - **LocalSend**: [`localsendd`](https://pypi.org/project/localsendd/) — `uv tool install localsendd` or `pipx install localsendd` (not packaged, so not in the `yay -Q` line below)
@@ -102,7 +102,7 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"
 yay -Q quickshell hyprland hyprsunset matugen awww cava \
         networkmanager pipewire wireplumber bluez bluez-utils nvtop \
         qt6-declarative qt6-5compat qt6-svg clipvault rdap kakasi \
-        mpv wl-clipboard xdg-utils pavucontrol inter-font \
+        wl-clipboard xdg-utils pavucontrol inter-font \
         python python-numpy python-pillow python-scipy python-matplotlib python-gtts ttf-roboto-mono \
         songrec wl-screenrec slurp grim hyprpicker tesseract ffmpeg libnotify jq satty file
 ```

@@ -7,6 +7,7 @@ SettingRow {
     property var options: []
     property var currentValue: null
     signal selected(var value)
+    signal aboutToOpen()
 
     stack: root.compact
 
@@ -16,5 +17,6 @@ SettingRow {
         options: root.options
         currentValue: root.currentValue
         onSelected: v => root.selected(v)
+        onAboutToOpen: root.aboutToOpen()
     }
 }

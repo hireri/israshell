@@ -115,6 +115,15 @@ Scope {
         }
     }
 
+    Instantiator {
+        model: Hyprland.toplevels
+        delegate: Connections {
+            required property HyprlandToplevel modelData
+            target: modelData
+            function onLastIpcObjectChanged(): void { _updateState(); }
+        }
+    }
+
     function focusDirection(direction: string): void {
         _dispatch(`hl.dsp.focus({ direction = "${direction}" })`);
     }
