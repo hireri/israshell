@@ -50,7 +50,7 @@ Item {
     property bool _ready: false
     Component.onCompleted: Qt.callLater(() => root._ready = true)
 
-    ClippingRectangle {
+    Rectangle {
         id: card
 
         x: root.controller?.cardX ?? 0

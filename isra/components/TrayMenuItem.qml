@@ -39,7 +39,6 @@ Item {
     Item {
         visible: !root.isSep
         anchors.fill: parent
-        clip: true
         opacity: root.isEnabled ? 1.0 : 0.38
 
         Rectangle {
