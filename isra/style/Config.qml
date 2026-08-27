@@ -100,6 +100,10 @@ Singleton {
         colored: true,
         unifiedPill: false                 // false = each metric in its own pill, true = all metrics in one pill
     })
+    property var quicksettings: ({
+        icons: ["wifi", "bluetooth", "caffeine", "nightlight", "dnd"],  // subset/order of: wifi, bluetooth, sound, caffeine, nightlight, dnd, recording, vpn, mic, screenshare, traffic, dns, gamemode, powerprofile. "sound" absent = shows only while muted (like the old always-there mute icon); include it to keep it always visible.
+        outline: false                     // true = outline style instead of filled, for icons that support it
+    })
     function __barDefaults() {
         const layout = WidgetService.defaultLayout();
         return {
@@ -405,6 +409,10 @@ Singleton {
                 smooth: true,
                 colored: true,
                 unifiedPill: false
+            },
+            quicksettings: {
+                icons: ["wifi", "bluetooth", "caffeine", "nightlight", "dnd"],
+                outline: false
             },
             bar: __barDefaults(),
             floatingDock: __floatingDockDefaults(),

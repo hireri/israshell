@@ -450,6 +450,36 @@ Singleton {
     }
 
     Component {
+        id: micCompactComp
+        CompactToggleTile {
+            active: !AudioService.sourceMuted
+            iconComponent: MaterialIcon {
+                name: "mic"
+                iconSize: 22
+                filled: !AudioService.sourceMuted
+                transitionType: "wipe-up"
+            }
+            onToggled: AudioService.toggleSourceMute()
+        }
+    }
+
+    Component {
+        id: micWideComp
+        SimpleIconLabelTile {
+            active: !AudioService.sourceMuted
+            label: Localization.t("qsTileService.microphone")
+            sublabel: AudioService.source ? AudioService.deviceName(AudioService.source) : ""
+            iconComponent: MaterialIcon {
+                name: "mic"
+                iconSize: 22
+                filled: !AudioService.sourceMuted
+                transitionType: "wipe-up"
+            }
+            onToggled: AudioService.toggleSourceMute()
+        }
+    }
+
+    Component {
         id: gameModeCompactComp
         CompactToggleTile {
             active: GameModeService.active
@@ -487,6 +517,7 @@ Singleton {
         { id: "bluetooth",    label: Localization.t("qsTileService.bluetooth"),     compactComponent: bluetoothCompactComp,    wideComponent: bluetoothWideComp },
         { id: "caffeine",     label: Localization.t("qsTileService.caffeine"),      compactComponent: caffeineCompactComp,      wideComponent: caffeineWideComp },
         { id: "nightlight",   label: Localization.t("qsTileService.night_light"),   compactComponent: nightlightCompactComp,    wideComponent: nightlightWideComp },
+        { id: "mic",          label: Localization.t("qsTileService.microphone"),   compactComponent: micCompactComp,           wideComponent: micWideComp },
         { id: "powerProfile", label: Localization.t("qsTileService.power_profile"), compactComponent: powerProfileCompactComp,  wideComponent: powerProfileWideComp },
         { id: "gameMode",     label: Localization.t("qsTileService.game_mode"),     compactComponent: gameModeCompactComp,      wideComponent: gameModeWideComp },
         { id: "localsend",    label: Localization.t("qsTileService.localsend"),     compactComponent: localsendCompactComp,     wideComponent: localsendWideComp },

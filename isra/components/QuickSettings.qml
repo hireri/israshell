@@ -35,6 +35,80 @@ Item {
         onTriggered: root._editVisual = root.editMode
     }
 
+    function _iconVisible(id) {
+        if (id === "sound")
+            return root._soundConfigured || root._soundForced;
+        return Config.quicksettings.icons.includes(id);
+    }
+
+    function _iconActive(id) {
+        if (!root._iconVisible(id))
+            return false;
+        switch (id) {
+        case "wifi": return true;
+        case "bluetooth": return BluetoothService.enabled;
+        case "sound": return true;
+        case "caffeine": return CaffeineService.active;
+        case "nightlight": return NightLightService.active;
+        case "dnd": return NotificationService.dnd;
+        case "recording": return ScreencapService.isRecording;
+        case "vpn": return NetworkService.vpnConnected;
+        case "mic": return AudioService.micInUse;
+        case "screenshare": return ScreenShareService.active;
+        case "traffic": return true;
+        case "dns": return DnsService.enabled;
+        case "gamemode": return GameModeService.active;
+        case "powerprofile": return true;
+        default: return false;
+        }
+    }
+
+    function _iconOverrideColor(id) {
+        return id === "recording" || id === "mic" || id === "screenshare";
+    }
+
+    function _iconComponentFor(id) {
+        switch (id) {
+        case "wifi": return wifiIconComp;
+        case "bluetooth": return bluetoothIconComp;
+        case "sound": return soundIconComp;
+        case "caffeine": return caffeineIconComp;
+        case "nightlight": return nightlightIconComp;
+        case "dnd": return dndIconComp;
+        case "recording": return recordingIconComp;
+        case "vpn": return vpnIconComp;
+        case "mic": return micIconComp;
+        case "screenshare": return screenshareIconComp;
+        case "traffic": return trafficIconComp;
+        case "dns": return dnsIconComp;
+        case "gamemode": return gamemodeIconComp;
+        case "powerprofile": return powerprofileIconComp;
+        default: return null;
+        }
+    }
+
+    readonly property bool _soundConfigured: Config.quicksettings.icons.includes("sound")
+    readonly property bool _soundForced: !root._soundConfigured && AudioService.muted
+
+    readonly property var _canonicalIconOrder: ["wifi", "bluetooth", "sound", "caffeine", "nightlight", "dnd", "recording", "vpn", "mic", "screenshare", "traffic", "dns", "gamemode", "powerprofile"]
+
+    function _formatRate(bytesPerSec) {
+        if (bytesPerSec >= 1073741824) return (bytesPerSec / 1073741824).toFixed(1) + "GB/s";
+        if (bytesPerSec >= 1048576) return (bytesPerSec / 1048576).toFixed(1) + "MB/s";
+        if (bytesPerSec >= 1024) return (bytesPerSec / 1024).toFixed(0) + "KB/s";
+        return Math.round(bytesPerSec) + "B/s";
+    }
+
+    function _iconLabel(id) {
+        switch (id) {
+        case "traffic": return root._formatRate(NetworkTrafficService.rxBytesPerSec + NetworkTrafficService.txBytesPerSec);
+        default: return "";
+        }
+    }
+
+    readonly property var _baselineIconIds: ["wifi", "traffic", "powerprofile", "sound"]
+    readonly property bool _anyIconActive: AudioService.muted || root._canonicalIconOrder.some(id => !root._baselineIconIds.includes(id) && root._iconActive(id))
+
     function toggleSelf(): void {
         root.isOpen = !root.isOpen;
         if (root.isOpen)
@@ -89,64 +163,16 @@ Item {
             id: btnRow
             anchors.centerIn: parent
             spacing: 0
-            leftPadding: (Bluetooth.defaultAdapter?.enabled || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd) ? 5 : 2
+            leftPadding: (root._anyIconActive || liveBatteryWidget.visible) ? 5 : 2
 
-            StatusIcon {
-                iconComponent: WifiIcon {
-                    iconSize: 16
-
-                    mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
-                    strength: NetworkService.wifiSignal
-
-                    secured: {
-                        if (!NetworkService.activeNetwork) return false;
-                        const sec = NetworkService.activeNetwork.security;
-                        return sec !== "" && sec !== "--";
-                    }
-                }
-            }
-            StatusIcon {
-                active: BluetoothService.enabled
-                iconComponent: BluetoothIcon {
-                    iconSize: 16
-
-                    enabled: true
-                    discovering: (Bluetooth.defaultAdapter?.discovering ?? false) ||
-                                Bluetooth.devices.values.some(d => d.connecting)
-                    connected: BluetoothService.connectedDevices.length > 0
-                }
-            }
-            StatusIcon {
-                active: AudioService.muted
-                overrideColor: true
-                iconComponent: VolumeIcon {
-                    iconSize: 16
-                    color: Colors.md3.error
-                    muted: true
-                }
-            }
-            StatusIcon {
-                active: CaffeineService.active
-                iconComponent: MaterialIcon {
-                    name: "caffeine"
-                    iconSize: 16
-                    filled: true
-                }
-            }
-            StatusIcon {
-                active: NightLightService.active
-                iconComponent: MaterialIcon {
-                    name: "nightlight"
-                    iconSize: 16
-                    filled: true
-                }
-            }
-            StatusIcon {
-                active: NotificationService.dnd
-                iconComponent: MaterialIcon {
-                    name: "dnd"
-                    iconSize: 16
-                    filled: true
+            Repeater {
+                model: root._canonicalIconOrder
+                delegate: StatusIcon {
+                    required property string modelData
+                    active: root._iconActive(modelData)
+                    overrideColor: root._iconOverrideColor(modelData)
+                    iconComponent: root._iconComponentFor(modelData)
+                    extraLabel: root._iconLabel(modelData)
                 }
             }
 
@@ -166,7 +192,7 @@ Item {
             }
 
             Rectangle {
-                implicitWidth: (Bluetooth.defaultAdapter?.enabled || AudioService.muted || CaffeineService.active || NightLightService.active || NotificationService.dnd || liveBatteryWidget.visible) ? 12 : 0
+                implicitWidth: (root._anyIconActive || liveBatteryWidget.visible) ? 12 : 0
                 height: 14
                 color: "transparent"
                 clip: true
@@ -244,13 +270,169 @@ Item {
         }
     }
 
+    Component {
+        id: wifiIconComp
+        WifiIcon {
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+            mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
+            strength: NetworkService.wifiSignal
+            secured: {
+                if (!NetworkService.activeNetwork) return false;
+                const sec = NetworkService.activeNetwork.security;
+                return sec !== "" && sec !== "--";
+            }
+        }
+    }
+
+    Component {
+        id: bluetoothIconComp
+        BluetoothIcon {
+            iconSize: 16
+            enabled: true
+            discovering: (Bluetooth.defaultAdapter?.discovering ?? false) ||
+                        Bluetooth.devices.values.some(d => d.connecting)
+            connected: BluetoothService.connectedDevices.length > 0
+        }
+    }
+
+    Component {
+        id: soundIconComp
+        Item {
+            id: soundWrap
+            implicitWidth: 16
+            implicitHeight: 16
+            property color color: "white"
+            readonly property color displayColor: AudioService.muted ? Colors.md3.error : soundWrap.color
+            readonly property bool isHeadphones: AudioService.sinkIsHeadphones
+            VolumeIcon {
+                anchors.fill: parent
+                visible: !soundWrap.isHeadphones
+                color: soundWrap.displayColor
+                muted: AudioService.muted
+                volume: Math.round(AudioService.volume * 100)
+                filled: !Config.quicksettings.outline
+            }
+            MaterialIcon {
+                anchors.fill: parent
+                visible: soundWrap.isHeadphones
+                name: "headphones"
+                filled: !Config.quicksettings.outline
+                color: soundWrap.displayColor
+            }
+        }
+    }
+
+    Component {
+        id: caffeineIconComp
+        MaterialIcon {
+            name: "caffeine"
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+        }
+    }
+
+    Component {
+        id: nightlightIconComp
+        MaterialIcon {
+            name: "nightlight"
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+        }
+    }
+
+    Component {
+        id: dndIconComp
+        MaterialIcon {
+            name: "dnd"
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+        }
+    }
+
+    Component {
+        id: recordingIconComp
+        MaterialIcon {
+            name: "record"
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+            color: Colors.md3.error
+        }
+    }
+
+    Component {
+        id: vpnIconComp
+        MaterialIcon {
+            name: "shield-lock"
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+        }
+    }
+
+    Component {
+        id: micIconComp
+        MaterialIcon {
+            name: "mic"
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+            color: Colors.md3.error
+        }
+    }
+
+    Component {
+        id: screenshareIconComp
+        MaterialIcon {
+            name: "cast"
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+            color: Colors.md3.error
+        }
+    }
+
+    Component {
+        id: trafficIconComp
+        MaterialIcon {
+            name: "mobiledata-arrows"
+            iconSize: 16
+        }
+    }
+
+    Component {
+        id: dnsIconComp
+        DnsProviderIcon {
+            iconSize: 16
+            provider: DnsService.currentProvider.id
+        }
+    }
+
+    Component {
+        id: gamemodeIconComp
+        MaterialIcon {
+            name: "game-mode"
+            iconSize: 16
+            filled: !Config.quicksettings.outline
+        }
+    }
+
+    Component {
+        id: powerprofileIconComp
+        PowerProfileIcon {
+            iconSize: 16
+            profileMode: PowerProfileService.profileIndex
+            filled: !Config.quicksettings.outline
+        }
+    }
+
     component StatusIcon: Item {
+        id: statusRoot
         property bool active: true
         property Component iconComponent: null
         property bool overrideColor: false
         property color iconColor: root.isOpen ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+        property string extraLabel: ""
+        readonly property bool hasLabel: extraLabel.length > 0
 
-        implicitWidth: active ? 26 : 0
+        implicitWidth: active ? (26 + (hasLabel ? labelText.implicitWidth + 2 : 0)) : 0
         height: 24
         clip: true
         opacity: active ? 1 : 0
@@ -274,17 +456,33 @@ Item {
             }
         }
 
-        Loader {
-            id: statusIconLoader
+        Row {
             anchors.centerIn: parent
-            sourceComponent: parent.iconComponent
-            visible: parent.iconComponent !== null
+            spacing: 2
 
-            Binding {
-                target: statusIconLoader.item
-                property: "color"
-                value: statusIconLoader.parent.iconColor
-                when: !statusIconLoader.parent.overrideColor && statusIconLoader.status === Loader.Ready && statusIconLoader.item && statusIconLoader.item.hasOwnProperty("color")
+            Loader {
+                id: statusIconLoader
+                sourceComponent: statusRoot.iconComponent
+                visible: statusRoot.iconComponent !== null
+
+                Binding {
+                    target: statusIconLoader.item
+                    property: "color"
+                    value: statusRoot.iconColor
+                    when: !statusRoot.overrideColor && statusIconLoader.status === Loader.Ready && statusIconLoader.item && statusIconLoader.item.hasOwnProperty("color")
+                }
+            }
+
+            Text {
+                id: labelText
+                visible: statusRoot.hasLabel
+                text: statusRoot.extraLabel
+                anchors.verticalCenter: parent.verticalCenter
+                font.family: Config.fontFamily
+                font.pixelSize: 10
+                font.weight: Font.Medium
+                color: statusRoot.iconColor
+                font.features: ({ "tnum": 1 })
             }
         }
     }

@@ -20,6 +20,63 @@ Singleton {
 
     readonly property var nodes: Pipewire.nodes.values
 
+    property bool sinkIsHeadphones: false
+
+    function _refreshSinkType() {
+        const s = root.sink;
+        if (!s) {
+            root.sinkIsHeadphones = false;
+            return;
+        }
+        const ff = s.properties?.["device.form-factor"] ?? "";
+        if (ff === "headphone" || ff === "headset") {
+            root.sinkIsHeadphones = true;
+            return;
+        }
+        const match = /^bluez_output\.([0-9A-Fa-f_]+)\./.exec(s.name ?? "");
+        if (match) {
+            bluezIconProc.command = ["bluetoothctl", "info", match[1].replace(/_/g, ":")];
+            bluezIconProc.running = false;
+            bluezIconProc.running = true;
+            return;
+        }
+        const name = (s.description || s.nickname || s.name || "").toLowerCase();
+        root.sinkIsHeadphones = name.includes("headphone") || name.includes("headset");
+    }
+
+    onSinkChanged: root._refreshSinkType()
+    Component.onCompleted: root._refreshSinkType()
+
+    Process {
+        id: bluezIconProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const m = /Icon:\s*audio-(headset|headphones)/.exec(text);
+                root.sinkIsHeadphones = !!m;
+            }
+        }
+    }
+
+    function _computeMicInUse() {
+        const links = Pipewire.links.values;
+        for (let i = 0; i < links.length; i++) {
+            const link = links[i];
+            const src = link.source;
+            const tgt = link.target;
+            if (!src || !tgt)
+                continue;
+            if (src.isStream || src.isSink)
+                continue;
+            if (!tgt.isStream)
+                continue;
+            if (tgt.name === "cava")
+                continue;
+            return true;
+        }
+        return false;
+    }
+    readonly property bool micInUse: _computeMicInUse()
+
     function deviceName(node) {
         return node.nickname || node.description || node.name || "Unknown";
     }

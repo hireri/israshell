@@ -188,6 +188,70 @@ PageBase {
     }
 
     SectionCard {
+        label: Localization.t("barPage.status_icons")
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: Localization.t("barPage.outline_icons")
+            sublabel: Localization.t("barPage.outline_style_instead_of_filled")
+            checked: Config.quicksettings.outline
+            onToggled: v => Config.update({
+                quicksettings: Object.assign({}, Config.quicksettings, {
+                    outline: v
+                })
+            })
+        }
+
+        SettingRow {
+            isLast: true
+            label: Localization.t("barPage.status_icons")
+            sublabel: Localization.t("barPage.toggle_individual_status_icons")
+
+            Flow {
+                width: 220
+                spacing: 6
+
+                readonly property var actions: [
+                    { key: "wifi", label: Localization.t("qsTileService.wifi") },
+                    { key: "bluetooth", label: Localization.t("qsTileService.bluetooth") },
+                    { key: "sound", label: Localization.t("barPage.sound") },
+                    { key: "caffeine", label: Localization.t("qsTileService.caffeine") },
+                    { key: "nightlight", label: Localization.t("qsTileService.night_light") },
+                    { key: "dnd", label: Localization.t("barPage.dnd") },
+                    { key: "recording", label: Localization.t("barPage.recording") },
+                    { key: "vpn", label: Localization.t("barPage.vpn") },
+                    { key: "mic", label: Localization.t("qsTileService.microphone") },
+                    { key: "screenshare", label: Localization.t("barPage.screenshare") },
+                    { key: "traffic", label: Localization.t("barPage.traffic") },
+                    { key: "dns", label: Localization.t("qsTileService.dns") },
+                    { key: "gamemode", label: Localization.t("qsTileService.game_mode") },
+                    { key: "powerprofile", label: Localization.t("qsTileService.power_profile") }
+                ]
+
+                Repeater {
+                    model: parent.actions
+
+                    FilterChip {
+                        required property var modelData
+                        label: modelData.label
+                        active: Config.quicksettings.icons.includes(modelData.key)
+                        onToggled: isActive => {
+                            const key = modelData.key;
+                            const icons = Config.quicksettings.icons;
+                            const updated = isActive ? icons.concat([key]) : icons.filter(x => x !== key);
+                            Config.update({
+                                quicksettings: Object.assign({}, Config.quicksettings, {
+                                    icons: updated
+                                })
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    SectionCard {
         label: Localization.t("widgetService.workspaces")
         Layout.fillWidth: true
 

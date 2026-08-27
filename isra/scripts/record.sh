@@ -231,5 +231,6 @@ else
     echo $! > "$TIMERPID_FILE"
 
     notify-send "$NOTIFY_RECORDING_STARTED_TITLE" "$NOTIFY_RECORDING_REGION_BODY" \
-        -i "media-record" -a "Screen Recorder" -t 3000
+        -i "media-record" -a "Screen Recorder" -t 3000 \
+        -h "boolean:suppress-sound:true"
 fi

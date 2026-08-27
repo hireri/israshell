@@ -14,6 +14,7 @@ Singleton {
     property bool wifiEnabled: false
     property bool wifiConnected: false
     property bool ethConnected: false
+    property bool vpnConnected: false
     property string wifiSsid: ""
     property int wifiSignal: 0
     property bool scanning: false
@@ -130,6 +131,17 @@ Singleton {
             networksProc.running = true;
             signalProc.running = false;
             signalProc.running = true;
+            vpnProc.running = false;
+            vpnProc.running = true;
+        }
+    }
+
+    Process {
+        id: vpnProc
+        running: true
+        command: ["sh", "-c", "nmcli -t -f TYPE connection show --active | grep -qE '^(vpn|wireguard)$' && echo yes || echo no"]
+        stdout: StdioCollector {
+            onStreamFinished: root.vpnConnected = text.trim() === "yes"
         }
     }
 
