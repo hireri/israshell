@@ -135,23 +135,15 @@ Singleton {
             return [];
 
         const activeWsIds = [];
-        const fullscreenWsIds = [];
         for (const m of mons) {
-            if (m.activeWorkspaceId !== -1) {
+            if (m.activeWorkspaceId !== -1)
                 activeWsIds.push(m.activeWorkspaceId);
-                if (m.activeWorkspaceHasFullscreen)
-                    fullscreenWsIds.push(m.activeWorkspaceId);
-            }
         }
 
         return rects.filter(r => {
             if (typeof r.w !== "number" || typeof r.h !== "number" || r.w <= 0 || r.h <= 0)
                 return false;
-            if (r.fullscreen)
-                return false;
             if (!activeWsIds.includes(r.workspaceId))
-                return false;
-            if (fullscreenWsIds.includes(r.workspaceId))
                 return false;
             return true;
         }).map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h, workspaceId: r.workspaceId }));

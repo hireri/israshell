@@ -879,6 +879,7 @@ Item {
 
                         Item {
                             id: floatingPill
+                            z: 2
 
                             property bool showPill: isFocused && !sessionRoot.dragging && !sessionRoot.capturing && root.backingReady
                             visible: showPill || opacity > 0
