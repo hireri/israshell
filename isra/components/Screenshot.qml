@@ -27,19 +27,28 @@ Item {
 
     onActiveChanged: active ? PanelService.opened(root) : PanelService.closed(root)
 
+    function _teardown() {
+        uiLoader.active = false;
+        root._closing = false;
+        if (root.useGrimCapture)
+            root._cleanupGrimFiles();
+    }
+
     Timer {
         id: teardownTimer
         interval: 250
         repeat: false
-        onTriggered: {
-            uiLoader.active = false;
-            root._closing = false;
-            if (root.useGrimCapture)
-                root._cleanupGrimFiles();
-        }
+        onTriggered: root._teardown()
     }
 
-    function _closeOverlay() {
+    function _closeOverlay(immediate = false) {
+        if (immediate) {
+            teardownTimer.stop();
+            root.active = false;
+            root._teardown();
+            return;
+        }
+
         if (root._closing)
             return;
         root.active = false;
@@ -320,12 +329,13 @@ Item {
                 console.error("captureProc:", text)
         }
         onExited: {
+            root._closeOverlay(true);
+
             if (root.activeTool === "screenshot" && root._capturedPath !== "") {
                 SoundService.screenshot();
                 screenshotPreview.show(root._capturedPath);
                 root._capturedPath = "";
             }
-            root._closeOverlay();
         }
     }
 
@@ -463,8 +473,10 @@ Item {
                         }
 
                         Loader {
+                            id: backgroundViewLoader
                             anchors.fill: parent
                             visible: root.activeTool !== "record"
+                            z: -1
                             sourceComponent: root.useGrimCapture ? grimImageComp : screencopyViewComp
 
                             Component {
@@ -489,8 +501,10 @@ Item {
                         }
 
                         Item {
+                            id: selectionUi
                             anchors.fill: parent
                             visible: !sessionRoot.capturing && root.backingReady
+                            z: 1
 
                             QtObject {
                                 id: currentHole
