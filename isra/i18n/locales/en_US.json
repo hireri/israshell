@@ -111,6 +111,8 @@
   "backgroundPage.video_sound_sub": "Play audio for video wallpapers",
   "backgroundPage.video_volume": "Video volume",
   "backgroundPage.video_volume_sub": "Volume of video wallpaper audio",
+  "backgroundPage.mute_on_media": "Mute on media playback",
+  "backgroundPage.mute_on_media_sub": "Duck wallpaper audio while a media player is playing",
   "backgroundPage.smoothing_applied_to_the_curve": "Smoothing applied to the curve render",
   "backgroundPage.solid": "Solid",
   "backgroundPage.speed": "Speed",

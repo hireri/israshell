@@ -180,7 +180,6 @@ PageBase {
         }
 
         SettingSlider {
-            isLast: true
             label: Localization.t("backgroundPage.video_volume")
             sublabel: Localization.t("backgroundPage.video_volume_sub")
             enabled: Config.background.videoSound
@@ -192,6 +191,18 @@ PageBase {
             value: Math.round((Config.background.videoVolume ?? 0.5) * 100)
             onMoved: v => Config.update({
                 background: Object.assign({}, Config.background, { videoVolume: Math.round(v) / 100 })
+            })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: Localization.t("backgroundPage.mute_on_media")
+            sublabel: Localization.t("backgroundPage.mute_on_media_sub")
+            enabled: Config.background.videoSound
+            opacity: enabled ? 1.0 : 0.4
+            checked: Config.background.muteOnMedia
+            onToggled: v => Config.update({
+                background: Object.assign({}, Config.background, { muteOnMedia: v })
             })
         }
     }

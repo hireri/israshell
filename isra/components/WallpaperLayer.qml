@@ -42,7 +42,9 @@ PanelWindow {
         return WallpaperService.currentWall;
     }
 
-    readonly property bool shouldPause: root.lockPauseActive || GameModeService.active
+    readonly property bool monitorHasFullscreen: CompositorService.monitorFor(root.screen)?.activeWorkspaceHasFullscreen ?? false
+
+    readonly property bool shouldPause: root.lockPauseActive || GameModeService.active || root.monitorHasFullscreen
 
     property bool lockPauseActive: false
 
@@ -378,12 +380,21 @@ PanelWindow {
                             anchors.fill: parent
                             readonly property alias videoOutput: vo
                             property bool ready: false
+                            property real pausedAtMs: 0
 
                             Component {
                                 id: audioOutComp
                                 AudioOutput {
-                                    muted: !Config.background.videoSound || root.screen !== Quickshell.screens[0]
-                                    volume: Config.background.videoVolume ?? 0.5
+                                    readonly property bool wantsMute: !Config.background.videoSound
+                                        || root.screen !== Quickshell.screens[0]
+                                        || (Config.background.muteOnMedia && MediaPlayerState.isPlaying)
+
+                                    property real muteFactor: wantsMute ? 0 : 1
+                                    Behavior on muteFactor {
+                                        NumberAnimation { duration: 400; easing.type: Easing.InOutQuad }
+                                    }
+
+                                    volume: (Config.background.videoVolume ?? 0.5) * muteFactor
                                 }
                             }
 
@@ -431,9 +442,17 @@ PanelWindow {
                                 target: slot
                                 function onShouldPlayChanged() {
                                     if (slot.shouldPlay) {
+                                        if (videoRoot.pausedAtMs > 0) {
+                                            const elapsed = Date.now() - videoRoot.pausedAtMs;
+                                            player.position = player.duration > 0
+                                                ? (player.position + elapsed) % player.duration
+                                                : player.position + elapsed;
+                                            videoRoot.pausedAtMs = 0;
+                                        }
                                         frozenFrame.visible = false;
                                         player.play();
                                     } else {
+                                        videoRoot.pausedAtMs = Date.now();
                                         frozenFrame.scheduleUpdate();
                                         frozenFrame.visible = true;
                                         player.pause();

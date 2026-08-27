@@ -44,7 +44,8 @@ Singleton {
             circleReverse: false,        // false = new wallpaper grows in; true = old wallpaper shrinks away
             transitionDisplacement: 20,  // percent; how far the wallpapers drift/scale during a transition
             videoSound: false,           // play audio for video wallpapers
-            videoVolume: 0.5             // 0..1
+            videoVolume: 0.5,            // 0..1
+            muteOnMedia: false           // duck wallpaper audio while a media player is playing
         })
     property var cava: ({
             enabled: false,
@@ -352,7 +353,8 @@ Singleton {
                 circleReverse: false,
                 transitionDisplacement: 20,
                 videoSound: false,
-                videoVolume: 0.5
+                videoVolume: 0.5,
+                muteOnMedia: false
             },
             cava: {
                 enabled: false,
