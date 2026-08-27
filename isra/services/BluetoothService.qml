@@ -63,13 +63,29 @@ Singleton {
         return a.name.localeCompare(b.name);
     }
 
+    function materialIconFor(iconStr) {
+        const s = iconStr ?? "";
+        if (s.includes("headset") || s.includes("headphone"))
+            return "headphones";
+        if (s.includes("phone"))
+            return "phone";
+        if (s.includes("keyboard"))
+            return "keyboard";
+        if (s.includes("mouse"))
+            return "mouse";
+        return "bluetooth";
+    }
+
     function _notifyDevice(device, connected) {
+        SoundService.bluetoothConnect(connected);
+        if (!Config.notifications.bluetooth)
+            return;
         const name = device.name || Localization.t("sysNotify.device");
-        const text = Localization.t(connected ? "sysNotify.connected" : "sysNotify.disconnected").arg(name);
-        notifyProc.command = ["notify-send", "-u", "low", "-a", "Bluetooth", "-t", "4000", "-h", "boolean:suppress-sound:true", text];
+        const body = Localization.t(connected ? "sysNotify.connectedGeneric" : "sysNotify.disconnectedGeneric");
+        const icon = materialIconFor(device.icon);
+        notifyProc.command = ["notify-send", "-u", "low", "-a", "Bluetooth", "-t", "4000", "-h", "boolean:suppress-sound:true", "-h", "string:x-material-icon:" + icon, name, body];
         notifyProc.running = false;
         notifyProc.running = true;
-        SoundService.bluetoothConnect(connected);
     }
 
     function batteryIcon(level) {

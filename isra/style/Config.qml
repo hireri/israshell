@@ -180,7 +180,9 @@ Singleton {
             popupTimeout: 5,
             showAllMonitors: false,
             popupFollowBar: true,
-            popupPosition: 1
+            popupPosition: 1,
+            network: true,
+            bluetooth: true
         })
     property var localsend: ({
             enabled: false,
@@ -417,7 +419,9 @@ Singleton {
                 popupTimeout: 5,
                 showAllMonitors: false,
                 popupFollowBar: true,
-                popupPosition: 1
+                popupPosition: 1,
+                network: true,
+                bluetooth: true
             },
             localsend: {
                 enabled: false,

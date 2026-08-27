@@ -41,21 +41,21 @@ PageBase {
     }
 
     function btCardIcon() {
-        const ico = BluetoothService.firstConnected?.icon ?? "";
-        if (ico.includes("headset") || ico.includes("headphone"))
+        const type = BluetoothService.materialIconFor(BluetoothService.firstConnected?.icon ?? "");
+        if (type === "headphones")
             return headphonesComp;
-        if (ico.includes("phone"))
+        if (type === "phone")
             return phoneComp;
-        if (ico.includes("keyboard"))
+        if (type === "keyboard")
             return keyboardComp;
         return btIconComp;
     }
 
     function btRowIcon(iconStr) {
-        const s = iconStr ?? "";
-        if (s.includes("headset") || s.includes("headphone"))
+        const type = BluetoothService.materialIconFor(iconStr);
+        if (type === "headphones")
             return btRowHeadphones;
-        if (s.includes("phone"))
+        if (type === "phone")
             return btRowPhone;
         return btRowGeneric;
     }

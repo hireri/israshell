@@ -24,12 +24,14 @@ Singleton {
     property bool awaitingPassword: false
 
     property bool _netReady: false
-    onWifiConnectedChanged: if (root._netReady) root._notifyNet(Localization.t("sysNotify.wifi"), root.wifiConnected)
-    onEthConnectedChanged: if (root._netReady) root._notifyNet(Localization.t("networkPage.ethernet"), root.ethConnected)
+    onWifiConnectedChanged: if (root._netReady) root._notifyNet(Localization.t("sysNotify.wifi"), root.wifiConnected, "wifi")
+    onEthConnectedChanged: if (root._netReady) root._notifyNet(Localization.t("networkPage.ethernet"), root.ethConnected, "ethernet")
 
-    function _notifyNet(label, connected) {
+    function _notifyNet(label, connected, icon) {
+        if (!Config.notifications.network)
+            return;
         const text = Localization.t(connected ? "sysNotify.connected" : "sysNotify.disconnected").arg(label);
-        netNotifyProc.command = ["notify-send", "-u", "low", "-a", "Network", "-t", "4000", text];
+        netNotifyProc.command = ["notify-send", "-u", "low", "-a", "Network", "-t", "4000", "-h", "string:x-material-icon:" + icon, Localization.t("sysNotify.connectivity"), text];
         netNotifyProc.running = false;
         netNotifyProc.running = true;
     }

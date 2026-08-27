@@ -86,6 +86,8 @@ MouseArea {
         return resolveIcon(m.desktopEntry);
     }
 
+    readonly property string _mainMaterialIcon: group.latest?.materialIcon ?? ""
+
     readonly property string _badgeIcon: {
         const m = group.latest;
         if (!m)
@@ -530,7 +532,7 @@ MouseArea {
                             color: group.isCritical ? Colors.md3.primary : (group.inPanel ? Qt.alpha(Colors.md3.surface_container, Config.blurOpacity) : Colors.md3.surface_container_high)
 
                             MaterialIcon {
-                                name: group.isCritical ? "brightness-alert" : "notification-active"
+                                name: group._mainMaterialIcon !== "" ? group._mainMaterialIcon : (group.isCritical ? "brightness-alert" : "notification-active")
                                 color: group.isCritical ? Colors.md3.on_primary : Colors.md3.on_surface_variant
                                 anchors.centerIn: parent
                                 width: 32

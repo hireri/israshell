@@ -80,6 +80,7 @@ Item {
                 image: notification.image || "",
                 appIcon: notification.appIcon || "",
                 desktopEntry: notification.desktopEntry || "",
+                materialIcon: notification.hints?.["x-material-icon"] ?? "",
                 time: Date.now()
             };
 

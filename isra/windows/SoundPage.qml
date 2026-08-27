@@ -747,6 +747,26 @@ PageBase {
                     })
                 })
         }
+        SettingSwitch {
+            label: Localization.t("soundPage.network_notifications")
+            sublabel: Localization.t("soundPage.notify_on_wifi_and_ethernet_changes")
+            checked: Config.notifications.network ?? true
+            onToggled: v => Config.update({
+                    notifications: Object.assign({}, Config.notifications, {
+                        network: v
+                    })
+                })
+        }
+        SettingSwitch {
+            label: Localization.t("soundPage.bluetooth_notifications")
+            sublabel: Localization.t("soundPage.notify_on_bluetooth_device_changes")
+            checked: Config.notifications.bluetooth ?? true
+            onToggled: v => Config.update({
+                    notifications: Object.assign({}, Config.notifications, {
+                        bluetooth: v
+                    })
+                })
+        }
         SettingChips {
             isLast: true
             label: Localization.t("backgroundPage.position")
