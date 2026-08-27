@@ -198,6 +198,7 @@ PanelWindow {
                 anchors.fill: parent
                 source: blurSrcImg
                 blurEnabled: true
+                autoPaddingEnabled: false
                 blurMax: 64
                 blur: blurRoot.targetActive && Config.blurEffects ? 1.0 : 0.0
 

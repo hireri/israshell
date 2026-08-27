@@ -43,6 +43,7 @@ Item {
                 anchors.fill: lockWallImg
                 source: lockWallImg
                 blurEnabled: true
+                autoPaddingEnabled: false
                 blurMax: 64
                 blur: Config.blurEffects ? 1.0 : 0.0
 
@@ -58,11 +59,11 @@ Item {
                     enabled: lockBlur.blurBehaviorEnabled
                     NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
                 }
+            }
 
-                Rectangle {
-                    anchors.fill: parent
-                    color: Qt.alpha(Colors.md3.surface_container, 0.65)
-                }
+            Rectangle {
+                anchors.fill: parent
+                color: Qt.alpha(Colors.md3.surface_container, 0.65)
             }
 
             CavaVisualizer {
