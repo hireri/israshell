@@ -19,21 +19,6 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Background
     anchors { top: true; bottom: true; left: true; right: true }
 
-    property int audioEpoch: 0
-
-    Connections {
-        target: AudioService
-        function onSinkChanged() {
-            sinkSettleTimer.restart();
-        }
-    }
-
-    Timer {
-        id: sinkSettleTimer
-        interval: 350
-        onTriggered: root.audioEpoch++
-    }
-
     readonly property string activeWallPath: {
         const isVid = /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(WallpaperService.currentWall);
         if (GameModeService.active && isVid && WallpaperService.currentWallPreview) {
@@ -382,36 +367,11 @@ PanelWindow {
                             property bool ready: false
                             property real pausedAtMs: 0
 
-                            Component {
-                                id: audioOutComp
-                                AudioOutput {
-                                    readonly property bool wantsMute: !Config.background.videoSound
-                                        || root.screen !== Quickshell.screens[0]
-                                        || (Config.background.muteOnMedia && MediaPlayerState.isPlaying)
-
-                                    property real muteFactor: wantsMute ? 0 : 1
-                                    Behavior on muteFactor {
-                                        NumberAnimation { duration: 400; easing.type: Easing.InOutQuad }
-                                    }
-
-                                    volume: (Config.background.videoVolume ?? 0.5) * muteFactor
-                                }
-                            }
-
-                            Connections {
-                                target: root
-                                function onAudioEpochChanged() {
-                                    const old = player.audioOutput;
-                                    player.audioOutput = audioOutComp.createObject(player);
-                                    if (old)
-                                        old.destroy();
-                                }
-                            }
-
                             MediaPlayer {
                                 id: player
                                 source: slot.path ? ("file://" + slot.path) : ""
                                 videoOutput: vo
+                                audioOutput: null
                                 loops: MediaPlayer.Infinite
                                 onSourceChanged: videoRoot.ready = false
                                 onMediaStatusChanged: {
@@ -419,7 +379,6 @@ PanelWindow {
                                         videoRoot.ready = true;
                                     }
                                 }
-                                Component.onCompleted: audioOutput = audioOutComp.createObject(player)
                             }
 
                             VideoOutput {
