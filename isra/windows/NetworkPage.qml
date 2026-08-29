@@ -79,7 +79,7 @@ PageBase {
         id: wifiIconComp
         WifiIcon {
             iconSize: 22
-            mode: (NetworkService.wifiEnabled && NetworkService.wifiConnected) ? "wifi" : (NetworkService.ethConnected ? "ethernet" : "disconnected")
+            mode: NetworkService.wifiConnected ? "wifi" : (NetworkService.wifiEnabled ? "no-signal" : "disconnected")
             strength: NetworkService.wifiConnected ? NetworkService.wifiSignal : 0
             secured: (NetworkService.activeNetwork?.security ?? "").length > 0
             color: NetworkService.wifiEnabled ? Colors.md3.on_primary_container : Colors.md3.outline

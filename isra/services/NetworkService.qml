@@ -26,8 +26,35 @@ Singleton {
     property bool awaitingPassword: false
 
     property bool _netReady: false
-    onWifiConnectedChanged: if (root._netReady) root._notifyNet(Localization.t("sysNotify.wifi"), root.wifiConnected, "wifi")
+    onWifiConnectedChanged: {
+        if (!root._netReady)
+            return;
+        if (root.wifiConnected) {
+            wifiNotifyInfoProc.running = false;
+            wifiNotifyInfoProc.running = true;
+        } else {
+            root._notifyNet(Localization.t("sysNotify.wifi"), false, "wifi-off");
+        }
+    }
     onEthConnectedChanged: if (root._netReady) root._notifyNet(Localization.t("networkPage.ethernet"), root.ethConnected, "ethernet")
+
+    function _wifiIconFor(strength, secured) {
+        const tier = strength >= 80 ? 80 : strength >= 75 ? 75 : strength >= 50 ? 50 : strength >= 25 ? 25 : 0;
+        return secured ? "wifi-locked-" + tier : (tier === 80 ? "wifi" : "wifi-" + tier);
+    }
+
+    Process {
+        id: wifiNotifyInfoProc
+        command: ["sh", "-c", "nmcli -t -f ACTIVE,SIGNAL,SECURITY d wifi | grep '^yes' | head -1"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parts = text.trim().split(":");
+                const strength = parseInt(parts[1]) || 0;
+                const secured = (parts[2] || "").length > 0;
+                root._notifyNet(Localization.t("sysNotify.wifi"), true, root._wifiIconFor(strength, secured));
+            }
+        }
+    }
 
     function _notifyNet(label, connected, icon) {
         if (!Config.notifications.network)
