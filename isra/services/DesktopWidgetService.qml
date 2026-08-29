@@ -8,7 +8,7 @@ import qs.components
 Singleton {
     id: root
 
-    readonly property var singletonTypes: ["music", "weather", "weathercard", "weatherscene", "pomodoro", "fetchcard"]
+    readonly property var singletonTypes: ["music", "weather", "weathercard", "weatherscene", "pomodoro", "fetchcard", "lyrics"]
 
     readonly property var _capabilityByType: ({
         weyes: "cursorPosition"
@@ -54,7 +54,8 @@ Singleton {
         pomodoro: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 3, h: 3 }, data: {} },
         githubheatmap: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 8, h: 3 }, data: { username: "" } },
         sunmoon: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 6, h: 3 }, data: { mode: "both", showIllumination: true } },
-        fetchcard: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 7, h: 4 }, data: { showLogo: true, showSwatches: true } }
+        fetchcard: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 7, h: 4 }, data: { showLogo: true, showSwatches: true } },
+        lyrics: { enabled: true, screen: null, cell: { col: 0, row: 0 }, span: { w: 6, h: 3 }, data: { showCard: true, showTrackInfo: true, artSize: 36, align: "left", idleBlur: 0, fontFamily: "Google Sans Flex", idleWeight: 380, activeWeight: 620, activeGrad: 70, fontWidth: 100, fontRoundness: 0, lyricSize: 20, wordMode: true, lineDuration: 620, wordDuration: 260, leadIn: 120, activeScale: 1.04 } }
     })
 
     function defaultsFor(type) {
@@ -84,6 +85,7 @@ Singleton {
     Component { id: githubHeatmapComp; GithubHeatmapWidget {} }
     Component { id: sunMoonComp; SunMoonWidget {} }
     Component { id: fetchCardComp; FetchCardWidget {} }
+    Component { id: lyricsComp; LyricsWidget {} }
 
     readonly property var componentMap: ({
         photo: photoComp,
@@ -96,7 +98,8 @@ Singleton {
         pomodoro: pomodoroComp,
         githubheatmap: githubHeatmapComp,
         sunmoon: sunMoonComp,
-        fetchcard: fetchCardComp
+        fetchcard: fetchCardComp,
+        lyrics: lyricsComp
     })
 
     property var _idList: []

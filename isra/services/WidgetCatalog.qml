@@ -15,6 +15,7 @@ Singleton {
     Component { id: weatherCardPreview; WeatherCardVisual {} }
     Component { id: weatherScenePreview; WeatherSceneVisual {} }
     Component { id: pomodoroPreview; PomodoroVisual {} }
+    Component { id: lyricsPreview; LyricsVisual {} }
     Component { id: githubHeatmapPreview; GithubHeatmapVisual {} }
     Component { id: sunMoonPreview; SunMoonVisual {} }
     Component { id: fetchCardPreview; FetchCardVisual {} }
@@ -82,6 +83,13 @@ Singleton {
             icon: "calendar-month",
             preview: githubHeatmapPreview,
             stackable: true
+        },
+        {
+            type: "lyrics",
+            label: Localization.t("widgetDrawer.lyrics"),
+            icon: "queue-music",
+            preview: lyricsPreview,
+            stackable: false
         },
         {
             type: "sunmoon",
