@@ -2,6 +2,7 @@ pragma Singleton
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Notifications
 import qs.services
 import qs.style
@@ -11,15 +12,31 @@ Item {
 
     // groups[groupKey] = {
     //   appName, groupSummary,
-    //   messages: [{ body, summary, image, appIcon, time }],
+    //   messages: [{ body, summary, image, appIcon, time, notifId }],
     //   liveNotification: <Notification | null>
     // }
+    function _notifId(appName, summary, body) {
+        return appName + "\u001f" + summary + "\u001f" + body;
+    }
     property var groups: ({})
     property bool dnd: false
 
     readonly property ListModel popupGroupModel: ListModel {}
     readonly property ListModel qsGroupModel: ListModel {}
-    readonly property var history: []
+    readonly property ListModel historyModel: ListModel {}
+    readonly property int historyLimit: 50
+
+    readonly property int visibleHistoryCount: {
+        let n = 0;
+        for (let i = 0; i < historyModel.count; i++)
+            if (!root.groups[historyModel.get(i).groupKey ?? ""])
+                n++;
+        return n;
+    }
+
+    function isGroupLive(gKey) {
+        return gKey !== undefined && root.groups[gKey] !== undefined;
+    }
 
     readonly property bool suppressPopups: PanelService.current?.suppressNotificationPopups ?? false
 
@@ -86,7 +103,8 @@ Item {
                 appIcon: notification.appIcon || "",
                 desktopEntry: notification.desktopEntry || "",
                 materialIcon: notification.hints?.["x-material-icon"] ?? "",
-                time: Date.now()
+                time: Date.now(),
+                notifId: root._notifId(appName, groupSummary, notification.body || "")
             };
 
             popupCleanupTimer.cancel(gKey);
@@ -107,6 +125,7 @@ Item {
                 urgency: notification.urgency?.toString() ?? "normal"
             });
             root.groups = gs;
+            root._captureHistory(gKey);
 
             const isCritical = notification.urgency?.toString() === "2";
 
@@ -137,11 +156,109 @@ Item {
     }
 
     function _removeGroup(gKey) {
+        root._releaseHistory(gKey);
+
         const gs = Object.assign({}, root.groups);
         delete gs[gKey];
         root.groups = gs;
         _removeGroupFromModel(popupGroupModel, gKey);
         _removeGroupFromModel(qsGroupModel, gKey);
+    }
+
+    function _captureHistory(gKey) {
+        const g = root.groups[gKey];
+        if (!g || g.messages.length === 0)
+            return;
+        const latest = g.messages[g.messages.length - 1];
+        const nId = latest.notifId ?? root._notifId(g.appName, latest.summary, latest.body);
+        for (let i = 0; i < historyModel.count; i++) {
+            if (historyModel.get(i).notifId === nId) {
+                historyModel.remove(i);
+                break;
+            }
+        }
+        historyModel.insert(0, {
+            appName: g.appName,
+            groupSummary: g.groupSummary,
+            groupKey: gKey,
+            body: latest.body,
+            summary: latest.summary,
+            image: latest.image,
+            appIcon: latest.appIcon,
+            desktopEntry: latest.desktopEntry,
+            materialIcon: latest.materialIcon,
+            time: latest.time,
+            urgency: g.urgency,
+            count: g.messages.length,
+            notifId: nId,
+            live: true
+        });
+        while (historyModel.count > root.historyLimit)
+            historyModel.remove(historyModel.count - 1);
+        _writeHistoryDebouncer.restart();
+    }
+
+    function _releaseHistory(gKey) {
+        for (let i = 0; i < historyModel.count; i++) {
+            const e = historyModel.get(i);
+            if (e.groupKey === gKey && e.live) {
+                historyModel.setProperty(i, "live", false);
+                _writeHistoryDebouncer.restart();
+                return;
+            }
+        }
+    }
+
+    function removeHistoryEntry(index) {
+        historyModel.remove(index);
+        _writeHistoryDebouncer.restart();
+    }
+
+    function clearHistory() {
+        historyModel.clear();
+        _writeHistoryDebouncer.restart();
+    }
+
+    function _loadHistory() {
+        try {
+            const text = historyFile.text();
+            if (!text)
+                return;
+            const entries = JSON.parse(text);
+            const seen = {};
+            for (const entry of entries) {
+                entry.groupKey = entry.groupKey ?? "";
+                entry.live = false;
+                entry.notifId = entry.notifId ?? root._notifId(entry.appName ?? "", entry.summary ?? "", entry.body ?? "");
+                if (seen[entry.notifId])
+                    continue;
+                seen[entry.notifId] = true;
+                historyModel.append(entry);
+            }
+        } catch (e) {
+            console.log("NotificationService: history load failed:", e);
+        }
+    }
+
+    function _writeHistory() {
+        const entries = [];
+        for (let i = 0; i < historyModel.count; i++)
+            entries.push(historyModel.get(i));
+        historyFile.setText(JSON.stringify(entries, null, 2));
+    }
+
+    Timer {
+        id: _writeHistoryDebouncer
+        interval: 300
+        onTriggered: root._writeHistory()
+    }
+
+    FileView {
+        id: historyFile
+        path: Config.configDir + "/notification_history.json"
+        watchChanges: false
+        blockLoading: true
+        Component.onCompleted: root._loadHistory()
     }
 
     function _groupIndex(model, gKey) {

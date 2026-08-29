@@ -6,7 +6,7 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property string _path: Quickshell.env("HOME") + "/.config/quickshell/secrets.enc"
+    readonly property string _path: Quickshell.env("HOME") + "/.local/share/israshell/secrets.enc"
     property var _values: ({})
     property bool ready: false
     property bool _writing: false

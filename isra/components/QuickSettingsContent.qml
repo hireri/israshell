@@ -37,10 +37,17 @@ Item {
         }
     }
 
-    onIsOpenChanged: if (isOpen) Qt.callLater(() => keyHandler.forceActiveFocus())
+    onIsOpenChanged: {
+        if (isOpen)
+            Qt.callLater(() => keyHandler.forceActiveFocus());
+        else
+            root.showHistory = false;
+    }
 
     property bool _ready: false
     Component.onCompleted: Qt.callLater(() => root._ready = true)
+
+    property bool showHistory: false
 
     Rectangle {
         id: sidebarCard
@@ -400,13 +407,15 @@ Item {
                         }
 
                         Rectangle {
-                            readonly property bool isHeld: dndMouse.pressed && dndMouse.containsMouse
+                            readonly property bool isHeld: historyMouse.pressed && historyMouse.containsMouse
 
                             Layout.preferredWidth: isHeld ? 64 : 56
                             Layout.fillHeight: true
                             radius: 10
                             topLeftRadius: 18
-                            color: dndMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+                            color: root.showHistory
+                                ? (historyMouse.containsMouse ? Qt.lighter(Colors.md3.primary, 1.1) : Colors.md3.primary)
+                                : (historyMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
 
                             Behavior on color {
                                 ColorAnimation {
@@ -421,20 +430,20 @@ Item {
                             }
 
                             MaterialIcon {
-                                name: "dnd"
+                                name: "history"
                                 anchors.centerIn: parent
                                 iconSize: 16
-                                color: Colors.md3.on_surface
-                                filled: NotificationService.dnd
+                                color: root.showHistory ? Colors.md3.on_primary : Colors.md3.on_surface
+                                filled: root.showHistory
                                 transitionType: "circle"
                             }
 
                             MouseArea {
-                                id: dndMouse
+                                id: historyMouse
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
                                 hoverEnabled: true
-                                onClicked: NotificationService.dnd = !NotificationService.dnd
+                                onClicked: root.showHistory = !root.showHistory
                             }
                         }
 
@@ -443,9 +452,44 @@ Item {
                             Layout.fillHeight: true
                             radius: 10
                             color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+                            readonly property int _count: root.showHistory ? NotificationService.visibleHistoryCount : NotificationService.qsGroupModel.count
+
                             Text {
+                                id: countText
                                 anchors.centerIn: parent
-                                text: NotificationService.qsGroupModel.count === 0 ? Localization.t("quickSettings.no_notifications") : NotificationService.qsGroupModel.count === 1 ? Localization.t("quickSettings.one_notification") : Localization.t("quickSettings.notifications_count").arg(NotificationService.qsGroupModel.count)
+
+                                readonly property string target: {
+                                    const c = parent._count;
+                                    if (root.showHistory)
+                                        return c === 0 ? Localization.t("quickSettings.no_history") : c === 1 ? Localization.t("quickSettings.one_history_item") : Localization.t("quickSettings.history_count").arg(c);
+                                    return c === 0 ? Localization.t("quickSettings.no_notifications") : c === 1 ? Localization.t("quickSettings.one_notification") : Localization.t("quickSettings.notifications_count").arg(c);
+                                }
+                                property string displayed: target
+                                text: displayed
+
+                                onTargetChanged: fadeSeq.restart()
+
+                                SequentialAnimation {
+                                    id: fadeSeq
+                                    NumberAnimation {
+                                        target: countText
+                                        property: "opacity"
+                                        to: 0
+                                        duration: 160
+                                        easing.type: Easing.OutCubic
+                                    }
+                                    ScriptAction {
+                                        script: countText.displayed = countText.target
+                                    }
+                                    NumberAnimation {
+                                        target: countText
+                                        property: "opacity"
+                                        to: 1
+                                        duration: 160
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+
                                 font.pixelSize: 13
                                 font.family: Config.fontFamily
                                 font.weight: Font.Medium
@@ -456,13 +500,14 @@ Item {
 
                         Rectangle {
                             readonly property bool isHeld: clearMouse.pressed && clearMouse.containsMouse
+                            readonly property int _count: root.showHistory ? NotificationService.visibleHistoryCount : NotificationService.qsGroupModel.count
 
                             Layout.preferredWidth: isHeld ? 64 : 56
                             Layout.fillHeight: true
                             radius: 10
                             topRightRadius: 18
                             color: clearMouse.containsMouse ? Qt.alpha(Colors.md3.surface_container_highest, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                            opacity: NotificationService.qsGroupModel.count > 0 ? 1 : 0.3
+                            opacity: _count > 0 ? 1 : 0.3
 
                             Behavior on color {
                                 ColorAnimation {
@@ -480,7 +525,7 @@ Item {
                                 name: "clear-all"
                                 anchors.centerIn: parent
                                 iconSize: 16
-                                filled: NotificationService.qsGroupModel.count > 0
+                                filled: parent._count > 0
                                 color: Colors.md3.on_surface
                                 transitionType: "wipe-up"
                             }
@@ -490,8 +535,8 @@ Item {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
                                 hoverEnabled: true
-                                enabled: NotificationService.qsGroupModel.count > 0
-                                onClicked: NotificationService.dismissAll()
+                                enabled: parent._count > 0
+                                onClicked: root.showHistory ? NotificationService.clearHistory() : NotificationService.dismissAll()
                             }
                         }
                     }
@@ -546,7 +591,7 @@ Item {
                         id: caughtUpCol
                         anchors.centerIn: parent
                         spacing: 12
-                        readonly property bool isAllCaughtUp: NotificationService.qsGroupModel.count === 0
+                        readonly property bool isAllCaughtUp: root.showHistory ? NotificationService.visibleHistoryCount === 0 : NotificationService.qsGroupModel.count === 0
 
                         opacity: (isAllCaughtUp && (root.controller?._showNormal ?? false)) ? 1.0 : 0.0
                         visible: opacity > 0
@@ -585,7 +630,7 @@ Item {
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: Localization.t("quickSettings.all_caught_up")
+                            text: root.showHistory ? Localization.t("quickSettings.no_history_yet") : Localization.t("quickSettings.all_caught_up")
                             font.pixelSize: 16
                             renderType: Text.NativeRendering
                             font.family: Config.fontFamily
@@ -600,7 +645,7 @@ Item {
                         anchors.margins: 8
                         contentHeight: notifCol.implicitHeight
                         clip: false
-                        opacity: (root.controller?._showNormal ?? false) ? 1 : 0
+                        opacity: ((root.controller?._showNormal ?? false) && !root.showHistory) ? 1 : 0
                         visible: opacity > 0
 
                         Behavior on opacity {
@@ -637,6 +682,46 @@ Item {
                                     inPanel: true
                                     popup: false
                                     width: qsNotifList.width
+                                }
+                            }
+                        }
+                    }
+
+                    Flickable {
+                        id: historyFlick
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        contentHeight: historyCol.implicitHeight
+                        clip: false
+                        opacity: ((root.controller?._showNormal ?? false) && root.showHistory) ? 1 : 0
+                        visible: opacity > 0
+
+                        Behavior on opacity {
+                            NumberAnimation { duration: 150 }
+                        }
+                        flickableDirection: Flickable.VerticalFlick
+                        flickDeceleration: 4000
+                        maximumFlickVelocity: 1200
+                        boundsBehavior: Flickable.DragAndOvershootBounds
+                        ScrollBar.vertical: ScrollBar {
+                            policy: ScrollBar.AlwaysOff
+                        }
+
+                        Column {
+                            id: historyCol
+                            width: historyFlick.width
+                            spacing: 6
+
+                            NotificationListView {
+                                id: historyList
+                                width: parent.width
+                                implicitHeight: contentHeight
+                                height: contentHeight
+                                model: NotificationService.historyModel
+
+                                delegate: NotificationHistoryItem {
+                                    entry: historyList.model.get(index)
+                                    width: historyList.width
                                 }
                             }
                         }

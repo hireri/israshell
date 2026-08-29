@@ -460,15 +460,25 @@ Singleton {
                 transitionType: "wipe-up"
             }
             onToggled: AudioService.toggleSourceMute()
+            onRightClicked: root.openSettings("sound")
+            onWheelStep: steps => {
+                const v = Math.max(0, Math.min(1.5, AudioService.sourceVolume + steps * 0.05));
+                AudioService.setSourceVolume(v);
+            }
         }
     }
 
     Component {
         id: micWideComp
         SimpleIconLabelTile {
+            id: micWide
+
+            property real _peekVolume: -1
+
             active: !AudioService.sourceMuted
             label: Localization.t("qsTileService.microphone")
             sublabel: AudioService.source ? AudioService.deviceName(AudioService.source) : ""
+            peekSublabel: _peekVolume >= 0 ? Math.round(_peekVolume * 100) + "%" : ""
             iconComponent: MaterialIcon {
                 name: "mic"
                 iconSize: 22
@@ -476,6 +486,99 @@ Singleton {
                 transitionType: "wipe-up"
             }
             onToggled: AudioService.toggleSourceMute()
+            onRightClicked: root.openSettings("sound")
+            onWheelStep: steps => {
+                const v = Math.max(0, Math.min(1.5, AudioService.sourceVolume + steps * 0.05));
+                AudioService.setSourceVolume(v);
+                _peekVolume = v;
+                micPeekTimer.restart();
+            }
+
+            Timer {
+                id: micPeekTimer
+                interval: 900
+                onTriggered: micWide._peekVolume = -1
+            }
+        }
+    }
+
+    Component {
+        id: outputCompactComp
+        CompactToggleTile {
+            active: !AudioService.muted
+            iconComponent: VolumeIcon {
+                iconSize: 22
+                muted: AudioService.muted
+                volume: Math.round(AudioService.volume * 100)
+            }
+            onToggled: AudioService.toggleMute()
+            onRightClicked: root.openSettings("sound")
+            onWheelStep: steps => {
+                const v = Math.max(0, Math.min(1.5, AudioService.volume + steps * 0.05));
+                AudioService.setVolume(v);
+            }
+        }
+    }
+
+    Component {
+        id: outputWideComp
+        SimpleIconLabelTile {
+            id: outputWide
+
+            property real _peekVolume: -1
+
+            active: !AudioService.muted
+            label: Localization.t("qsTileService.output")
+            sublabel: AudioService.sink ? AudioService.deviceName(AudioService.sink) : ""
+            peekSublabel: _peekVolume >= 0 ? Math.round(_peekVolume * 100) + "%" : ""
+            iconComponent: VolumeIcon {
+                iconSize: 22
+                muted: AudioService.muted
+                volume: Math.round(AudioService.volume * 100)
+            }
+            onToggled: AudioService.toggleMute()
+            onRightClicked: root.openSettings("sound")
+            onWheelStep: steps => {
+                const v = Math.max(0, Math.min(1.5, AudioService.volume + steps * 0.05));
+                AudioService.setVolume(v);
+                _peekVolume = v;
+                outputPeekTimer.restart();
+            }
+
+            Timer {
+                id: outputPeekTimer
+                interval: 900
+                onTriggered: outputWide._peekVolume = -1
+            }
+        }
+    }
+
+    Component {
+        id: dndCompactComp
+        CompactToggleTile {
+            active: NotificationService.dnd
+            iconComponent: MaterialIcon {
+                name: "dnd"
+                iconSize: 22
+                filled: NotificationService.dnd
+                transitionType: "circle"
+            }
+            onToggled: NotificationService.dnd = !NotificationService.dnd
+        }
+    }
+
+    Component {
+        id: dndWideComp
+        SimpleIconLabelTile {
+            active: NotificationService.dnd
+            label: Localization.t("qsTileService.do_not_disturb")
+            iconComponent: MaterialIcon {
+                name: "dnd"
+                iconSize: 22
+                filled: NotificationService.dnd
+                transitionType: "circle"
+            }
+            onToggled: NotificationService.dnd = !NotificationService.dnd
         }
     }
 
@@ -517,7 +620,9 @@ Singleton {
         { id: "bluetooth",    label: Localization.t("qsTileService.bluetooth"),     compactComponent: bluetoothCompactComp,    wideComponent: bluetoothWideComp },
         { id: "caffeine",     label: Localization.t("qsTileService.caffeine"),      compactComponent: caffeineCompactComp,      wideComponent: caffeineWideComp },
         { id: "nightlight",   label: Localization.t("qsTileService.night_light"),   compactComponent: nightlightCompactComp,    wideComponent: nightlightWideComp },
+        { id: "dnd",          label: Localization.t("qsTileService.do_not_disturb"), compactComponent: dndCompactComp,          wideComponent: dndWideComp },
         { id: "mic",          label: Localization.t("qsTileService.microphone"),   compactComponent: micCompactComp,           wideComponent: micWideComp },
+        { id: "output",       label: Localization.t("qsTileService.output"),       compactComponent: outputCompactComp,        wideComponent: outputWideComp },
         { id: "powerProfile", label: Localization.t("qsTileService.power_profile"), compactComponent: powerProfileCompactComp,  wideComponent: powerProfileWideComp },
         { id: "gameMode",     label: Localization.t("qsTileService.game_mode"),     compactComponent: gameModeCompactComp,      wideComponent: gameModeWideComp },
         { id: "localsend",    label: Localization.t("qsTileService.localsend"),     compactComponent: localsendCompactComp,     wideComponent: localsendWideComp },

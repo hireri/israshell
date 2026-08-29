@@ -11,6 +11,7 @@ Item {
     property color accentContentColor: Colors.md3.on_primary
     signal toggled
     signal rightClicked
+    signal wheelStep(int steps)
 
     readonly property bool _on: active && !forceOff
 
@@ -49,5 +50,21 @@ Item {
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         hoverEnabled: true
         onClicked: mouse => mouse.button === Qt.RightButton ? root.rightClicked() : root.toggled()
+
+        property real _wheelAccum: 0
+        onWheel: wheel => {
+            _wheelAccum += wheel.angleDelta.y;
+            let steps = 0;
+            while (_wheelAccum >= 120) {
+                _wheelAccum -= 120;
+                steps++;
+            }
+            while (_wheelAccum <= -120) {
+                _wheelAccum += 120;
+                steps--;
+            }
+            if (steps !== 0)
+                root.wheelStep(steps);
+        }
     }
 }

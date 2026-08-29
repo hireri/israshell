@@ -9,12 +9,14 @@ Item {
     property string label: ""
     property string sublabel: ""
     property var sublabelForOn: null
+    property string peekSublabel: ""
     property bool active: false
     property bool forceOff: false
     property color accentColor: Colors.md3.primary
     property color accentContentColor: Colors.md3.on_primary
     signal toggled
     signal rightClicked
+    signal wheelStep(int steps)
 
     readonly property bool _on: active && !forceOff
     readonly property string _effectiveSublabel: sublabelForOn ? sublabelForOn(_on) : sublabel
@@ -68,16 +70,56 @@ Item {
             }
 
             Text {
+                id: subText
+                property string _shown: root._effectiveSublabel
                 Layout.fillWidth: true
-                text: root._effectiveSublabel
+                text: _shown
                 font.pixelSize: 11
                 font.family: Config.fontFamily
                 font.features: ({ "tnum": 1 })
                 color: root._on ? Qt.alpha(root.accentContentColor, 0.85) : Colors.md3.on_surface_variant
                 elide: Text.ElideRight
-                visible: root._effectiveSublabel !== ""
+                visible: text !== ""
                 renderType: Text.NativeRendering
+
+                Binding {
+                    target: subText
+                    property: "_shown"
+                    value: root._effectiveSublabel
+                    when: root.peekSublabel === "" && !subFade.running
+                }
+
+                SequentialAnimation {
+                    id: subFade
+                    NumberAnimation {
+                        target: subText
+                        property: "opacity"
+                        to: 0
+                        duration: 120
+                        easing.type: Easing.OutCubic
+                    }
+                    ScriptAction {
+                        script: subText._shown = root._effectiveSublabel
+                    }
+                    NumberAnimation {
+                        target: subText
+                        property: "opacity"
+                        to: 1
+                        duration: 160
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
+        }
+    }
+
+    onPeekSublabelChanged: {
+        if (peekSublabel !== "") {
+            subFade.stop();
+            subText._shown = peekSublabel;
+            subText.opacity = 1;
+        } else if (subText._shown !== root._effectiveSublabel) {
+            subFade.restart();
         }
     }
 
@@ -88,5 +130,21 @@ Item {
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onClicked: mouse => mouse.button === Qt.RightButton ? root.rightClicked() : root.toggled()
+
+        property real _wheelAccum: 0
+        onWheel: wheel => {
+            _wheelAccum += wheel.angleDelta.y;
+            let steps = 0;
+            while (_wheelAccum >= 120) {
+                _wheelAccum -= 120;
+                steps++;
+            }
+            while (_wheelAccum <= -120) {
+                _wheelAccum += 120;
+                steps--;
+            }
+            if (steps !== 0)
+                root.wheelStep(steps);
+        }
     }
 }
