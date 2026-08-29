@@ -611,7 +611,6 @@ Item {
                     anchors.fill: parent
                     progress: coverProgress.progress
                     strokeWidth: coverArt.ringStrokeWidth
-                    gapDegrees: 10
                 }
 
                 Rectangle {
