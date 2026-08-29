@@ -4,6 +4,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.style
 
 Singleton {
     id: root
@@ -15,9 +16,12 @@ Singleton {
     property var _lastTx: 0
     property bool _haveLast: false
 
+    readonly property bool active: Config.quicksettings.icons.includes("traffic")
+    onActiveChanged: root._haveLast = false
+
     Timer {
         interval: 1000
-        running: true
+        running: root.active
         repeat: true
         triggeredOnStart: true
         onTriggered: pollProc.running = true

@@ -88,6 +88,11 @@ Singleton {
         watchChanges: false
     }
 
+    Component {
+        id: notifyProcComponent
+        Process {}
+    }
+
     function _stripCodeFence(text) {
         const trimmed = text.trim();
         const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
@@ -100,7 +105,7 @@ Singleton {
     }
 
     function _notify(summary, body) {
-        const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
+        const proc = notifyProcComponent.createObject(root);
         proc.command = ["notify-send", "-u", "normal", "-a", "QuickShell", "-t", "5000", summary, body];
         proc.onExited.connect(() => proc.destroy());
         proc.running = true;

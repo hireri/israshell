@@ -549,6 +549,7 @@ Singleton {
         id: wallSymlink
         path: Quickshell.env("HOME") + "/.config/hypr/current_wall"
         watchChanges: true
+        preload: false
         onFileChanged: {
             watchChanges = false;
             Qt.callLater(() => { watchChanges = true; });
@@ -565,6 +566,7 @@ Singleton {
         id: wallPreviewSymlink
         path: Quickshell.env("HOME") + "/.config/hypr/current_wall_prev"
         watchChanges: true
+        preload: false
         onFileChanged: {
             watchChanges = false;
             Qt.callLater(() => { watchChanges = true; });
@@ -764,7 +766,6 @@ Singleton {
         running: false
     }
 
-    // audio and video run on diff decoders so they will drift, and i dont care
     readonly property bool wallIsVideo: /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(root.currentWall)
 
     Component {
@@ -781,7 +782,7 @@ Singleton {
 
     Loader {
         id: audioLoader
-        active: root.wallIsVideo && Config.background.videoSound && !GameModeService.active
+        active: root.wallIsVideo && !GameModeService.active
 
         sourceComponent: Component {
             MediaPlayer {
@@ -789,36 +790,32 @@ Singleton {
                 source: root.currentWall ? ("file://" + root.currentWall) : ""
                 loops: MediaPlayer.Infinite
                 onMediaStatusChanged: {
-                    // enum is LoadedMedia/BufferedMedia - MediaPlayer.Loaded is undefined
                     if ((mediaStatus === MediaPlayer.LoadedMedia || mediaStatus === MediaPlayer.BufferedMedia)
-                        && !LockscreenService.locked)
+                        && root.audioShouldPlay)
                         play();
                 }
                 Component.onCompleted: {
                     audioOutput = wallAudioOutComp.createObject(wallAudio);
-                    if (!LockscreenService.locked)
+                    if (root.audioShouldPlay)
                         play();
                 }
             }
         }
     }
 
-    // lock pauses the stream rather than tearing it down, so it resumes where
-    // it left off instead of restarting the file
-    readonly property bool lockedAudio: LockscreenService.locked
+    readonly property bool audioShouldPlay: root.wallIsVideo && Config.background.videoSound
+        && !GameModeService.active && !LockscreenService.locked
 
-    onLockedAudioChanged: {
+    onAudioShouldPlayChanged: {
         const p = audioLoader.item;
         if (!p)
             return;
-        if (root.lockedAudio)
-            p.pause();
-        else
+        if (root.audioShouldPlay)
             p.play();
+        else
+            p.pause();
     }
 
-    // AudioOutput does not follow a default-sink change; swap in a fresh one
-    // once the switch settles (the player keeps playing, so nothing restarts)
     Connections {
         target: AudioService
         function onSinkChanged() {

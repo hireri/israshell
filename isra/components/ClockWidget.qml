@@ -87,7 +87,8 @@ Item {
 
     Timer {
         interval: clockRoot._layoutMode === 3 ? 50 : 500
-        running: true
+        running: clockRoot.isClockEnabled
+        triggeredOnStart: true
         repeat: true
         onTriggered: {
             const now = new Date();
@@ -237,7 +238,7 @@ Item {
             }
         }
 
-        layer.enabled: true
+        layer.enabled: isClockEnabled
         layer.effect: MultiEffect {
             shadowEnabled: true
             shadowBlur: ((Config.clock.shadowBlur ?? 16) / 32)

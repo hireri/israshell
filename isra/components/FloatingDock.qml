@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import Quickshell.Widgets
 import QtQuick
 import QtQuick.Layouts
@@ -10,11 +9,10 @@ import QtQuick.Layouts
 import qs.style
 import qs.services
 
-PanelWindow {
+Item {
     id: dockRoot
 
     required property var modelData
-    screen: modelData
 
     component DockSection: Loader {
         visible: active
@@ -74,7 +72,7 @@ PanelWindow {
 
     readonly property var monitorWorkspace: {
         const list = CompositorService.workspaces ?? [];
-        const name = dockRoot.screen ? dockRoot.screen.name : "";
+        const name = dockRoot.modelData ? dockRoot.modelData.name : "";
         return list.find(w => w.monitor === name && w.active) ?? null;
     }
     readonly property bool hasWindowsUnderneath: {
@@ -142,51 +140,11 @@ PanelWindow {
         || Config.floatingDock.showMusicPlayer
         || dockModelImpl.viewModel.count > 0
 
-    visible: Config.floatingDock.enabled && hasContent
-    color: "transparent"
+    visible: hasContent
+    anchors.fill: parent
 
-    BackgroundEffect.blurRegion: Config.blurAllowed() ? fullBlurRegion : null
-
-    Region {
-        id: fullBlurRegion
-        width: dockRoot.width
-        height: dockRoot.height
-    }
-
-    property rect dockHoverRect: Qt.rect(0, 0, 0, 0)
-
-    WlrLayershell.namespace: "quickshell:floatingDock"
-    WlrLayershell.layer: WlrLayer.Top
-
-    exclusionMode: ExclusionMode.Ignore
-
-    anchors.top: true
-    anchors.bottom: true
-    anchors.left: true
-    anchors.right: true
-
-    mask: revealed ? revealedMask : hiddenMask
-
-    Region {
-        id: hiddenMask
-        item: sensorStrip
-    }
-
-    Region {
-        id: revealedMask
-        item: pill
-
-        Region {
-            item: sensorStrip
-        }
-
-        Region {
-            x: dockRoot.dockHoverRect.x
-            y: dockRoot.dockHoverRect.y
-            width: dockRoot.dockHoverRect.width
-            height: dockRoot.dockHoverRect.height
-        }
-    }
+    readonly property alias pillItem: pill
+    readonly property alias sensorStripItem: sensorStrip
 
     Item {
         id: contentRoot

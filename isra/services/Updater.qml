@@ -9,6 +9,11 @@ import qs.style
 Singleton {
     id: root
 
+    Component {
+        id: notifyProcComponent
+        Process {}
+    }
+
     readonly property string currentVersion: _currentVersion
     readonly property string latestVersion: _latestVersion
     readonly property bool updateAvailable: _updateAvailable
@@ -212,7 +217,7 @@ Singleton {
     }
 
     function _notify(summary, body, urgency, timeout) {
-        const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
+        const proc = notifyProcComponent.createObject(root);
         proc.command = ["notify-send", "-u", urgency, "-a", "QuickShell", "-t", String(timeout ?? 5000), summary, body];
         proc.onExited.connect(() => proc.destroy());
         proc.running = true;

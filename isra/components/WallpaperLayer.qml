@@ -204,6 +204,10 @@ PanelWindow {
             ? /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(path)
             : false
 
+        readonly property bool isAnimated: path
+            ? /\.gif$/i.test(path)
+            : false
+
         readonly property bool videoTornDown: isVideo && GameModeService.active
 
         readonly property bool shouldPlay: isVideo && isFront && !pause && !videoTornDown
@@ -268,17 +272,18 @@ PanelWindow {
                 return;
             }
 
-            if (img.status === Image.Ready || img.status === Image.Error || img.source === "") {
+            const activeImg = slot.isAnimated ? img : staticImg;
+            if (activeImg.status === Image.Ready || activeImg.status === Image.Error || activeImg.source === "") {
                 cb();
                 return;
             }
             const handler = () => {
-                if (img.status === Image.Ready || img.status === Image.Error) {
-                    img.statusChanged.disconnect(handler);
+                if (activeImg.status === Image.Ready || activeImg.status === Image.Error) {
+                    activeImg.statusChanged.disconnect(handler);
                     cb();
                 }
             };
-            img.statusChanged.connect(handler);
+            activeImg.statusChanged.connect(handler);
         }
 
         opacity: transitionType === "crossfade" ? (isFront ? _progress : 1) : 1
@@ -288,12 +293,13 @@ PanelWindow {
             : (isFront ? 1 : 0)
 
         onPathChanged: {
-            frozenFrame.visible = false;
+            if (videoLoader.item)
+                videoLoader.item.frozenFrameItem.visible = false;
             unloadTimer.stop();
         }
         onVideoTornDownChanged: {
-            if (videoTornDown) {
-                frozenFrame.visible = false;
+            if (videoTornDown && videoLoader.item) {
+                videoLoader.item.frozenFrameItem.visible = false;
             }
         }
 
@@ -324,6 +330,8 @@ PanelWindow {
             layer.effect: MultiEffect {
                 maskEnabled: true
                 maskSource: slot.transitionType === "wipe" ? wipeMask : circleMask
+                maskThresholdMin: 0.5
+                maskSpreadAtMin: 0.5
             }
 
             Item {
@@ -345,12 +353,24 @@ PanelWindow {
                 AnimatedImage {
                     id: img
                     anchors.fill: parent
-                    visible: !slot.isVideo
+                    visible: !slot.isVideo && slot.isAnimated
                     asynchronous: true
-                    source: (!slot.isVideo && slot.path) ? ("file://" + slot.path) : ""
+                    source: (!slot.isVideo && slot.isAnimated && slot.path) ? ("file://" + slot.path) : ""
                     fillMode: Image.PreserveAspectCrop
                     sourceSize.width: root.screen ? Math.round(root.screen.width * root.screen.devicePixelRatio) : 1080
+                    sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1920
                     playing: slot.isFront && !slot.pause
+                }
+
+                Image {
+                    id: staticImg
+                    anchors.fill: parent
+                    visible: !slot.isVideo && !slot.isAnimated
+                    asynchronous: true
+                    source: (!slot.isVideo && !slot.isAnimated && slot.path) ? ("file://" + slot.path) : ""
+                    fillMode: Image.PreserveAspectCrop
+                    sourceSize.width: root.screen ? Math.round(root.screen.width * root.screen.devicePixelRatio) : 1080
+                    sourceSize.height: root.screen ? Math.round(root.screen.height * root.screen.devicePixelRatio) : 1920
                 }
 
                 Loader {
@@ -364,6 +384,7 @@ PanelWindow {
                             id: videoRoot
                             anchors.fill: parent
                             readonly property alias videoOutput: vo
+                            readonly property alias frozenFrameItem: frozenFrame
                             property bool ready: false
                             property real pausedAtMs: 0
 
@@ -386,6 +407,15 @@ PanelWindow {
                                 anchors.fill: parent
                                 visible: !frozenFrame.visible
                                 fillMode: VideoOutput.PreserveAspectCrop
+                            }
+
+                            ShaderEffectSource {
+                                id: frozenFrame
+                                anchors.fill: parent
+                                sourceItem: vo
+                                live: false
+                                hideSource: false
+                                visible: false
                             }
 
                             Component.onCompleted: {
@@ -421,15 +451,6 @@ PanelWindow {
                         }
                     }
                 }
-
-                ShaderEffectSource {
-                    id: frozenFrame
-                    anchors.fill: parent
-                    sourceItem: videoLoader.item ? videoLoader.item.videoOutput : null
-                    live: false
-                    hideSource: false
-                    visible: false
-                }
             }
         }
 
@@ -439,7 +460,7 @@ PanelWindow {
             height: slot.height
             visible: false
             layer.enabled: true
-            layer.samples: 4
+            layer.textureSize: Qt.size(Math.ceil(slot.width / 4), Math.ceil(slot.height / 4))
             layer.smooth: true
 
             readonly property real _sweep: slot._wipeSpan * (slot._progress - 0.5) - slot._diagonal
@@ -462,7 +483,7 @@ PanelWindow {
             height: slot.height
             visible: false
             layer.enabled: true
-            layer.samples: 4
+            layer.textureSize: Qt.size(Math.ceil(slot.width / 4), Math.ceil(slot.height / 4))
             layer.smooth: true
 
             Rectangle {

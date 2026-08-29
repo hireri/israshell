@@ -7,6 +7,16 @@ import qs.style
 Singleton {
     id: root
 
+    Component {
+        id: procComponent
+        Process {}
+    }
+
+    Component {
+        id: collectorComponent
+        StdioCollector {}
+    }
+
     property bool visible: false
     readonly property bool excludeFromBarOverlay: true
     property var history: []
@@ -59,8 +69,8 @@ Singleton {
             return;
         }
 
-        const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        const collector = Qt.createQmlObject('import Quickshell.Io; StdioCollector {}', proc);
+        const proc = procComponent.createObject(root);
+        const collector = collectorComponent.createObject(proc);
         if (mimeType) {
             proc.command = ["base64", "-w0", path];
         } else {
@@ -117,8 +127,8 @@ Singleton {
         const screens = Quickshell.screens ?? [];
         for (const scr of screens) {
             const name = scr.name;
-            const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-            const collector = Qt.createQmlObject('import Quickshell.Io; StdioCollector {}', proc);
+            const proc = procComponent.createObject(root);
+            const collector = collectorComponent.createObject(proc);
             proc.command = ["bash", "-c", "grim -o '" + name.replace(/'/g, "'\\''") + "' - | base64 -w0"];
             proc.stdout = collector;
             collector.streamFinished.connect(() => {
@@ -604,7 +614,7 @@ Singleton {
     }
 
     function _notify(summary: string, body: string): void {
-        const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
+        const proc = procComponent.createObject(root);
         proc.command = ["notify-send", "-u", "normal", "-a", "QuickShell", "-t", "5000", summary, body];
         proc.onExited.connect(() => proc.destroy());
         proc.running = true;

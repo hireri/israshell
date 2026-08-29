@@ -67,12 +67,9 @@ Singleton {
     Timer {
         id: displayTimer
         interval: 100
-        running: true
+        running: root.isRecording
         repeat: true
         onTriggered: {
-            if (!root.isRecording)
-                return;
-
             var diff = Math.floor((Date.now() - root.startTime) / 1000);
             var hrs = Math.floor(diff / 3600);
             var mins = Math.floor((diff % 3600) / 60);

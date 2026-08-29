@@ -8,6 +8,16 @@ import qs.style
 Singleton {
     id: root
 
+    Component {
+        id: procComponent
+        Process {}
+    }
+
+    Component {
+        id: collectorComponent
+        StdioCollector {}
+    }
+
     readonly property int port: 53317
     readonly property string socketPath: (Quickshell.env("XDG_RUNTIME_DIR") ?? "/tmp") + "/localsendd.sock"
     property bool reachable: false
@@ -231,8 +241,8 @@ Singleton {
         if (paths.length === 0)
             return;
 
-        const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
-        const collector = Qt.createQmlObject('import Quickshell.Io; StdioCollector {}', proc);
+        const proc = procComponent.createObject(root);
+        const collector = collectorComponent.createObject(proc);
         proc.command = ["stat", "--format=%s|%n", "--"].concat(paths);
         proc.stdout = collector;
         collector.streamFinished.connect(() => {
@@ -531,7 +541,7 @@ Singleton {
     }
 
     function notify(summary, body, urgency, timeout, deviceType) {
-        const proc = Qt.createQmlObject('import Quickshell.Io; Process {}', root);
+        const proc = procComponent.createObject(root);
         proc.command = ["notify-send", "-u", urgency ?? "normal", "-a", "LocalSend", "-t", String(timeout ?? 5000), "-h", "boolean:suppress-sound:true", "-h", "string:x-material-icon:" + root.deviceTypeIcon(deviceType ?? "desktop"), summary, body ?? ""];
         proc.onExited.connect(() => proc.destroy());
         proc.running = true;

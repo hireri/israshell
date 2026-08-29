@@ -167,25 +167,10 @@ ShellRoot {
                 modelData: screenScope.modelData
             }
 
-            Loader {
-                active: Config.neko.enabled && Config.neko.onTop
-                    && !(LockscreenService.locked || LockscreenService.lockAnimating || LockscreenService.lockVisualActive || LockscreenService.unlockAnimating)
-                    && CompositorService.hasCapability("cursorPosition")
-                sourceComponent: NekoOverlay {
-                    modelData: screenScope.modelData
-                }
-            }
-
             WallpaperPicker {
                 panelWindow: window
                 registry: rootShell.wallpaperPanels
                 controllerRegistry: screenScope.panelControllers
-            }
-
-            Loader {
-                id: floatingDockLoader
-                active: Config.floatingDock.enabled
-                sourceComponent: FloatingDock { modelData: screenScope.modelData }
             }
 
             Component { id: workspacesComponent; Workspaces { panelWindow: window } }
@@ -318,6 +303,13 @@ ShellRoot {
                         y: window.dockHoverRect.y
                         width: window.dockHoverRect.width
                         height: window.dockHoverRect.height
+                    }
+
+                    Region {
+                        item: floatingDockLoader.item?.pillItem ?? null
+                    }
+                    Region {
+                        item: floatingDockLoader.item?.sensorStripItem ?? null
                     }
                 }
                 mask: anyMergedPanelOpen ? null : barOnlyMask
@@ -547,6 +539,22 @@ ShellRoot {
                     anchors.fill: parent
                     active: true
                     sourceComponent: ScreenCorners { screen: screenScope.modelData }
+                }
+
+                Loader {
+                    id: floatingDockLoader
+                    z: 3
+                    anchors.fill: parent
+                    active: Config.floatingDock.enabled
+                    sourceComponent: FloatingDock { modelData: screenScope.modelData }
+                }
+
+                Loader {
+                    z: 4
+                    active: Config.neko.enabled && Config.neko.onTop
+                        && !(LockscreenService.locked || LockscreenService.lockAnimating || LockscreenService.lockVisualActive || LockscreenService.unlockAnimating)
+                        && CompositorService.hasCapability("cursorPosition")
+                    sourceComponent: Neko { modelData: screenScope.modelData }
                 }
 
                 Item {

@@ -148,7 +148,6 @@ Item {
     Canvas {
         id: ringCanvas
         anchors.fill: parent
-        renderTarget: Canvas.FramebufferObject
 
         property rect box: root._rb
         property real rx: root._ringRx

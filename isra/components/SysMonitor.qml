@@ -1,5 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Shapes
+import QtQuick.Shapes.DesignHelpers
 import Quickshell
 import Quickshell.Widgets
 import qs.style
@@ -132,7 +134,7 @@ Item {
             height: 24
             anchors.verticalCenter: parent.verticalCenter
 
-            Canvas {
+            Item {
                 id: pieCanvas
                 anchors.fill: parent
                 property real value: metricContent.liveValue
@@ -151,41 +153,21 @@ Item {
                     }
                 }
 
-                onAnimatedValueChanged: requestPaint()
-                onScaleMaxChanged: requestPaint()
-                onAvailableChanged: requestPaint()
-                onPieColorChanged: requestPaint()
-                onVisibleChanged: if (visible) requestPaint()
-                onWidthChanged: requestPaint()
-                onHeightChanged: requestPaint()
+                readonly property real _frac: Math.max(0, Math.min(1, pieCanvas.animatedValue / pieCanvas.scaleMax))
 
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.reset();
+                EllipseShape {
+                    anchors.fill: parent
+                    fillColor: Qt.alpha(pieCanvas.pieColor, 0.5)
+                    strokeWidth: -1
+                }
 
-                    if (width <= 0 || height <= 0)
-                        return;
-
-                    var cx = width / 2;
-                    var cy = height / 2;
-                    var r = (Math.min(width, height) / 2) - 0.5;
-
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                    ctx.fillStyle = Qt.alpha(pieColor, 0.5);
-                    ctx.fill();
-
-                    var frac = Math.max(0, Math.min(scaleMax, animatedValue)) / scaleMax;
-                    if (frac > 0) {
-                        var start = -Math.PI / 2;
-                        var end = start + frac * Math.PI * 2;
-                        ctx.beginPath();
-                        ctx.moveTo(cx, cy);
-                        ctx.arc(cx, cy, r, start, end);
-                        ctx.closePath();
-                        ctx.fillStyle = pieColor;
-                        ctx.fill();
-                    }
+                EllipseShape {
+                    anchors.fill: parent
+                    visible: pieCanvas._frac > 0
+                    startAngle: 0
+                    sweepAngle: pieCanvas._frac * 360
+                    fillColor: pieCanvas.pieColor
+                    strokeWidth: -1
                 }
             }
 
@@ -246,7 +228,15 @@ Item {
         panelWindow: root.panelWindow
         yOffset: 4
 
-        Row {
+        Loader {
+            active: tooltip._shown
+            sourceComponent: tooltipRowComponent
+        }
+
+        Component {
+            id: tooltipRowComponent
+
+            Row {
             spacing: 20
 
             Repeater {
@@ -292,7 +282,7 @@ Item {
                         border.width: 1
                         border.color: Qt.alpha(metricDelegate.resolvedColor, 0.3)
 
-                        Canvas {
+                        Shape {
                             id: sparkline
                             anchors.fill: parent
                             property real sampleSpacing: width / Math.max(1, SystemInfo.historyLength - 1)
@@ -300,11 +290,10 @@ Item {
                             property real scaleMax: metricDelegate.liveScale
                             property color lineColor: metricDelegate.liveAvailable ? metricDelegate.resolvedColor : Qt.alpha(Colors.md3.on_surface, 0.35)
                             property color gridColor: Qt.alpha(lineColor, 0.15)
-                            renderStrategy: Canvas.Immediate
-                            
+
                             readonly property bool smoothEnabled: Config.sysMonitor?.smooth ?? false
                             property real smoothOffset: 0
-                            
+
                             property var _prevPoints: []
                             property var extendedPoints: []
 
@@ -330,92 +319,84 @@ Item {
                             onPointsChanged: {
                                 var pts = points || [];
                                 if (smoothEnabled && pts.length > 1 && _prevPoints.length > 0) {
-                                    extendedPoints = [_prevPoints[0]].concat(pts); 
+                                    extendedPoints = [_prevPoints[0]].concat(pts);
                                 } else {
                                     extendedPoints = pts;
-                                    requestPaint();
                                 }
                                 _prevPoints = pts;
                             }
 
-                            onSmoothOffsetChanged: {
-                                if (smoothEnabled) requestPaint();
+                            onSmoothEnabledChanged: extendedPoints = points || []
+
+                            readonly property real _pad: 2
+                            readonly property var _linePoints: {
+                                const pts = sparkline.extendedPoints || [];
+                                if (pts.length < 2 || sparkline.width <= 0 || sparkline.height <= 0)
+                                    return [];
+                                const rightIdx = pts.length - 1;
+                                const offset = sparkline.smoothEnabled ? sparkline.smoothOffset : 0;
+                                const usableH = sparkline.height - sparkline._pad * 2;
+                                const arr = [];
+                                for (let i = 0; i < pts.length; i++) {
+                                    const x = sparkline.width - (rightIdx - i) * sparkline.sampleSpacing + offset;
+                                    const clamped = Math.max(0, Math.min(sparkline.scaleMax, pts[i]));
+                                    const y = sparkline._pad + usableH - (clamped / sparkline.scaleMax) * usableH;
+                                    arr.push(Qt.point(x, y));
+                                }
+                                return arr;
                             }
-                            
-                            onSmoothEnabledChanged: {
-                                extendedPoints = points || [];
-                                requestPaint();
+
+                            readonly property var _fillPoints: {
+                                const lp = sparkline._linePoints;
+                                if (lp.length < 2) return [];
+                                const last = lp[lp.length - 1];
+                                const first = lp[0];
+                                return lp.concat([Qt.point(last.x, sparkline.height), Qt.point(first.x, sparkline.height)]);
                             }
 
-                            onLineColorChanged: requestPaint()
-                            onWidthChanged: requestPaint()
-                            onScaleMaxChanged: requestPaint()
-                            onPaint: {
-                                var ctx = getContext("2d");
-                                ctx.reset();
-
-                                var w = width;
-                                var h = height;
-
-                                var pad = 2;
-                                var usableH = h - pad * 2;
-                                var spacing = sampleSpacing;
-
-                                var rows = 4;
-                                var cols = 6;
-                                var rowHeight = h / rows;
-                                var colWidth = w / cols;
-
-                                ctx.strokeStyle = gridColor;
-                                ctx.lineWidth = 1;
-                                ctx.beginPath();
-                                for (var g = 1; g < rows; g++) {
-                                    var gy = Math.round(rowHeight * g) + 0.5;
-                                    ctx.moveTo(0, gy);
-                                    ctx.lineTo(w, gy);
+                            readonly property var _gridPaths: {
+                                const w = sparkline.width, h = sparkline.height;
+                                if (w <= 0 || h <= 0) return [];
+                                const rows = 4, cols = 6;
+                                const rowHeight = h / rows, colWidth = w / cols;
+                                const lines = [];
+                                for (let g = 1; g < rows; g++) {
+                                    const gy = Math.round(rowHeight * g) + 0.5;
+                                    lines.push([Qt.point(0, gy), Qt.point(w, gy)]);
                                 }
-                                for (var c = 1; c < cols; c++) {
-                                    var gx = Math.round(colWidth * c) + 0.5;
-                                    ctx.moveTo(gx, 0);
-                                    ctx.lineTo(gx, h);
+                                for (let c = 1; c < cols; c++) {
+                                    const gx = Math.round(colWidth * c) + 0.5;
+                                    lines.push([Qt.point(gx, 0), Qt.point(gx, h)]);
                                 }
-                                ctx.stroke();
+                                return lines;
+                            }
 
-                                var pts = extendedPoints || []; 
-                                if (pts.length < 2)
-                                    return;
-
-                                var rightIdx = pts.length - 1;
-                                var offset = smoothEnabled ? smoothOffset : 0; 
-
-                                function xFor(i) {
-                                    return w - (rightIdx - i) * spacing + offset;
+                            ShapePath {
+                                strokeColor: sparkline.gridColor
+                                strokeWidth: 1
+                                fillColor: "transparent"
+                                PathMultiline {
+                                    paths: sparkline._gridPaths
                                 }
+                            }
 
-                                function yFor(v) {
-                                    var clamped = Math.max(0, Math.min(scaleMax, v));
-                                    return pad + usableH - (clamped / scaleMax) * usableH;
+                            ShapePath {
+                                strokeColor: "transparent"
+                                fillColor: Qt.alpha(sparkline.lineColor, 0.18)
+                                PathPolyline {
+                                    path: sparkline._fillPoints
                                 }
+                            }
 
-                                ctx.beginPath();
-                                ctx.moveTo(xFor(0), yFor(pts[0]));
-                                for (var i = 1; i < pts.length; i++)
-                                    ctx.lineTo(xFor(i), yFor(pts[i]));
-                                ctx.lineTo(xFor(rightIdx), h);
-                                ctx.lineTo(xFor(0), h);
-                                ctx.closePath();
-                                ctx.fillStyle = Qt.alpha(lineColor, 0.18);
-                                ctx.fill();
-
-                                ctx.beginPath();
-                                ctx.moveTo(xFor(0), yFor(pts[0]));
-                                for (var j = 1; j < pts.length; j++)
-                                    ctx.lineTo(xFor(j), yFor(pts[j]));
-                                ctx.strokeStyle = lineColor;
-                                ctx.lineWidth = 1.5;
-                                ctx.lineJoin = "round";
-                                ctx.lineCap = "round";
-                                ctx.stroke();
+                            ShapePath {
+                                strokeColor: sparkline.lineColor
+                                strokeWidth: 1.5
+                                capStyle: ShapePath.RoundCap
+                                joinStyle: ShapePath.RoundJoin
+                                fillColor: "transparent"
+                                PathPolyline {
+                                    path: sparkline._linePoints
+                                }
                             }
                         }
                     }
@@ -444,6 +425,7 @@ Item {
                         renderType: Text.NativeRendering
                     }
                 }
+            }
             }
         }
     }

@@ -132,7 +132,6 @@ Item {
         id: canvas
         anchors.fill: parent
 
-        renderTarget: Canvas.FramebufferObject
         renderStrategy: Canvas.Threaded
 
         onWidthChanged: canvas.requestPaint()

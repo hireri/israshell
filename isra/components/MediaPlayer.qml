@@ -187,12 +187,9 @@ ClippingRectangle {
 
                 Timer {
                     interval: 16
-                    running: true
+                    running: Math.abs(pillArt.velocity) > 0.001
                     repeat: true
-                    onTriggered: {
-                        if (Math.abs(pillArt.velocity) > 0.001)
-                            pillArt.angle = (pillArt.angle + pillArt.velocity) % 360;
-                    }
+                    onTriggered: pillArt.angle = (pillArt.angle + pillArt.velocity) % 360
                 }
             }
         }
@@ -213,14 +210,20 @@ ClippingRectangle {
                     marqueeAnim.restart();
             }
 
-            NumberAnimation {
+            SequentialAnimation {
                 id: marqueeAnim
-                target: marqueeContainer
-                property: "scrollPos"
-                from: 0
-                to: marqueeText.implicitWidth + 20
-                duration: (marqueeText.implicitWidth + 20) * 1000 / Config.carouselSpeed
                 loops: Animation.Infinite
+
+                PauseAnimation { duration: 1500 }
+                NumberAnimation {
+                    target: marqueeContainer
+                    property: "scrollPos"
+                    from: 0
+                    to: marqueeText.implicitWidth + 20
+                    duration: (marqueeText.implicitWidth + 20) * 1000 / Config.carouselSpeed
+                }
+                PauseAnimation { duration: 1500 }
+                PropertyAction { target: marqueeContainer; property: "scrollPos"; value: 0 }
             }
 
             Text {

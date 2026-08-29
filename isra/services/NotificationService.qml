@@ -27,12 +27,17 @@ Item {
         id: popupCleanupTimer
         property var _pending: ({})
 
+        Component {
+            id: cleanupTimerComponent
+            Timer { interval: 600; repeat: false }
+        }
+
         function schedule(gKey, appName, groupSummary) {
             if (_pending[gKey]) {
                 _pending[gKey].restart();
                 return;
             }
-            const t = Qt.createQmlObject('import QtQuick; Timer { interval: 600; repeat: false }', popupCleanupTimer);
+            const t = cleanupTimerComponent.createObject(popupCleanupTimer);
             _pending[gKey] = t;
             t.triggered.connect(() => {
                 root._removeGroup(gKey);

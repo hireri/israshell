@@ -355,7 +355,8 @@ Singleton {
         hardwareProc.running = true;
         shellProc.running = true;
         quickshellProc.running = true;
-        packagesProc.running = true;
+        if (root._fetchCardPresent)
+            packagesProc.running = true;
         fileOsRelease.reload();
         fileUptime.reload();
     }
@@ -371,7 +372,7 @@ Singleton {
     Timer {
         id: packagesTimer
         interval: 600000
-        running: true
+        running: root._fetchCardPresent
         repeat: true
         onTriggered: packagesProc.running = true
     }
