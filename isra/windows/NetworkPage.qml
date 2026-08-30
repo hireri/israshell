@@ -102,6 +102,7 @@ PageBase {
             name: "headphones"
             iconSize: 22
             color: Colors.md3.on_secondary_container
+            filled: true
         }
     }
 
@@ -111,6 +112,7 @@ PageBase {
             name: "phone"
             iconSize: 22
             color: Colors.md3.on_secondary_container
+            filled: true
         }
     }
 
@@ -120,6 +122,7 @@ PageBase {
             name: "keyboard"
             iconSize: 22
             color: Colors.md3.on_secondary_container
+            filled: true
         }
     }
 
@@ -129,6 +132,7 @@ PageBase {
             name: "headphones"
             iconSize: 20
             color: Colors.md3.on_surface
+            filled: true
         }
     }
 
@@ -138,6 +142,7 @@ PageBase {
             name: "phone"
             iconSize: 20
             color: Colors.md3.on_surface
+            filled: true
         }
     }
 
