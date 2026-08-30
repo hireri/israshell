@@ -295,6 +295,48 @@ Item {
         captureDelay.start();
     }
 
+    function clampToScreenAxis(v, horizontal) {
+        const screens = Quickshell.screens;
+        let best = v;
+        let bestDist = Infinity;
+        for (let i = 0; i < screens.length; i++) {
+            const scr = screens[i];
+            const lo = horizontal ? scr.x : scr.y;
+            const hi = horizontal ? lo + scr.width : lo + scr.height;
+            if (v >= lo && v <= hi)
+                return v;
+            const d = v < lo ? lo - v : v - hi;
+            if (d < bestDist) {
+                bestDist = d;
+                best = v < lo ? lo : hi;
+            }
+        }
+        return best;
+    }
+
+    function clampRectEdge(unpadded, padded, center, horizontal) {
+        const screens = Quickshell.screens;
+        let bestLo = 0;
+        let bestHi = 0;
+        let bestDist = Infinity;
+        for (let i = 0; i < screens.length; i++) {
+            const scr = screens[i];
+            const lo = horizontal ? scr.x : scr.y;
+            const hi = horizontal ? lo + scr.width : lo + scr.height;
+            if (unpadded < lo || unpadded > hi)
+                continue;
+            if (center >= lo && center <= hi)
+                return Math.max(lo, Math.min(hi, padded));
+            const d = center < lo ? lo - center : center - hi;
+            if (d < bestDist) {
+                bestDist = d;
+                bestLo = lo;
+                bestHi = hi;
+            }
+        }
+        return bestDist === Infinity ? padded : Math.max(bestLo, Math.min(bestHi, padded));
+    }
+
     readonly property var clientRects: {
         const pad = root.windowPad;
         const rawRects = CompositorService.clientRects;
@@ -303,11 +345,17 @@ Item {
             for (let i = 0; i < rawRects.length; i++) {
                 const r = rawRects[i];
                 if (r && typeof r.x === "number") {
+                    const cx = r.x + r.w / 2;
+                    const cy = r.y + r.h / 2;
+                    const x1 = root.clampRectEdge(r.x, r.x - pad, cx, true);
+                    const y1 = root.clampRectEdge(r.y, r.y - pad, cy, false);
+                    const x2 = root.clampRectEdge(r.x + r.w, r.x + r.w + pad, cx, true);
+                    const y2 = root.clampRectEdge(r.y + r.h, r.y + r.h + pad, cy, false);
                     rects.push({
-                        x: r.x - pad,
-                        y: r.y - pad,
-                        w: r.w + pad * 2,
-                        h: r.h + pad * 2
+                        x: x1,
+                        y: y1,
+                        w: x2 - x1,
+                        h: y2 - y1
                     });
                 }
             }
@@ -486,7 +534,7 @@ Item {
                                     captureSource: overlay.screen
                                     live: false
                                     onHasContentChanged: if (hasContent)
-                                        root._markScreenReady(overlay.screen.name)
+                                    root._markScreenReady(overlay.screen.name)
                                 }
                             }
                             Component {
@@ -653,8 +701,8 @@ Item {
                                 acceptedButtons: Qt.LeftButton | Qt.RightButton
 
                                 onPositionChanged: mouse => {
-                                    const gmx = overlay.monX + mouse.x;
-                                    const gmy = overlay.monY + mouse.y;
+                                    const gmx = root.clampToScreenAxis(overlay.monX + mouse.x, true);
+                                    const gmy = root.clampToScreenAxis(overlay.monY + mouse.y, false);
                                     sessionRoot.globalMouseX = gmx;
                                     sessionRoot.globalMouseY = gmy;
 
@@ -679,10 +727,14 @@ Item {
                                                 dx = dx >= 0 ? size : -size;
                                                 dy = dy >= 0 ? size : -size;
                                             }
-                                            sessionRoot.globalTargetX = dx >= 0 ? sessionRoot.globalPressX : sessionRoot.globalPressX + dx;
-                                            sessionRoot.globalTargetY = dy >= 0 ? sessionRoot.globalPressY : sessionRoot.globalPressY + dy;
-                                            sessionRoot.globalTargetW = Math.abs(dx);
-                                            sessionRoot.globalTargetH = Math.abs(dy);
+                                            const x1 = root.clampToScreenAxis(dx >= 0 ? sessionRoot.globalPressX : sessionRoot.globalPressX + dx, true);
+                                            const y1 = root.clampToScreenAxis(dy >= 0 ? sessionRoot.globalPressY : sessionRoot.globalPressY + dy, false);
+                                            const x2 = root.clampToScreenAxis(dx >= 0 ? sessionRoot.globalPressX + dx : sessionRoot.globalPressX, true);
+                                            const y2 = root.clampToScreenAxis(dy >= 0 ? sessionRoot.globalPressY + dy : sessionRoot.globalPressY, false);
+                                            sessionRoot.globalTargetX = x1;
+                                            sessionRoot.globalTargetY = y1;
+                                            sessionRoot.globalTargetW = x2 - x1;
+                                            sessionRoot.globalTargetH = y2 - y1;
                                         }
                                         return;
                                     }
