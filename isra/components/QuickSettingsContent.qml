@@ -699,13 +699,6 @@ Item {
                         Behavior on opacity {
                             NumberAnimation { duration: 150 }
                         }
-                        flickableDirection: Flickable.VerticalFlick
-                        flickDeceleration: 4000
-                        maximumFlickVelocity: 1200
-                        boundsBehavior: Flickable.DragAndOvershootBounds
-                        ScrollBar.vertical: ScrollBar {
-                            policy: ScrollBar.AlwaysOff
-                        }
 
                         Column {
                             id: historyCol

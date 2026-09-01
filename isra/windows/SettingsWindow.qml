@@ -91,7 +91,7 @@ FloatingWindow {
                 contentHeight: sidebarContent.implicitHeight
                 clip: true
                 ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
+                    policy: ScrollBar.AlwaysOff
                 }
 
                 ColumnLayout {
