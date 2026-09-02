@@ -32,6 +32,7 @@ Item {
     readonly property int pad: 16
 
     readonly property int window: 4
+    readonly property int blurWindow: 2
 
     readonly property var lines: LyricsService.lines
     readonly property int idx: LyricsService.activeIndex
@@ -274,9 +275,16 @@ Item {
                 track.offsets = tops;
             }
 
-            onWidthChanged: relayout()
-            onLineHChanged: relayout()
+            onWidthChanged: relayoutDebounce.restart()
+            onLineHChanged: relayoutDebounce.restart()
             Component.onCompleted: relayout()
+
+            Timer {
+                id: relayoutDebounce
+                interval: 80
+                repeat: false
+                onTriggered: track.relayout()
+            }
 
             Connections {
                 target: root
@@ -303,6 +311,7 @@ Item {
                     readonly property bool isActive: line.offset === 0
                     readonly property bool isSung: line.offset < 0
                     readonly property bool nearby: Math.abs(line.offset) <= root.window
+                    readonly property bool blurEligible: Math.abs(line.offset) <= root.blurWindow
 
                     readonly property var rows: track.layout[line.index] ?? []
 
@@ -341,7 +350,7 @@ Item {
 
                     opacity: line.isActive ? 1 : line.edgeFade * (line.isSung ? 0.42 : 0.55)
 
-                    layer.enabled: root.idleBlur > 0 && !line.isActive
+                    layer.enabled: root.idleBlur > 0 && !line.isActive && line.blurEligible && line.opacity > 0.08
                     layer.effect: MultiEffect {
                         blurEnabled: true
                         blur: Math.min(1, root.idleBlur / 32)

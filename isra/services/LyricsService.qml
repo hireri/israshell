@@ -43,7 +43,26 @@ Singleton {
     property int _serial: 0
     property string _latestId: ""
     property var _handle: null
+
+    readonly property int _cacheMax: 8
     property var _cache: ({})
+    property var _cacheOrder: []
+
+    function _cacheSet(key, lines): void {
+        if (root._cache[key] === undefined)
+            root._cacheOrder.push(key);
+        root._cache = Object.assign({}, root._cache, {
+            [key]: lines
+        });
+        while (root._cacheOrder.length > root._cacheMax) {
+            const oldest = root._cacheOrder.shift();
+            if (oldest === key)
+                continue;
+            const next = Object.assign({}, root._cache);
+            delete next[oldest];
+            root._cache = next;
+        }
+    }
 
     function _clear(): void {
         root.lines = [];
@@ -105,9 +124,7 @@ Singleton {
             if (requestId !== root._latestId)
                 return;
             root._handle = null;
-            root._cache = Object.assign({}, root._cache, {
-                [key]: lines
-            });
+            root._cacheSet(key, lines);
             root.lines = lines;
             root._loadedKey = key;
             root.activeIndex = -1;
@@ -119,9 +136,7 @@ Singleton {
                 return;
             root._handle = null;
             if (err === "not_found")
-                root._cache = Object.assign({}, root._cache, {
-                    [key]: []
-                });
+                root._cacheSet(key, []);
             root.status = err === "not_found" ? "not_found" : "error";
             if (err !== "not_found")
                 console.warn("[LyricsService]", err);
@@ -185,7 +200,6 @@ Singleton {
             const p = root.player;
             if (!p)
                 return;
-            p.positionChanged();
             const reported = p.position ?? 0;
             if (reported !== root._lastReported) {
                 root._lastReported = reported;
