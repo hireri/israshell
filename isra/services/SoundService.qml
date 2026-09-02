@@ -41,6 +41,8 @@ Singleton {
     function play(file, bypassDnd = false) {
         if (!Config.sounds.enabled)
             return;
+        if (BedtimeService.active && (Config.bedtime.muteSounds ?? false))
+            return;
         if (!bypassDnd && (NotificationService.dnd || (Config.sounds.muteDuringMedia && MediaPlayerState.isPlaying)))
             return;
 

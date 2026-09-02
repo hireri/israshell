@@ -81,7 +81,31 @@ PageBase {
                 })
         }
 
+        SettingSwitch {
+            label: Localization.t("displayPage.attach_bedtime")
+            sublabel: Localization.t("displayPage.attach_bedtime_sub")
+            checked: Config.nightLight.attachBedtime
+            onToggled: v => Config.update({
+                    nightLight: Object.assign({}, Config.nightLight, {
+                        attachBedtime: v
+                    })
+                })
+        }
+
+        SettingSwitch {
+            label: Localization.t("displayPage.auto_sun_times")
+            sublabel: Localization.t("displayPage.auto_sun_times_sub")
+            checked: Config.nightLight.autoSunTimes
+            onToggled: v => Config.update({
+                    nightLight: Object.assign({}, Config.nightLight, {
+                        autoSunTimes: v
+                    })
+                })
+        }
+
         TimeInput {
+            enabled: !Config.nightLight.autoSunTimes
+            opacity: enabled ? 1.0 : 0.4
             label: Localization.t("displayPage.sunrise")
             sublabel: Localization.t("displayPage.night_light_off_light_mode")
             value: Config.nightLight.sunrise
@@ -89,10 +113,101 @@ PageBase {
         }
 
         TimeInput {
+            enabled: !Config.nightLight.autoSunTimes
+            opacity: enabled ? 1.0 : 0.4
             label: Localization.t("displayPage.sunset")
             sublabel: Localization.t("displayPage.night_light_on_dark_mode")
             value: Config.nightLight.sunset
             onCommitted: v => NightLightService.setSunset(v)
+        }
+    }
+
+    HeroCard {
+        Layout.fillWidth: true
+        title: Localization.t("displayPage.bedtime")
+        subtitle: BedtimeService.active ? Localization.t("displayPage.bedtime_on") : Localization.t("displayPage.bedtime_off")
+        iconBg: Colors.md3.primary_container
+        cardColor: Colors.md3.surface_container
+        checked: BedtimeService.active
+        onToggled: v => BedtimeService.toggle()
+        MaterialIcon { name: "moon-stars" }
+    }
+
+    SectionCard {
+        label: Localization.t("displayPage.bedtime")
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: Localization.t("displayPage.bedtime_dim")
+            sublabel: Localization.t("displayPage.bedtime_dim_sub")
+            checked: Config.bedtime.dimWallpaper
+            onToggled: v => Config.update({
+                    bedtime: Object.assign({}, Config.bedtime, {
+                        dimWallpaper: v
+                    })
+                })
+        }
+
+        SettingSlider {
+            label: Localization.t("displayPage.bedtime_dim_amount")
+            sublabel: Localization.t("displayPage.bedtime_dim_amount_sub")
+            enabled: Config.bedtime.dimWallpaper
+            opacity: enabled ? 1.0 : 0.4
+            from: 0
+            to: 1
+            stepSize: 0.05
+            decimals: 2
+            value: Config.bedtime.dimAmount
+            onMoved: v => Config.update({
+                    bedtime: Object.assign({}, Config.bedtime, {
+                        dimAmount: v
+                    })
+                })
+        }
+
+        SettingSwitch {
+            label: Localization.t("displayPage.bedtime_grayscale")
+            sublabel: Localization.t("displayPage.bedtime_grayscale_sub")
+            checked: Config.bedtime.grayscaleWallpaper
+            onToggled: v => Config.update({
+                    bedtime: Object.assign({}, Config.bedtime, {
+                        grayscaleWallpaper: v
+                    })
+                })
+        }
+
+        SettingSwitch {
+            label: Localization.t("displayPage.bedtime_grayscale_theme")
+            sublabel: Localization.t("displayPage.bedtime_grayscale_theme_sub")
+            checked: Config.bedtime.grayscaleTheme
+            onToggled: v => Config.update({
+                    bedtime: Object.assign({}, Config.bedtime, {
+                        grayscaleTheme: v
+                    })
+                })
+        }
+
+        SettingSwitch {
+            label: Localization.t("displayPage.bedtime_stop_video")
+            sublabel: Localization.t("displayPage.bedtime_stop_video_sub")
+            checked: Config.bedtime.stopVideo
+            onToggled: v => Config.update({
+                    bedtime: Object.assign({}, Config.bedtime, {
+                        stopVideo: v
+                    })
+                })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: Localization.t("displayPage.bedtime_mute_sounds")
+            sublabel: Localization.t("displayPage.bedtime_mute_sounds_sub")
+            checked: Config.bedtime.muteSounds
+            onToggled: v => Config.update({
+                    bedtime: Object.assign({}, Config.bedtime, {
+                        muteSounds: v
+                    })
+                })
         }
     }
 

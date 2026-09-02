@@ -21,7 +21,36 @@ Singleton {
     Component.onCompleted: pollProc.running = true
 
     property var _watchedConfig: Config.nightLight
-    on_WatchedConfigChanged: _reapplySchedule()
+    on_WatchedConfigChanged: {
+        _applyAutoSunTimes();
+        _reapplySchedule();
+    }
+
+    property var _watchedWeatherDaily: LocaleService.weatherDaily
+    on_WatchedWeatherDailyChanged: _applyAutoSunTimes()
+
+    function _applyAutoSunTimes() {
+        const nl = Config.nightLight;
+        if (!nl.autoSunTimes)
+            return;
+        const daily = LocaleService.weatherDaily;
+        const today = (daily && daily.length > 0) ? daily[0] : null;
+        if (!today || !today.sunrise || !today.sunset)
+            return;
+        const sr = _formatHM(today.sunrise);
+        const ss = _formatHM(today.sunset);
+        const patch = {};
+        if (nl.sunrise !== sr)
+            patch.sunrise = sr;
+        if (nl.sunset !== ss)
+            patch.sunset = ss;
+        if (Object.keys(patch).length > 0)
+            _patchNightLight(patch);
+    }
+
+    function _formatHM(d) {
+        return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
 
     Timer {
         interval: 3000
@@ -131,6 +160,9 @@ Singleton {
             WallpaperService.isDark = isNight;
             WallpaperService.applyTheme();
         }
+
+        if (nl.attachBedtime && BedtimeService.active !== isNight)
+            BedtimeService.active = isNight;
     }
 
     function _isNight(nl) {

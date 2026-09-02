@@ -176,10 +176,20 @@ Singleton {
     property var nightLight: ({
             scheduleEnabled: true,
             autoDarkMode: false,
+            autoSunTimes: false,
             nightTemp: 4500,
             dayTemp: 6300,
             sunrise: "07:30",
             sunset: "21:00"
+        })
+    property var bedtime: ({
+            enableDarkMode: true,
+            dimWallpaper: true,
+            dimAmount: 0.35,
+            grayscaleWallpaper: false,
+            grayscaleTheme: false,
+            stopVideo: true,
+            muteSounds: true
         })
     property var notifications: ({
             popupTimeout: 5,
@@ -421,10 +431,20 @@ Singleton {
             nightLight: {
                 scheduleEnabled: true,
                 autoDarkMode: false,
+                autoSunTimes: false,
                 nightTemp: 4500,
                 dayTemp: 6300,
                 sunrise: "07:30",
                 sunset: "21:00"
+            },
+            bedtime: {
+                enableDarkMode: true,
+                dimWallpaper: true,
+                dimAmount: 0.35,
+                grayscaleWallpaper: false,
+                grayscaleTheme: false,
+                stopVideo: true,
+                muteSounds: true
             },
             notifications: {
                 popupTimeout: 5,

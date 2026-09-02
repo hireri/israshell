@@ -38,6 +38,13 @@ Item {
     }
 
     IpcHandler {
+        target: "bedtime"
+        function toggle(): void {
+            BedtimeService.toggle();
+        }
+    }
+
+    IpcHandler {
         target: "aiassistant"
         function toggle(): void {
             AiAssistantService.toggle();

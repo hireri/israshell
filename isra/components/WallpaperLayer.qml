@@ -19,9 +19,11 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Background
     anchors { top: true; bottom: true; left: true; right: true }
 
+    readonly property bool bedtimeStopVideo: BedtimeService.active && (Config.bedtime.stopVideo ?? false)
+
     readonly property string activeWallPath: {
         const isVid = /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(WallpaperService.currentWall);
-        if (GameModeService.active && isVid && WallpaperService.currentWallPreview) {
+        if ((GameModeService.active || root.bedtimeStopVideo) && isVid && WallpaperService.currentWallPreview) {
             return WallpaperService.currentWallPreview;
         }
         return WallpaperService.currentWall;
@@ -29,7 +31,43 @@ PanelWindow {
 
     readonly property bool monitorHasFullscreen: CompositorService.monitorFor(root.screen)?.activeWorkspaceHasFullscreen ?? false
 
-    readonly property bool shouldPause: root.lockPauseActive || GameModeService.active || root.monitorHasFullscreen
+    readonly property bool shouldPause: root.lockPauseActive || GameModeService.active || root.bedtimeStopVideo || root.monitorHasFullscreen
+
+    readonly property bool bedtimeFx: BedtimeService.active
+        && ((Config.bedtime.dimWallpaper ?? false) || (Config.bedtime.grayscaleWallpaper ?? false))
+
+    readonly property bool grayscaleUnsupportedUnderAwww: Config.useAwww
+        && BedtimeService.active && (Config.bedtime.grayscaleWallpaper ?? false)
+    onGrayscaleUnsupportedUnderAwwwChanged: {
+        if (grayscaleUnsupportedUnderAwww)
+            console.warn("WallpaperLayer: grayscaleWallpaper has no effect while Config.useAwww is true");
+    }
+
+    property bool bedtimeFxHold: false
+    onBedtimeFxChanged: {
+        if (bedtimeFx) {
+            fxHoldTimer.stop();
+            bedtimeFxHold = true;
+        } else {
+            fxHoldTimer.restart();
+        }
+    }
+    Component.onCompleted: bedtimeFxHold = bedtimeFx
+
+    Timer {
+        id: fxHoldTimer
+        interval: 500
+        onTriggered: root.bedtimeFxHold = false
+    }
+
+    readonly property real bedtimeDim: (BedtimeService.active && (Config.bedtime.dimWallpaper ?? false))
+        ? Math.max(0, Math.min(1, Config.bedtime.dimAmount ?? 0.35)) : 0
+
+    readonly property real bedtimeGrayscale: (BedtimeService.active && (Config.bedtime.grayscaleWallpaper ?? false)) ? -1 : 0
+
+    readonly property real bedtimeDimSaturation: -root.bedtimeDim * 0.35
+
+    readonly property int bedtimeFxDuration: 400
 
     property bool lockPauseActive: false
 
@@ -58,6 +96,15 @@ PanelWindow {
         sourceComponent: Item {
             id: wallpaperContainer
             anchors.fill: parent
+
+            layer.enabled: root.bedtimeFxHold
+            layer.effect: MultiEffect {
+                saturation: Math.max(-1, root.bedtimeGrayscale + root.bedtimeDimSaturation)
+
+                Behavior on saturation {
+                    NumberAnimation { duration: root.bedtimeFxDuration; easing.type: Easing.InOutCubic }
+                }
+            }
 
             property int frontSlot: 0
             property string activeTransitionType: "crossfade"
@@ -103,6 +150,18 @@ PanelWindow {
                 pause: root.shouldPause
                 transitionType: wallpaperContainer.activeTransitionType
             }
+        }
+    }
+
+    Rectangle {
+        z: 0.5
+        anchors.fill: parent
+        color: "black"
+        visible: opacity > 0
+        opacity: root.bedtimeDim
+
+        Behavior on opacity {
+            NumberAnimation { duration: root.bedtimeFxDuration; easing.type: Easing.InOutCubic }
         }
     }
 
@@ -208,7 +267,7 @@ PanelWindow {
             ? /\.gif$/i.test(path)
             : false
 
-        readonly property bool videoTornDown: isVideo && GameModeService.active
+        readonly property bool videoTornDown: isVideo && (GameModeService.active || root.bedtimeStopVideo)
 
         readonly property bool shouldPlay: isVideo && isFront && !pause && !videoTornDown
 

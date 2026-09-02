@@ -46,53 +46,25 @@ A Quickshell shell for Hyprland 0.55+. Uses matugen colors, smart desktop clock 
 Most things are configurable through the settings app now, and is auto generated.
 config.json can be updated for finer control (some options may require a restart)
 
-## Hyprland binds
+## IPC Targets
 
-All available binds, this is my config:
+All handlers are called with `qs -c isra ipc call <target> <function> [args]`.
 
-```ini
-hl.bind(mainMod .. " + S", hl.dsp.global("quickshell:openQuickSettings"))
-hl.bind(mainMod .. " + M", hl.dsp.global("quickshell:openPowerMenu"))
-hl.bind(mainMod .. " + W", hl.dsp.global("quickshell:openWallpaperPicker"))
-
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("qs ipc -c isra call lockscreen lock"))
-
-hl.bind(mainMod .. " + SUPER_L", hl.dsp.exec_cmd("qs -c isra ipc call launcher toggle"), {
-    release = true
-})
-hl.bind(mainMod .. " + V", hl.dsp.exec_cmd('qs -c isra ipc call launcher openWith ";"'))
-hl.bind(mainMod .. " + Period", hl.dsp.exec_cmd('qs -c isra ipc call launcher openWith ":"'))
-
-
-hl.bind(mainMod .. " + SHIFT + N", hl.dsp.exec_cmd("qs -c isra ipc call media next"))
-hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("qs -c isra ipc call media togglePlaying"))
-hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("qs -c isra ipc call media previous"))
-
-
-hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("qs -c isra ipc call settings open overview"))
-
-# open settings into a page
-# $ qs -c isra ipc call settings open network
-# overview | network | bar | background | clock | display | sound | locale | system
-
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs -c isra ipc call screenshot activate"))
-
-
-# screenshot has the following modes
-# activate | region | window | screen | ocr | cts | record
-# activate ig if you dont want to write region at this point, they're the same
-
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs -c isra ipc call screenshot activate"))
-
-hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("qs -c isra ipc call gamemode toggle"))
-
-bindl = , XF86MonBrightnessUp, exec, qs -c isra ipc call brightness increment
-bindl = , XF86MonBrightnessDown, exec, qs -c isra ipc call brightness decrement
-
-# hook these into hypridle so brightness doesn't get confused by DPMS
-# on-screen-off: qs -c isra ipc call brightness sleepBegin
-# on-screen-on: qs -c isra ipc call brightness restoreAfterWake
-```
+| Target | Functions | Notes |
+|---|---|---|
+| `settings` | `open(page)` | `overview`, `network`, `bar`, `floatingdock`, `background`, `clock`, `display`, `sound`, `aiassistant`, `locale`, `system` |
+| `launcher` | `toggle`, `openWith(prefix)` | `openWith ";"` clipboard, `openWith ":"` emoji picker |
+| `media` | `togglePlaying`, `play`, `pause`, `next`, `previous` | Controls the displayed player |
+| `screenshot` | `activate`, `region`, `window`, `screen`, `ocr`, `cts`, `record` | `activate` = smart screenshot, `record` toggles screen recording |
+| `lockscreen` | `lock` | |
+| `gamemode` | `toggle` | |
+| `bedtime` | `toggle` | |
+| `aiassistant` | `toggle` | |
+| `powermenu` | `toggle` | |
+| `wallpaperpicker` | `toggle` | Opens on the focused monitor |
+| `quicksettings` | `toggle` | Opens on the focused monitor |
+| `brightness` | `increment`, `decrement`, `sleepBegin`, `restoreAfterWake` | `sleepBegin`/`restoreAfterWake` are for hypridle DPMS hooks |
+| `editmode` | `enable`, `disable`, `toggle` | Desktop widget edit mode |
 
 ## Dependencies
 

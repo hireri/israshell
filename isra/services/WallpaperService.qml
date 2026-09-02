@@ -44,6 +44,7 @@ Singleton {
     property int _lastClockWidth: -1
     property int _lastClockHeight: -1
     property bool _lastClockIsDark: false
+    property string _lastAppliedKey: ""
 
     onIsDarkChanged: {
         Config.update({
@@ -129,8 +130,9 @@ Singleton {
         currentWallPreview = "";
         applyProc.wallPath = path;
         applyProc.mode = isDark ? "dark" : "light";
-        applyProc.scheme = currentScheme;
+        applyProc.scheme = root.effectiveScheme();
         applyProc.sourceColorIndex = Config.sourceColorIndex ?? 0;
+        applyProc.appliedKey = [path, applyProc.mode, applyProc.scheme, applyProc.sourceColorIndex].join("|");
         applyProc.wallChanged = true;
         applyProc.running = false;
         applyProc.running = true;
@@ -387,14 +389,27 @@ Singleton {
         applyTheme();
     }
 
-    function applyTheme() {
+    function effectiveScheme() {
+        return (BedtimeService.active && (Config.bedtime.grayscaleTheme ?? false))
+            ? "scheme-monochrome"
+            : currentScheme;
+    }
+
+    function applyTheme(force) {
         if (applying || !currentWall)
+            return;
+        const mode = isDark ? "dark" : "light";
+        const scheme = root.effectiveScheme();
+        const sourceColorIndex = Config.sourceColorIndex ?? 0;
+        const key = [currentWall, mode, scheme, sourceColorIndex].join("|");
+        if (!force && key === root._lastAppliedKey)
             return;
         applying = true;
         applyProc.wallPath = Quickshell.env("HOME") + "/.config/hypr/current_wall";
-        applyProc.mode = isDark ? "dark" : "light";
-        applyProc.scheme = currentScheme;
-        applyProc.sourceColorIndex = Config.sourceColorIndex ?? 0;
+        applyProc.mode = mode;
+        applyProc.scheme = scheme;
+        applyProc.sourceColorIndex = sourceColorIndex;
+        applyProc.appliedKey = key;
         applyProc.running = false;
         applyProc.running = true;
     }
@@ -470,7 +485,7 @@ Singleton {
 
                 if (root._pendingAwwwApply && p) {
                     root._pendingAwwwApply = false;
-                    root.applyTheme();
+                    root.applyTheme(true);
                 }
 
                 previewDebounce.restart();
@@ -642,6 +657,7 @@ Singleton {
         property string scheme: "scheme-tonal-spot"
         property int sourceColorIndex: 0
         property bool wallChanged: false
+        property string appliedKey: ""
 
         command: {
             const cmd = [
@@ -665,6 +681,7 @@ Singleton {
         onExited: (code, _) => {
             root.applying = false;
             if (code === 0) {
+                root._lastAppliedKey = applyProc.appliedKey;
                 wallSyncProc.running = false;
                 wallSyncProc.running = true;
                 wallPreviewSyncProc.running = false;
@@ -752,7 +769,7 @@ Singleton {
         onExited: (code, _) => {
             if (code === 0 && Config.useAwww) {
                 if (root.currentWall) {
-                    root.applyTheme();
+                    root.applyTheme(true);
                 } else {
                     root._pendingAwwwApply = true;
                 }
@@ -780,9 +797,12 @@ Singleton {
         }
     }
 
+    readonly property bool bedtimeVideoOff: BedtimeService.active
+        && ((Config.bedtime.stopVideo ?? false) || (Config.bedtime.muteSounds ?? false))
+
     Loader {
         id: audioLoader
-        active: root.wallIsVideo && !GameModeService.active
+        active: root.wallIsVideo && !GameModeService.active && !root.bedtimeVideoOff
 
         sourceComponent: Component {
             MediaPlayer {
@@ -804,7 +824,7 @@ Singleton {
     }
 
     readonly property bool audioShouldPlay: root.wallIsVideo && Config.background.videoSound
-        && !GameModeService.active && !LockscreenService.locked
+        && !GameModeService.active && !root.bedtimeVideoOff && !LockscreenService.locked
 
     onAudioShouldPlayChanged: {
         const p = audioLoader.item;

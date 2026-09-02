@@ -583,6 +583,37 @@ Singleton {
     }
 
     Component {
+        id: bedtimeCompactComp
+        CompactToggleTile {
+            active: BedtimeService.active
+            iconComponent: MaterialIcon {
+                name: "moon-stars"
+                iconSize: 22
+                filled: BedtimeService.active
+                transitionType: "wipe-up"
+            }
+            onToggled: BedtimeService.toggle()
+            onRightClicked: root.openSettings("display")
+        }
+    }
+
+    Component {
+        id: bedtimeWideComp
+        SimpleIconLabelTile {
+            active: BedtimeService.active
+            label: Localization.t("qsTileService.bedtime")
+            iconComponent: MaterialIcon {
+                name: "moon-stars"
+                iconSize: 22
+                filled: BedtimeService.active
+                transitionType: "wipe-up"
+            }
+            onToggled: BedtimeService.toggle()
+            onRightClicked: root.openSettings("display")
+        }
+    }
+
+    Component {
         id: gameModeCompactComp
         CompactToggleTile {
             active: GameModeService.active
@@ -620,6 +651,7 @@ Singleton {
         { id: "bluetooth",    label: Localization.t("qsTileService.bluetooth"),     compactComponent: bluetoothCompactComp,    wideComponent: bluetoothWideComp },
         { id: "caffeine",     label: Localization.t("qsTileService.caffeine"),      compactComponent: caffeineCompactComp,      wideComponent: caffeineWideComp },
         { id: "nightlight",   label: Localization.t("qsTileService.night_light"),   compactComponent: nightlightCompactComp,    wideComponent: nightlightWideComp },
+        { id: "bedtime",      label: Localization.t("qsTileService.bedtime"),       compactComponent: bedtimeCompactComp,       wideComponent: bedtimeWideComp },
         { id: "dnd",          label: Localization.t("qsTileService.do_not_disturb"), compactComponent: dndCompactComp,          wideComponent: dndWideComp },
         { id: "mic",          label: Localization.t("qsTileService.microphone"),   compactComponent: micCompactComp,           wideComponent: micWideComp },
         { id: "output",       label: Localization.t("qsTileService.output"),       compactComponent: outputCompactComp,        wideComponent: outputWideComp },

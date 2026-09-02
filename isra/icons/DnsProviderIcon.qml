@@ -49,7 +49,13 @@ Item {
             strokeWidth: 0
             fillColor: root.color
             scale: Qt.size(shape.width / root._vb, shape.height / root._vb)
-            PathSvg { path: root._path }
+            PathSvg { id: pathSvg; path: root._path }
         }
     }
+
+    Component.onCompleted: Qt.callLater(() => {
+        const p = pathSvg.path;
+        pathSvg.path = "";
+        pathSvg.path = p;
+    })
 }
