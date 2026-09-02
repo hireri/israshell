@@ -14,6 +14,28 @@ Scope {
 
     property bool _keepAlive: false
 
+    property bool busy: false
+    property string busyMessage: ""
+    property bool releaseReady: false
+
+    Timer {
+        id: releaseTimer
+        interval: 5000
+        onTriggered: root.releaseReady = true
+    }
+
+    function startBusy(message) {
+        root.busyMessage = message;
+        root.releaseReady = false;
+        root.busy = true;
+        releaseTimer.restart();
+    }
+
+    function stopBusy() {
+        releaseTimer.stop();
+        PowerMenuState.hide();
+    }
+
     Connections {
         target: PowerMenuState
         function onVisibleChanged() {
@@ -42,6 +64,7 @@ Scope {
 
                 required property string command
                 required property string text
+                required property string busyText
                 required property string icon
                 property var keybind: null
                 property color containerColor: "transparent"
@@ -52,7 +75,6 @@ Scope {
                 }
 
                 function exec() {
-                    PowerMenuState.hide();
                     process.startDetached();
                 }
             }
@@ -62,6 +84,7 @@ Scope {
                     command: "loginctl lock-session"
                     keybind: Qt.Key_L
                     text: Localization.t("logout.lock")
+                    busyText: Localization.t("logout.busy_lock")
                     icon: "lock"
                     containerColor: Colors.md3.primary_container
                     contentColor: Colors.md3.on_primary_container
@@ -70,6 +93,7 @@ Scope {
                     command: "loginctl terminate-user $USER"
                     keybind: Qt.Key_E
                     text: Localization.t("logout.logout")
+                    busyText: Localization.t("logout.busy_logout")
                     icon: "logout"
                     containerColor: Colors.md3.primary_container
                     contentColor: Colors.md3.on_primary_container
@@ -78,6 +102,7 @@ Scope {
                     command: "systemctl suspend | loginctl suspend"
                     keybind: Qt.Key_S
                     text: Localization.t("logout.suspend")
+                    busyText: Localization.t("logout.busy_suspend")
                     icon: "dark-mode"
                     containerColor: Colors.md3.primary_container
                     contentColor: Colors.md3.on_primary_container
@@ -86,6 +111,7 @@ Scope {
                     command: "systemctl hibernate | loginctl hibernate"
                     keybind: Qt.Key_H
                     text: Localization.t("logout.hibernate")
+                    busyText: Localization.t("logout.busy_hibernate")
                     icon: "ac-unit"
                     containerColor: Colors.md3.primary_container
                     contentColor: Colors.md3.on_primary_container
@@ -94,6 +120,7 @@ Scope {
                     command: "systemctl poweroff | loginctl poweroff"
                     keybind: Qt.Key_P
                     text: Localization.t("logout.shutdown")
+                    busyText: Localization.t("logout.busy_shutdown")
                     icon: "shutdown"
                     containerColor: Colors.md3.primary
                     contentColor: Colors.md3.on_primary
@@ -102,6 +129,7 @@ Scope {
                     command: "systemctl reboot | loginctl reboot"
                     keybind: Qt.Key_R
                     text: Localization.t("logout.reboot")
+                    busyText: Localization.t("logout.busy_reboot")
                     icon: "reboot"
                     containerColor: Colors.md3.primary
                     contentColor: Colors.md3.on_primary
@@ -148,6 +176,14 @@ Scope {
                 property string uptimeStr: ""
                 property var hoveredButton: null
 
+                function execButton(button) {
+                    if (root.busy)
+                        return;
+                    hoveredButton = null;
+                    root.startBusy(button.busyText);
+                    button.exec();
+                }
+
                 function keyName(key) {
                     if (key >= Qt.Key_A && key <= Qt.Key_Z)
                         return String.fromCharCode(key).toUpperCase();
@@ -175,6 +211,8 @@ Scope {
 
                 function openMenu() {
                     infoProc.running = true;
+                    root.busy = false;
+                    root.releaseReady = false;
                     visible = true;
                     exitAnim.stop();
                     enterAnim.start();
@@ -229,12 +267,14 @@ Scope {
                 contentItem {
                     focus: PowerMenuState.visible
                     Keys.onPressed: event => {
+                        if (root.busy)
+                            return;
                         if (event.key === Qt.Key_Escape) {
                             PowerMenuState.hide();
                         } else {
                             for (let i = 0; i < buttons.length; i++)
                                 if (event.key === buttons[i].keybind)
-                                    buttons[i].exec();
+                                    w.execButton(buttons[i]);
                         }
                     }
                 }
@@ -247,6 +287,7 @@ Scope {
 
                     MouseArea {
                         anchors.fill: parent
+                        enabled: !root.busy
                         onClicked: PowerMenuState.hide()
                     }
 
@@ -256,6 +297,13 @@ Scope {
                         columns: 3
                         columnSpacing: 38
                         rowSpacing: 38
+                        opacity: root.busy ? 0.0 : 1.0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 250
+                                easing.type: Easing.OutCubic
+                            }
+                        }
 
                         Repeater {
                             model: buttons
@@ -291,6 +339,7 @@ Scope {
                                 MouseArea {
                                     id: ma
                                     anchors.fill: parent
+                                    enabled: !root.busy
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onEntered: w.hoveredButton = circle.modelData
@@ -300,7 +349,7 @@ Scope {
                                             tooltipHideTimer.restart();
                                         }
                                     }
-                                    onClicked: circle.modelData.exec()
+                                    onClicked: w.execButton(circle.modelData)
                                 }
                             }
                         }
@@ -321,8 +370,8 @@ Scope {
                         radius: 18
                         color: Colors.md3.surface_container_high
 
-                        opacity: shown ? 1.0 : 0.0
-                        scale: shown ? 1.0 : 0.82
+                        opacity: shown && !root.busy ? 1.0 : 0.0
+                        scale: shown && !root.busy ? 1.0 : 0.82
                         transformOrigin: Item.Top
 
                         Behavior on opacity {
@@ -437,6 +486,91 @@ Scope {
                         }
                     }
 
+                    Column {
+                        id: busyOverlay
+                        anchors.centerIn: parent
+                        spacing: 32
+                        opacity: root.busy ? 1.0 : 0.0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 280
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: 20
+
+                            LoadingSpinner {
+                                anchors.verticalCenter: parent.verticalCenter
+                                running: root.busy
+                                size: 40
+                                background: true
+                                color: Colors.md3.primary
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.busyMessage
+                                font.pixelSize: 20
+                                font.weight: Font.Medium
+                                font.family: Config.fontFamily
+                                color: Colors.md3.on_surface
+                                renderType: Text.NativeRendering
+                            }
+                        }
+
+                        Rectangle {
+                            id: releaseButton
+                            anchors.horizontalCenter: parent.horizontalCenter
+
+                            implicitWidth: releaseLabel.implicitWidth + 48
+                            height: 44
+                            radius: 22
+                            color: Colors.md3.primary
+
+                            opacity: root.releaseReady ? 1.0 : 0.0
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: 220
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: parent.radius
+                                color: Qt.alpha(Colors.md3.on_primary, releaseMa.containsMouse ? 0.12 : 0.0)
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 180
+                                    }
+                                }
+                            }
+
+                            Text {
+                                id: releaseLabel
+                                anchors.centerIn: parent
+                                text: Localization.t("logout.release")
+                                font.pixelSize: 15
+                                font.weight: Font.Medium
+                                font.family: Config.fontFamily
+                                color: Colors.md3.on_primary
+                                renderType: Text.NativeRendering
+                            }
+
+                            MouseArea {
+                                id: releaseMa
+                                anchors.fill: parent
+                                enabled: root.releaseReady
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.stopBusy()
+                            }
+                        }
+                    }
+
                     function keyName(key) {
                         if (key >= Qt.Key_A && key <= Qt.Key_Z)
                             return String.fromCharCode(key).toUpperCase();
@@ -444,6 +578,7 @@ Scope {
                     }
 
                     Item {
+                        id: bottomBar
                         anchors.bottom: parent.bottom
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -451,6 +586,13 @@ Scope {
                         anchors.leftMargin: 64
                         anchors.rightMargin: 64
                         height: 52
+                        opacity: root.busy ? 0.0 : 1.0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 250
+                                easing.type: Easing.OutCubic
+                            }
+                        }
 
                         Rectangle {
                             anchors.left: parent.left
