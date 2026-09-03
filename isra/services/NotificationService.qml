@@ -170,6 +170,8 @@ Item {
         if (!g || g.messages.length === 0)
             return;
         const latest = g.messages[g.messages.length - 1];
+        if (latest.materialIcon)
+            return;
         const nId = latest.notifId ?? root._notifId(g.appName, latest.summary, latest.body);
         for (let i = 0; i < historyModel.count; i++) {
             if (historyModel.get(i).notifId === nId) {
