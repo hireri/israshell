@@ -1,4 +1,3 @@
-<img width="2560" height="1440" alt="screenshot-2026-09-03_05-14-11" src= />
 <div align="center">
 <pre>
 ▗▄▄▄▖ ▗▄▄▖▗▄▄▖  ▗▄▖  ▗▄▄▖▗▖ ▗▖▗▄▄▄▖▗▖   ▗▖   
@@ -24,7 +23,7 @@
     <td><img src="https://github.com/user-attachments/assets/3431fde7-13c2-4487-9cab-c6336ee562cc" width="100%"></td>
   </tr>
   <tr>
-    <td><img src="https://github.com/user-attachments/assets/08631bf6-d62a-4dea-a4f1-2b902c84ff6d" width="100%"></td>
+    <td><img src="https://github.com/user-attachments/assets/4a28f3c9-b7ac-43d6-b22c-ca1e87dbfc13" width="100%"></td>
     <td><img src="https://github.com/user-attachments/assets/447903ba-f902-4012-af74-48c1d5c5f4da" width="100%"></td>
     <td><img src="https://github.com/user-attachments/assets/eaabbb78-64e0-4ec6-bf60-5a9c913e7a49" width="100%"></td>
   </tr>
