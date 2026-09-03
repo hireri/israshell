@@ -59,6 +59,7 @@ ShellRoot {
     }
 
     readonly property var _updater: Updater
+    readonly property var _fedd: FeddService
 
     Loader {
         id: settingsLoader

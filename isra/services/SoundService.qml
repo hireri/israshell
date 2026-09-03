@@ -61,6 +61,12 @@ done`;
         resolveProc.running = true;
     }
 
+    function playUrl(url) {
+        player.stop();
+        player.source = url;
+        player.play();
+    }
+
     function rescanThemes() { themeScanProc.running = true; }
 
     property string _ttsPath: ""

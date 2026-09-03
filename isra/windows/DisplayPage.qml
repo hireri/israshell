@@ -212,6 +212,39 @@ PageBase {
     }
 
     SectionCard {
+        label: Localization.t("displayPage.fedd")
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: Localization.t("displayPage.fedd_enabled")
+            sublabel: Localization.t("displayPage.fedd_enabled_sub")
+            checked: Config.fedd.enabled
+            onToggled: v => Config.update({
+                    fedd: Object.assign({}, Config.fedd, {
+                        enabled: v
+                    })
+                })
+        }
+
+        SettingSlider {
+            isLast: true
+            label: Localization.t("displayPage.fedd_chance")
+            sublabel: Localization.t("displayPage.fedd_chance_sub")
+            enabled: Config.fedd.enabled
+            opacity: enabled ? 1.0 : 0.4
+            from: 1
+            to: 5000
+            stepSize: 1
+            value: Config.fedd.chance
+            onMoved: v => Config.update({
+                    fedd: Object.assign({}, Config.fedd, {
+                        chance: Math.round(v)
+                    })
+                })
+        }
+    }
+
+    SectionCard {
         label: Localization.t("displayPage.brightness")
         Layout.fillWidth: true
 

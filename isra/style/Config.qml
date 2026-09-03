@@ -300,6 +300,10 @@ Singleton {
             onTop: false,
             sprite: "oneko"
         })
+    property var fedd: ({
+            enabled: true,
+            chance: 500
+        })
     property bool activateLinux: false
     property var lockscreen: ({
             dotShape: "roundedSquare"  // "roundedSquare" | "circle" | "material"
@@ -556,6 +560,10 @@ Singleton {
                 sprite: "oneko"
             },
             activateLinux: false,
+            fedd: {
+                enabled: true,
+                chance: 500
+            },
             lockscreen: {
                 dotShape: "roundedSquare"
             },
