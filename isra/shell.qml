@@ -390,13 +390,18 @@ ShellRoot {
                         }
                     ]
 
-                    opacity: window.shouldHide ? 0 : 1
-
-                    Behavior on opacity {
+                    readonly property real lockSlideDistance: height + edgeGap + 20
+                    property real lockSlideProgress: window.shouldHide ? 1 : 0
+                    Behavior on lockSlideProgress {
                         NumberAnimation {
-                            duration: 200
-                            easing.type: Easing.InOutCubic
+                            duration: 260
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
                         }
+                    }
+
+                    transform: Translate {
+                        y: (visualContent.state === "top" ? -1 : 1) * visualContent.lockSlideDistance * visualContent.lockSlideProgress
                     }
 
                     Rectangle {
@@ -595,9 +600,8 @@ ShellRoot {
 
                         property string barColor: GameModeService.active ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
 
-                        opacity: window.shouldHide ? 0 : 1
-                        Behavior on opacity {
-                            NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
+                        transform: Translate {
+                            y: (visualContent.state === "top" ? -1 : 1) * visualContent.lockSlideDistance * visualContent.lockSlideProgress
                         }
 
                         CornerBlock {

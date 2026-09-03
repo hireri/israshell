@@ -109,6 +109,7 @@ Item {
     property bool trashFileHovering: false
 
     readonly property bool forceHidden: EditModeService.active || AiAssistantService.visible
+        || LockscreenService.lockAnimating || LockscreenService.locked
 
     readonly property bool revealed: !forceHidden
         && (pinned || hoverLatched || interactionHold || (smartHide && !hasWindowsUnderneath))

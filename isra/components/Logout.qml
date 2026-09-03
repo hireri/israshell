@@ -69,6 +69,7 @@ Scope {
                 property var keybind: null
                 property color containerColor: "transparent"
                 property color contentColor: "transparent"
+                property bool skipBusy: false
 
                 readonly property var process: Process {
                     command: ["sh", "-c", button.command]
@@ -88,6 +89,7 @@ Scope {
                     icon: "lock"
                     containerColor: Colors.md3.primary_container
                     contentColor: Colors.md3.on_primary_container
+                    skipBusy: true
                 },
                 LogoutButton {
                     command: "loginctl terminate-user $USER"
@@ -99,7 +101,7 @@ Scope {
                     contentColor: Colors.md3.on_primary_container
                 },
                 LogoutButton {
-                    command: "systemctl suspend | loginctl suspend"
+                    command: "systemctl suspend || loginctl suspend"
                     keybind: Qt.Key_S
                     text: Localization.t("logout.suspend")
                     busyText: Localization.t("logout.busy_suspend")
@@ -108,7 +110,7 @@ Scope {
                     contentColor: Colors.md3.on_primary_container
                 },
                 LogoutButton {
-                    command: "systemctl hibernate | loginctl hibernate"
+                    command: "systemctl hibernate || loginctl hibernate"
                     keybind: Qt.Key_H
                     text: Localization.t("logout.hibernate")
                     busyText: Localization.t("logout.busy_hibernate")
@@ -117,7 +119,7 @@ Scope {
                     contentColor: Colors.md3.on_primary_container
                 },
                 LogoutButton {
-                    command: "systemctl poweroff | loginctl poweroff"
+                    command: "systemctl poweroff || loginctl poweroff"
                     keybind: Qt.Key_P
                     text: Localization.t("logout.shutdown")
                     busyText: Localization.t("logout.busy_shutdown")
@@ -126,7 +128,7 @@ Scope {
                     contentColor: Colors.md3.on_primary
                 },
                 LogoutButton {
-                    command: "systemctl reboot | loginctl reboot"
+                    command: "systemctl reboot || loginctl reboot"
                     keybind: Qt.Key_R
                     text: Localization.t("logout.reboot")
                     busyText: Localization.t("logout.busy_reboot")
@@ -180,6 +182,11 @@ Scope {
                     if (root.busy)
                         return;
                     hoveredButton = null;
+                    if (button.skipBusy) {
+                        button.exec();
+                        PowerMenuState.hide();
+                        return;
+                    }
                     root.startBusy(button.busyText);
                     button.exec();
                 }
@@ -569,12 +576,6 @@ Scope {
                                 onClicked: root.stopBusy()
                             }
                         }
-                    }
-
-                    function keyName(key) {
-                        if (key >= Qt.Key_A && key <= Qt.Key_Z)
-                            return String.fromCharCode(key).toUpperCase();
-                        return "?";
                     }
 
                     Item {
