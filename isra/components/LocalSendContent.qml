@@ -751,15 +751,47 @@ Item {
                         }
 
                         Rectangle {
-                            width: 26; height: 26; radius: 13
+                            id: folderBtn
+                            readonly property bool expanded: root.attached.length === 0
+                            implicitWidth: folderRow.implicitWidth + (expanded ? 20 : 12)
+                            implicitHeight: 26
+                            radius: 13
                             color: openFolderMa.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high
                             Behavior on color { ColorAnimation { duration: 100 } }
-                            MaterialIcon {
-                                anchors.centerIn: parent
-                                name: "folder"
-                                iconSize: 14
-                                color: Colors.md3.on_surface_variant
+                            Behavior on implicitWidth {
+                                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                             }
+                            clip: true
+
+                            Row {
+                                id: folderRow
+                                anchors.centerIn: parent
+                                spacing: 5
+                                MaterialIcon {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    name: "folder"
+                                    iconSize: 14
+                                    color: Colors.md3.on_surface_variant
+                                }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: Localization.t("localSendPopover.downloads")
+                                    font.family: Config.fontFamily
+                                    font.pixelSize: 11
+                                    font.weight: Font.Medium
+                                    color: Colors.md3.on_surface_variant
+                                    opacity: folderBtn.expanded ? 1 : 0
+                                    width: folderBtn.expanded ? implicitWidth : 0
+                                    clip: true
+                                    Behavior on opacity {
+                                        NumberAnimation { duration: folderBtn.expanded ? 180 : 90 }
+                                    }
+                                    Behavior on width {
+                                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                                    }
+                                }
+                            }
+
                             MouseArea {
                                 id: openFolderMa
                                 anchors.fill: parent
@@ -774,16 +806,26 @@ Item {
                             }
                         }
 
-                        LsTextButton {
-                            text: root.attached.length > 0 ? Localization.t("localSendPopover.clear") : Localization.t("localSendPopover.choose_files")
-                            textColor: Colors.md3.primary
-                            onClicked: {
-                                if (root.attached.length > 0) {
-                                    LocalSendService.clearAttached();
-                                } else if (root.controller) {
-                                    root.controller.openFilePicker();
-                                    root.controller.close();
+                        Item {
+                            id: clearSlot
+                            readonly property bool shown: root.attached.length > 0
+                            implicitWidth: shown ? clearBtn.implicitWidth : 0
+                            implicitHeight: 26
+                            clip: true
+                            Behavior on implicitWidth {
+                                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                            }
+
+                            LsTextButton {
+                                id: clearBtn
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: Localization.t("localSendPopover.clear")
+                                textColor: Colors.md3.primary
+                                opacity: clearSlot.shown ? 1 : 0
+                                Behavior on opacity {
+                                    NumberAnimation { duration: clearSlot.shown ? 180 : 90 }
                                 }
+                                onClicked: LocalSendService.clearAttached()
                             }
                         }
                     }
@@ -965,7 +1007,9 @@ Item {
                             deviceType: modelData.deviceType ?? modelData.type ?? ""
                             deviceMeta: modelData.ip ?? modelData.address ?? ""
                             armed: root.attached.length > 0 && !LocalSendService.activeTransfer && !LocalSendService.pendingSend
+                            isFavorite: LocalSendService.isFavorite(modelData)
                             onActivated: LocalSendService.sendFiles(modelData, root.attached.map(f => f.path))
+                            onFavoriteToggled: LocalSendService.toggleFavorite(modelData)
                         }
                     }
 
@@ -1031,7 +1075,6 @@ Item {
                         LsTextButton {
                             text: Localization.t("localSendPopover.scan")
                             icon: "restart"
-                            textColor: Colors.md3.primary
                             onClicked: LocalSendService.scanNow()
                         }
                     }
@@ -1259,7 +1302,9 @@ Item {
         property string deviceType: "desktop"
         property string deviceMeta: ""
         property bool armed: false
+        property bool isFavorite: false
         signal activated
+        signal favoriteToggled
 
         implicitHeight: 52
 
@@ -1272,6 +1317,15 @@ Item {
             radius: 16
             color: devRow.armed && devMa.containsMouse ? Colors.md3.secondary_container : Qt.alpha(Colors.md3.secondary_container, 0)
             Behavior on color { ColorAnimation { duration: 100 } }
+        }
+
+        MouseArea {
+            id: devMa
+            anchors.fill: parent
+            enabled: devRow.armed
+            hoverEnabled: devRow.armed
+            cursorShape: devRow.armed ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: devRow.activated()
         }
 
         RowLayout {
@@ -1310,23 +1364,49 @@ Item {
                 }
             }
 
+            Rectangle {
+                width: 28; height: 28; radius: 14
+                color: favMa.containsMouse ? Colors.md3.surface_container_highest : Qt.alpha(Colors.md3.surface_container_highest, 0)
+                Behavior on color { ColorAnimation { duration: 100 } }
+                MaterialIcon {
+                    anchors.centerIn: parent
+                    name: "star"
+                    iconSize: 16
+                    color: devRow.isFavorite ? Colors.md3.primary : Colors.md3.on_surface_variant
+                    filled: devRow.isFavorite
+                }
+                MouseArea {
+                    id: favMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: devRow.favoriteToggled()
+                }
+            }
+
             MaterialIcon {
-                Layout.rightMargin: 4
+                id: forwardIcon
                 name: "arrow-forward"
                 iconSize: 16
                 color: Colors.md3.on_secondary_container
-                opacity: devRow.armed && devMa.containsMouse ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: 130 } }
-            }
-        }
 
-        MouseArea {
-            id: devMa
-            anchors.fill: parent
-            enabled: devRow.armed
-            hoverEnabled: devRow.armed
-            cursorShape: devRow.armed ? Qt.PointingHandCursor : Qt.ArrowCursor
-            onClicked: devRow.activated()
+                readonly property bool shown: devRow.armed && devMa.containsMouse
+                readonly property real fullWidth: iconSize
+                opacity: shown ? 1 : 0
+                Layout.preferredWidth: shown ? fullWidth : 0
+                Layout.rightMargin: shown ? 4 : 0
+                clip: true
+
+                Behavior on Layout.preferredWidth {
+                    NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+                }
+                Behavior on Layout.rightMargin {
+                    NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+                }
+                Behavior on opacity {
+                    NumberAnimation { duration: forwardIcon.shown ? 160 : 90 }
+                }
+            }
         }
     }
 }

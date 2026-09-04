@@ -28,6 +28,8 @@ Singleton {
     signal event(string type, var data)
 
     property var devices: []
+    // {fingerprint, alias, deviceType, ip, port, protocol, online, ...}
+    property var favorites: []
     // {sessionId, from, deviceType, fileCount, totalBytes, files[]}
     property var pendingIncoming: null
     // {id, direction, phase, peer, deviceType, fileName, index, total,
@@ -99,6 +101,77 @@ Singleton {
     }
 
     readonly property var deviceTypes: ["desktop", "mobile", "web", "headless", "server"]
+
+    readonly property var favoritesByFingerprint: {
+        const m = ({});
+        for (const f of root.favorites)
+            if (f?.fingerprint)
+                m[f.fingerprint] = f;
+        return m;
+    }
+
+    function isFavorite(device) {
+        const fp = device?.fingerprint;
+        if (!fp)
+            return false;
+        return !!root.favoritesByFingerprint[fp];
+    }
+
+    function _incomingIsFavorite(inc) {
+        if (!inc)
+            return false;
+        if (inc.fingerprint)
+            return !!root.favoritesByFingerprint[inc.fingerprint];
+        const from = inc.from;
+        if (!from)
+            return false;
+        return root.favorites.some(f => f.online && f.alias === from);
+    }
+
+    function toggleFavorite(device) {
+        if (root.isFavorite(device))
+            root.removeFavorite(device.fingerprint);
+        else
+            root.addFavorite(device);
+    }
+
+    function addFavorite(device) {
+        const fp = device?.fingerprint;
+        if (!fp)
+            return;
+        _call("favorites_add", {
+            device: {
+                fingerprint: fp,
+                alias: device.alias ?? device.name ?? "",
+                deviceType: device.deviceType ?? device.type ?? ""
+            }
+        }, (result, error) => {
+            if (error) {
+                root.notify("LocalSend", error.message || "Couldn't add favorite.", "normal", 5000);
+                return;
+            }
+            root.favorites = result?.favorites ?? root.favorites;
+        });
+    }
+
+    function removeFavorite(fingerprint) {
+        if (!fingerprint)
+            return;
+        _call("favorites_remove", { fingerprint: fingerprint }, (result, error) => {
+            if (error) {
+                root.notify("LocalSend", error.message || "Couldn't remove favorite.", "normal", 5000);
+                return;
+            }
+            root.favorites = result?.favorites ?? root.favorites;
+        });
+    }
+
+    function refreshFavorites() {
+        _call("favorites_list", {}, (result, error) => {
+            if (!error)
+                root.favorites = result?.favorites ?? [];
+        });
+    }
 
     function deviceTypeIcon(t) {
         switch (t) {
@@ -433,11 +506,20 @@ Singleton {
             return;
         root.stateSeq = s.seq ?? 0;
 
+        const devicesChanged = JSON.stringify(s.devices ?? []) !== JSON.stringify(root.devices);
         root.devices = s.devices ?? [];
+        if (devicesChanged && root.favorites.length > 0)
+            root.refreshFavorites();
         const inc = s.incoming ?? null;
-        if ((inc?.sessionId ?? "") !== (root.pendingIncoming?.sessionId ?? ""))
+        const isNewIncoming = (inc?.sessionId ?? "") !== (root.pendingIncoming?.sessionId ?? "");
+        if (isNewIncoming)
             root.pendingIncoming = inc;
         root.activeTransfer = s.active ?? null;
+
+        if (isNewIncoming && inc && root._incomingIsFavorite(inc)) {
+            root.pendingIncoming = null;
+            root.confirmReceive(inc.sessionId, true);
+        }
 
         const wasLocal = root.lastResult?.local ?? false;
         const incomingResult = s.result ?? null;
@@ -500,6 +582,7 @@ Singleton {
         root._pushedPin = "";
         root._pushedDiscoverable = null;
         root._pushedEncryption = null;
+        root.refreshFavorites();
     }
 
     function _pushIdentity() {
@@ -534,6 +617,7 @@ Singleton {
         root.pendingSend = null;
         root.pinRequest = null;
         root.devices = [];
+        root.favorites = [];
         root.stateSeq = -1;
         root._instanceId = "";
         if (root.lastResult && !root.lastResult.local)
