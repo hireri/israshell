@@ -785,6 +785,9 @@ Singleton {
 
     readonly property bool wallIsVideo: /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(root.currentWall)
 
+    property real videoPositionMs: 0
+    onCurrentWallChanged: videoPositionMs = 0
+
     Component {
         id: wallAudioOutComp
         AudioOutput {
@@ -809,15 +812,28 @@ Singleton {
                 id: wallAudio
                 source: root.currentWall ? ("file://" + root.currentWall) : ""
                 loops: MediaPlayer.Infinite
+
+                property bool syncPending: true
+
+                function playSynced() {
+                    syncPending = false;
+                    play();
+                    if (duration > 0 && root.videoPositionMs > 0)
+                        position = root.videoPositionMs % duration;
+                }
                 onMediaStatusChanged: {
-                    if ((mediaStatus === MediaPlayer.LoadedMedia || mediaStatus === MediaPlayer.BufferedMedia)
-                        && root.audioShouldPlay)
+                    if (!(mediaStatus === MediaPlayer.LoadedMedia || mediaStatus === MediaPlayer.BufferedMedia)
+                        || !root.audioShouldPlay)
+                        return;
+                    if (syncPending)
+                        playSynced();
+                    else if (playbackState !== MediaPlayer.PlayingState)
                         play();
                 }
                 Component.onCompleted: {
                     audioOutput = wallAudioOutComp.createObject(wallAudio);
                     if (root.audioShouldPlay)
-                        play();
+                        playSynced();
                 }
             }
         }
@@ -831,7 +847,7 @@ Singleton {
         if (!p)
             return;
         if (root.audioShouldPlay)
-            p.play();
+            p.playSynced();
         else
             p.pause();
     }

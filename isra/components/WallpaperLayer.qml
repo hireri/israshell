@@ -437,6 +437,10 @@ PanelWindow {
                     anchors.fill: parent
                     asynchronous: false
                     active: slot.isVideo && !slot.videoTornDown
+                    onActiveChanged: {
+                        if (!active)
+                            WallpaperService.videoPositionMs = 0;
+                    }
 
                     sourceComponent: Component {
                         Item {
@@ -454,6 +458,10 @@ PanelWindow {
                                 audioOutput: null
                                 loops: MediaPlayer.Infinite
                                 onSourceChanged: videoRoot.ready = false
+                                onPositionChanged: {
+                                    if (slot.isFront)
+                                        WallpaperService.videoPositionMs = position;
+                                }
                                 onMediaStatusChanged: {
                                     if (mediaStatus === MediaPlayer.Loaded || mediaStatus === MediaPlayer.Buffered) {
                                         videoRoot.ready = true;
