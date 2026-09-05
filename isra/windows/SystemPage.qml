@@ -11,6 +11,7 @@ import qs.windows.components
 import qs.icons
 
 PageBase {
+    pageId: "system"
     id: pageRoot
     title: Localization.t("settingsWindow.system")
     subtitle: Localization.t("systemPage.about_and_script_paths")
@@ -61,7 +62,8 @@ PageBase {
         });
     }
 
-    Component.onCompleted: Updater.checkNow()
+    onActiveChanged: if (active)
+        Updater.checkNow()
 
     ColumnLayout {
         Layout.fillWidth: true

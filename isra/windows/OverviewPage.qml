@@ -11,6 +11,9 @@ import qs.windows.components
 import qs.icons
 
 PageBase {
+    id: page
+
+    pageId: "overview"
     title: Localization.t("settingsWindow.overview")
     subtitle: Localization.t("overviewPage.wallpaper_and_appearance")
 

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.style
+import qs.services
 import "IconSlotSync.js" as IconSlotSync
 
 Rectangle {
@@ -14,6 +15,15 @@ Rectangle {
     property bool hasSwitch: true
 
     signal toggled(bool checked)
+
+    property string settingKey: ""
+    property string settingKeywords: ""
+    property string settingType: "switch"
+    property string settingsPath: ""
+
+    function applyValue(value) {
+        root.toggled(value);
+    }
 
     implicitHeight: 72
     radius: 18
@@ -90,7 +100,11 @@ Rectangle {
 
     default property alias iconChild: iconSlot.data
 
-    Component.onCompleted: deferSync.restart()
+    Component.onCompleted: {
+        SettingsRegistry.register(root);
+        deferSync.restart();
+    }
+    Component.onDestruction: SettingsRegistry.unregister(root)
 
     function _syncIcon() {
         IconSlotSync.syncIconSlot(iconSlot.children, 24, () => Colors.md3.on_surface, root.checked);

@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import qs.services
+import "../services/fuzzy.js" as Fuzzy
 
 Scope {
     id: root
@@ -173,122 +174,44 @@ Scope {
         return _langMap[first];
     }
 
-    function _substringEditDistance(query, target, maxEdits) {
-        const m = query.length;
-        const n = target.length;
-        if (m === 0) return 0;
-        if (n === 0) return m;
-
-        if (maxEdits !== undefined && (m - n) > maxEdits)
-            return maxEdits + 1;
-
-        let prevRow = new Array(n + 1).fill(0);
-        let currRow = new Array(n + 1);
-
-        for (let i = 1; i <= m; i++) {
-            currRow[0] = i;
-            for (let j = 1; j <= n; j++) {
-                const cost = query.charAt(i - 1) === target.charAt(j - 1) ? 0 : 1;
-                currRow[j] = Math.min(
-                    prevRow[j - 1] + cost,
-                    prevRow[j] + 1,
-                    currRow[j - 1] + 1
-                );
-            }
-            const tmp = prevRow;
-            prevRow = currRow;
-            currRow = tmp;
-        }
-
-        let minVal = prevRow[0];
-        for (let j = 1; j <= n; j++) {
-            if (prevRow[j] < minVal) {
-                minVal = prevRow[j];
-                if (minVal === 0)
-                    break;
-            }
-        }
-        return minVal;
-    }
-
-    function _maxAllowedEdits(queryLength) {
-        if (queryLength <= 2) return 0;
-        if (queryLength <= 4) return 1;
-        if (queryLength <= 7) return 2;
-        return Math.floor(queryLength / 3);
-    }
+    readonly property var _searchNameBand: ({ exact: 1000, startsWith: 900, includes: 800, fuzzy: 700 })
+    readonly property var _searchGenericBand: ({ exact: 600, startsWith: 600, includes: 550, fuzzy: 500, indexPenalty: 0 })
+    readonly property var _searchKeywordBand: ({ exact: 450, startsWith: 400, includes: 380, fuzzy: 350, fuzzyLenPenalty: 0 })
+    readonly property var _searchCommentBand: ({ includes: 300, lenPenalty: 0.1, indexPenalty: 0 })
+    readonly property var _searchCategoryBand: ({ exact: 200, startsWith: 180, includes: 160 })
 
     function _scoreApp(app, q) {
-        const name = (app.name || "").toLowerCase();
-        const genericName = (app.genericName || "").toLowerCase();
-        const comment = (app.comment || "").toLowerCase();
-
-        if (name === q) {
-            return { matched: true, score: 1000 };
-        }
-        if (name.startsWith(q)) {
-            return { matched: true, score: 900 - name.length };
-        }
-        if (name.includes(q)) {
-            return { matched: true, score: 800 - name.indexOf(q) - name.length };
-        }
-
-        const maxEdits = _maxAllowedEdits(q.length);
-
-        const nameDist = _substringEditDistance(q, name, maxEdits);
-        if (nameDist <= maxEdits) {
-            return { matched: true, score: 700 - nameDist * 50 - name.length };
-        }
-
-        if (genericName !== "") {
-            if (genericName.startsWith(q)) {
-                return { matched: true, score: 600 - genericName.length };
-            }
-            if (genericName.includes(q)) {
-                return { matched: true, score: 550 - genericName.length };
-            }
-            const genDist = _substringEditDistance(q, genericName, maxEdits);
-            if (genDist <= maxEdits) {
-                return { matched: true, score: 500 - genDist * 50 - genericName.length };
-            }
-        }
+        const fields = [{
+                    text: (app.name || "").toLowerCase(),
+                    band: root._searchNameBand
+                }, {
+                    text: (app.genericName || "").toLowerCase(),
+                    band: root._searchGenericBand
+                }];
 
         const keywords = app.keywords || [];
-        for (let i = 0; i < keywords.length; i++) {
-            const kw = keywords[i].toLowerCase();
-            if (kw === q) {
-                return { matched: true, score: 450 };
-            }
-            if (kw.startsWith(q)) {
-                return { matched: true, score: 400 - kw.length };
-            }
-            if (kw.includes(q)) {
-                return { matched: true, score: 380 - kw.length };
-            }
-            const kwDist = _substringEditDistance(q, kw, maxEdits);
-            if (kwDist <= maxEdits) {
-                return { matched: true, score: 350 - kwDist * 50 };
-            }
-        }
+        for (let i = 0; i < keywords.length; i++)
+            fields.push({
+                text: keywords[i].toLowerCase(),
+                band: root._searchKeywordBand
+            });
 
-        if (comment !== "") {
-            if (comment.includes(q)) {
-                return { matched: true, score: 300 - comment.length * 0.1 };
-            }
-        }
+        fields.push({
+            text: (app.comment || "").toLowerCase(),
+            band: root._searchCommentBand
+        });
 
         const categories = app.categories || [];
-        for (let i = 0; i < categories.length; i++) {
-            const cat = categories[i].toLowerCase();
-            if (cat === q) {
-                return { matched: true, score: 200 };
-            }
-            if (cat.startsWith(q)) {
-                return { matched: true, score: 180 - cat.length };
-            }
-            if (cat.includes(q)) {
-                return { matched: true, score: 160 - cat.length };
-            }
+        for (let i = 0; i < categories.length; i++)
+            fields.push({
+                text: categories[i].toLowerCase(),
+                band: root._searchCategoryBand
+            });
+
+        for (let i = 0; i < fields.length; i++) {
+            const score = Fuzzy.scoreText(q, fields[i].text, fields[i].band);
+            if (score !== undefined)
+                return { matched: true, score: score };
         }
 
         return { matched: false, score: 0 };

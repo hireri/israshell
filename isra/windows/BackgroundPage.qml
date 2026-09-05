@@ -11,6 +11,7 @@ import qs.components
 import Quickshell.Widgets
 
 PageBase {
+    pageId: "background"
     title: Localization.t("settingsWindow.background")
     subtitle: Localization.t("settingsWindow.effects_wallpaper_widgets")
 

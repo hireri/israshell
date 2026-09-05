@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import qs.style
+import qs.services
 
 Item {
     id: root
@@ -16,6 +17,18 @@ Item {
     default property alias trailing: trailingSlot.data
 
     signal committed(string value)
+
+    property string settingKey: ""
+    property string settingKeywords: ""
+    property string settingType: "textarea"
+    property string settingsPath: ""
+
+    function applyValue(value) {
+        root.committed(value);
+    }
+
+    Component.onCompleted: SettingsRegistry.register(root)
+    Component.onDestruction: SettingsRegistry.unregister(root)
 
     implicitWidth: parent?.width ?? 0
     implicitHeight: column.implicitHeight + 20

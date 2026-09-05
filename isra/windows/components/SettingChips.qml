@@ -11,6 +11,9 @@ SettingRow {
 
     property Component icon: null
 
+    settingType: "chips"
+    applySignal: "selected"
+
     readonly property real smallRadius: 6
     readonly property real fullRadius: root.compact ? 13 : 15
 
@@ -145,10 +148,7 @@ SettingRow {
                             }
                         }
 
-                        onClicked: {
-                            root.currentValue = chip.modelData.value;
-                            root.selected(chip.modelData.value);
-                        }
+                        onClicked: root.selected(chip.modelData.value)
                     }
                 }
             }

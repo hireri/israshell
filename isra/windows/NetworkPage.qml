@@ -13,13 +13,13 @@ import qs.windows.components
 import "../services/ShellQuote.js" as ShellQuote
 
 PageBase {
+    pageId: "network"
     id: page
     title: Localization.t("settingsWindow.connectivity")
     subtitle: Localization.t("networkPage.wi_fi_and_bluetooth")
 
-    onVisibleChanged: if (visible)
+    onActiveChanged: if (active)
         NetworkService.refresh()
-    Component.onCompleted: NetworkService.refresh()
 
     readonly property bool wifiBusy: NetworkService.wifiConnecting || NetworkService.scanning
 

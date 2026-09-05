@@ -10,6 +10,7 @@ import qs.components
 import qs.windows.components
 
 PageBase {
+    pageId: "locale"
     id: page
     title: Localization.t("settingsWindow.locale")
     subtitle: Localization.t("localePage.time_date_and_regional_preferences")

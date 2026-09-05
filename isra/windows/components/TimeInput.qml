@@ -9,6 +9,9 @@ SettingRow {
     property string value: "00:00"
     signal committed(string value)
 
+    settingType: "time"
+    applySignal: "committed"
+
     Component.onCompleted: _parse(root.value)
     onValueChanged: _parse(root.value)
 

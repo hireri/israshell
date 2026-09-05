@@ -9,8 +9,16 @@ Item {
 
     property string title: ""
     property string subtitle: ""
-    property int maxWidth: 720
+    property int maxWidth: 860
     default property alias content: body.data
+
+    property string pageId: ""
+    readonly property bool settingsPage: true
+
+    property bool active: false
+
+    onActiveChanged: if (active)
+        flick.contentY = 0
 
     Flickable {
         id: flick

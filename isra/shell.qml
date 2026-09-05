@@ -58,6 +58,8 @@ ShellRoot {
         quickSettingsPanels: rootShell.quickSettingsPanels
     }
 
+    Component.onCompleted: SettingsRegistry.init(SettingsPages.pages)
+
     readonly property var _updater: Updater
     readonly property var _fedd: FeddService
 
@@ -71,7 +73,7 @@ ShellRoot {
             enabled: settingsLoader.item !== null
             function onVisibleChanged() {
                 if (!settingsLoader.item.visible) {
-                    settingsLoader.active = false;
+                    Qt.callLater(() => settingsLoader.active = false);
                 }
             }
         }

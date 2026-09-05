@@ -14,6 +14,9 @@ SettingRow {
 
     signal moved(real value)
 
+    settingType: "slider"
+    applySignal: "moved"
+
     stack: root.compact
 
     function _format(v) {
@@ -50,10 +53,7 @@ SettingRow {
             implicitWidth: root.stack ? Math.max(60, root.contentWidth - valueBox.width - parent.spacing) : 150
             anchors.verticalCenter: parent.verticalCenter
 
-            onMoved: {
-                root.value = slider.value
-                root.moved(slider.value)
-            }
+            onMoved: root.moved(slider.value)
         }
 
         Rectangle {

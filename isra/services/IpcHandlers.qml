@@ -24,9 +24,27 @@ Item {
         function open(page: string): void {
             root.settingsLoader.active = true;
             root.settingsLoader.item.visible = true;
-            const p = root.settingsLoader.item.pageIndexByName[page];
-            if (p !== undefined)
-                root.settingsLoader.item.currentPage = p;
+            root.settingsLoader.item.open(page);
+        }
+
+        function search(query: string): string {
+            return SettingsRegistry.searchJson(query);
+        }
+
+        function list(path: string): string {
+            return SettingsRegistry.listJson(path);
+        }
+
+        function get(path: string): string {
+            return SettingsRegistry.getJson(path);
+        }
+
+        function set(path: string, value: string): string {
+            return SettingsRegistry.apply(path, value);
+        }
+
+        function toggle(path: string): string {
+            return SettingsRegistry.toggle(path);
         }
     }
 

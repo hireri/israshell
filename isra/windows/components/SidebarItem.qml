@@ -6,7 +6,7 @@ import "IconSlotSync.js" as IconSlotSync
 Rectangle {
     id: root
 
-    property int page: 0
+    property string pageKey: ""
     property string label: ""
     property string sublabel: ""
     property bool active: false

@@ -13,6 +13,9 @@ SettingRow {
 
     signal committed(string value)
 
+    settingType: "input"
+    applySignal: "committed"
+
     Rectangle {
         id: fieldRect
         implicitWidth: root.fieldWidth

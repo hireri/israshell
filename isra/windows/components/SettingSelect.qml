@@ -9,6 +9,9 @@ SettingRow {
     signal selected(var value)
     signal aboutToOpen()
 
+    settingType: "select"
+    applySignal: "selected"
+
     stack: root.compact
 
     SelectField {

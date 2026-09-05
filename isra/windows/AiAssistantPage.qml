@@ -9,6 +9,7 @@ import qs.services
 import qs.windows.components
 
 PageBase {
+    pageId: "aiassistant"
     id: pageRoot
     title: Localization.t("settingsWindow.ai_assistant")
     subtitle: Localization.t("settingsWindow.provider_prompt_behavior")

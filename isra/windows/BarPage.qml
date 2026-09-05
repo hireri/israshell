@@ -9,6 +9,7 @@ import qs.services
 import qs.windows.components
 
 PageBase {
+    pageId: "bar"
     title: Localization.t("settingsWindow.bar")
     subtitle: Localization.t("barPage.layout_media_and_tray")
 

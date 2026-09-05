@@ -9,6 +9,7 @@ import qs.services
 import qs.windows.components
 
 PageBase {
+    pageId: "floatingdock"
     title: Localization.t("widgetService.dock")
     subtitle: Localization.t("dockPage.a_separate_app_dock_pinned")
 

@@ -5,12 +5,12 @@ import qs.style
 ColumnLayout {
     id: root
 
-    property int currentPage: 0
+    property string currentPage: ""
     property bool collapsed: false
     property real outerRadius: 18
     property real innerRadius: 6
 
-    signal navigate(int page)
+    signal navigate(string pageKey)
 
     default property alias items: root.children
 
@@ -24,7 +24,7 @@ ColumnLayout {
     function _sidebarKids() {
         const kids = [];
         for (let i = 0; i < children.length; i++) {
-            if (children[i].hasOwnProperty("page"))
+            if (children[i].hasOwnProperty("pageKey"))
                 kids.push(children[i]);
         }
         return kids;
@@ -40,7 +40,7 @@ ColumnLayout {
 
             k.topRadius = (isOnly || isFirst) ? root.outerRadius : root.innerRadius;
             k.bottomRadius = (isOnly || isLast) ? root.outerRadius : root.innerRadius;
-            k.active = (k.page === root.currentPage);
+            k.active = (k.pageKey === root.currentPage);
             k.collapsed = root.collapsed;
         }
     }

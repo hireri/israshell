@@ -7,12 +7,12 @@ SettingRow {
     property bool checked: false
     signal toggled(bool checked)
 
+    settingType: "switch"
+    applySignal: "toggled"
+
     Md3Switch {
         checked: root.checked
         enabled: root.enabled
-        onToggled: v => {
-            root.checked = v;
-            root.toggled(v);
-        }
+        onToggled: v => root.toggled(v)
     }
 }

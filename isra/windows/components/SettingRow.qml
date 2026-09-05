@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import qs.style
+import qs.services
 
 Item {
     id: root
@@ -15,6 +16,26 @@ Item {
 
     property bool compact: false
     property bool stack: false
+
+    property string settingKey: ""
+    property string settingKeywords: ""
+    property string settingType: "custom"
+    property string settingsPath: ""
+    property var settingsValue: null
+    property var settingsMeta
+
+    property string applySignal: ""
+
+    function applyValue(value) {
+        if (root.applySignal !== "") {
+            root[root.applySignal](value);
+            return;
+        }
+        console.warn("[SettingRow] '" + root.label + "' (" + root.settingType + ") does not support applyValue");
+    }
+
+    Component.onCompleted: SettingsRegistry.register(root)
+    Component.onDestruction: SettingsRegistry.unregister(root)
 
     readonly property real sideMargin: root.compact ? 14 : 18
     readonly property real contentWidth: root.width - root.sideMargin * 2

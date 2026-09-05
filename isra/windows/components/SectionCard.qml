@@ -8,6 +8,9 @@ Column {
     property bool compact: false
     spacing: 0
 
+    property string sectionKey: ""
+    readonly property bool settingsSection: true
+
     Text {
         text: root.label
         font.family: Config.fontFamily

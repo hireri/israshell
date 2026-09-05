@@ -10,8 +10,36 @@ import qs.components
 import Quickshell.Widgets
 
 PageBase {
+    pageId: "display"
     title: Localization.t("settingsWindow.visuals_display")
     subtitle: Localization.t("settingsWindow.night_light_blur")
+
+    component TempSliderRow: SettingRow {
+        id: tempRow
+
+        property alias strip: theStrip
+
+        settingType: "slider"
+        settingsValue: () => theStrip.value
+        readonly property var settingsMeta: ({
+            from: theStrip.from,
+            to: theStrip.to,
+            stepSize: theStrip.stepSize,
+            unit: "K",
+            decimals: 0
+        })
+
+        function applyValue(v) {
+            theStrip.moved(v);
+        }
+
+        TempStrip {
+            id: theStrip
+            from: 1000
+            to: 10000
+            stepSize: 100
+        }
+    }
 
     HeroCard {
         Layout.fillWidth: true
@@ -29,29 +57,21 @@ PageBase {
         label: Localization.t("barPage.temperature")
         Layout.fillWidth: true
 
-        SettingRow {
+        TempSliderRow {
             label: Localization.t("displayPage.night")
             sublabel: Localization.t("displayPage.applied_when_night_light_is")
-            TempStrip {
-                from: 1000
-                to: 10000
-                stepSize: 100
-                value: Config.nightLight.nightTemp
-                onMoved: v => NightLightService.setNightTemp(Math.round(v))
-            }
+
+            strip.value: Config.nightLight.nightTemp
+            strip.onMoved: v => NightLightService.setNightTemp(Math.round(v))
         }
 
-        SettingRow {
+        TempSliderRow {
             isLast: true
             label: Localization.t("displayPage.day")
             sublabel: Localization.t("displayPage.applied_during_the_day")
-            TempStrip {
-                from: 1000
-                to: 10000
-                stepSize: 100
-                value: Config.nightLight.dayTemp
-                onMoved: v => NightLightService.setDayTemp(Math.round(v))
-            }
+
+            strip.value: Config.nightLight.dayTemp
+            strip.onMoved: v => NightLightService.setDayTemp(Math.round(v))
         }
     }
 

@@ -499,10 +499,10 @@ Item {
 
                     SidebarGroup {
                         Layout.fillWidth: true
-                        currentPage: panel.isLocal ? -1 : (panel.mode === "konachan" ? 0 : (panel.mode === "wallhaven" ? 1 : 2))
+                        currentPage: panel.isLocal ? "" : panel.mode
 
                         SidebarItem {
-                            page: 0
+                            pageKey: "konachan"
                             label: Localization.t("wallpaperPicker.konachan")
                             sublabel: Localization.t("wallpaperPicker.konachan_sub")
                             onClicked: panel.requestMode("konachan")
@@ -511,7 +511,7 @@ Item {
                             }
                         }
                         SidebarItem {
-                            page: 1
+                            pageKey: "wallhaven"
                             label: Localization.t("wallpaperPicker.wallhaven")
                             sublabel: Localization.t("wallpaperPicker.wallhaven_sub")
                             onClicked: panel.requestMode("wallhaven")
@@ -520,7 +520,7 @@ Item {
                             }
                         }
                         SidebarItem {
-                            page: 2
+                            pageKey: "danbooru"
                             label: Localization.t("wallpaperPicker.danbooru")
                             sublabel: Localization.t("wallpaperPicker.danbooru_sub")
                             onClicked: panel.requestMode("danbooru")

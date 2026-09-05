@@ -12,11 +12,11 @@ import qs.services
 import qs.windows.components
 
 PageBase {
+    pageId: "sound"
     title: Localization.t("soundPage.sound_notifications")
     subtitle: Localization.t("soundPage.audio_output_and_interruption_settings")
 
-    Component.onCompleted: AudioService.startMicMeter()
-    Component.onDestruction: AudioService.stopMicMeter()
+    onActiveChanged: active ? AudioService.startMicMeter() : AudioService.stopMicMeter()
 
     component SoundSwitch: SettingSwitch {
         id: sw

@@ -12,6 +12,7 @@ import qs.windows.components
 import qs.icons
 
 PageBase {
+    pageId: "clock"
     id: pageRoot
     title: Localization.t("settingsWindow.desktop_clock")
     subtitle: Localization.t("clockPage.layout_style_and_sizing")
@@ -35,7 +36,7 @@ PageBase {
     property var previewTime: new Date()
     Timer {
         interval: 1000
-        running: true
+        running: pageRoot.active
         repeat: true
         onTriggered: pageRoot.previewTime = new Date()
     }
@@ -537,6 +538,7 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
+        sectionKey: "elements"
 
         SettingSwitch {
             label: Localization.t("clockPage.show_date")
@@ -576,6 +578,7 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
+        sectionKey: "position"
         SettingSwitch {
             label: Localization.t("clockPage.manual_positioning")
             sublabel: Localization.t("clockPage.drag_the_clock_freely_instead")
@@ -587,6 +590,7 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
+        sectionKey: "typography"
 
         SettingChips {
             label: Localization.t("clockPage.content_alignment")
@@ -654,6 +658,7 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
+        sectionKey: "digital-size"
         visible: Config.clock.layout === "vertical" || Config.clock.layout === "horizontal"
 
         SettingSlider {
@@ -705,6 +710,7 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
+        sectionKey: "word-size"
         visible: Config.clock.layout === "word"
 
         SettingSlider {
@@ -746,6 +752,7 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
+        sectionKey: "analog-size"
         visible: Config.clock.layout === "analog"
 
         SettingSlider {
@@ -797,6 +804,7 @@ PageBase {
 
     SectionCard {
         Layout.fillWidth: true
+        sectionKey: "shadow"
 
         SettingSlider {
             label: Localization.t("clockPage.shadow_blur")
