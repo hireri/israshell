@@ -124,6 +124,38 @@ Singleton {
         root.byPath[entry.path] = entry;
     }
 
+    Connections {
+        target: Localization
+        function onLanguageChanged() {
+            root.refreshTranslations();
+        }
+    }
+
+    function refreshTranslations() {
+        if (!root._initialized)
+            return;
+        let changed = false;
+        for (const entry of root.entries) {
+            if (entry.source === null)
+                continue;
+            const ctx = root._contextFor(entry.source);
+            const label = root._labelOf(entry.source);
+            const sublabel = root._sublabelOf(entry.source);
+            const page = ctx.page ? (ctx.page.title || ctx.page.pageId) : entry.page;
+            const section = ctx.section ? (ctx.section.label || entry.section) : entry.section;
+            if (label === entry.label && sublabel === entry.sublabel && page === entry.page && section === entry.section)
+                continue;
+            entry.label = label;
+            entry.sublabel = sublabel;
+            entry.page = page;
+            entry.section = section;
+            root._buildSearchCache(entry);
+            changed = true;
+        }
+        if (changed)
+            root._writeCache(true);
+    }
+
     function unregister(source) {
         for (let i = root.entries.length - 1; i >= 0; i--) {
             if (root.entries[i].source === source) {

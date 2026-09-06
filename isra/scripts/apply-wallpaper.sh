@@ -32,7 +32,7 @@ SOURCE_INDEX="${4:-0}"
 
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
-FRAME_CACHE_DIR="$HOME/.cache/isra/wallpaper-frames"
+FRAME_CACHE_DIR="$HOME/.cache/israshell/wallpaper-frames"
 HYPR_DIR="$HOME/.config/hypr"
 
 VALID_SCHEMES=(

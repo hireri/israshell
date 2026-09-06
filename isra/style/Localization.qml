@@ -8,6 +8,9 @@ Singleton {
     id: root
 
     readonly property string localesDir: Quickshell.shellDir + "/i18n/locales"
+    readonly property string userLocalesDir: Config.configDir + "/i18n"
+
+    signal languageChanged()
 
     property var _en: ({})
     property var _active: ({})
@@ -36,7 +39,21 @@ Singleton {
     }
 
     function _syncActive() {
-        root._active = Config.language === "en_US" ? root._en : root._parseOrEmpty(activeFile.text());
+        if (Config.language === "" || Config.language === "en_US") {
+            root._active = root._en;
+        } else {
+            let text = "";
+            try {
+                text = userActiveFile.text();
+            } catch (e) {}
+            if (!text) {
+                try {
+                    text = shippedActiveFile.text();
+                } catch (e) {}
+            }
+            root._active = root._parseOrEmpty(text);
+        }
+        root.languageChanged();
     }
 
     FileView {
@@ -55,18 +72,52 @@ Singleton {
         onFileChanged: reload()
     }
 
+    function _reloadManifest() {
+        let shipped = {};
+        let user = {};
+        try {
+            shipped = root._parseOrEmpty(shippedManifestFile.text());
+        } catch (e) {}
+        try {
+            user = root._parseOrEmpty(userManifestFile.text());
+        } catch (e) {}
+        root.manifest = Object.assign(shipped, user);
+    }
+
     FileView {
-        id: manifestFile
+        id: shippedManifestFile
         path: root.localesDir + "/manifest.json"
         watchChanges: true
         blockLoading: true
-        Component.onCompleted: root.manifest = root._parseOrEmpty(text())
-        onLoaded: root.manifest = root._parseOrEmpty(text())
+        Component.onCompleted: root._reloadManifest()
+        onLoaded: root._reloadManifest()
         onFileChanged: reload()
     }
 
     FileView {
-        id: activeFile
+        id: userManifestFile
+        path: root.userLocalesDir + "/manifest.json"
+        watchChanges: true
+        blockLoading: true
+        Component.onCompleted: root._reloadManifest()
+        onLoaded: root._reloadManifest()
+        onLoadFailed: root._reloadManifest()
+        onFileChanged: reload()
+    }
+
+    FileView {
+        id: userActiveFile
+        path: (Config.language !== "" && Config.language !== "en_US") ? (root.userLocalesDir + "/" + Config.language + ".json") : ""
+        watchChanges: true
+        blockLoading: true
+        Component.onCompleted: root._syncActive()
+        onLoaded: root._syncActive()
+        onLoadFailed: root._syncActive()
+        onFileChanged: reload()
+    }
+
+    FileView {
+        id: shippedActiveFile
         path: (Config.language !== "" && Config.language !== "en_US") ? (root.localesDir + "/" + Config.language + ".json") : ""
         watchChanges: true
         blockLoading: true
@@ -91,6 +142,45 @@ Singleton {
     Component {
         id: notifyProcComponent
         Process {}
+    }
+
+    Component {
+        id: mkdirProcComponent
+        Process {}
+    }
+
+    property bool _migratedLocales: false
+
+    function _migrateLegacyLocales() {
+        if (root._migratedLocales)
+            return;
+        root._migratedLocales = true;
+        const proc = mkdirProcComponent.createObject(root);
+        proc.command = ["bash", "-c",
+            "mkdir -p " + JSON.stringify(root.userLocalesDir) +
+            " && cd " + JSON.stringify(root.localesDir) +
+            " && for f in *.json; do" +
+            " [ \"$f\" = en_US.json ] && continue;" +
+            " [ -e " + JSON.stringify(root.userLocalesDir) + "/\"$f\" ] || mv -n \"$f\" " + JSON.stringify(root.userLocalesDir) + "/;" +
+            " done; true"];
+        proc.exited.connect(() => {
+            proc.destroy();
+            root._reloadManifest();
+            root._syncActive();
+        });
+        proc.running = true;
+    }
+
+    Component.onCompleted: root._migrateLegacyLocales()
+
+    function _ensureUserLocalesDir(cb) {
+        const proc = mkdirProcComponent.createObject(root);
+        proc.command = ["mkdir", "-p", root.userLocalesDir];
+        proc.exited.connect(() => {
+            proc.destroy();
+            cb();
+        });
+        proc.running = true;
     }
 
     function _stripCodeFence(text) {
@@ -233,25 +323,27 @@ Singleton {
                 const translated = JSON.parse(root._stripCodeFence(translatedText));
                 const label = displayName + (tone !== "formal" ? " (" + root.toneLabels[tone] + ")" : "");
 
-                root._writeJson(root.localesDir + "/" + id + ".json", translated);
-                const nextManifest = Object.assign({}, root.manifest, {
-                    [id]: {
-                        label: label,
-                        sourceName: displayName,
-                        code: code,
-                        tone: tone,
-                        providerId: provider,
-                        keyHash: root._sourceKeyHash
-                    }
-                });
-                root._writeJson(root.localesDir + "/manifest.json", nextManifest);
-                root.manifest = nextManifest;
+                root._ensureUserLocalesDir(() => {
+                    root._writeJson(root.userLocalesDir + "/" + id + ".json", translated);
+                    const nextManifest = Object.assign({}, root.manifest, {
+                        [id]: {
+                            label: label,
+                            sourceName: displayName,
+                            code: code,
+                            tone: tone,
+                            providerId: provider,
+                            keyHash: root._sourceKeyHash
+                        }
+                    });
+                    root._writeJson(root.userLocalesDir + "/manifest.json", nextManifest);
+                    root.manifest = nextManifest;
 
-                Config.update({
-                    language: id
-                });
+                    Config.update({
+                        language: id
+                    });
 
-                root._notify(root.t("localization.notify_summary"), root.t("localization.notify_body").arg(label));
+                    root._notify(root.t("localization.notify_summary"), root.t("localization.notify_body").arg(label));
+                });
             } catch (e) {
                 root.translateError = root.t("localization.couldnt_parse_gemini_response");
                 console.log("Localization translate error:", e, translatedText);

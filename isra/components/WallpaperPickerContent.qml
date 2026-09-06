@@ -277,7 +277,7 @@ Item {
         readonly property string thumbScript: "
             set -e
             video=\"$1\"
-            cache_dir=\"$HOME/.cache/isra/wallpaper-frames\"
+            cache_dir=\"$HOME/.cache/israshell/wallpaper-frames\"
             mkdir -p \"$cache_dir\"
             mtime=$(stat -c '%Y' \"$video\" 2>/dev/null || echo 0)
             key=$(printf '%s:%s' \"$video\" \"$mtime\" | sha256sum | cut -d' ' -f1)
@@ -290,7 +290,7 @@ Item {
         readonly property string remoteThumbScript: "
             set -e
             url=\"$1\"
-            cache_dir=\"$HOME/.cache/isra/wallpaper-thumbs\"
+            cache_dir=\"$HOME/.cache/israshell/wallpaper-thumbs\"
             mkdir -p \"$cache_dir\"
             key=$(printf '%s' \"$url\" | sha256sum | cut -d' ' -f1)
             ext=$(printf '%s' \"$url\" | sed -n 's/.*\\.\\([A-Za-z0-9]*\\)\\(\\?.*\\)\\?$/\\1/p')
