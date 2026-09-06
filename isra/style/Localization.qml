@@ -123,7 +123,7 @@ Singleton {
         blockLoading: true
         Component.onCompleted: root._syncActive()
         onLoaded: root._syncActive()
-        onLoadFailed: root._active = {}
+        onLoadFailed: root._syncActive()
         onFileChanged: reload()
     }
 

@@ -12,6 +12,7 @@ Singleton {
 
     property bool _initialized: false
     property bool _instancesLoaded: false
+    property bool _allInstantiated: false
     property bool _cacheValid: false
     property string _loadedKey: ""
 
@@ -30,14 +31,36 @@ Singleton {
     }
 
     function pageInstance(key) {
-        root.ensureInstances();
+        if (root._cacheValid)
+            root._ensurePage(key);
+        else
+            root.ensureInstances();
         return root._pageInstances[key] ?? null;
+    }
+
+    function _ensurePage(key) {
+        root._ensureContainer();
+        if (root._pageInstances[key])
+            return;
+        const index = root.pageDefs.findIndex(d => d.key === key);
+        if (index === -1)
+            return;
+        root._createPage(index);
+        cacheWriteSettle.restart();
+    }
+
+    function _ensureEntrySource(path) {
+        const adopted = root.byPath[path];
+        if (adopted && adopted.source === null)
+            root._ensurePage(adopted.pageId);
+        return root.byPath[path];
     }
 
     function ensureInstances() {
         if (root._instancesLoaded)
             return;
         root._instancesLoaded = true;
+        root._allInstantiated = true;
         root._ensureContainer();
         for (let i = 0; i < root.pageDefs.length; i++)
             root._createPage(i);
@@ -134,6 +157,8 @@ Singleton {
     function refreshTranslations() {
         if (!root._initialized)
             return;
+        if (!root._allInstantiated && root.entries.some(e => e.source === null))
+            root.ensureInstances();
         let changed = false;
         for (const entry of root.entries) {
             if (entry.source === null)
@@ -213,8 +238,7 @@ Singleton {
     })
 
     function apply(path, value) {
-        root.ensureInstances();
-        const entry = root.byPath[path];
+        const entry = root._ensureEntrySource(path);
         if (!entry || !entry.source)
             return "error: no such setting: " + path;
         const parsed = root._parseFor(entry.type, value);
@@ -225,8 +249,7 @@ Singleton {
     }
 
     function toggle(path) {
-        root.ensureInstances();
-        const entry = root.byPath[path];
+        const entry = root._ensureEntrySource(path);
         if (!entry || !entry.source)
             return "error: no such setting: " + path;
         if (entry.type !== "switch")
@@ -236,8 +259,7 @@ Singleton {
     }
 
     function getJson(path) {
-        root.ensureInstances();
-        const entry = root.byPath[path];
+        const entry = root._ensureEntrySource(path);
         if (!entry || !entry.source)
             return JSON.stringify({
                 error: "no such setting: " + path
@@ -289,17 +311,26 @@ Singleton {
         id: cacheWriteSettle
         interval: 300
         onTriggered: {
-            const pruned = root._pruneAdopted();
-            root._writeCache(pruned > 0);
+            if (root._allInstantiated) {
+                const pruned = root._pruneAdopted(false);
+                root._writeCache(pruned > 0);
+            } else {
+                root._pruneAdopted(true);
+                root._writeCache(true);
+            }
         }
     }
 
-    function _pruneAdopted() {
+    function _pruneAdopted(orphansOnly) {
         let removed = 0;
+        const pageKeys = root.pageDefs.map(d => d.key);
         for (let i = root.entries.length - 1; i >= 0; i--) {
-            if (root.entries[i].source !== null)
+            const entry = root.entries[i];
+            if (entry.source !== null)
                 continue;
-            delete root.byPath[root.entries[i].path];
+            if (orphansOnly && pageKeys.includes(entry.pageId))
+                continue;
+            delete root.byPath[entry.path];
             root.entries.splice(i, 1);
             removed++;
         }
