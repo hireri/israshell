@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.services
+import qs.components
 import qs.style
 
 Item {
@@ -377,26 +378,11 @@ Item {
                     Layout.fillWidth: true
                     spacing: 8
 
-                    Rectangle {
-                        width: 6
-                        height: 6
-                        radius: 3
-                        color: Colors.md3.primary
-                        SequentialAnimation on opacity {
-                            running: root._loading
-                            loops: Animation.Infinite
-                            NumberAnimation {
-                                to: 0.2
-                                duration: 500
-                            }
-                            NumberAnimation {
-                                to: 0.9
-                                duration: 500
-                            }
-                        }
+                    LoadingSpinner {
+                        size: 14
                     }
                     Text {
-                        text: "looking up \"" + root.word + "\"..."
+                        text: Localization.t("defineWidget.looking_up").arg(root.word)
                         color: Colors.md3.on_surface_variant
                         font.pixelSize: 13
                         font.family: Config.fontFamily

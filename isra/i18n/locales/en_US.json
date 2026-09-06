@@ -282,6 +282,7 @@
   "ctsScript.upload_failed_body": "Could not upload image",
   "defineWidget.copy_definition": "󰆏  copy definition",
   "defineWidget.copy_word": "󰆏  copy word",
+  "defineWidget.looking_up": "looking up \"%1\"...",
   "defineWidget.speak": "󰕾  speak",
   "defineWidget.type_a_word_to_look": "type a word to look up",
   "displayPage.applied_during_the_day": "Applied during the day",

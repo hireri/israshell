@@ -1,6 +1,7 @@
 import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
+import qs.components
 import qs.style
 
 Item {
@@ -456,24 +457,9 @@ Item {
             Layout.fillWidth: true
             spacing: 6
 
-            Rectangle {
-                width: 6
-                height: 6
-                radius: 3
-                color: Colors.md3.primary
+            LoadingSpinner {
                 visible: root._loading
-                SequentialAnimation on opacity {
-                    running: root._loading
-                    loops: Animation.Infinite
-                    NumberAnimation {
-                        to: 0.2
-                        duration: 450
-                    }
-                    NumberAnimation {
-                        to: 0.9
-                        duration: 450
-                    }
-                }
+                size: 14
             }
 
             Text {
@@ -639,23 +625,9 @@ Item {
                     RowLayout {
                         visible: root._loading
                         spacing: 5
-                        Rectangle {
-                            width: 5
-                            height: 5
-                            radius: 3
+                        LoadingSpinner {
+                            size: 14
                             color: Colors.md3.on_primary_container
-                            SequentialAnimation on opacity {
-                                running: root._loading
-                                loops: Animation.Infinite
-                                NumberAnimation {
-                                    to: 0.2
-                                    duration: 450
-                                }
-                                NumberAnimation {
-                                    to: 0.9
-                                    duration: 450
-                                }
-                            }
                         }
                         Text {
                             text: Localization.t("mathWidget.fetching")

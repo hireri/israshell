@@ -1,6 +1,7 @@
 import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
+import qs.components
 import qs.style
 
 Item {
@@ -431,24 +432,9 @@ Item {
                 Layout.fillWidth: true
             }
 
-            Rectangle {
+            LoadingSpinner {
                 visible: root._loading
-                width: 6
-                height: 6
-                radius: 3
-                color: Colors.md3.primary
-                SequentialAnimation on opacity {
-                    running: root._loading
-                    loops: Animation.Infinite
-                    NumberAnimation {
-                        to: 0.2
-                        duration: 600
-                    }
-                    NumberAnimation {
-                        to: 0.9
-                        duration: 600
-                    }
-                }
+                size: 14
             }
         }
 

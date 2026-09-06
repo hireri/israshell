@@ -214,26 +214,10 @@ Item {
                         anchors.baseline: tempLabel.baseline
                     }
 
-                    Rectangle {
+                    LoadingSpinner {
                         visible: root.weatherData.loading
-                        width: 6
-                        height: 6
-                        radius: 3
-                        color: Colors.md3.primary
+                        size: 14
                         anchors.verticalCenter: tempLabel.verticalCenter
-                        opacity: 0.7
-                        SequentialAnimation on opacity {
-                            running: root.weatherData.loading
-                            loops: Animation.Infinite
-                            NumberAnimation {
-                                to: 0.2
-                                duration: 500
-                            }
-                            NumberAnimation {
-                                to: 0.8
-                                duration: 500
-                            }
-                        }
                     }
                 }
 
