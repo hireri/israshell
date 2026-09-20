@@ -27,6 +27,7 @@ Item {
     property int wordDuration: 260
     property int leadIn: 120
     property real activeScale: 1.04
+    property int instrumentalGap: 2000
 
     readonly property bool isFlex: root.fontFamily === "Google Sans Flex"
     readonly property int pad: 16
@@ -108,10 +109,32 @@ Item {
         visible: root.showTrackInfo
         height: visible ? Math.max(root.artSize, metaText.implicitHeight) : 0
 
+        readonly property real artW: art.visible ? root.artSize : 0
+        readonly property real artGap: art.visible ? 12 : 0
+        readonly property real textW: root.align === "center"
+            ? Math.min(Math.max(titleMetrics.advanceWidth, artistMetrics.advanceWidth), meta.width - meta.artW - meta.artGap)
+            : meta.width - meta.artW - meta.artGap
+        readonly property real groupW: meta.artW + meta.artGap + meta.textW
+
+        readonly property real artX: root.align === "right" ? meta.width - meta.artW : root.align === "center" ? (meta.width - meta.groupW) / 2 : 0
+        readonly property real textX: root.align === "right" ? 0 : root.align === "center" ? meta.artX + meta.artW + meta.artGap : meta.artW + meta.artGap
+
+        TextMetrics {
+            id: titleMetrics
+            font: titleText.font
+            text: titleText.text
+        }
+
+        TextMetrics {
+            id: artistMetrics
+            font: artistText.font
+            text: artistText.text
+        }
+
         CrossfadeArt {
             id: art
 
-            anchors.left: parent.left
+            x: meta.artX
             anchors.verticalCenter: parent.verticalCenter
 
             width: root.artSize
@@ -125,13 +148,13 @@ Item {
         Column {
             id: metaText
 
-            anchors.left: art.visible ? art.right : parent.left
-            anchors.leftMargin: art.visible ? 12 : 0
-            anchors.right: parent.right
+            x: meta.textX
+            width: meta.textW
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
 
             Text {
+                id: titleText
                 width: parent.width
                 elide: Text.ElideRight
                 horizontalAlignment: root.hAlign
@@ -148,6 +171,7 @@ Item {
             }
 
             Text {
+                id: artistText
                 width: parent.width
                 elide: Text.ElideRight
                 horizontalAlignment: root.hAlign
@@ -319,6 +343,9 @@ Item {
 
                     readonly property int lineAlign: line.modelData.align === "left" ? Text.AlignLeft : line.modelData.align === "right" ? Text.AlignRight : root.hAlign
 
+                    readonly property bool isBlank: line.modelData.text === ""
+                    readonly property bool showInstrumental: line.isBlank && line.isActive && (line.modelData.end - line.modelData.start) * 1000 >= root.instrumentalGap
+
                     anchors.left: parent.left
                     anchors.right: parent.right
                     height: Math.max(1, line.rows.length) * track.lineH
@@ -383,7 +410,7 @@ Item {
                         }
 
                         Repeater {
-                            model: line.nearby ? line.rows : []
+                            model: line.nearby && !line.isBlank ? line.rows : []
 
                             delegate: Row {
                                 id: wordRow
@@ -428,6 +455,65 @@ Item {
 
                                         style: root.showCard ? Text.Normal : Text.Raised
                                         styleColor: root.shadowColor
+                                    }
+                                }
+                            }
+                        }
+
+                        Row {
+                            id: instrumentalDots
+
+                            readonly property real spanMs: Math.max(1, (line.modelData.end - line.modelData.start) * 1000)
+                            readonly property real stagger: instrumentalDots.spanMs / 4
+                            readonly property real bounceHeight: 5
+                            readonly property real edgeInset: 4
+
+                            visible: line.showInstrumental
+                            height: track.lineH
+                            spacing: 8
+                            x: line.lineAlign === Text.AlignRight ? rowStack.width - width - instrumentalDots.edgeInset : line.lineAlign === Text.AlignHCenter ? (rowStack.width - width) / 2 : instrumentalDots.edgeInset
+
+                            Repeater {
+                                model: 3
+
+                                delegate: Rectangle {
+                                    id: dot
+
+                                    required property int index
+                                    property real rise: 0
+                                    property real fall: 0
+
+                                    width: 6
+                                    height: 6
+                                    radius: 3
+                                    y: (instrumentalDots.height - height) / 2 - (dot.rise - dot.fall) * instrumentalDots.bounceHeight
+                                    scale: 1 + dot.rise * 0.4
+                                    color: root.textColor
+
+                                    SequentialAnimation {
+                                        id: bounceAnim
+
+                                        PauseAnimation { duration: dot.index * instrumentalDots.stagger }
+                                        NumberAnimation { target: dot; property: "rise"; to: 1; duration: instrumentalDots.stagger; easing.type: Easing.InOutSine }
+                                        NumberAnimation { target: dot; property: "fall"; to: 1; duration: instrumentalDots.stagger; easing.type: Easing.InOutSine }
+                                    }
+
+                                    Connections {
+                                        target: instrumentalDots
+                                        function onVisibleChanged(): void {
+                                            if (instrumentalDots.visible) {
+                                                bounceAnim.restart();
+                                            } else {
+                                                bounceAnim.stop();
+                                                dot.rise = 0;
+                                                dot.fall = 0;
+                                            }
+                                        }
+                                    }
+
+                                    Component.onCompleted: {
+                                        if (instrumentalDots.visible)
+                                            bounceAnim.restart();
                                     }
                                 }
                             }
