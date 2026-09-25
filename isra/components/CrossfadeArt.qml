@@ -17,16 +17,24 @@ ClippingRectangle {
     color: "transparent"
 
     property int frontSlot: 0
-    property string targetUrl: ""
+    property string targetNormUrl: ""
 
     function front() { return frontSlot === 0 ? imgA : imgB; }
     function back() { return frontSlot === 0 ? imgB : imgA; }
     function frontAnim() { return frontSlot === 0 ? animA : animB; }
     function backAnim() { return frontSlot === 0 ? animB : animA; }
 
+    function _normalize(path) {
+        if (!path || path === "")
+            return "";
+        return Qt.resolvedUrl(path).toString();
+    }
+
     function _show(path) {
-        targetUrl = path;
-        if (path === "") {
+        const norm = _normalize(path);
+        targetNormUrl = norm;
+
+        if (norm === "") {
             animA.stop();
             animB.stop();
             animA.to = 0;
@@ -35,13 +43,26 @@ ClippingRectangle {
             animB.start();
             return;
         }
-        if (front().source.toString() === path && front().status === Image.Ready)
+
+        if (_normalize(front().source) === norm && front().status === Image.Ready) {
+            frontAnim().stop();
+            frontAnim().to = 1;
+            frontAnim().start();
+            backAnim().stop();
+            backAnim().to = 0;
+            backAnim().start();
             return;
-        if (back().source.toString() === path && back().status === Image.Ready) {
+        }
+
+        if (_normalize(back().source) === norm && back().status === Image.Ready) {
             _crossfade(1 - frontSlot);
             return;
         }
-        back().source = path;
+
+        if (_normalize(back().source) === norm)
+            back().source = "";
+
+        back().source = norm;
         frontAnim().stop();
         frontAnim().to = 1;
         frontAnim().start();
@@ -51,8 +72,9 @@ ClippingRectangle {
         if (slot === frontSlot)
             return;
         const loaded = slot === 0 ? imgA : imgB;
-        if (loaded.source.toString() !== targetUrl)
+        if (_normalize(loaded.source) !== targetNormUrl)
             return;
+
         frontSlot = slot;
         frontAnim().stop();
         frontAnim().to = 1;
@@ -79,8 +101,12 @@ ClippingRectangle {
             blur: root.blurAmount
             blurMax: root.blurMax
         }
-        onStatusChanged: if (status === Image.Ready) root._crossfade(0)
+        onStatusChanged: {
+            if (status === Image.Ready)
+                root._crossfade(0);
+        }
     }
+
     Image {
         id: imgB
         anchors.fill: parent
@@ -95,7 +121,10 @@ ClippingRectangle {
             blur: root.blurAmount
             blurMax: root.blurMax
         }
-        onStatusChanged: if (status === Image.Ready) root._crossfade(1)
+        onStatusChanged: {
+            if (status === Image.Ready)
+                root._crossfade(1);
+        }
     }
 
     NumberAnimation { id: animA; target: imgA; property: "opacity"; duration: root.fadeDuration; easing.type: Easing.OutCubic }

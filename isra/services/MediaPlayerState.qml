@@ -30,7 +30,7 @@ Singleton {
     property var _artPending: ({})
 
     function _artLocalPath(url) {
-        if (url === "")
+        if (!url || url === "")
             return "";
         if (url.startsWith("file://"))
             return url;
@@ -40,21 +40,29 @@ Singleton {
     }
 
     function resolvedArt(url) {
+        if (!url || url === "")
+            return "";
         const local = _artLocalPath(url);
         if (local !== "")
             return local;
+        ensureArt(url);
         return artCache[url] ?? "";
     }
 
     function ensureArt(url) {
-        if (url === "" || _artLocalPath(url) !== "" || artCache[url] || _artPending[url])
+        if (!url || url === "" || _artLocalPath(url) !== "" || artCache[url] || _artPending[url])
             return;
         _artPending[url] = true;
+
+        let fetchUrl = url;
+        if (fetchUrl.startsWith("https://open.spotify.com/image/"))
+            fetchUrl = fetchUrl.replace("https://open.spotify.com/image/", "https://i.scdn.co/image/");
+
         const file = "/tmp/qs_art_" + Qt.md5(url);
         artFetchComponent.createObject(root, {
             artUrl: url,
             targetFile: file,
-            command: ["bash", "-c", `f=${ShellQuote.shQuote(file)}; t="$f.tmp"; [ -f "$f" ] || { curl -4 -sSL ${ShellQuote.shQuote(url)} -o "$t" && mv "$t" "$f"; }`],
+            command: ["bash", "-c", `f=${ShellQuote.shQuote(file)}; t="$f.tmp"; [ -f "$f" ] || { curl -4 -fsSL ${ShellQuote.shQuote(fetchUrl)} -o "$t" && mv "$t" "$f" || rm -f "$t"; }`],
             running: true
         });
     }
@@ -82,7 +90,7 @@ Singleton {
     }
 
     function ensureColors(url) {
-        if (url === "")
+        if (!url || url === "")
             return;
         ensureArt(url);
         if (colorCache[url] || _colorPending[url])
