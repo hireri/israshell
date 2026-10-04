@@ -58,6 +58,7 @@ All handlers are called with `qs -c isra ipc call <target> <function> [args]`.
 | `screenshot` | `activate`, `region`, `window`, `screen`, `ocr`, `cts`, `record` | `activate` = smart screenshot, `record` toggles screen recording |
 | `lockscreen` | `lock` | |
 | `gamemode` | `toggle` | |
+| `gameoverlay` | `toggle`, `crosshair(code)`, `unpin` | In-game overlay: draggable crosshair, performance, audio mixer, capture. Opens on the focused monitor. Widgets can be pinned to stay on screen after closing. `crosshair` takes a Valorant crosshair code, `unpin` unpins everything |
 | `bedtime` | `toggle` | |
 | `aiassistant` | `toggle` | |
 | `powermenu` | `toggle` | |

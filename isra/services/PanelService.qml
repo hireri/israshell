@@ -16,7 +16,7 @@ Singleton {
         const prev = root.current;
         root.current = panel;
         root.currentScreen = screen ?? null;
-        if (prev)
+        if (prev && !(prev.keepsUnderCapture === true && panel?.isCapture === true))
             prev.close();
         if (root.currentMode && panel?.coexistsWithMode !== true)
             root._closeMode();

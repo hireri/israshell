@@ -25,7 +25,18 @@ Item {
     property string _capturedPath: ""
     property bool _closing: false
 
-    onActiveChanged: active ? PanelService.opened(root) : PanelService.closed(root)
+    readonly property bool isCapture: true
+
+    onActiveChanged: {
+        if (active) {
+            PanelService.opened(root);
+            GameOverlayService.suspended = GameOverlayService.visible;
+        } else {
+            PanelService.closed(root);
+            GameOverlayService.suspended = false;
+            GameOverlayService.closeInstantly();
+        }
+    }
 
     function _teardown() {
         uiLoader.active = false;

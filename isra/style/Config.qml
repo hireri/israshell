@@ -293,6 +293,15 @@ Singleton {
             ringAmplitude: 4,
             outlineWidth: 2
         })
+    property var gameOverlay: ({
+            open: ["crosshair", "resources", "volumeMixer", "recorder"],
+            crosshairCode: "0;P;c;1;h;0;d;1;z;2;0l;6;0o;4;0a;1;0t;2;1b;0",
+            zoomAnimation: true,
+            darkenScreen: true,
+            clickthroughOpacity: 0.8,
+            pingHost: "1.1.1.1",
+            widgets: {}
+        })
     property var neko: ({
             enabled: false,
             size: 32,
@@ -554,6 +563,15 @@ Singleton {
                 ringSides: 12,
                 ringAmplitude: 4,
                 outlineWidth: 2
+            },
+            gameOverlay: {
+                open: ["crosshair", "resources", "volumeMixer", "recorder"],
+                crosshairCode: "0;P;c;1;h;0;d;1;z;2;0l;6;0o;4;0a;1;0t;2;1b;0",
+                zoomAnimation: true,
+                darkenScreen: true,
+                clickthroughOpacity: 0.8,
+                pingHost: "1.1.1.1",
+                widgets: {}
             },
             neko: {
                 enabled: false,

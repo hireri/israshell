@@ -18,6 +18,7 @@ Item {
     property var player: null
     property bool pinned: false
     property bool showPin: true
+    property bool showVisualizer: true
     property bool suppressAnimations: false
 
     signal pinToggled
@@ -194,7 +195,7 @@ raw_target = /dev/stdout
 data_format = ascii
 ascii_max_range = 1000
 CAVAEOF`]
-        running: root.visible && root.player !== null
+        running: root.showVisualizer && root.visible && root.player !== null
 
         stdout: SplitParser {
             splitMarker: "\n"
@@ -752,6 +753,7 @@ CAVAEOF`]
         Canvas {
             id: cavaViz
             anchors.fill: parent
+            visible: root.showVisualizer
             opacity: root.player !== null ? 0.28 : 0
             Behavior on opacity {
                 NumberAnimation {

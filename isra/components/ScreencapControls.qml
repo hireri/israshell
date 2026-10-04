@@ -23,9 +23,7 @@ Rectangle {
     }
 
     function isEnabled(name) {
-        if (name === "colorpicker" && CompositorService.backendName !== "hyprland")
-            return false;
-        return !Config.screencap.blacklist.includes(name);
+        return ScreencapService.toolEnabled(name);
     }
 
     readonly property var songrecEnv: ({

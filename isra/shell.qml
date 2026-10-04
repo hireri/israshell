@@ -80,6 +80,7 @@ ShellRoot {
     }
 
     Logout {}
+    GameOverlay {}
 
     component BarZone: Row {
         id: zone

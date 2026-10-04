@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.style
 
 Singleton {
     id: root
@@ -10,6 +11,12 @@ Singleton {
     property bool isRecognizing: false
     property string recordingTime: "00:00"
     property double startTime: 0
+
+    function toolEnabled(name) {
+        if (name === "colorpicker" && CompositorService.backendName !== "hyprland")
+            return false;
+        return !Config.screencap.blacklist.includes(name);
+    }
 
     function refresh() {
         if (!recordingCheckProc.running)

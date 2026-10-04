@@ -56,6 +56,19 @@ Item {
     }
 
     IpcHandler {
+        target: "gameoverlay"
+        function toggle(): void {
+            GameOverlayService.toggle();
+        }
+        function crosshair(code: string): void {
+            GameOverlayService.setCrosshair(code);
+        }
+        function unpin(): void {
+            GameOverlayService.unpinAll();
+        }
+    }
+
+    IpcHandler {
         target: "bedtime"
         function toggle(): void {
             BedtimeService.toggle();
