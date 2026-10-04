@@ -31,7 +31,13 @@ QtObject {
             root.progress = target;
     }
 
-    onPlayerChanged: root.resetTo(0)
+    property bool _ready: false
+    onPlayerChanged: if (root._ready) root.resetTo(0)
+    Component.onCompleted: {
+        root._ready = true;
+        root.player?.positionChanged();
+        root.sync();
+    }
 
     readonly property NumberAnimation _resetAnim: NumberAnimation {
         id: resetAnim
@@ -54,9 +60,9 @@ QtObject {
     readonly property Timer _tick: Timer {
         interval: 16
         repeat: true
-        running: root.active && root.player !== null && root.player.playbackState === MprisPlaybackState.Playing && !resetAnim.running
+        running: root.active && !!root.player && root.player.playbackState === MprisPlaybackState.Playing && !resetAnim.running
         onTriggered: {
-            root.player.positionChanged();
+            root.player?.positionChanged();
             root.sync();
         }
     }
