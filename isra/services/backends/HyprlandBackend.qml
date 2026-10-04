@@ -46,6 +46,7 @@ Scope {
             address: t.address ?? "",
             title: t.title ?? "",
             appId: t.appId ?? t.wayland?.appId ?? "",
+            pid: ipc?.pid ?? 0,
             workspace: t.workspace?.id ?? -1,
             fullscreen: t.wayland?.fullscreen ?? false,
             x: visible ? (ipc.at?.[0] ?? 0) : 0,

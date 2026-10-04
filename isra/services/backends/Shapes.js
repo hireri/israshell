@@ -5,7 +5,7 @@ function emptyMonitor() {
 }
 
 function emptyWindow(extra) {
-    return Object.assign({ address: "", title: "", appId: "", workspace: -1, fullscreen: false }, extra || {});
+    return Object.assign({ address: "", title: "", appId: "", pid: 0, workspace: -1, fullscreen: false }, extra || {});
 }
 
 function emptyWorkspace(extra) {
