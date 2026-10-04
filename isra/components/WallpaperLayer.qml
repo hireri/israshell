@@ -374,7 +374,7 @@ PanelWindow {
             id: unloadTimer
             interval: slot.transitionDuration + 150
             onTriggered: {
-                if (!slot.isFront && !slot.isVideo)
+                if (!slot.isFront)
                     slot.path = "";
             }
         }
@@ -438,7 +438,7 @@ PanelWindow {
                     asynchronous: false
                     active: slot.isVideo && !slot.videoTornDown
                     onActiveChanged: {
-                        if (!active)
+                        if (!active && slot.isFront)
                             WallpaperService.videoPositionMs = 0;
                     }
 
