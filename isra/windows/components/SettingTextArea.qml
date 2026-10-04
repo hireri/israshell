@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls.Basic
 import qs.style
 import qs.services
 
@@ -94,61 +93,12 @@ Item {
             }
         }
 
-        Rectangle {
+        TextAreaField {
             Layout.fillWidth: true
             Layout.preferredHeight: root.areaHeight
-            radius: 8
-            color: (Config.dim(Colors.md3.surface_container))
-            border.width: field.activeFocus ? 1.5 : 1
-            border.color: field.activeFocus ? Colors.md3.primary : Colors.md3.surface_variant
-
-            Behavior on border.color {
-                ColorAnimation {
-                    duration: 120
-                }
-            }
-
-            Flickable {
-                anchors.fill: parent
-                anchors.margins: 8
-                contentWidth: width
-                contentHeight: field.implicitHeight
-                clip: true
-
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                }
-
-                TextArea {
-                    id: field
-                    width: parent.width
-                    text: root.value
-                    placeholderText: root.placeholder
-                    wrapMode: TextArea.Wrap
-                    font.family: Config.fontMonospace
-                    font.pixelSize: 12
-                    color: Colors.md3.on_surface
-                    placeholderTextColor: Colors.md3.outline
-                    selectByMouse: true
-                    background: Item {}
-
-                    Keys.onEscapePressed: {
-                        text = root.value;
-                        focus = false;
-                    }
-                    Keys.onReturnPressed: event => {
-                        if (event.modifiers & Qt.ShiftModifier) {
-                            event.accepted = false;
-                        } else {
-                            root.committed(text);
-                            focus = false;
-                            event.accepted = true;
-                        }
-                    }
-                    onFocusChanged: if (!focus)
-                        root.committed(text)
-                }
-            }
+            text: root.value
+            placeholder: root.placeholder
+            onCommitted: v => root.committed(v)
         }
     }
 }
