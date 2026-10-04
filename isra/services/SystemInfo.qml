@@ -82,6 +82,87 @@ Singleton {
 
     readonly property var cpuTempHistoryDisplay: Config.useFahrenheit ? cpuTempHistory.map(c => celsiusToFahrenheit(c)) : cpuTempHistory
 
+    readonly property var metrics: [
+        { id: "cpu",  label: Localization.t("sysMonitor.cpu"),  icon: "memory",          color: Colors.md3.primary },
+        { id: "ram",  label: Localization.t("sysMonitor.ram"),  icon: "memory-alt",      color: Colors.md3.tertiary },
+        { id: "gpu",  label: Localization.t("sysMonitor.gpu"),  icon: "videogame-asset", color: Colors.md3.secondary },
+        { id: "temp", label: Localization.t("sysMonitor.temp"), icon: "thermostat",      color: Colors.md3.error },
+        { id: "swap", label: Localization.t("sysMonitor.swap"), icon: "swap-horiz",      color: Colors.md3.outline }
+    ]
+
+    function metricValue(id) {
+        switch (id) {
+        case "cpu":  return root.cpuUsage;
+        case "ram":  return root.ramUsage;
+        case "gpu":  return Math.max(0, root.gpuUsage);
+        case "temp":
+            return Math.max(root.cpuTempDisplay, root.gpuTempDisplay);
+        case "swap": return root.swapUsage;
+        }
+        return 0;
+    }
+
+    function metricAvailable(id) {
+        switch (id) {
+        case "gpu":  return root.gpuUsage >= 0;
+        case "temp": return root.cpuTemp >= 0 || root.gpuTemp >= 0;
+        default:     return true;
+        }
+    }
+
+    function metricDetail(id) {
+        switch (id) {
+        case "cpu":  
+            let cpuName = root.cpu.replace(/ \d+-Core| Processor| CPU/gi, "").trim();
+            let cpuSpecs = [];
+            if (root.cpuFreq !== "—" && root.cpuFreq !== "") cpuSpecs.push(root.cpuFreq);
+            if (root.cpuPower !== "—" && root.cpuPower !== "") cpuSpecs.push(root.cpuPower);
+            return cpuName + (cpuSpecs.length > 0 ? "\n" + cpuSpecs.join(" • ") : "");
+
+        case "ram":  
+            return root.ramUsedLabel + " / " + root.ramTotalLabel;
+
+        case "gpu":  
+            let gpuName = root.gpu.replace(/AMD |NVIDIA |Intel /gi, "").trim();
+            let gpuSpecs = [];
+            if (root.gpuFreq !== "—" && root.gpuFreq !== "") gpuSpecs.push(root.gpuFreq);
+            if (root.gpuPower !== "—" && root.gpuPower !== "") gpuSpecs.push(root.gpuPower);
+            return gpuName + (gpuSpecs.length > 0 ? "\n" + gpuSpecs.join(" • ") : "");
+
+        case "temp": 
+            let tempParts = [];
+            if (root.cpuTemp >= 0) {
+                tempParts.push("CPU " + Math.round(root.cpuTempDisplay) + root.tempUnit + (root.cpuPower !== "—" ? " • " + root.cpuPower : ""));
+            }
+            if (root.gpuTemp >= 0) {
+                tempParts.push("GPU " + Math.round(root.gpuTempDisplay) + root.tempUnit + (root.gpuPower !== "—" ? " • " + root.gpuPower : ""));
+            }
+            return tempParts.length > 0 ? tempParts.join("\n") : "—";
+
+        case "swap":  
+            return root.swapUsedLabel + " / " + root.swapTotalLabel;
+        }
+        return "";
+    }
+
+    function metricHistory(id) {
+        switch (id) {
+        case "cpu":  return root.cpuHistory;
+        case "ram":  return root.ramHistory;
+        case "gpu":  return root.gpuHistory;
+        case "temp": return root.cpuTempHistoryDisplay;
+        case "swap": return root.swapHistory;
+        }
+        return [];
+    }
+
+    function metricScale(id) {
+        if (id === "temp") {
+            return Config.useFahrenheit ? 250 : 120;
+        }
+        return 100;
+    }
+
     property real _stageCpuUsage: 0
     property real _stageRamUsage: 0
     property real _stageSwapUsage: 0
