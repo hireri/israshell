@@ -11,7 +11,7 @@ Item {
     readonly property var options: [
         { value: "dock", label: Localization.t("lockSurface.layout_dock"), icon: "chromeos-bar" },
         { value: "corners", label: Localization.t("lockSurface.layout_corners"), icon: "grid-view" },
-        { value: "center", label: Localization.t("lockSurface.layout_center"), icon: "recenter" }
+        { value: "center", label: Localization.t("lockSurface.layout_center"), icon: "filter-center-focus" }
     ]
 
     implicitWidth: 56
