@@ -27,6 +27,16 @@ Singleton {
     onCurrentTextChanged: showFailure = false
     Component.onCompleted: sessionCheckProcess.running = true
 
+    readonly property real blurAmount: Config.blurEffects ? Math.max(0, Math.min(1, Config.lockscreen.blurAmount ?? 1)) : 0
+
+    readonly property int decodeDivisor: blurAmount < 0.2 ? 1 : (blurAmount < 0.6 ? 2 : 4)
+
+    function artBackground(): string {
+        if (!(Config.lockscreen.artWallpaper ?? false))
+            return "";
+        return MediaPlayerState.resolvedArt(MediaPlayerState.displayPlayer?.trackArtUrl ?? "");
+    }
+
     function lock(isFresh = false): void {
         if (root.locked || root.lockAnimating) return
         root._isFirstLock = isFresh;

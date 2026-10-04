@@ -511,6 +511,34 @@ PageBase {
                 onToggled: v => Config.update({ useHyprlock: v })
             }
 
+            SettingSwitch {
+                label: Localization.t("systemPage.media_art_lockscreen_background")
+                sublabel: Localization.t("systemPage.use_the_playing_tracks_album_art")
+                checked: Config.lockscreen.artWallpaper ?? false
+                onToggled: v => Config.update({
+                    lockscreen: Object.assign({}, Config.lockscreen, {
+                        artWallpaper: v
+                    })
+                })
+            }
+
+            SettingSlider {
+                label: Localization.t("systemPage.lockscreen_blur")
+                sublabel: Localization.t("systemPage.how_blurred_the_lockscreen_background_is")
+                enabled: Config.blurEffects
+                opacity: enabled ? 1.0 : 0.4
+                from: 0
+                to: 1
+                stepSize: 0.05
+                decimals: 2
+                value: Config.lockscreen.blurAmount ?? 1
+                onMoved: v => Config.update({
+                        lockscreen: Object.assign({}, Config.lockscreen, {
+                            blurAmount: v
+                        })
+                    })
+            }
+
             SettingChips {
                 isLast: true
                 label: Localization.t("systemPage.password_dot_shape")

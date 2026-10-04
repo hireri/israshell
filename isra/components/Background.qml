@@ -182,16 +182,15 @@ PanelWindow {
             Image {
                 id: blurSrcImg
                 anchors.fill: parent
-                source: (WallpaperService.currentWallPreview || WallpaperService.currentWall)
+                source: LockscreenService.artBackground() || ((WallpaperService.currentWallPreview || WallpaperService.currentWall)
                     ? ("file://" + (WallpaperService.currentWallPreview || WallpaperService.currentWall))
-                    : ""
+                    : "")
                 fillMode: Image.PreserveAspectCrop
                 visible: false
                 layer.enabled: true
-                layer.textureSize: Qt.size(sourceSize.width, sourceSize.height)
+                layer.textureSize: Qt.size(sourceSize.width, Math.max(1, Math.round(sourceSize.width * height / Math.max(1, width))))
 
-                sourceSize.width: root.screen ? Math.max(1, Math.round(root.screen.width * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 480
-                sourceSize.height: root.screen ? Math.max(1, Math.round(root.screen.height * root.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 270
+                sourceSize.width: root.screen ? Math.max(1, Math.round(root.screen.width * root.screen.devicePixelRatio / LockscreenService.decodeDivisor)) : 480
             }
 
             MultiEffect {
@@ -200,7 +199,7 @@ PanelWindow {
                 blurEnabled: true
                 autoPaddingEnabled: false
                 blurMax: 64
-                blur: blurRoot.targetActive && Config.blurEffects ? 1.0 : 0.0
+                blur: blurRoot.targetActive ? LockscreenService.blurAmount : 0.0
 
                 Behavior on blur {
                     NumberAnimation { duration: 400; easing.type: Easing.InOutCubic }

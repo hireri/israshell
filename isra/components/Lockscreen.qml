@@ -22,11 +22,10 @@ Item {
                 anchors.fill: parent
                 asynchronous: true
                 cache: true
-                source: WallpaperService.currentWall ? ("file://" + WallpaperService.currentWallPreview) : ""
+                source: LockscreenService.artBackground() || (WallpaperService.currentWall ? ("file://" + WallpaperService.currentWallPreview) : "")
                 fillMode: Image.PreserveAspectCrop
                 visible: false
-                sourceSize.width: lockSurface.screen ? Math.max(1, Math.round(lockSurface.screen.width * lockSurface.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 480
-                sourceSize.height: lockSurface.screen ? Math.max(1, Math.round(lockSurface.screen.height * lockSurface.screen.devicePixelRatio / (Config.blurEffects ? 4 : 1))) : 270
+                sourceSize.width: lockSurface.screen ? Math.max(1, Math.round(lockSurface.screen.width * lockSurface.screen.devicePixelRatio / LockscreenService.decodeDivisor)) : 480
                 smooth: false
 
                 readonly property bool settled: status === Image.Ready || status === Image.Error || source === ""
@@ -45,7 +44,7 @@ Item {
                 blurEnabled: true
                 autoPaddingEnabled: false
                 blurMax: 64
-                blur: Config.blurEffects ? 1.0 : 0.0
+                blur: LockscreenService.blurAmount
 
                 opacity: (lockWallImg.settled || lockSurface.forceShow) ? 1 : 0
 

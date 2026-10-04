@@ -1001,6 +1001,10 @@
   "githubHeatmap.less": "Less",
   "githubHeatmap.more": "More",
   "githubHeatmap.day_streak": "streak",
+  "systemPage.how_blurred_the_lockscreen_background_is": "How blurred the lockscreen background is. Needs blur effects on.",
+  "systemPage.lockscreen_blur": "Lockscreen blur",
+  "systemPage.media_art_lockscreen_background": "Media art as lockscreen background",
+  "systemPage.use_the_playing_tracks_album_art": "Use the playing track's album art instead of the wallpaper",
   "widgetSettings.sunmoon_mode": "Display",
   "wolframWidget.query_failed": "Query failed",
   "wolframWidget.thinking": "thinking..."
