@@ -8,7 +8,7 @@ import "fuzzy.js" as Fuzzy
 Singleton {
     id: root
 
-    readonly property string _cacheVersion: "2"
+    readonly property string _cacheVersion: "3"
 
     property bool _initialized: false
     property bool _instancesLoaded: false

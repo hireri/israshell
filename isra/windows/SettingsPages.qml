@@ -78,6 +78,15 @@ Singleton {
             source: "SoundPage.qml"
         },
         {
+            key: "gameoverlay",
+            titleKey: "settingsWindow.game_overlay",
+            sublabelKey: "settingsWindow.crosshair_widgets",
+            icon: "videogame-asset",
+            iconTransition: "circle",
+            group: 2,
+            source: "GameOverlayPage.qml"
+        },
+        {
             key: "aiassistant",
             titleKey: "settingsWindow.ai_assistant",
             sublabelKey: "settingsWindow.provider_prompt_behavior",
