@@ -188,4 +188,8 @@ if [[ "$SKIP_THEME" -eq 1 ]]; then
     exit 1
 fi
 
-matugen image "$HYPR_DIR/current_wall_prev" -m "$MODE" -t "$SCHEME" --source-color-index "$SOURCE_INDEX"
+rc=0
+matugen image "$HYPR_DIR/current_wall_prev" -m "$MODE" -t "$SCHEME" --source-color-index "$SOURCE_INDEX" || rc=$?
+
+"$(dirname "$(readlink -f "$0")")/sddm-sync.sh" || true
+exit "$rc"

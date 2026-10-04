@@ -285,6 +285,13 @@ Item {
             active: root.shown
             sourceComponent: root.bodyComponent
         }
+
+        Binding {
+            target: body.item
+            property: "rightAligned"
+            value: root.x + root.width / 2 > root._canvasW / 2
+            when: root.meta.id === "discordVoice" && body.item
+        }
     }
 
     Repeater {

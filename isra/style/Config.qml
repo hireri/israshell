@@ -741,6 +741,7 @@ Singleton {
             data[key] = configRoot[key];
         }
         fileView.setText(JSON.stringify(data, null, 4));
+        sddmSyncDebouncer.restart();
     }
 
     function update(changes) {
@@ -769,6 +770,17 @@ Singleton {
         id: reloadDebouncer
         interval: 150
         onTriggered: fileView.reload()
+    }
+
+    Timer {
+        id: sddmSyncDebouncer
+        interval: 1000
+        onTriggered: if (!sddmSync.running) sddmSync.running = true
+    }
+
+    Process {
+        id: sddmSync
+        command: [Quickshell.shellDir + "/scripts/sddm-sync.sh"]
     }
 
     Timer {

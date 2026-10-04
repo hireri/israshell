@@ -53,6 +53,8 @@ Item {
 
         transform: Translate { id: shift }
 
+        HoverHandler { cursorShape: Qt.IBeamCursor }
+
         SequentialAnimation {
             id: shake
             loops: 2

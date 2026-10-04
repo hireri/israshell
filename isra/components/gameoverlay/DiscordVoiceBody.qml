@@ -9,6 +9,8 @@ import qs.style
 Item {
     id: root
 
+    property bool rightAligned: false
+
     readonly property string status: DiscordVoiceService.status
     readonly property string channel: DiscordVoiceService.channel
     readonly property var users: DiscordVoiceService.users
@@ -22,6 +24,8 @@ Item {
         id: column
         anchors.fill: parent
         spacing: 8
+        LayoutMirroring.enabled: root.rightAligned
+        LayoutMirroring.childrenInherit: true
 
         Rectangle {
             visible: root.channel !== ""
