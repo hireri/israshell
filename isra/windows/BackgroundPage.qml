@@ -365,7 +365,7 @@ PageBase {
                         spacing: 6
 
                         MaterialIcon {
-                            name: "bar-chart"
+                            name: "equalizer"
                             iconSize: 14
                             color: btnBars.contentColor
                             Behavior on color { ColorAnimation { duration: 120 } }
