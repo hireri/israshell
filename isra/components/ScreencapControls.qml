@@ -111,7 +111,7 @@ Rectangle {
     BarTooltip {
         id: tooltipWindow
         panelWindow: root.panelWindow
-        yOffset: 4
+        gap: 4
     }
 
     Item {
@@ -651,12 +651,9 @@ Rectangle {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: lsPopover.isOpen ? lsPopover.close() : lsPopover.open()
                 onEntered: {
-                    var yPos = Config.bar.position === 1 ? 0 : height;
-                    tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = Localization.t("qsTileService.localsend");
-                    tooltipWindow.open = true;
+                    tooltipWindow.show(parent, Localization.t("qsTileService.localsend"));
                 }
-                onExited: tooltipWindow.open = false
+                onExited: tooltipWindow.hide()
             }
 
             DropArea {
@@ -758,12 +755,9 @@ Rectangle {
                     songrecScript.startDetached();
                 }
                 onEntered: {
-                    var yPos = Config.bar.position === 1 ? 0 : height;
-                    tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = srItem.fileRecognizing ? Localization.t("screencapControls.recognizing_file") : (ScreencapService.isRecognizing ? Localization.t("screencapControls.stop_recognizing") : Localization.t("barPage.recognize_music"));
-                    tooltipWindow.open = true;
+                    tooltipWindow.show(parent, srItem.fileRecognizing ? Localization.t("screencapControls.recognizing_file") : (ScreencapService.isRecognizing ? Localization.t("screencapControls.stop_recognizing") : Localization.t("barPage.recognize_music")));
                 }
-                onExited: tooltipWindow.open = false
+                onExited: tooltipWindow.hide()
             }
 
             DropArea {
@@ -859,12 +853,9 @@ Rectangle {
                     recordScript.startDetached();
                 }
                 onEntered: {
-                    var yPos = Config.bar.position === 1 ? 0 : height;
-                    tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                    tooltipWindow.tipTitle = ScreencapService.isRecording ? Localization.t("screencapControls.stop_recording") : Localization.t("screencapControls.start_recording");
-                    tooltipWindow.open = true;
+                    tooltipWindow.show(parent, ScreencapService.isRecording ? Localization.t("screencapControls.stop_recording") : Localization.t("screencapControls.start_recording"));
                 }
-                onExited: tooltipWindow.open = false
+                onExited: tooltipWindow.hide()
             }
         }
     }
@@ -896,12 +887,9 @@ Rectangle {
             cursorShape: Qt.PointingHandCursor
             onClicked: parent.clicked()
             onEntered: {
-                var yPos = Config.bar.position === 1 ? 0 : height;
-                tooltipWindow.targetPos = mapToGlobal(width / 2, yPos);
-                tooltipWindow.tipTitle = parent.tooltip;
-                tooltipWindow.open = true;
+                tooltipWindow.show(parent, parent.tooltip);
             }
-            onExited: tooltipWindow.open = false
+            onExited: tooltipWindow.hide()
         }
     }
 }

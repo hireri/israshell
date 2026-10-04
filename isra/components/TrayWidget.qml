@@ -41,7 +41,7 @@ Item {
     BarTooltip {
         id: tooltip
         panelWindow: root.panelWindow
-        yOffset: 4
+        gap: 4
     }
 
     TrayMenuWindow {
@@ -127,12 +127,9 @@ Item {
                             var name = root.itemName(cell.modelData);
                             if (!name)
                                 return;
-                            var yPos = Config.bar.position === 1 ? 0 : cell.height;
-                            tooltip.targetPos = cell.mapToGlobal(cell.width / 2, yPos);
-                            tooltip.tipTitle = name;
-                            tooltip.open = true;
+                            tooltip.show(cell, name);
                         }
-                        onExited: tooltip.open = false
+                        onExited: tooltip.hide()
 
                         onClicked: mouse => {
                             if (mouse.button === Qt.LeftButton) {
@@ -140,7 +137,7 @@ Item {
                                     PanelService.current.close();
                                 cell.modelData?.activate();
                             } else if (mouse.button === Qt.RightButton) {
-                                tooltip.open = false;
+                                tooltip.hide();
                                 var yEdge = Config.bar.position === 1 ? 0 : cell.height;
                                 var globalPos = cell.mapToGlobal(cell.width / 2, yEdge);
                                 menu.open(cell.modelData, globalPos);
