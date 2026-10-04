@@ -116,7 +116,7 @@ Singleton {
 
         const rects = [];
         for (const w of rawWindows) {
-            if (!w.at || !w.size)
+            if (!w.at || !w.size || w.mapped === false || w.hidden)
                 continue;
             rects.push({
                 x: w.at[0],

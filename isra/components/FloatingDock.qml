@@ -70,17 +70,16 @@ Item {
     readonly property bool pinned: Config.floatingDock.exclusiveZone
     readonly property bool smartHide: Config.floatingDock.smartHide
 
-    readonly property var monitorWorkspace: {
-        const list = CompositorService.workspaces ?? [];
-        const name = dockRoot.modelData ? dockRoot.modelData.name : "";
-        return list.find(w => w.monitor === name && w.active) ?? null;
-    }
+    readonly property int hideMargin: 24
     readonly property bool hasWindowsUnderneath: {
-        const ws = monitorWorkspace;
-        if (!ws)
+        const s = dockRoot.modelData;
+        if (!s)
             return false;
-        const list = CompositorService.windows ?? [];
-        return list.some(w => w.workspace === ws.id);
+        const m = dockRoot.hideMargin;
+        const x = s.x + pill.restX - m, y = s.y + pill.restY - m;
+        const w = pill.width + m * 2, h = pill.height + m * 2;
+        return CompositorService.clientRects.some(r =>
+            r.x < x + w && r.x + r.w > x && r.y < y + h && r.y + r.h > y);
     }
 
     readonly property bool hovered: sensorHover.hovered || pillHover.hovered
@@ -412,6 +411,7 @@ Item {
                     active: Config.floatingDock.showMusicPlayer
                     sourceComponent: DockMusicPlayer {
                         dockRoot: pill
+                        atEnd: !Config.floatingDock.showTrash
                     }
                 }
 

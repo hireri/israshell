@@ -14,6 +14,7 @@ Item {
     id: root
 
     required property Item dockRoot
+    property bool atEnd: false
 
     readonly property bool isVertical: dockRoot.orientation === 1
     readonly property int cellSize: dockRoot.itemCellSize ?? 28
@@ -75,6 +76,11 @@ Item {
         id: card
         anchors.fill: parent
         radius: 12
+        readonly property real endRadius: root.atEnd ? root.cellSize / 2 : 12
+        topLeftRadius: 12
+        topRightRadius: root.isVertical ? 12 : endRadius
+        bottomRightRadius: endRadius
+        bottomLeftRadius: root.isVertical ? endRadius : 12
         color: root.cardColor
         Behavior on color {
             ColorAnimation { duration: 400; easing.type: Easing.InOutQuad }
