@@ -43,143 +43,15 @@ PageBase {
             color: "transparent"
         }
 
-        Repeater {
-            id: outputRepeater
-            model: AudioService.nodes.filter(n => n.audio && !n.isStream && n.isSink)
-
-            delegate: Item {
-                required property var modelData
-                required property int index
-
-                readonly property bool active: AudioService.isDefaultSink(modelData)
-
-                implicitWidth: parent?.width ?? 0
-                implicitHeight: 52
-
-                Rectangle {
-                    anchors {
-                        fill: parent
-                        leftMargin: 10
-                        rightMargin: 10
-                        topMargin: 4
-                        bottomMargin: 4
-                    }
-                    radius: 14
-                    color: active ? Colors.md3.primary_container : (Config.dim(Colors.md3.surface_container_high))
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-
-                    RowLayout {
-                        anchors {
-                            fill: parent
-                            leftMargin: 14
-                            rightMargin: 14
-                        }
-                        spacing: 12
-
-                        Text {
-                            text: "󰕾"
-                            font.pixelSize: 16
-                            font.family: Config.fontMonospace
-                            color: active ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant
-                        }
-
-                        Text {
-                            text: AudioService.deviceName(modelData)
-                            font.family: Config.fontFamily
-                            font.pixelSize: 13
-                            font.weight: active ? Font.Medium : Font.Normal
-                            color: active ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Text {
-                            text: "󰄬"
-                            font.pixelSize: 13
-                            font.weight: Font.Medium
-                            color: Colors.md3.on_primary_container
-                            visible: active
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: active ? Qt.ArrowCursor : Qt.PointingHandCursor
-                        enabled: !active
-                        onClicked: AudioService.setDefaultSink(modelData)
-                    }
-                }
-            }
+        AudioDeviceList {
+            sink: true
         }
 
-        Item {
-            implicitWidth: parent?.width ?? 0
-            implicitHeight: 48
-
-            RowLayout {
-                anchors {
-                    fill: parent
-                    leftMargin: 10
-                    rightMargin: 16
-                }
-                spacing: 12
-
-                Rectangle {
-                    id: outMuteBtn
-                    width: 38
-                    height: 38
-                    radius: AudioService.muted ? width / 2 : 12
-                    color: AudioService.muted ? Colors.md3.error_container : (Config.dim(Colors.md3.surface_container_high))
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-                    Behavior on radius {
-                        NumberAnimation {
-                            duration: 150
-                        }
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: AudioService.muted ? "󰖁" : "󰕾"
-                        font.pixelSize: 16
-                        font.family: Config.fontMonospace
-                        color: AudioService.muted ? Colors.md3.on_error_container : Colors.md3.on_surface_variant
-                    }
-
-                    MouseArea {
-                        id: outMuteArea
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: AudioService.toggleMute()
-                    }
-                }
-
-                TrackSlider {
-                    id: outSlider
-                    Layout.fillWidth: true
-                    from: 0
-                    to: 1.5
-                    stepSize: 0.01
-                    value: AudioService.volume
-                    onMoved: AudioService.setVolume(value)
-                }
-
-                Text {
-                    text: Math.round(AudioService.volume * 100) + "%"
-                    font.family: Config.fontMonospace
-                    font.pixelSize: 11
-                    color: Colors.md3.outline
-                    Layout.preferredWidth: 34
-                    horizontalAlignment: Text.AlignRight
-                }
-            }
+        VolumeRow {
+            muted: AudioService.muted
+            volume: AudioService.volume
+            onMuteToggled: AudioService.toggleMute()
+            onVolumeMoved: v => AudioService.setVolume(v)
         }
 
         Rectangle {
@@ -199,143 +71,17 @@ PageBase {
             color: "transparent"
         }
 
-        Repeater {
-            id: inputRepeater
-            model: AudioService.nodes.filter(n => n.audio && !n.isStream && !n.isSink)
-
-            delegate: Item {
-                required property var modelData
-                required property int index
-
-                readonly property bool active: AudioService.isDefaultSource(modelData)
-
-                implicitWidth: parent?.width ?? 0
-                implicitHeight: 52
-
-                Rectangle {
-                    anchors {
-                        fill: parent
-                        leftMargin: 10
-                        rightMargin: 10
-                        topMargin: 4
-                        bottomMargin: 4
-                    }
-                    radius: 14
-                    color: active ? Colors.md3.primary_container : (Config.dim(Colors.md3.surface_container_high))
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-
-                    RowLayout {
-                        anchors {
-                            fill: parent
-                            leftMargin: 14
-                            rightMargin: 14
-                        }
-                        spacing: 12
-
-                        Text {
-                            text: "󰍬"
-                            font.pixelSize: 16
-                            font.family: Config.fontMonospace
-                            color: active ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant
-                        }
-
-                        Text {
-                            text: AudioService.deviceName(modelData)
-                            font.family: Config.fontFamily
-                            font.pixelSize: 13
-                            font.weight: active ? Font.Medium : Font.Normal
-                            color: active ? Colors.md3.on_primary_container : Colors.md3.on_surface_variant
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Text {
-                            text: "󰄬"
-                            font.pixelSize: 13
-                            font.weight: Font.Medium
-                            color: Colors.md3.on_primary_container
-                            visible: active
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: active ? Qt.ArrowCursor : Qt.PointingHandCursor
-                        enabled: !active
-                        onClicked: AudioService.setDefaultSource(modelData)
-                    }
-                }
-            }
+        AudioDeviceList {
+            sink: false
         }
 
-        Item {
-            implicitWidth: parent?.width ?? 0
-            implicitHeight: 48
-
-            RowLayout {
-                anchors {
-                    fill: parent
-                    leftMargin: 10
-                    rightMargin: 16
-                }
-                spacing: 12
-
-                Rectangle {
-                    id: inMuteBtn
-                    width: 38
-                    height: 38
-                    radius: AudioService.sourceMuted ? width / 2 : 12
-                    color: AudioService.sourceMuted ? Colors.md3.error_container : (Config.dim(Colors.md3.surface_container_high))
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-                    Behavior on radius {
-                        NumberAnimation {
-                            duration: 150
-                        }
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: AudioService.sourceMuted ? "󰍭" : "󰍬"
-                        font.pixelSize: 16
-                        font.family: Config.fontMonospace
-                        color: AudioService.sourceMuted ? Colors.md3.on_error_container : Colors.md3.on_surface_variant
-                    }
-
-                    MouseArea {
-                        id: inMuteArea
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: AudioService.toggleSourceMute()
-                    }
-                }
-
-                TrackSlider {
-                    id: inSlider
-                    Layout.fillWidth: true
-                    from: 0
-                    to: 1.5
-                    stepSize: 0.01
-                    value: AudioService.sourceVolume
-                    onMoved: AudioService.setSourceVolume(value)
-                }
-
-                Text {
-                    text: Math.round(AudioService.sourceVolume * 100) + "%"
-                    font.family: Config.fontMonospace
-                    font.pixelSize: 11
-                    color: Colors.md3.outline
-                    Layout.preferredWidth: 34
-                    horizontalAlignment: Text.AlignRight
-                }
-            }
+        VolumeRow {
+            glyph: "󰍬"
+            mutedGlyph: "󰍭"
+            muted: AudioService.sourceMuted
+            volume: AudioService.sourceVolume
+            onMuteToggled: AudioService.toggleSourceMute()
+            onVolumeMoved: v => AudioService.setSourceVolume(v)
         }
 
         Item {
@@ -434,113 +180,38 @@ PageBase {
             model: AudioService.nodes.filter(n => n.audio && n.isStream && n.isSink && n.name !== "quickshell")
 
             delegate: Item {
+                id: streamRow
                 required property var modelData
                 required property int index
 
                 PwObjectTracker {
-                    objects: [modelData]
+                    objects: [streamRow.modelData]
                 }
-
-                readonly property string appName: AudioService.appNodeDisplayName(modelData)
-                readonly property string mediaName: modelData.properties["media.name"] ?? ""
-                readonly property bool streamMuted: modelData.audio?.muted ?? false
 
                 implicitWidth: parent?.width ?? 0
                 implicitHeight: 56
 
-                RowLayout {
-                    anchors {
-                        fill: parent
-                        leftMargin: 10
-                        rightMargin: 16
+                VolumeRow {
+                    anchors.fill: parent
+                    mutedGlyph: "󰸈"
+                    buttonSize: 32
+                    accent: Colors.md3.secondary
+                    label: AudioService.appNodeDisplayName(streamRow.modelData)
+                    sublabel: streamRow.modelData.properties["media.name"] ?? ""
+                    muted: streamRow.modelData.audio?.muted ?? false
+                    volume: streamRow.modelData.audio?.volume ?? 0
+                    onMuteToggled: {
+                        if (streamRow.modelData.audio)
+                            streamRow.modelData.audio.muted = !streamRow.modelData.audio.muted;
                     }
-                    spacing: 12
-
-                    Rectangle {
-                        id: appMuteBtn
-                        width: 32
-                        height: 32
-                        radius: 10
-                        Layout.alignment: Qt.AlignVCenter
-                        color: streamMuted ? Colors.md3.error_container : (Config.dim(Colors.md3.surface_container_high))
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 150
-                            }
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: streamMuted ? "󰸈" : "󰕾"
-                            font.pixelSize: 16
-                            font.family: Config.fontMonospace
-                            color: streamMuted ? Colors.md3.on_error_container : Colors.md3.on_surface_variant
-                        }
-
-                        MouseArea {
-                            id: appMuteArea
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (modelData.audio)
-                                    modelData.audio.muted = !modelData.audio.muted;
-                            }
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.preferredWidth: 96
-                        Layout.maximumWidth: 96
-                        spacing: 2
-
-                        Text {
-                            text: appName
-                            font.family: Config.fontFamily
-                            font.pixelSize: 13
-                            color: Colors.md3.on_surface
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Text {
-                            text: mediaName
-                            font.family: Config.fontFamily
-                            font.pixelSize: 11
-                            color: Colors.md3.outline
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                            visible: mediaName.length > 0
-                        }
-                    }
-
-                    TrackSlider {
-                        id: streamSlider
-                        Layout.fillWidth: true
-                        Layout.minimumWidth: 80
-                        from: 0
-                        to: 1.5
-                        stepSize: 0.01
-                        fillColor: Colors.md3.secondary
-
-                        value: modelData.audio?.volume ?? 0
-                        onMoved: {
-                            if (modelData.audio)
-                                modelData.audio.volume = value;
-                        }
-                    }
-
-                    Text {
-                        text: Math.round((modelData.audio?.volume ?? 0) * 100) + "%"
-                        font.family: Config.fontMonospace
-                        font.pixelSize: 11
-                        color: Colors.md3.outline
-                        Layout.preferredWidth: 34
-                        horizontalAlignment: Text.AlignRight
+                    onVolumeMoved: v => {
+                        if (streamRow.modelData.audio)
+                            streamRow.modelData.audio.volume = v;
                     }
                 }
 
                 Rectangle {
-                    visible: index < streamRepeater.count - 1
+                    visible: streamRow.index < streamRepeater.count - 1
                     anchors {
                         bottom: parent.bottom
                         left: parent.left
