@@ -4,6 +4,7 @@ import Quickshell
 import qs.style
 import qs.services
 import qs.icons
+import "lockLayout.js" as LockLayout
 
 Item {
     id: root
@@ -58,8 +59,8 @@ Item {
     onWidthChanged: {
         if (!root._isInitializing || width === 0) return
         if (root.forceCentered) {
-            clockRoot.currentCx = (modelData?.width  ?? root.width)  / 2
-            clockRoot.currentCy = (modelData?.height ?? root.height) / 2
+            clockRoot.currentCx = clockRoot.targetCx
+            clockRoot.currentCy = clockRoot.targetCenterY
             root._isInitializing = false
             return
         }
@@ -143,13 +144,14 @@ Item {
 
         readonly property bool isLockedPosition: root.forceCentered || LockscreenService.lockVisualActive || LockscreenService.locked
 
-        readonly property real targetCx: isLockedPosition
-            ? (modelData?.width  ?? root.width)  / 2
-            : root._cx
+        readonly property var _lockCenter: LockLayout.clockCenter(
+            Config.lockscreen.layout,
+            modelData?.width ?? root.width, modelData?.height ?? root.height,
+            implicitWidth, implicitHeight)
 
-        readonly property real targetCenterY: isLockedPosition
-            ? (modelData?.height ?? root.height) / 2
-            : root._cy
+        readonly property real targetCx: isLockedPosition ? _lockCenter.x : root._cx
+
+        readonly property real targetCenterY: isLockedPosition ? _lockCenter.y : root._cy
 
         property real currentCx: targetCx
         property real currentCy: targetCenterY
@@ -362,6 +364,7 @@ Item {
             id: analogComp
             ClockAnalog {
                 currentTime: root._currentTime
+                immediateShapes: root.forceCentered
                 clockFont:   clockRoot._font
                 textColor:   clockRoot._textColor
                 subColor:    clockRoot._subColor

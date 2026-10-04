@@ -306,7 +306,8 @@ Singleton {
         })
     property bool activateLinux: false
     property var lockscreen: ({
-            dotShape: "roundedSquare"  // "roundedSquare" | "circle" | "material"
+            dotShape: "roundedSquare",  // "roundedSquare" | "circle" | "material"
+            layout: "dock"
         })
     property var clockPositions: ({})
     property var desktopWidgets: []
@@ -565,7 +566,8 @@ Singleton {
                 chance: 500
             },
             lockscreen: {
-                dotShape: "roundedSquare"
+                dotShape: "roundedSquare",
+                layout: "dock"
             },
             useAwww: false,
             clockPositions: {},

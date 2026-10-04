@@ -117,9 +117,14 @@ Item {
     onNameChanged: root.reshape()
     onShapesChanged: root.reshape()
     onRandomChanged: root.reshape()
+    property bool immediate: false
+
     Component.onCompleted: {
         root._ready = true;
-        Qt.callLater(root.reshape);
+        if (root.immediate && (root.name || root.random || (root.shapes && root.shapes.length > 0)))
+            root.reshape();
+        else
+            Qt.callLater(root.reshape);
     }
 
     Timer {

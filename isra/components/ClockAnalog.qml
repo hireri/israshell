@@ -16,6 +16,7 @@ Item {
     property bool showSeconds
     property bool is12h
     property int analogSize
+    property bool immediateShapes: false
     property real dateSize: Config.clock.dateSize ?? 25
     property real outlineWidth: Config.clock.outlineWidth ?? 2
 
@@ -253,6 +254,7 @@ Item {
         MaterialShape {
             anchors.fill: parent
             name: "pill"
+            immediate: root.immediateShapes
             shapeSize: parent.width
             color: Colors.md3.secondary_container
                    ?? Qt.rgba(0.85, 0.85, 0.95, 1)
@@ -289,6 +291,7 @@ Item {
         MaterialShape {
             anchors.fill: parent
             name: "gem"
+            immediate: root.immediateShapes
             shapeSize: parent.width
             color: Colors.md3.primary_container
                    ?? Qt.rgba(0.85, 0.85, 0.95, 1)
