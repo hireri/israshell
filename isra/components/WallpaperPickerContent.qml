@@ -10,6 +10,7 @@ import qs.style
 import qs.services
 import qs.icons
 import qs.windows.components
+import "videoPreview.js" as VideoJobs
 
 Item {
     id: root
@@ -262,31 +263,6 @@ Item {
             return mb >= 1 ? mb.toFixed(1) + " MB" : Math.round(bytes / 1024) + " KB";
         }
 
-        function formatDuration(seconds) {
-            const s = Math.round(seconds ?? 0);
-            if (!s || s <= 0)
-                return "";
-            const h = Math.floor(s / 3600);
-            const m = Math.floor((s % 3600) / 60);
-            const sec = s % 60;
-            const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
-            const ss = String(sec).padStart(2, "0");
-            return h > 0 ? h + ":" + mm + ":" + ss : mm + ":" + ss;
-        }
-
-        readonly property string thumbScript: "
-            set -e
-            video=\"$1\"
-            cache_dir=\"$HOME/.cache/israshell/wallpaper-frames\"
-            mkdir -p \"$cache_dir\"
-            mtime=$(stat -c '%Y' \"$video\" 2>/dev/null || echo 0)
-            key=$(printf '%s:%s' \"$video\" \"$mtime\" | sha256sum | cut -d' ' -f1)
-            frame=\"$cache_dir/$key.png\"
-            dur=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"$video\" 2>/dev/null | cut -d. -f1)
-            if [ -s \"$frame\" ]; then printf '%s\\n%s' \"$frame\" \"$dur\"; exit 0; fi
-            ffmpeg -y -i \"$video\" -vf \"thumbnail,scale=320:-1\" -frames:v 1 \"$frame\" -loglevel error >/dev/null 2>&1 && printf '%s\\n%s' \"$frame\" \"$dur\"
-        "
-
         readonly property string remoteThumbScript: "
             set -e
             url=\"$1\"
@@ -299,31 +275,6 @@ Item {
             if [ -s \"$dest\" ]; then printf '%s' \"$dest\"; exit 0; fi
             curl -fsSL -o \"$dest\" \"$url\" && printf '%s' \"$dest\"
         "
-
-        QtObject {
-            id: thumbQueue
-            property int active: 0
-            readonly property int maxActive: 2
-            property var _pending: []
-
-            function request(startFn) {
-                if (active < maxActive) {
-                    active++;
-                    startFn();
-                } else {
-                    _pending.push(startFn);
-                }
-            }
-
-            function release() {
-                active--;
-                if (_pending.length > 0) {
-                    const next = _pending.shift();
-                    active++;
-                    next();
-                }
-            }
-        }
 
         function isVideoPath(path) {
             return /\.(mp4|mkv|webm|mov|avi|m4v)$/i.test(path ?? "");
@@ -1421,65 +1372,10 @@ Item {
         readonly property bool isVideo: !isDir && panel.isVideoPath(entryPath)
         readonly property bool applying: card.isCurrent && WallpaperService.applying
 
-        property string thumbPath: ""
-        property real videoDuration: 0
-        property bool thumbRequested: false
-        property int thumbAttempts: 0
-        property string _thumbTargetPath: ""
-
-        GridView.onReused: {
-            card.thumbRequested = false;
-            card.thumbPath = "";
-            card.videoDuration = 0;
-            card.thumbAttempts = 0;
-            card._thumbTargetPath = "";
-        }
-
-        function ensureThumbnail() {
-            if (!card.isVideo || card.thumbRequested)
-                return;
-
-            if (!card.GridView.view)
-                return;
-
-            card.thumbRequested = true;
-            card._thumbTargetPath = card.entryPath;
-            thumbQueue.request(() => {
-                thumbProc.running = true;
-            });
-        }
-
-        Timer {
-            interval: 100
-            running: card.isVideo && !card.thumbRequested
-            repeat: true
-            onTriggered: card.ensureThumbnail()
-        }
-
-        Process {
-            id: thumbProc
-            command: ["bash", "-c", panel.thumbScript, "_", card.entryPath]
-            stdout: StdioCollector {
-                id: thumbCollector
-                onStreamFinished: {
-                    if (card._thumbTargetPath !== card.entryPath) {
-                        thumbQueue.release();
-                        return;
-                    }
-                    const lines = thumbCollector.text.trim().split("\n");
-                    const p = (lines[0] ?? "").trim();
-                    const dur = parseFloat(lines[1]);
-                    if (!isNaN(dur))
-                        card.videoDuration = dur;
-                    if (p) {
-                        card.thumbPath = p;
-                    } else if (card.thumbAttempts < 1) {
-                        card.thumbAttempts++;
-                        card.thumbRequested = false;
-                    }
-                    thumbQueue.release();
-                }
-            }
+        VideoPreview {
+            id: preview
+            path: card.isVideo ? card.entryPath : ""
+            active: card.GridView.view !== null
         }
 
         width: grid.cellWidth
@@ -1568,7 +1464,7 @@ Item {
                         if (card.isDir)
                             return "";
                         if (card.isVideo)
-                            return card.thumbPath ? ("file://" + card.thumbPath) : "";
+                            return preview.frame ? ("file://" + preview.frame) : "";
                         return "file://" + card.entryPath;
                     }
                     fillMode: Image.PreserveAspectCrop
@@ -1610,7 +1506,7 @@ Item {
                         left: parent.left
                         margins: 6
                     }
-                    readonly property string durationText: panel.formatDuration(card.videoDuration)
+                    readonly property string durationText: VideoJobs.formatDuration(preview.duration)
                     width: durationRow.implicitWidth + (durationText ? 14 : 8)
                     height: 22
                     radius: 11
@@ -1739,7 +1635,7 @@ Item {
         readonly property int imgW: bcard.modelData?.width ?? 0
         readonly property int imgH: bcard.modelData?.height ?? 0
         readonly property bool isVideo: bcard.modelData?.isVideo ?? false
-        readonly property string durationText: panel.formatDuration(bcard.modelData?.duration)
+        readonly property string durationText: VideoJobs.formatDuration(bcard.modelData?.duration)
         readonly property bool applying: WallpaperService.applying
             && bcard.saved
             && WallpaperService.savedPath(bcard.itemId) === WallpaperService.currentWall
@@ -1754,7 +1650,7 @@ Item {
                 return;
             bcard._proxyTargetUrl = url;
             bcard.proxiedThumbPath = "";
-            thumbQueue.request(() => {
+            VideoJobs.request(() => {
                 remoteThumbProc.targetUrl = url;
                 remoteThumbProc.running = true;
             });
@@ -1771,13 +1667,13 @@ Item {
                 id: remoteThumbCollector
                 onStreamFinished: {
                     if (remoteThumbProc.targetUrl !== bcard._proxyTargetUrl) {
-                        thumbQueue.release();
+                        VideoJobs.release();
                         return;
                     }
                     const p = remoteThumbCollector.text.trim();
                     if (p)
                         bcard.proxiedThumbPath = p;
-                    thumbQueue.release();
+                    VideoJobs.release();
                 }
             }
         }
