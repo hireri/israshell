@@ -16,14 +16,19 @@ layout(binding = 4) uniform sampler2D d3;
 
 float dilated(sampler2D s, vec2 uv) {
     float a = textureLod(s, uv, 0.0).a;
-    for (int i = 0; i < 24; i++) {
-        float t = 6.2831853 * float(i) / 24.0;
-        vec2 dir = vec2(cos(t), sin(t)) * texel;
-        a = max(a, textureLod(s, uv + dir * radius, 0.0).a);
-        if (i % 2 == 0)
-            a = max(a, textureLod(s, uv + dir * radius * 0.66, 0.0).a);
-        if (i % 4 == 0)
-            a = max(a, textureLod(s, uv + dir * radius * 0.33, 0.0).a);
+    for (int i = 0; i < 24; i++)
+    {
+        float fi = float(i);
+        float t = 6.283185307 * fi / 24.0;
+        vec2 dir = vec2(cos(t), sin(t)) * texel * radius;
+
+        a = max(a, textureLod(s, uv + dir, 0.0).a);
+
+        if (mod(fi, 2.0) < 0.5)
+            a = max(a, textureLod(s, uv + dir * 0.66, 0.0).a);
+
+        if (mod(fi, 4.0) < 0.5)
+            a = max(a, textureLod(s, uv + dir * 0.33, 0.0).a);
     }
     return a;
 }
@@ -35,9 +40,13 @@ void main() {
     vec4 c2 = textureLod(d2, uv, 0.0);
     vec4 c3 = textureLod(d3, uv, 0.0);
 
-    float o2 = c2.a > 0.0 ? dilated(d3, uv) : 0.0;
-    float o1 = c1.a > 0.0 ? max(dilated(d2, uv), dilated(d3, uv)) : 0.0;
-    float o0 = c0.a > 0.0 ? max(max(dilated(d1, uv), dilated(d2, uv)), dilated(d3, uv)) : 0.0;
+    float d3d = (c0.a > 0.0 || c1.a > 0.0 || c2.a > 0.0) ? dilated(d3, uv) : 0.0;
+    float d2d = (c0.a > 0.0 || c1.a > 0.0) ? dilated(d2, uv) : 0.0;
+    float d1d = (c0.a > 0.0) ? dilated(d1, uv) : 0.0;
+
+    float o2 = c2.a > 0.0 ? d3d : 0.0;
+    float o1 = c1.a > 0.0 ? max(d2d, d3d) : 0.0;
+    float o0 = c0.a > 0.0 ? max(max(d1d, d2d), d3d) : 0.0;
 
     vec4 acc = c0 * (1.0 - o0);
     acc = c1 * (1.0 - o1) + acc * (1.0 - c1.a * (1.0 - o1));
