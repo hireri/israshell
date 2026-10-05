@@ -242,11 +242,11 @@ Item {
 
         layer.enabled: isClockEnabled
         layer.effect: MultiEffect {
-            shadowEnabled: true
+            shadowEnabled: Config.clock.showShadow ?? true
             shadowBlur: ((Config.clock.shadowBlur ?? 16) / 32)
             shadowColor: Qt.alpha("black", Config.clock.shadowOpacity ?? 0.2)
             shadowHorizontalOffset: Config.clock.shadowX ?? 0
-            shadowVerticalOffset: Config.clock.shadowY ?? 4
+            shadowVerticalOffset: Config.clock.shadowY ?? 0
         }
 
         HoverHandler {
@@ -271,7 +271,7 @@ Item {
             : Config.clock.align === "auto" ? _autoHalign
             : Text.AlignHCenter
         readonly property int _layoutMode: Config.clock.layout === "horizontal" ? 0 : Config.clock.layout === "vertical" ? 1 : Config.clock.layout === "word" ? 2 : Config.clock.layout === "analog" ? 3 : 0
-        readonly property int _analogSize: Config.clock.analogSize ?? 200
+        readonly property int _analogSize: (Config.clock.size ?? 100) * 2
         readonly property bool _showSeconds: Config.clock.showSeconds ?? false
         readonly property bool _is12h: Config.hourFormat !== 0
 
@@ -325,6 +325,7 @@ Item {
             id: horizontalComp
             ClockHorizontal {
                 currentTime: root._currentTime
+                immediateShapes: root.forceCentered
                 clockFont:   clockRoot._font
                 textColor:   clockRoot._textColor
                 subColor:    clockRoot._subColor
@@ -338,6 +339,7 @@ Item {
             id: verticalComp
             ClockVertical {
                 currentTime: root._currentTime
+                immediateShapes: root.forceCentered
                 clockFont:   clockRoot._font
                 textColor:   clockRoot._textColor
                 subColor:    clockRoot._subColor

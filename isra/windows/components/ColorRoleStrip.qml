@@ -19,6 +19,7 @@ ColumnLayout {
 
     Text {
         text: root.label
+        visible: root.label !== ""
         font.family: Config.fontFamily
         font.pixelSize: 11
         font.weight: Font.Medium

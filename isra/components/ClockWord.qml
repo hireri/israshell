@@ -1,32 +1,14 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.style
+import qs.services
 
-Item {
+ClockFace {
     id: root
-
-    property var currentTime
-    property string clockFont
-    property color textColor
-    property color subColor
-    property int halign
-    property bool showSeconds
-    property bool is12h
-    property int analogSize
-
-    property int    fontWeight:    Config.clock.hourWeight    ?? 500
-    property real   fontWidth:     Config.clock.fontWidth     ?? 100
-    property real   fontRoundness: Config.clock.fontRoundness ?? 0
-    property real   subWeight:     Config.clock.minuteWeight  ?? 300
-
-    readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
-
-    readonly property var mainAxes: ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
-    readonly property var subAxes:  ({ "wght": root.subWeight,  "wdth": root.fontWidth,  "ROND": root.fontRoundness  })
 
     implicitWidth:  wordClock.implicitWidth
     implicitHeight: wordClock.implicitHeight
-                    + (Config.clock.showDate ? Config.clock.dateSpacing + dateLbl.implicitHeight : 0)
+                    + (root.cfg.showDate ? root.textDateGap + dateLbl.implicitHeight : 0)
 
     function _wordClockLines() {
         const now = new Date();
@@ -53,22 +35,19 @@ Item {
         return [{ words: itis }];
     }
 
-    Timer {
-        interval: 60000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: wordRepeater.model = root._wordClockLines()
+    readonly property var lines: {
+        LocaleService.liveTime;
+        return root._wordClockLines();
     }
 
     ColumnLayout {
         id: wordClock
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: Config.clock.wordSpacing ?? -6
+        spacing: root.cfg.wordSpacing ?? -6
 
         Repeater {
             id: wordRepeater
-            model: root._wordClockLines()
+            model: root.lines
 
             Row {
                 Layout.alignment: root.halign === Text.AlignLeft ? Qt.AlignLeft
@@ -85,7 +64,7 @@ Item {
                         text: modelData.text
                         font {
                             family:       root.clockFont
-                            pixelSize:    (Config.clock.hourSize ?? 48) * 0.55
+                            pixelSize:    root.size * 0.55
                             weight:       root.isGoogleSansFlex
                                             ? Font.Normal
                                             : (modelData.isNumber ? root.fontWeight : root.subWeight)
@@ -106,26 +85,16 @@ Item {
         }
     }
 
-    Text {
+    ClockDate {
         id: dateLbl
-        visible: Config.clock.showDate
+        face: root
+        opacity: 0.8
 
-        width:               root.width
-        horizontalAlignment: root.halign
-
+        width: root.width
         anchors {
             left:      parent.left
             top:       wordClock.bottom
-            topMargin: Config.clock.dateSpacing
+            topMargin: root.textDateGap
         }
-        font {
-            family:       root.clockFont
-            pixelSize:    Config.clock.dateSize
-            weight:       root.isGoogleSansFlex ? Font.Normal : Font.Light
-            variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
-        }
-        color: root.subColor
-        opacity: 0.8
-        text: Qt.formatDate(root.currentTime, ["ddd, dd/MM", "ddd, MM/dd"][Config.dateFormat] ?? "ddd, dd/MM")
     }
 }

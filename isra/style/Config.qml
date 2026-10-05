@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.services
+import "../services/clockOptions.js" as ClockOptions
 
 Singleton {
     id: configRoot
@@ -265,34 +266,7 @@ Singleton {
             songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
         })
     property bool useAwww: false
-    property var clock: ({
-            layout: "vertical",
-            hourSize: 100,
-            minuteSize: 100,
-            dateSize: 25,
-            timeSpacing: -30,
-            dateSpacing: -5,
-            showDate: true,
-            showSeconds: false,
-            align: "left",
-            fontFamily: "Google Sans Flex",
-            hourWeight: 500,
-            minuteWeight: 300,
-            fontWidth: 100,
-            fontRoundness: 0,
-            colorRole: "primary",
-            subColorRole: "secondary",
-            shadowBlur: 16,
-            shadowX: 0,
-            shadowY: 0,
-            shadowOpacity: 0.2,
-            manualPos: false,
-            showDigitalInside: true,
-            analogSize: 200,
-            ringSides: 12,
-            ringAmplitude: 4,
-            outlineWidth: 2
-        })
+    property var clock: ClockOptions.defaults()
     property var gameOverlay: ({
             open: ["crosshair", "resources", "volumeMixer", "recorder"],
             crosshairCode: "0;P;c;1;h;0;d;1;z;2;0l;6;0o;4;0a;1;0t;2;1b;0",
@@ -535,35 +509,7 @@ Singleton {
                 ocrPath: "~/.config/quickshell/isra/scripts/ocr.sh",
                 songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
             },
-            clock: {
-                layout: "vertical",
-                hourSize: 100,
-                minuteSize: 100,
-                dateSize: 25,
-                timeSpacing: -30,
-                dateSpacing: -5,
-                showDate: true,
-                showSeconds: false,
-                align: "left",
-                fontFamily: "Google Sans Flex",
-                hourWeight: 500,
-                minuteWeight: 300,
-                fontWidth: 100,
-                fontRoundness: 0,
-                colorRole: "primary",
-                subColorRole: "secondary",
-                shadowBlur: 16,
-                shadowX: 0,
-                shadowY: 0,
-                shadowOpacity: 0.2,
-                shadowVisible: true,
-                manualPos: false,
-                showDigitalInside: true,
-                analogSize: 200,
-                ringSides: 12,
-                ringAmplitude: 4,
-                outlineWidth: 2
-            },
+            clock: ClockOptions.defaults(),
             gameOverlay: {
                 open: ["crosshair", "resources", "volumeMixer", "recorder"],
                 crosshairCode: "0;P;c;1;h;0;d;1;z;2;0l;6;0o;4;0a;1;0t;2;1b;0",
@@ -709,6 +655,58 @@ Singleton {
                 popupFollowBar: followBar,
                 popupPosition: (rawPopupPosition === 1 || rawPopupPosition === 2) ? rawPopupPosition : 1
             });
+        }
+
+        if (result.clock && data.clock) {
+            const raw = data.clock;
+            const c = Object.assign({}, result.clock);
+            if (raw.gridColumnSpacing === undefined && raw.digitSpacing !== undefined) {
+                c.gridColumnSpacing = raw.digitSpacing;
+                c.gridRowSpacing = raw.digitSpacing;
+            }
+            if (raw.showFace === undefined && raw.faceStyle !== undefined) {
+                c.showFace = raw.faceStyle !== "none";
+                if (raw.faceStyle === "circle")
+                    c.ringAmplitude = 0;
+            }
+            if (raw.showDigitalInside !== undefined && raw.dialStyle !== "numerals")
+                c.dialStyle = raw.showDigitalInside ? "digital" : "ticks";
+            if (raw.digitStyle === undefined) {
+                const shaped = (raw.hourShape ?? "none") !== "none" || (raw.minuteShape ?? "none") !== "none";
+                c.digitStyle = raw.arrangement === "grid" ? "grid" : (shaped ? "tiles" : "text");
+                if (!shaped) {
+                    c.hourShape = "cookie12";
+                    c.minuteShape = "square";
+                }
+            }
+            if (raw.size === undefined) {
+                const hour = raw.layout === "analog" ? Math.round((raw.analogSize ?? 200) / 2) : (raw.hourSize ?? 100);
+                c.size = hour;
+                if (raw.minuteSize !== undefined && raw.hourSize)
+                    c.minuteSize = Math.round(100 * raw.minuteSize / raw.hourSize);
+                if (raw.dateSize !== undefined && hour > 0)
+                    c.dateSize = Math.round(100 * raw.dateSize / (hour * 0.25));
+            }
+            if (raw.shadow !== undefined && raw.showShadow === undefined) {
+                c.showShadow = raw.shadow !== "none";
+                if (raw.shadow === "strong") {
+                    c.shadowBlur = 24;
+                    c.shadowY = 6;
+                    c.shadowOpacity = 0.5;
+                }
+            }
+            if (raw.gridSpacing !== undefined && raw.gridColumnSpacing === undefined) {
+                c.gridColumnSpacing = raw.gridSpacing;
+                c.gridRowSpacing = raw.gridSpacing;
+            }
+            for (const gone of ["hourSize", "analogSize", "shadow", "gridSpacing"])
+                delete c[gone];
+            delete c.arrangement;
+            delete c.digitSpacing;
+            delete c.faceStyle;
+            delete c.shadowVisible;
+            delete c.showDigitalInside;
+            result.clock = c;
         }
 
         if (result.sounds && data.sounds && data.sounds.lockUnlock !== undefined && data.sounds.unlock === undefined)

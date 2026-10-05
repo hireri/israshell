@@ -2,37 +2,35 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls.Basic
-import Quickshell
+import Qt.labs.qmlmodels
 import Quickshell.Widgets
 import qs.style
 import qs.services
 import qs.components
 import qs.windows.components
 import qs.icons
+import "../services/clockOptions.js" as ClockOptions
 
 PageBase {
-    pageId: "clock"
     id: pageRoot
+    pageId: "clock"
     title: Localization.t("settingsWindow.desktop_clock")
     subtitle: Localization.t("clockPage.layout_style_and_sizing")
 
+    readonly property string layoutId: Config.clock.layout ?? "vertical"
+    readonly property string effectiveFont: (Config.clock.fontFamily ?? "") !== "" ? Config.clock.fontFamily : Config.fontFamily
+    readonly property var optionState: Object.assign({}, Config.clock, { fontFamily: pageRoot.effectiveFont })
+    readonly property var manualPosOpt: ClockOptions.option("manualPos")
+    readonly property var mainColor: ClockOptions.option("colorRole")
+    readonly property var accentColor: ClockOptions.option("subColorRole")
+    readonly property string activePreset: ClockOptions.activePreset(Config.clock)
+
     readonly property var systemFontsModel: {
-        var families = Qt.fontFamilies();
-        var uniqueFamilies = families.filter(function(item, pos, self) {
-            return self.indexOf(item) === pos;
-        });
-        uniqueFamilies.sort(function(a, b) {
-            return a.localeCompare(b);
-        });
-        return uniqueFamilies.map(function(family) {
-            return {
-                label: family,
-                value: family
-            };
-        });
+        const families = Qt.fontFamilies().filter((item, pos, self) => self.indexOf(item) === pos);
+        families.sort((a, b) => a.localeCompare(b));
+        return families.map(family => ({ label: family, value: family }));
     }
-    
+
     property var previewTime: new Date()
     Timer {
         interval: 1000
@@ -42,103 +40,131 @@ PageBase {
     }
 
     function updateClock(changes) {
+        pageRoot.undoSnapshot = null;
         Config.update({
             clock: Object.assign({}, Config.clock, changes)
         });
     }
 
+    property var undoSnapshot: null
+    property string undoText: ""
+
+    function applyWithUndo(text, changes) {
+        const before = Object.assign({}, Config.clock);
+        pageRoot.updateClock(changes);
+        pageRoot.undoText = text;
+        pageRoot.undoSnapshot = before;
+        undoTimer.restart();
+    }
+
+    function undo() {
+        if (pageRoot.undoSnapshot !== null)
+            Config.update({ clock: pageRoot.undoSnapshot });
+        pageRoot.undoSnapshot = null;
+    }
+
+    Timer {
+        id: undoTimer
+        interval: 8000
+        onTriggered: pageRoot.undoSnapshot = null
+    }
+
+    function lt(key) {
+        return Localization.t(key);
+    }
+
+    function isShown(opt) {
+        return ClockOptions.isVisible(opt, pageRoot.layoutId, pageRoot.optionState);
+    }
+
+    function value(opt) {
+        return Config.clock[opt.key] ?? opt.default;
+    }
+
+    function labelOf(opt) {
+        return pageRoot.lt(ClockOptions.text(opt, "label", pageRoot.layoutId));
+    }
+
+    function subOf(opt) {
+        const key = ClockOptions.text(opt, "sub", pageRoot.layoutId);
+        return key === "" ? "" : pageRoot.lt(key);
+    }
+
+    function isLocked(opt) {
+        return ClockOptions.isLocked(opt, pageRoot.optionState);
+    }
+
+    function choicesOf(opt) {
+        return opt.choices.map(c => ({
+            value: c.value,
+            label: c.iconOnly ? "" : pageRoot.lt(c.label),
+            icon: c.icon ? pageRoot.icons[c.icon] : undefined
+        }));
+    }
+
     Component {
         id: alignAutoComp
-        MaterialIcon {
-            name: "align-auto"
-            iconSize: 16
-            filled: Config.clock.align === "auto"
-        }
+        MaterialIcon { name: "align-auto"; iconSize: 16; filled: Config.clock.align === "auto" }
     }
     Component {
         id: alignLeftComp
-        MaterialIcon {
-            name: "align-left"
-            iconSize: 16
-            filled: Config.clock.align === "left"
-        }
+        MaterialIcon { name: "align-left"; iconSize: 16; filled: Config.clock.align === "left" }
     }
     Component {
         id: alignCenterComp
-        MaterialIcon {
-            name: "align-center"
-            iconSize: 16
-            filled: Config.clock.align === "center"
-        }
+        MaterialIcon { name: "align-center"; iconSize: 16; filled: Config.clock.align === "center" }
     }
     Component {
         id: alignRightComp
-        MaterialIcon {
-            name: "align-right"
-            iconSize: 16
-            filled: Config.clock.align === "right"
+        MaterialIcon { name: "align-right"; iconSize: 16; filled: Config.clock.align === "right" }
+    }
+    component ShapeIcon: MaterialShape { shapeSize: 20; immediate: true }
+    component HandIcon: Item {
+        id: hand
+        property string style
+        property color color
+        width: 20
+        height: 20
+        Item {
+            anchors.fill: parent
+            rotation: 40
+            ClockHand { style: hand.style; length: 7; thickness: 5; color: hand.color }
         }
     }
 
-    Component {
-        id: verticalPreviewComp
-        ClockVertical {
-            scale: 0.5
-            transformOrigin: Item.Center
-            currentTime: pageRoot.previewTime
-            clockFont: Config.clock.fontFamily || Config.fontFamily
-            textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
-            subColor: Colors.md3[Config.clock.subColorRole] ?? Colors.md3.on_surface_variant
-            halign: Text.AlignHCenter
-            showSeconds: Config.clock.showSeconds ?? false
-            is12h: Config.hourFormat !== 0
-        }
-    }
-    Component {
-        id: horizontalPreviewComp
-        ClockHorizontal {
-            scale: 0.5
-            transformOrigin: Item.Center
-            currentTime: pageRoot.previewTime
-            clockFont: Config.clock.fontFamily || Config.fontFamily
-            textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
-            subColor: Colors.md3[Config.clock.subColorRole] ?? Colors.md3.on_surface_variant
-            halign: Text.AlignHCenter
-            showSeconds: Config.clock.showSeconds ?? false
-            is12h: Config.hourFormat !== 0
-        }
-    }
-    Component {
-        id: wordPreviewComp
-        ClockWord {
-            scale: 0.4
-            transformOrigin: Item.Center
-            currentTime: pageRoot.previewTime
-            clockFont: Config.clock.fontFamily || Config.fontFamily
-            textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
-            subColor: Colors.md3[Config.clock.subColorRole] ?? Colors.md3.on_surface_variant
-            halign: Text.AlignHCenter
-            showSeconds: Config.clock.showSeconds ?? false
-            is12h: Config.hourFormat !== 0
-        }
-    }
-    Component {
-        id: analogPreviewComp
-        ClockAnalog {
-            readonly property real previewScale: analogSize / (Config.clock.analogSize || 200)
+    Component { id: shapeCookie12;  ShapeIcon { name: "cookie12" } }
+    Component { id: shapeCookie9;   ShapeIcon { name: "cookie9" } }
+    Component { id: shapeSoftBurst; ShapeIcon { name: "softBurst" } }
+    Component { id: shapeClover4;   ShapeIcon { name: "clover4" } }
+    Component { id: shapeSunny;     ShapeIcon { name: "sunny" } }
+    Component { id: shapeCircle;    ShapeIcon { name: "circle" } }
+    Component { id: shapeSquare;    ShapeIcon { name: "square" } }
+    Component { id: handCapsule;    HandIcon { style: "capsule" } }
+    Component { id: handTapered;    HandIcon { style: "tapered" } }
+    Component { id: handHollow;     HandIcon { style: "hollow" } }
+    Component { id: handNeedle;     HandIcon { style: "needle" } }
+    Component { id: handDot;        HandIcon { style: "dot" } }
+    Component { id: handTail;       HandIcon { style: "tail" } }
 
-            currentTime: pageRoot.previewTime
-            clockFont: Config.clock.fontFamily || Config.fontFamily
-            textColor: Colors.md3[Config.clock.colorRole] ?? Colors.md3.on_surface
-            subColor: Colors.md3[Config.clock.subColorRole] ?? Colors.md3.on_surface_variant
-            halign: Text.AlignHCenter
-            showSeconds: Config.clock.showSeconds ?? false
-            is12h: Config.hourFormat !== 0
-            analogSize: 130
-            dateSize: (Config.clock.dateSize ?? 25) * previewScale
-            outlineWidth: (Config.clock.outlineWidth ?? 2) * previewScale
-        }
-    }
+    readonly property var icons: ({
+        "align-auto": alignAutoComp,
+        "align-left": alignLeftComp,
+        "align-center": alignCenterComp,
+        "align-right": alignRightComp,
+        "shape:cookie12": shapeCookie12,
+        "shape:cookie9": shapeCookie9,
+        "shape:softBurst": shapeSoftBurst,
+        "shape:clover4": shapeClover4,
+        "shape:sunny": shapeSunny,
+        "shape:circle": shapeCircle,
+        "shape:square": shapeSquare,
+        "hand:capsule": handCapsule,
+        "hand:tapered": handTapered,
+        "hand:hollow": handHollow,
+        "hand:needle": handNeedle,
+        "hand:dot": handDot,
+        "hand:tail": handTail
+    })
 
     HeroCard {
         Layout.fillWidth: true
@@ -146,13 +172,13 @@ PageBase {
         subtitle: {
             if (!Config.desktopClock) return Localization.t("clockPage.hidden");
 
-            var layoutNames = {
+            const layoutNames = {
                 "vertical": Localization.t("clockPage.vertical_style"),
                 "horizontal": Localization.t("clockPage.horizontal_style"),
                 "word": Localization.t("clockPage.word_clock"),
                 "analog": Localization.t("clockPage.analog_face")
             };
-            var layout = layoutNames[Config.clock.layout] ?? Localization.t("clockPage.standard");
+            const layout = layoutNames[pageRoot.layoutId] ?? Localization.t("clockPage.standard");
             return Localization.t("clockPage.visible_layout").arg(layout);
         }
         iconBg: Colors.md3.tertiary_container
@@ -162,11 +188,25 @@ PageBase {
         MaterialIcon { name: "analog-clock"; transitionType: "circle" }
     }
 
+    SectionCard {
+        Layout.fillWidth: true
+        sectionKey: "position"
+
+        SettingSwitch {
+            isLast: true
+            settingKey: "manualPos"
+            label: pageRoot.labelOf(pageRoot.manualPosOpt)
+            sublabel: pageRoot.subOf(pageRoot.manualPosOpt)
+            checked: pageRoot.value(pageRoot.manualPosOpt)
+            onToggled: v => pageRoot.updateClock({ manualPos: v })
+        }
+    }
+
     Rectangle {
         Layout.fillWidth: true
         implicitHeight: layoutInner.implicitHeight + 32
         radius: 20
-        color: (Config.dim(Colors.md3.surface_container))
+        color: Config.dim(Colors.md3.surface_container)
 
         ColumnLayout {
             id: layoutInner
@@ -182,270 +222,92 @@ PageBase {
                 Layout.fillWidth: true
                 spacing: 4
 
-                Rectangle {
-                    id: btnVertical
-                    Layout.fillWidth: true
-                    height: 34
-                    radius: 17
-                    topRightRadius: active ? 17 : 8
-                    bottomRightRadius: active ? 17 : 8
+                Repeater {
+                    id: layoutButtons
+                    model: ClockOptions.layouts()
 
-                    Behavior on topRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                    Behavior on bottomRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                    delegate: Rectangle {
+                        id: btn
+                        required property var modelData
+                        required property int index
 
-                    readonly property bool active: Config.clock.layout === "vertical"
-                    readonly property color contentColor: active
-                        ? Colors.md3.on_primary
-                        : (verticalMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
+                        readonly property bool active: pageRoot.layoutId === btn.modelData.id
+                        readonly property bool first: btn.index === 0
+                        readonly property bool last: btn.index === layoutButtons.count - 1
+                        readonly property color contentColor: active
+                            ? Colors.md3.on_primary
+                            : (mouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
 
-                    color: active
-                        ? Colors.md3.primary
-                        : (verticalMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 34
+                        radius: 17
+                        topLeftRadius: (active || first) ? 17 : 8
+                        bottomLeftRadius: (active || first) ? 17 : 8
+                        topRightRadius: (active || last) ? 17 : 8
+                        bottomRightRadius: (active || last) ? 17 : 8
+                        color: active
+                            ? Colors.md3.primary
+                            : (mouse.containsMouse ? Config.dim(Colors.md3.surface_container_highest) : Config.dim(Colors.md3.surface_container_high))
 
-                    Behavior on color { ColorAnimation { duration: 120 } }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: parent.radius
-                        topRightRadius: parent.topRightRadius
-                        bottomRightRadius: parent.bottomRightRadius
-                        color: verticalMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                        visible: btnVertical.active
+                        Behavior on topLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                        Behavior on topRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
                         Behavior on color { ColorAnimation { duration: 120 } }
-                    }
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        spacing: 6
-
-                        MaterialIcon {
-                            name: "vertical-clock"
-                            iconSize: 14
-                            filled: btnVertical.active
-                            color: btnVertical.contentColor
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: btn.radius
+                            topLeftRadius: btn.topLeftRadius
+                            bottomLeftRadius: btn.bottomLeftRadius
+                            topRightRadius: btn.topRightRadius
+                            bottomRightRadius: btn.bottomRightRadius
+                            color: mouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                            visible: btn.active
                             Behavior on color { ColorAnimation { duration: 120 } }
                         }
 
-                        Text {
-                            Layout.fillWidth: true
-                            text: Localization.t("clockPage.vertical")
-                            font.family: Config.fontFamily
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                            color: btnVertical.contentColor
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            elide: Text.ElideRight
-                        }
-                    }
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 12
+                            spacing: 6
 
-                    MouseArea {
-                        id: verticalMouse
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onClicked: updateClock({ layout: "vertical" })
-                    }
-                }
+                            MaterialIcon {
+                                name: btn.modelData.icon
+                                iconSize: 14
+                                filled: btn.active
+                                color: btn.contentColor
+                                Behavior on color { ColorAnimation { duration: 120 } }
+                            }
 
-                Rectangle {
-                    id: btnHorizontal
-                    Layout.fillWidth: true
-                    height: 34
-                    radius: active ? 17 : 8
-
-                    Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-
-                    readonly property bool active: Config.clock.layout === "horizontal"
-                    readonly property color contentColor: active
-                        ? Colors.md3.on_primary
-                        : (horizontalMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
-
-                    color: active
-                        ? Colors.md3.primary
-                        : (horizontalMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
-
-                    Behavior on color { ColorAnimation { duration: 120 } }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: parent.radius
-                        color: horizontalMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                        visible: btnHorizontal.active
-                        Behavior on color { ColorAnimation { duration: 120 } }
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        spacing: 6
-
-                        MaterialIcon {
-                            name: "horizontal-clock"
-                            iconSize: 14
-                            filled: btnHorizontal.active
-                            color: btnHorizontal.contentColor
-                            Behavior on color { ColorAnimation { duration: 120 } }
+                            Text {
+                                Layout.fillWidth: true
+                                text: pageRoot.lt(btn.modelData.label)
+                                font.family: Config.fontFamily
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                color: btn.contentColor
+                                elide: Text.ElideRight
+                                Behavior on color { ColorAnimation { duration: 120 } }
+                            }
                         }
 
-                        Text {
-                            Layout.fillWidth: true
-                            text: Localization.t("clockPage.horizontal")
-                            font.family: Config.fontFamily
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                            color: btnHorizontal.contentColor
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            elide: Text.ElideRight
+                        MouseArea {
+                            id: mouse
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onClicked: pageRoot.updateClock({ layout: btn.modelData.id })
                         }
-                    }
-
-                    MouseArea {
-                        id: horizontalMouse
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onClicked: updateClock({ layout: "horizontal" })
-                    }
-                }
-
-                Rectangle {
-                    id: btnWord
-                    Layout.fillWidth: true
-                    height: 34
-                    radius: active ? 17 : 8
-
-                    Behavior on radius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-
-                    readonly property bool active: Config.clock.layout === "word"
-                    readonly property color contentColor: active
-                        ? Colors.md3.on_primary
-                        : (wordMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
-
-                    color: active
-                        ? Colors.md3.primary
-                        : (wordMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
-
-                    Behavior on color { ColorAnimation { duration: 120 } }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: parent.radius
-                        color: wordMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                        visible: btnWord.active
-                        Behavior on color { ColorAnimation { duration: 120 } }
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        spacing: 6
-
-                        MaterialIcon {
-                            name: "word-clock"
-                            iconSize: 14
-                            filled: btnWord.active
-                            color: btnWord.contentColor
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: Localization.t("clockPage.word")
-                            font.family: Config.fontFamily
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                            color: btnWord.contentColor
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    MouseArea {
-                        id: wordMouse
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onClicked: updateClock({ layout: "word" })
-                    }
-                }
-
-                Rectangle {
-                    id: btnAnalog
-                    Layout.fillWidth: true
-                    height: 34
-                    radius: 17
-                    topLeftRadius: active ? 17 : 8
-                    bottomLeftRadius: active ? 17 : 8
-
-                    Behavior on topLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                    Behavior on bottomLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-
-                    readonly property bool active: Config.clock.layout === "analog"
-                    readonly property color contentColor: active
-                        ? Colors.md3.on_primary
-                        : (analogMouse.containsMouse ? Colors.md3.on_surface : Colors.md3.on_surface_variant)
-
-                    color: active
-                        ? Colors.md3.primary
-                        : (analogMouse.containsMouse ? (Config.dim(Colors.md3.surface_container_highest)) : (Config.dim(Colors.md3.surface_container_high)))
-
-                    Behavior on color { ColorAnimation { duration: 120 } }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: parent.radius
-                        topLeftRadius: parent.topLeftRadius
-                        bottomLeftRadius: parent.bottomLeftRadius
-                        color: analogMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-                        visible: btnAnalog.active
-                        Behavior on color { ColorAnimation { duration: 120 } }
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        spacing: 6
-
-                        MaterialIcon {
-                            name: "analog-clock"
-                            iconSize: 14
-                            filled: btnAnalog.active
-                            color: btnAnalog.contentColor
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: Localization.t("clockPage.analog")
-                            font.family: Config.fontFamily
-                            font.pixelSize: 12
-                            font.weight: Font.Medium
-                            color: btnAnalog.contentColor
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    MouseArea {
-                        id: analogMouse
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onClicked: updateClock({ layout: "analog" })
                     }
                 }
             }
 
             ClippingRectangle {
-                id: singlePreview
                 Layout.fillWidth: true
                 Layout.preferredHeight: 180
-                color: (Config.dim(Colors.md3.surface_container_high))
+                color: Config.dim(Colors.md3.surface_container_high)
                 radius: 12
 
                 Image {
@@ -467,43 +329,13 @@ PageBase {
                     visible: wallView.visible
                 }
 
-                Loader {
-                    id: previewLoader
-                    anchors.centerIn: parent
-                    asynchronous: false
-                    
-                    property var activeComponent: null
-                    property var targetComponent: {
-                        switch (Config.clock.layout) {
-                        case "vertical":   return verticalPreviewComp
-                        case "horizontal": return horizontalPreviewComp
-                        case "word":       return wordPreviewComp
-                        case "analog":     return analogPreviewComp
-                        default:           return verticalPreviewComp
-                        }
-                    }
-                    
-                    onTargetComponentChanged: transitionSeq.restart()
-                    sourceComponent: activeComponent
-                    
-                    SequentialAnimation {
-                        id: transitionSeq
-                        ParallelAnimation {
-                            NumberAnimation { target: previewLoader; property: "opacity"; to: 0; duration: 150; easing.type: Easing.OutCubic }
-                            NumberAnimation { target: previewLoader; property: "scale"; to: 0.9; duration: 150; easing.type: Easing.OutCubic }
-                        }
-                        ScriptAction {
-                            script: previewLoader.activeComponent = previewLoader.targetComponent
-                        }
-                        ParallelAnimation {
-                            NumberAnimation { target: previewLoader; property: "opacity"; to: 1; duration: 200; easing.type: Easing.OutCubic }
-                            NumberAnimation { target: previewLoader; property: "scale"; to: 1; duration: 200; easing.type: Easing.OutCubic }
-                        }
-                    }
-                    
-                    Component.onCompleted: {
-                        previewLoader.activeComponent = previewLoader.targetComponent
-                    }
+                ClockPreview {
+                    anchors.fill: parent
+                    cfg: pageRoot.optionState
+                    time: pageRoot.previewTime
+                    live: pageRoot.active
+                    maxScale: pageRoot.layoutId === "analog" ? 0.65 : 0.5
+                    shadow: true
                 }
             }
 
@@ -520,324 +352,166 @@ PageBase {
 
                 ColorRoleStrip {
                     label: Localization.t("backgroundPage.main_color")
-                    roles: ["primary", "secondary", "tertiary", "on_surface"]
-                    selected: Config.clock.colorRole
-                    onPicked: role => updateClock({ colorRole: role })
+                    roles: pageRoot.mainColor.roles
+                    selected: pageRoot.value(pageRoot.mainColor)
+                    onPicked: role => pageRoot.updateClock({ colorRole: role })
                 }
 
                 ColorRoleStrip {
                     label: Localization.t("backgroundPage.accent_color")
-                    roles: ["primary", "secondary", "tertiary", "on_surface"]
-                    selected: Config.clock.subColorRole
+                    roles: pageRoot.accentColor.roles
+                    selected: pageRoot.value(pageRoot.accentColor)
                     fallback: Colors.md3.secondary
-                    onPicked: role => updateClock({ subColorRole: role })
+                    onPicked: role => pageRoot.updateClock({ subColorRole: role })
                 }
             }
         }
     }
 
-    SectionCard {
-        Layout.fillWidth: true
-        sectionKey: "elements"
-
-        SettingSwitch {
-            label: Localization.t("clockPage.show_date")
-            sublabel: Localization.t("clockPage.include_date_information_below_the")
-            checked: Config.clock.showDate ?? false
-            onToggled: v => updateClock({ showDate: v })
-        }
-
-        SettingSwitch {
-            label: Config.clock.layout === "analog" ? Localization.t("clockPage.show_seconds_hand") : Localization.t("clockPage.show_seconds")
-            sublabel: Config.clock.layout === "analog" ? Localization.t("clockPage.adds_a_sweeping_seconds_hand") : Localization.t("clockPage.displays_ticking_seconds")
-            checked: Config.clock.showSeconds ?? false
-            onToggled: v => updateClock({ showSeconds: v })
-        }
-
-        SettingSwitch {
-            label: Localization.t("clockPage.show_digital_clock")
-            sublabel: Localization.t("clockPage.render_digital_time_inside_the")
-            enabled: Config.clock.layout === "analog"
-            opacity: enabled ? 1.0 : 0.4
-            checked: Config.clock.showDigitalInside ?? false
-            onToggled: v => updateClock({ showDigitalInside: v })
-            Behavior on opacity { NumberAnimation { duration: 150 } }
-        }
-        SettingSlider{
-            label: Localization.t("clockPage.outline_width")
-            sublabel: Localization.t("clockPage.colored_outline_around_the_clock")
-            isLast: true
-            visible: ClockSizing.fieldsForLayout(Config.clock.layout).includes("outlineWidth")
-            from: ClockSizing.boundsFor(Config.clock.layout, "outlineWidth")?.min ?? 0
-            to: ClockSizing.boundsFor(Config.clock.layout, "outlineWidth")?.max ?? 10
-            stepSize: 1
-            value: Config.clock.outlineWidth
-            onMoved: v => updateClock({ outlineWidth: v })
-        }
-    }
 
     SectionCard {
         Layout.fillWidth: true
-        sectionKey: "position"
-        SettingSwitch {
-            label: Localization.t("clockPage.manual_positioning")
-            sublabel: Localization.t("clockPage.drag_the_clock_freely_instead")
-            isLast: true
-            checked: Config.clock.manualPos ?? false
-            onToggled: v => updateClock({ manualPos: v })
-        }
-    }
-
-    SectionCard {
-        Layout.fillWidth: true
-        sectionKey: "typography"
+        sectionKey: "presets"
 
         SettingChips {
-            label: Localization.t("clockPage.content_alignment")
-            sublabel: Localization.t("clockPage.flow_layout_of_the_time")
-            options: [
-                { value: "auto",   label: Localization.t("barPage.auto"),   icon: alignAutoComp },
-                { value: "left",   label: Localization.t("barPage.left"),   icon: alignLeftComp },
-                { value: "center", label: Localization.t("backgroundPage.center"), icon: alignCenterComp },
-                { value: "right",  label: Localization.t("barPage.right"),  icon: alignRightComp }
-            ]
-            currentValue: Config.clock.align ?? "auto"
-            onSelected: (val) => updateClock({ align: val })
-        }
-
-        SettingSelect {
-            label: Localization.t("clockPage.font_family")
-            sublabel: Localization.t("clockPage.leave_empty_to_use_the")
-            options: pageRoot.systemFontsModel
-            currentValue: Config.clock.fontFamily
+            label: Localization.t("clockPage.presets")
+            sublabel: Localization.t("clockPage.presets_sub")
+            options: ClockOptions.presets().map(p => ({ value: p.id, label: pageRoot.lt(p.label) }))
+            currentValue: pageRoot.activePreset
             onSelected: v => {
-                if (v && v.trim().length > 0) {
-                    updateClock({
-                        fontFamily: v.trim()
-                    });
-                }
+                const hit = ClockOptions.presets().find(p => p.id === v);
+                if (hit)
+                    pageRoot.applyWithUndo(Localization.t("clockPage.applied_preset").arg(pageRoot.lt(hit.label)), hit.patch);
             }
         }
-        SettingSlider {
-            label: Localization.t("clockPage.weight")
-            from: 100
-            to: 900
-            stepSize: 10
-            value: Config.clock.hourWeight
-            onMoved: v => updateClock({ hourWeight: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.sub_weight")
-            sublabel: Localization.t("clockPage.minutes_seconds_date")
-            from: 100
-            to: 900
-            stepSize: 10
-            value: Config.clock.minuteWeight
-            onMoved: v => updateClock({ minuteWeight: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.width")
-            sublabel: Localization.t("clockPage.condensed_normal_expanded")
-            from: 25
-            to: 150
-            stepSize: 1
-            value: Config.clock.fontWidth ?? 100
-            onMoved: v => updateClock({ fontWidth: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.roundness")
-            sublabel: Localization.t("clockPage.corner_radius_of_letterforms_rond")
+
+        SettingActions {
             isLast: true
-            from: 0
-            to: 100
-            stepSize: 1
-            value: Config.clock.fontRoundness ?? 0
-            onMoved: v => updateClock({ fontRoundness: v })
+            label: Localization.t("clockPage.reset_all")
+            sublabel: pageRoot.undoSnapshot !== null ? pageRoot.undoText : Localization.t("clockPage.reset_all_sub")
+
+            ActionButton {
+                visible: pageRoot.undoSnapshot !== null
+                icon: "history"
+                label: Localization.t("clockPage.undo")
+                onClicked: pageRoot.undo()
+            }
+
+            ActionButton {
+                icon: "restart"
+                label: Localization.t("clockPage.reset_all_button")
+                onClicked: pageRoot.applyWithUndo(Localization.t("clockPage.reset_done"), ClockOptions.defaults())
+            }
         }
     }
 
-    SectionCard {
-        Layout.fillWidth: true
-        sectionKey: "digital-size"
-        visible: Config.clock.layout === "vertical" || Config.clock.layout === "horizontal"
+    Repeater {
+        model: ClockOptions.groups()
 
-        SettingSlider {
-            label: Localization.t("clockPage.hour_size")
-            from: ClockSizing.boundsFor(Config.clock.layout, "hourSize")?.min ?? 40
-            to: ClockSizing.boundsFor(Config.clock.layout, "hourSize")?.max ?? 200
-            stepSize: 1
-            value: Config.clock.hourSize
-            onMoved: v => updateClock({ hourSize: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.minute_size")
-            visible: ClockSizing.fieldsForLayout(Config.clock.layout).includes("minuteSize")
-            from: ClockSizing.boundsFor(Config.clock.layout, "minuteSize")?.min ?? 40
-            to: ClockSizing.boundsFor(Config.clock.layout, "minuteSize")?.max ?? 200
-            stepSize: 1
-            value: Config.clock.minuteSize
-            onMoved: v => updateClock({ minuteSize: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.time_spacing")
-            visible: ClockSizing.fieldsForLayout(Config.clock.layout).includes("timeSpacing")
-            from: ClockSizing.boundsFor(Config.clock.layout, "timeSpacing")?.min ?? -100
-            to: ClockSizing.boundsFor(Config.clock.layout, "timeSpacing")?.max ?? 40
-            stepSize: 1
-            value: Config.clock.timeSpacing
-            onMoved: v => updateClock({ timeSpacing: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.date_spacing")
-            visible: Config.clock.showDate
-            from: ClockSizing.boundsFor(Config.clock.layout, "dateSpacing")?.min ?? -60
-            to: ClockSizing.boundsFor(Config.clock.layout, "dateSpacing")?.max ?? 40
-            stepSize: 1
-            value: Config.clock.dateSpacing
-            onMoved: v => updateClock({ dateSpacing: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.date_size")
-            visible: Config.clock.showDate
-            isLast: true
-            from: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.min ?? 10
-            to: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.max ?? 60
-            stepSize: 1
-            value: Config.clock.dateSize
-            onMoved: v => updateClock({ dateSize: v })
-        }
-    }
+        delegate: SectionCard {
+            id: card
+            required property var modelData
 
-    SectionCard {
-        Layout.fillWidth: true
-        sectionKey: "word-size"
-        visible: Config.clock.layout === "word"
+            Layout.fillWidth: true
+            sectionKey: card.modelData.id
+            label: pageRoot.lt(card.modelData.label)
+            visible: ClockOptions.groupVisible(card.modelData, pageRoot.layoutId, pageRoot.optionState)
 
-        SettingSlider {
-            label: Localization.t("clockPage.word_size")
-            from: ClockSizing.boundsFor(Config.clock.layout, "hourSize")?.min ?? 40
-            to: ClockSizing.boundsFor(Config.clock.layout, "hourSize")?.max ?? 200
-            stepSize: 1
-            value: Config.clock.hourSize
-            onMoved: v => updateClock({ hourSize: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.line_spacing")
-            from: ClockSizing.boundsFor(Config.clock.layout, "wordSpacing")?.min ?? -40
-            to: ClockSizing.boundsFor(Config.clock.layout, "wordSpacing")?.max ?? 40
-            stepSize: 1
-            value: Config.clock.wordSpacing ?? -6
-            onMoved: v => updateClock({ wordSpacing: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.date_spacing")
-            visible: Config.clock.showDate
-            from: ClockSizing.boundsFor(Config.clock.layout, "dateSpacing")?.min ?? -60
-            to: ClockSizing.boundsFor(Config.clock.layout, "dateSpacing")?.max ?? 40
-            stepSize: 1
-            value: Config.clock.dateSpacing
-            onMoved: v => updateClock({ dateSpacing: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.date_size")
-            visible: Config.clock.showDate
-            isLast: true
-            from: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.min ?? 10
-            to: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.max ?? 60
-            stepSize: 1
-            value: Config.clock.dateSize
-            onMoved: v => updateClock({ dateSize: v })
-        }
-    }
+            Repeater {
+                model: card.modelData.options
 
-    SectionCard {
-        Layout.fillWidth: true
-        sectionKey: "analog-size"
-        visible: Config.clock.layout === "analog"
+                delegate: DelegateChooser {
+                    role: "kind"
 
-        SettingSlider {
-            label: Localization.t("clockPage.clock_size")
-            from: ClockSizing.boundsFor(Config.clock.layout, "analogSize")?.min ?? 80
-            to: ClockSizing.boundsFor(Config.clock.layout, "analogSize")?.max ?? 500
-            stepSize: 4
-            value: Config.clock.analogSize ?? 200
-            onMoved: v => updateClock({ analogSize: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.face_wobble")
-            sublabel: Localization.t("clockPage.number_of_lobes_on_the")
-            from: 2
-            to: 20
-            stepSize: 1
-            value: Config.clock.ringSides ?? 8
-            onMoved: v => updateClock({ ringSides: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.wobble_depth")
-            sublabel: Localization.t("clockPage.how_far_the_edge_undulates")
-            from: 0
-            to: 30
-            stepSize: 1
-            value: Config.clock.ringAmplitude ?? 6
-            onMoved: v => updateClock({ ringAmplitude: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.date_spacing")
-            visible: Config.clock.showDate && ClockSizing.fieldsForLayout(Config.clock.layout).includes("dateSpacing")
-            from: -60
-            to: 40
-            stepSize: 1
-            value: Config.clock.dateSpacing
-            onMoved: v => updateClock({ dateSpacing: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.date_size")
-            visible: Config.clock.showDate
-            isLast: true
-            from: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.min ?? 10
-            to: ClockSizing.boundsFor(Config.clock.layout, "dateSize")?.max ?? 60
-            stepSize: 1
-            value: Config.clock.dateSize
-            onMoved: v => updateClock({ dateSize: v })
-        }
-    }
+                    DelegateChoice {
+                        roleValue: "switch"
+                        SettingSwitch {
+                            required property var modelData
+                            settingKey: modelData.key
+                            visible: pageRoot.isShown(modelData)
+                            enabled: !pageRoot.isLocked(modelData)
+                            opacity: enabled ? 1 : 0.6
+                            label: pageRoot.labelOf(modelData)
+                            sublabel: pageRoot.subOf(modelData)
+                            checked: pageRoot.value(modelData)
+                            onToggled: v => pageRoot.updateClock({ [modelData.key]: v })
+                        }
+                    }
 
-    SectionCard {
-        Layout.fillWidth: true
-        sectionKey: "shadow"
+                    DelegateChoice {
+                        roleValue: "slider"
+                        SettingSlider {
+                            required property var modelData
+                            readonly property var span: ClockOptions.range(modelData, pageRoot.layoutId)
+                            readonly property real factor: modelData.display ?? 1
 
-        SettingSlider {
-            label: Localization.t("clockPage.shadow_blur")
-            from: 0
-            to: 64
-            stepSize: 1
-            value: Config.clock.shadowBlur
-            onMoved: v => updateClock({ shadowBlur: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.shadow_x")
-            from: -40
-            to: 40
-            stepSize: 1
-            value: Config.clock.shadowX ?? 0
-            onMoved: v => updateClock({ shadowX: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.shadow_y")
-            from: -40
-            to: 40
-            stepSize: 1
-            value: Config.clock.shadowY ?? 0
-            onMoved: v => updateClock({ shadowY: v })
-        }
-        SettingSlider {
-            label: Localization.t("clockPage.shadow_opacity")
-            isLast: true
-            from: 0
-            to: 100
-            stepSize: 1
-            value: Math.round((Config.clock.shadowOpacity ?? 0.2) * 100)
-            onMoved: v => updateClock({ shadowOpacity: v / 100 })
+                            settingKey: modelData.key
+                            visible: pageRoot.isShown(modelData)
+                            enabled: !pageRoot.isLocked(modelData)
+                            opacity: enabled ? 1 : 0.6
+                            label: pageRoot.labelOf(modelData)
+                            sublabel: pageRoot.subOf(modelData)
+                            from: span.min
+                            to: span.max
+                            stepSize: span.step
+                            unit: span.unit ?? ""
+                            value: Math.round(pageRoot.value(modelData) * factor)
+                            onMoved: v => pageRoot.updateClock({ [modelData.key]: v / factor })
+                        }
+                    }
+
+                    DelegateChoice {
+                        roleValue: "chips"
+                        SettingChips {
+                            required property var modelData
+                            settingKey: modelData.key
+                            visible: pageRoot.isShown(modelData)
+                            enabled: !pageRoot.isLocked(modelData)
+                            opacity: enabled ? 1 : 0.6
+                            label: pageRoot.labelOf(modelData)
+                            sublabel: pageRoot.subOf(modelData)
+                            options: pageRoot.choicesOf(modelData)
+                            currentValue: pageRoot.value(modelData)
+                            onSelected: v => pageRoot.updateClock({ [modelData.key]: v })
+                        }
+                    }
+
+                    DelegateChoice {
+                        roleValue: "select"
+                        SettingSelect {
+                            required property var modelData
+                            settingKey: modelData.key
+                            visible: pageRoot.isShown(modelData)
+                            enabled: !pageRoot.isLocked(modelData)
+                            opacity: enabled ? 1 : 0.6
+                            label: pageRoot.labelOf(modelData)
+                            sublabel: pageRoot.subOf(modelData)
+                            options: pageRoot.choicesOf(modelData)
+                            currentValue: pageRoot.value(modelData)
+                            onSelected: v => pageRoot.updateClock({ [modelData.key]: v })
+                        }
+                    }
+
+                    DelegateChoice {
+                        roleValue: "font"
+                        SettingSelect {
+                            required property var modelData
+                            settingKey: modelData.key
+                            visible: pageRoot.isShown(modelData)
+                            enabled: !pageRoot.isLocked(modelData)
+                            opacity: enabled ? 1 : 0.6
+                            label: pageRoot.labelOf(modelData)
+                            sublabel: pageRoot.subOf(modelData)
+                            options: pageRoot.systemFontsModel
+                            currentValue: pageRoot.value(modelData)
+                            onSelected: v => {
+                                if (v && v.trim().length > 0)
+                                    pageRoot.updateClock({ [modelData.key]: v.trim() });
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

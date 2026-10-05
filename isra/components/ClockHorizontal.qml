@@ -3,42 +3,87 @@ import QtQuick.Layouts
 import qs.style
 import qs.services
 
-Item {
+ClockFace {
     id: root
 
-    property var    currentTime
-    property color  textColor
-    property color  subColor
-    property int    halign
-    property bool   showSeconds
-    property bool   is12h
-    property int    analogSize
+    readonly property real baseSize: root.size
 
-    property string clockFont:      "Google Sans Flex"
-    property int    fontWeight:     Config.clock.hourWeight    ?? 600
-    property real   fontWidth:      Config.clock.fontWidth     ?? 100
-    property real   fontRoundness:  Config.clock.fontRoundness ?? 0
-    property real   subWeight:      Config.clock.minuteWeight  ?? 300
+    readonly property string hourShape:   root.cfg.hourShape   ?? "cookie12"
+    readonly property string minuteShape: root.cfg.minuteShape ?? "square"
 
-    readonly property int  baseSize:         Config.clock.hourSize ?? 64
-    readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
-    readonly property var  mainAxes:         ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
-    readonly property var  subAxes:          ({ "wght": root.subWeight,  "wdth": root.fontWidth,  "ROND": root.fontRoundness  })
+    readonly property real dateGap: root.tiled ? 8 : root.textDateGap
 
     implicitWidth:  timeRow.implicitWidth
     implicitHeight: timeRow.implicitHeight
-                  + (Config.clock.showDate
-                        ? Config.clock.dateSpacing + dateLbl.implicitHeight
-                        : 0)
+                  + (root.cfg.showDate ? root.dateGap + dateLbl.implicitHeight : 0)
 
     RowLayout {
         id: timeRow
 
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 6
+        spacing: root.tiled ? (root.cfg.tileSpacing ?? 6) : 6
+
+        ClockDigitGrid {
+            visible: root.grid
+            Layout.alignment: Qt.AlignVCenter
+            columns:       4
+            columnSpacing: root.cfg.gridColumnSpacing ?? 0
+            outline:       root.cfg.digitOutline ?? 0
+
+            hourColor:        root.textColor
+            minuteColor:      root.subColor
+            clockFont:        root.clockFont
+            fontSize:         root.baseSize
+            hourWeight:       root.fontWeight
+            minuteWeight:     root.subWeight
+            isGoogleSansFlex: root.isGoogleSansFlex
+            hourAxes:         root.mainAxes
+            minuteAxes:       root.subAxes
+        }
+
+        ClockTile {
+            id: hourTile
+            visible: root.tiled
+            Layout.alignment: Qt.AlignVCenter
+            text:       LocaleService.liveTime.split(":")[0]
+            shape:      root.hourShape
+            fill:       root.tileFill(root.cfg.colorRole ?? "primary")
+            onFill:     root.tileOnFill(root.cfg.colorRole ?? "primary")
+            plainColor: root.textColor
+            immediate:  root.immediateShapes
+            spinKey:    hourTile.text
+
+            clockFont:        root.clockFont
+            fontSize:         root.baseSize
+            fontWeight:       root.fontWeight
+            isGoogleSansFlex: root.isGoogleSansFlex
+            axes:             root.mainAxes
+            measureWeight:     Math.max(root.fontWeight, root.subWeight)
+        }
+
+        ClockTile {
+            id: minuteTile
+            visible: root.tiled
+            Layout.alignment: Qt.AlignVCenter
+            text:       LocaleService.liveTime.split(":")[1]
+            shape:      root.minuteShape
+            fill:       root.tileFill(root.cfg.subColorRole ?? "secondary")
+            onFill:     root.tileOnFill(root.cfg.subColorRole ?? "secondary")
+            plainColor: root.textColor
+            immediate:  root.immediateShapes
+            spinKey:    minuteTile.text
+
+            clockFont:        root.clockFont
+            fontSize:         root.baseSize
+            fontWeight:       root.subWeight
+            isGoogleSansFlex: root.isGoogleSansFlex
+            axes:             root.subAxes
+            measureWeight:     Math.max(root.fontWeight, root.subWeight)
+        }
 
         Text {
-            Layout.alignment: Qt.AlignBaseline
+            visible: !root.tiled && !root.grid
+            Layout.alignment: Qt.AlignVCenter
             color: root.textColor
             text:  LocaleService.liveTime.split(":").slice(0, 2).join(":")
 
@@ -50,57 +95,24 @@ Item {
             font.variableAxes:  root.isGoogleSansFlex ? root.mainAxes : ({})
         }
 
-        Text {
-            visible:          root.showSeconds
-            Layout.alignment: Qt.AlignBaseline
-            color: root.subColor
-            text:  ":" + LocaleService.liveSecs
-
-            font.family:       root.clockFont
-            font.pixelSize:    root.baseSize * 0.55
-            font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
-            font.features:     { "tnum": 1 }
-            font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
-        }
-
-        Item {
-            visible:               root.is12h
-            Layout.preferredWidth: 4
-        }
-
-        Text {
-            visible:          root.is12h
-            Layout.alignment: Qt.AlignBaseline
-            color: root.subColor
-            text:  LocaleService.liveAmPm.trim()
-
-            font.family:        root.clockFont
-            font.pixelSize:     root.baseSize * 0.35
-            font.weight:        root.isGoogleSansFlex ? Font.Normal : root.subWeight
-            font.letterSpacing: 0.5
-            font.variableAxes:  root.isGoogleSansFlex ? root.subAxes : ({})
+        ClockExtras {
+            Layout.alignment: Qt.AlignVCenter
+            Layout.leftMargin: root.tiled ? 0 : root.baseSize * 0.1
+            face: root
+            unit: root.tiled ? hourTile.size : root.baseSize
         }
     }
 
-    Text {
+    ClockDate {
         id: dateLbl
+        face: root
+        pill: root.tiled
 
-        visible: Config.clock.showDate
-        color:   root.subColor
-        text:    LocaleService.shortDateText
-
-        width:               timeRow.width
-        horizontalAlignment: root.halign
-
+        width: timeRow.width
         anchors {
             left:      timeRow.left
             top:       timeRow.bottom
-            topMargin: Config.clock.dateSpacing
+            topMargin: root.dateGap
         }
-
-        font.family:       root.clockFont
-        font.pixelSize:    Config.clock.dateSize
-        font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
-        font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
     }
 }

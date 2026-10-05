@@ -2,85 +2,121 @@ import QtQuick
 import qs.style
 import qs.services
 
-Item {
+ClockFace {
     id: root
 
-    property var    currentTime
-    property color  textColor
-    property color  subColor
-    property int    halign
-    property bool   showSeconds
-    property bool   is12h
-    property int    analogSize
+    readonly property string hourShape:   root.cfg.hourShape   ?? "cookie12"
+    readonly property string minuteShape: root.cfg.minuteShape ?? "square"
 
-    property string clockFont:      "Google Sans Flex"
-    property int    fontWeight:     Config.clock.hourWeight    ?? 500
-    property real   fontWidth:      Config.clock.fontWidth     ?? 100
-    property real   fontRoundness:  Config.clock.fontRoundness ?? 0
-    property real   subWeight:      Config.clock.minuteWeight  ?? 300
+    readonly property real minuteFontSize: root.size * (root.cfg.minuteSize ?? 100) / 100
+    readonly property real lineGap: root.tiled ? (root.cfg.tileSpacing ?? 6) : (root.cfg.timeSpacing ?? -30)
 
-    readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
+    readonly property real _timeWidth: root.grid ? gridBox.width : Math.max(hoursLbl.implicitWidth, minsLbl.implicitWidth)
+    readonly property real _timeHeight: root.grid
+        ? gridBox.height
+        : hoursLbl.implicitHeight + root.lineGap + minsLbl.implicitHeight
 
-    readonly property var mainAxes: ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
-    readonly property var subAxes:  ({ "wght": root.subWeight,  "wdth": root.fontWidth,  "ROND": root.fontRoundness  })
+    readonly property real dateGap: root.tiled ? 8 : root.textDateGap
 
-    readonly property real _timeWidth: Math.max(hoursLbl.implicitWidth, minsLbl.implicitWidth)
+    implicitWidth:  Math.max(mainRow.implicitWidth, root.cfg.showDate ? dateLbl.implicitWidth : 0)
+    implicitHeight: mainRow.implicitHeight
+                  + (root.cfg.showDate ? root.dateGap + dateLbl.implicitHeight : 0)
 
-    implicitWidth:  Math.max(_timeWidth, Config.clock.showDate ? dateLbl.implicitWidth : 0)
-    implicitHeight: hoursLbl.implicitHeight + Config.clock.timeSpacing + minsLbl.implicitHeight
-                  + (Config.clock.showDate ? Config.clock.dateSpacing + dateLbl.implicitHeight : 0)
-
-    Text {
-        id: hoursLbl
-
+    Row {
+        id: mainRow
         anchors.horizontalCenter: parent.horizontalCenter
-        color: root.textColor
-        text:  LocaleService.liveTime.split(":")[0]
+        spacing: root.tiled ? 6 : root.size * 0.1
 
-        font.family:       root.clockFont
-        font.pixelSize:    Config.clock.hourSize
-        font.weight:       root.isGoogleSansFlex ? Font.Normal : root.fontWeight
-        font.features:     { "tnum": 1 }
-        font.variableAxes: root.isGoogleSansFlex ? root.mainAxes : ({})
-    }
+        Item {
+            id: timeBox
+            width:  root._timeWidth
+            height: root._timeHeight
 
-    Text {
-        id: minsLbl
+            ClockTile {
+                id: hoursLbl
 
-        anchors {
-            horizontalCenter: parent.horizontalCenter
-            top:              hoursLbl.bottom
-            topMargin:        Config.clock.timeSpacing
+                visible: !root.grid
+                anchors.horizontalCenter: parent.horizontalCenter
+                text:       LocaleService.liveTime.split(":")[0]
+                shape:      root.tiled ? root.hourShape : "none"
+                fill:       root.tileFill(root.cfg.colorRole ?? "primary")
+                onFill:     root.tileOnFill(root.cfg.colorRole ?? "primary")
+                plainColor: root.textColor
+                immediate:  root.immediateShapes
+                spinKey:    hoursLbl.text
+
+                clockFont:        root.clockFont
+                fontSize:         root.size
+                fontWeight:       root.fontWeight
+                isGoogleSansFlex: root.isGoogleSansFlex
+                axes:             root.mainAxes
+                measureWeight:    Math.max(root.fontWeight, root.subWeight)
+            }
+
+            ClockTile {
+                id: minsLbl
+
+                visible: !root.grid
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    top:              hoursLbl.bottom
+                    topMargin:        root.lineGap
+                }
+                text:       LocaleService.liveTime.split(":")[1]
+                shape:      root.tiled ? root.minuteShape : "none"
+                fill:       root.tileFill(root.cfg.subColorRole ?? "secondary")
+                onFill:     root.tileOnFill(root.cfg.subColorRole ?? "secondary")
+                plainColor: root.subColor
+                immediate:  root.immediateShapes
+                spinKey:    minsLbl.text
+
+                clockFont:        root.clockFont
+                fontSize:         root.minuteFontSize
+                fontWeight:       root.subWeight
+                isGoogleSansFlex: root.isGoogleSansFlex
+                axes:             root.subAxes
+                measureWeight:    Math.max(root.fontWeight, root.subWeight)
+            }
+
+            ClockDigitGrid {
+                id: gridBox
+
+                visible: root.grid
+                anchors.horizontalCenter: parent.horizontalCenter
+                columns:       2
+                columnSpacing: root.cfg.gridColumnSpacing ?? 0
+                rowSpacing:    root.cfg.gridRowSpacing ?? 0
+                outline:       root.cfg.digitOutline ?? 0
+
+                hourColor:        root.textColor
+                minuteColor:      root.subColor
+                clockFont:        root.clockFont
+                fontSize:         root.size
+                hourWeight:       root.fontWeight
+                minuteWeight:     root.subWeight
+                isGoogleSansFlex: root.isGoogleSansFlex
+                hourAxes:         root.mainAxes
+                minuteAxes:       root.subAxes
+            }
         }
-        color: root.subColor
-        text:  LocaleService.liveTime.split(":")[1]
 
-        font.family:       root.clockFont
-        font.pixelSize:    Config.clock.minuteSize
-        font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
-        font.features:     { "tnum": 1 }
-        font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
+        ClockExtras {
+            anchors.verticalCenter: parent.verticalCenter
+            face: root
+            unit: root.tiled ? hoursLbl.size : root.size
+        }
     }
 
-    Text {
+    ClockDate {
         id: dateLbl
+        face: root
+        pill: root.tiled
 
-        visible: Config.clock.showDate
-        color:   root.subColor
-        text:    LocaleService.shortDateText
-
-        width:               root.width
-        horizontalAlignment: root.halign
-
+        width: root.width
         anchors {
             left:      parent.left
-            top:       minsLbl.bottom
-            topMargin: Config.clock.dateSpacing
+            top:       mainRow.bottom
+            topMargin: root.dateGap
         }
-
-        font.family:       root.clockFont
-        font.pixelSize:    Config.clock.dateSize
-        font.weight:       root.isGoogleSansFlex ? Font.Normal : Font.Light
-        font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
     }
 }

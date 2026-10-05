@@ -5,34 +5,61 @@ import qs.style
 import qs.icons
 import qs.services
 
-Item {
+ClockFace {
     id: root
 
-    property var currentTime
-    property string clockFont
-    property color textColor
-    property color subColor
-    property int halign
-    property bool showSeconds
-    property bool is12h
-    property int analogSize
-    property bool immediateShapes: false
-    property real dateSize: Config.clock.dateSize ?? 25
-    property real outlineWidth: Config.clock.outlineWidth ?? 2
-
-    property int    fontWeight:    Config.clock.hourWeight    ?? 600
-    property real   fontWidth:     Config.clock.fontWidth     ?? 100
-    property real   fontRoundness: Config.clock.fontRoundness ?? 0
-    property real   subWeight:     Config.clock.minuteWeight  ?? 300
-
-    readonly property bool isGoogleSansFlex: root.clockFont === "Google Sans Flex"
-    readonly property var  mainAxes:         ({ "wght": root.fontWeight, "wdth": root.fontWidth, "ROND": root.fontRoundness })
-    readonly property var  subAxes:          ({ "wght": root.subWeight,  "wdth": root.fontWidth,  "ROND": root.fontRoundness  })
+    property real dateSize: root.analogSize * 0.125 * (root.cfg.dateSize ?? 100) / 100
+    property real outlineWidth: root.cfg.outlineWidth ?? 2
 
     readonly property var  qtLocale:      Qt.locale(Config.language.split("_").slice(0, 2).join("_"))
 
-    readonly property real ringSides:     Config.clock.ringSides     ?? 8
-    readonly property real ringAmplitude: (Config.clock.ringAmplitude ?? 6) * (root.analogSize / 200)
+    readonly property bool badgesShown: (root.cfg.showDate ?? false) && root.dateStyle === "badges"
+    readonly property bool rimShown:    (root.cfg.showDate ?? false) && root.dateStyle === "rim"
+
+    readonly property real rimRadius:    root.analogSize / 2 - root.ringAmplitude - root.dateSize * 0.75
+    readonly property real secondsDeg: root.currentTime.getSeconds() * 6 + root.currentTime.getMilliseconds() * 0.006
+    readonly property real rimCenterDeg: (root.cfg.showSeconds ?? false) ? (root.secondsDeg + 180) % 360 : 300
+    readonly property string rimText: root.currentTime.toLocaleDateString(root.qtLocale, "ddd d")
+    readonly property var  rimLayout: {
+        rimFm.ascent;
+        const chars = root.rimText.split("");
+        const adv = chars.map(c => rimFm.advanceWidth(c));
+        const total = adv.reduce((a, b) => a + b, 0);
+        const degPerPx = 180 / Math.PI / root.rimRadius;
+        let x = -total / 2;
+        const out = [];
+        for (let i = 0; i < chars.length; i++) {
+            out.push({ ch: chars[i], deg: (x + adv[i] / 2) * degPerPx });
+            x += adv[i];
+        }
+        return { chars: out, span: total * degPerPx };
+    }
+    readonly property bool rimFlip: root.rimCenterDeg > 90 && root.rimCenterDeg < 270
+
+    function rimCovers(deg) {
+        if (!root.rimShown) return false;
+        const d = ((deg - root.rimCenterDeg + 540) % 360) - 180;
+        return Math.abs(d) <= root.rimLayout.span / 2 + 15;
+    }
+
+    FontMetrics {
+        id: rimFm
+        font.family:       root.clockFont
+        font.pixelSize:    root.dateSize
+        font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
+        font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
+    }
+
+    function handStyle(key, fallback) { return root.cfg[key] ?? fallback; }
+    function handWidth(key) { return (root.cfg[key] ?? 100) / 100; }
+    function handColor(key, fallback) { return Colors.md3[root.cfg[key] ?? ""] ?? fallback; }
+
+    readonly property string dialStyle: root.cfg.dialStyle ?? "digital"
+    readonly property bool   showFace:  root.cfg.showFace ?? true
+    readonly property string dateStyle: root.cfg.dateStyle ?? "badges"
+
+    readonly property real ringSides:     root.cfg.ringSides ?? 12
+    readonly property real ringAmplitude: (root.cfg.ringAmplitude ?? 6) * (root.analogSize / 200)
     readonly property int  ringPoints:    256
 
     implicitWidth:  analogSize + root.outlineWidth
@@ -43,8 +70,8 @@ Item {
         anchors.centerIn: face
         width:  root.analogSize + root.outlineWidth
         height: root.analogSize + root.outlineWidth
-        visible: true
-        layer.enabled: true
+        visible: root.showFace
+        layer.enabled: visible
         layer.samples: 4
 
         ShapePath {
@@ -82,10 +109,12 @@ Item {
         height: root.analogSize
 
         Repeater {
-            model: 12
+            model: root.dialStyle !== "numerals" ? 12 : 0
             Item {
                 anchors.fill: parent
                 rotation: index * 30
+                opacity: root.rimCovers(index * 30) ? 0 : 1
+                Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
                 Rectangle {
                     width: 6 * (root.analogSize / 200)
                     height: (index % 3 === 0 ? 10 : 6) * (root.analogSize / 200)
@@ -100,13 +129,66 @@ Item {
             }
         }
 
+        Repeater {
+            model: root.dialStyle === "numerals" ? ["12", "3", "6", "9"] : []
+
+            Text {
+                readonly property real angle: index * Math.PI / 2
+                readonly property real reach: root.analogSize * 0.335 - root.ringAmplitude * 2
+
+                x: face.width  / 2 + Math.sin(angle) * reach - width  / 2
+                y: face.height / 2 - Math.cos(angle) * reach - height / 2
+                z: 1
+                color: Qt.alpha(root.textColor, 0.9)
+                text:  modelData
+
+                font.family:        root.clockFont
+                font.pixelSize:     root.analogSize * 0.29
+                font.weight:        root.isGoogleSansFlex ? Font.Normal : root.fontWeight
+                font.letterSpacing: -root.analogSize * 0.004
+                font.variableAxes:  root.isGoogleSansFlex ? root.mainAxes : ({})
+            }
+        }
+
+        Item {
+            anchors.fill: parent
+            z: 2
+            rotation: root.rimCenterDeg
+            opacity: root.rimShown ? 1 : 0
+            visible: opacity > 0
+            Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+
+            Repeater {
+                model: root.rimLayout.chars
+
+                Item {
+                    x: face.width  / 2
+                    y: face.height / 2
+                    rotation: root.rimFlip ? -modelData.deg : modelData.deg
+
+                    Text {
+                        x: -width / 2
+                        y: -root.rimRadius - height / 2
+                        rotation: root.rimFlip ? 180 : 0
+                        color: root.subColor
+                        text:  modelData.ch
+
+                        font.family:       root.clockFont
+                        font.pixelSize:    root.dateSize
+                        font.weight:       root.isGoogleSansFlex ? Font.Normal : root.subWeight
+                        font.variableAxes: root.isGoogleSansFlex ? root.subAxes : ({})
+                    }
+                }
+            }
+        }
+
         Column {
             id: innerDigitalClock
             anchors.centerIn: parent
             spacing: -root.analogSize * 0.1
             z: 1
 
-            readonly property bool shown: Config.clock.showDigitalInside ?? false
+            readonly property bool shown: root.dialStyle === "digital"
             opacity: shown ? 0.5 : 0.0
             scale:   shown ? 1.0  : 0.75
 
@@ -157,15 +239,11 @@ Item {
                       + root.currentTime.getMilliseconds() * (0.1 / 1000)
             z: 3
 
-            Rectangle {
-                width: root.analogSize * 0.05
-                height: root.analogSize * 0.32 + width
-                radius: width / 2
-                color: root.subColor
-                anchors.bottom: parent.verticalCenter
-                anchors.bottomMargin: -radius
-                anchors.horizontalCenter: parent.horizontalCenter
-                antialiasing: true
+            ClockHand {
+                style:     root.handStyle("minuteHandStyle", "capsule")
+                length:    root.analogSize * 0.32
+                thickness: root.analogSize * 0.05 * root.handWidth("minuteHandWidth")
+                color:     root.handColor("minuteHandColor", root.subColor)
             }
         }
 
@@ -178,15 +256,11 @@ Item {
                       + root.currentTime.getSeconds() * (0.5 / 60)
             z: 4
 
-            Rectangle {
-                width: root.analogSize * 0.08
-                height: root.analogSize * 0.20 + width
-                radius: width / 2
-                color: root.textColor
-                anchors.bottom: parent.verticalCenter
-                anchors.bottomMargin: -radius
-                anchors.horizontalCenter: parent.horizontalCenter
-                antialiasing: true
+            ClockHand {
+                style:     root.handStyle("hourHandStyle", "capsule")
+                length:    root.analogSize * 0.20
+                thickness: root.analogSize * 0.08 * root.handWidth("hourHandWidth")
+                color:     root.handColor("hourHandColor", root.textColor)
             }
         }
 
@@ -198,28 +272,27 @@ Item {
                       + root.currentTime.getMilliseconds() * 0.006
             z: 5
 
-            Rectangle {
-                width: root.analogSize * 0.08
-                height: width
-                radius: width / 2
-                color: Colors.md3.tertiary ?? Colors.md3.error ?? "#ff6b6b"
-                y: root.analogSize * 0.15
-                anchors.horizontalCenter: parent.horizontalCenter
-                antialiasing: true
-                opacity: Config.clock.showSeconds ? 1.0 : 0.0
-                scale: Config.clock.showSeconds ? 1.0 : 0.75
+            ClockHand {
+                readonly property string handKind: root.handStyle("secondHandStyle", "dot")
+
+                style:     handKind
+                length:    root.analogSize * (handKind === "dot" ? 0.31 : 0.38)
+                thickness: root.analogSize * 0.08 * root.handWidth("secondHandWidth")
+                color:     root.handColor("secondHandColor", Colors.md3.tertiary ?? Colors.md3.error ?? "#ff6b6b")
+                opacity:   root.cfg.showSeconds ? 1.0 : 0.0
+                scale:     root.cfg.showSeconds ? 1.0 : 0.75
+                transformOrigin: Item.Bottom
 
                 Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
                 Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
-
             }
         }
 
         Rectangle {
-            width: root.analogSize * 0.05
+            width: root.analogSize * 0.035
             height: width
             radius: width / 2
-            color: root.textColor
+            color: root.showFace ? (Colors.md3.surface_container_high ?? Colors.md3.surface) : Colors.md3.surface
             anchors.centerIn: parent
             z: 10
             antialiasing: true
@@ -235,15 +308,16 @@ Item {
 
     readonly property real dateRimPush:   7 * (root.analogSize / 200)
     readonly property real dateRimOffset: (root.analogSize / 2) * Math.SQRT1_2 + root.dateRimPush
+    readonly property int  daySide: Config.dateOrder === 1 ? 1 : -1
 
     Item {
         id: dayBadge
-        x: face.x + face.width  / 2 - root.dateRimOffset - width  / 2
-        y: face.y + face.height / 2 - root.dateRimOffset - height / 2
+        x: face.x + face.width  / 2 + root.daySide * root.dateRimOffset - width  / 2
+        y: face.y + face.height / 2 + root.daySide * root.dateRimOffset - height / 2
 
         z: 2
-        opacity: Config.clock.showDate ? 1 : 0
-        scale: Config.clock.showDate ? 1.0 : 0.75
+        opacity: root.badgesShown ? 1 : 0
+        scale: root.badgesShown ? 1.0 : 0.75
 
         Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
         Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
@@ -275,12 +349,12 @@ Item {
 
     Item {
         id: monthBadge
-        x: face.x + face.width  / 2 + root.dateRimOffset - width  / 2
-        y: face.y + face.height / 2 + root.dateRimOffset - height / 2
+        x: face.x + face.width  / 2 - root.daySide * root.dateRimOffset - width  / 2
+        y: face.y + face.height / 2 - root.daySide * root.dateRimOffset - height / 2
 
         z: 2
-        opacity: Config.clock.showDate ? 1 : 0
-        scale: Config.clock.showDate ? 1.0 : 0.75
+        opacity: root.badgesShown ? 1 : 0
+        scale: root.badgesShown ? 1.0 : 0.75
 
         Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
         Behavior on scale   { NumberAnimation { duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] } }
