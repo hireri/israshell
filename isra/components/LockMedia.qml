@@ -95,7 +95,9 @@ Rectangle {
             CrossfadeArt {
                 id: art
 
-                readonly property bool spin: root.isPlaying && (Config.bar.spinningCover ?? false)
+                readonly property bool spinEnabled: Config.bar.spinningCover ?? false
+                readonly property bool spin: root.isPlaying && spinEnabled
+                settleUpright: !spinEnabled
                 property real velocity: spin ? 0.5 : 0
 
                 anchors.fill: parent
@@ -112,8 +114,8 @@ Rectangle {
                 Timer {
                     interval: 16
                     repeat: true
-                    running: art.spin || art.velocity > 0.001
-                    onTriggered: art.rotation = (art.rotation + art.velocity) % 360
+                    running: art.spinEnabled && (art.spin || art.velocity > 0.001)
+                    onTriggered: art.contentRotation = (art.contentRotation + art.velocity) % 360
                 }
             }
         }

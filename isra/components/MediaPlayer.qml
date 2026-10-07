@@ -102,7 +102,8 @@ ClippingRectangle {
             anchors.verticalCenter: parent.verticalCenter
 
             readonly property bool isPlaying: MediaPlayerState.displayPlayer?.playbackState === MprisPlaybackState.Playing
-            readonly property bool shouldSpin: Config.bar.spinningCover && isPlaying
+            readonly property bool spinEnabled: Config.bar.spinningCover ?? false
+            readonly property bool shouldSpin: spinEnabled && isPlaying
 
             readonly property bool hasPlayer: MediaPlayerState.displayPlayer !== null && MediaPlayerState.displayPlayer !== undefined
             readonly property bool showRing: hasPlayer && (Config.bar.playerRing ?? false)
@@ -174,9 +175,8 @@ ClippingRectangle {
                 url: MediaPlayerState.displayPlayer?.trackArtUrl ?? ""
                 renderSize: Qt.size(60, 60)
 
-                property real angle: 0
                 property real velocity: pillCover.shouldSpin ? 0.5 : 0
-                rotation: angle
+                settleUpright: !pillCover.spinEnabled
 
                 Behavior on velocity {
                     NumberAnimation {
@@ -187,9 +187,9 @@ ClippingRectangle {
 
                 Timer {
                     interval: 16
-                    running: Math.abs(pillArt.velocity) > 0.001
+                    running: pillCover.spinEnabled && Math.abs(pillArt.velocity) > 0.001
                     repeat: true
-                    onTriggered: pillArt.angle = (pillArt.angle + pillArt.velocity) % 360
+                    onTriggered: pillArt.contentRotation = (pillArt.contentRotation + pillArt.velocity) % 360
                 }
             }
         }

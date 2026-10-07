@@ -13,6 +13,26 @@ ClippingRectangle {
     property real blurMax: 32
     property size renderSize: Qt.size(120, 120)
     property int fadeDuration: 260
+    property real contentRotation: 0
+    property bool settleUpright: false
+
+    onSettleUprightChanged: {
+        if (!settleUpright) {
+            uprightAnim.stop();
+            return;
+        }
+        uprightAnim.to = contentRotation > 180 ? 360 : 0;
+        uprightAnim.restart();
+    }
+
+    NumberAnimation {
+        id: uprightAnim
+        target: root
+        property: "contentRotation"
+        duration: 500
+        easing.type: Easing.OutCubic
+        onFinished: root.contentRotation = 0
+    }
 
     color: "transparent"
 
@@ -95,6 +115,7 @@ ClippingRectangle {
         asynchronous: true
         cache: true
         opacity: 0
+        rotation: root.contentRotation
         layer.enabled: root.blurEnabled
         layer.effect: MultiEffect {
             blurEnabled: root.blurEnabled
@@ -115,6 +136,7 @@ ClippingRectangle {
         asynchronous: true
         cache: true
         opacity: 0
+        rotation: root.contentRotation
         layer.enabled: root.blurEnabled
         layer.effect: MultiEffect {
             blurEnabled: root.blurEnabled
