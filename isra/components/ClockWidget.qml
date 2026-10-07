@@ -390,7 +390,7 @@ Item {
         trackWidth: root._clockVisualWidth
         trackHeight: root._clockVisualHeight
         label: Localization.t("widgetService.clock")
-        interactive: (EditModeService.active || (Config.clock.manualPos ?? false)) && clockRoot.isClockEnabled
+        interactive: !root.forceCentered && (EditModeService.active || (Config.clock.manualPos ?? false)) && clockRoot.isClockEnabled
         showChrome: EditModeService.active && clockRoot.isClockEnabled
         movable: true
         resizable: EditModeService.active
