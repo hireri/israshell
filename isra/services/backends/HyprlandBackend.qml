@@ -63,6 +63,7 @@ Scope {
             name: m.name ?? "",
             id: m.id ?? -1,
             activeWorkspaceId: m.activeWorkspace?.id ?? -1,
+            specialWorkspaceId: m.lastIpcObject?.specialWorkspace?.id ?? 0,
             activeWorkspaceHasFullscreen: m.activeWorkspace?.hasFullscreen ?? false
         };
     }
@@ -103,7 +104,9 @@ Scope {
         function onFocusedWorkspaceChanged(): void { _updateState(); }
 
         function onRawEvent(event: HyprlandEvent): void {
-            if (event.name === "configreloaded") {
+            if (event.name === "activespecial") {
+                Hyprland.refreshMonitors();
+            } else if (event.name === "configreloaded") {
                 Hyprland.refreshWorkspaces();
                 Hyprland.refreshMonitors();
                 Hyprland.refreshToplevels();
@@ -113,6 +116,15 @@ Scope {
 
             Hyprland.refreshToplevels();
             Qt.callLater(_updateState);
+        }
+    }
+
+    Instantiator {
+        model: Hyprland.monitors
+        delegate: Connections {
+            required property HyprlandMonitor modelData
+            target: modelData
+            function onLastIpcObjectChanged(): void { _updateState(); }
         }
     }
 

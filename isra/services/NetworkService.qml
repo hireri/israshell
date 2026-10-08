@@ -24,6 +24,7 @@ Singleton {
 
     property string pendingPasswordSsid: ""
     property bool awaitingPassword: false
+    property bool passwordFailed: false
 
     property bool _netReady: false
     onWifiConnectedChanged: {
@@ -97,27 +98,42 @@ Singleton {
         connectProc.running = true;
     }
 
+    function requestPassword(ssid) {
+        passwordFailed = false;
+        pendingPasswordSsid = ssid;
+        awaitingPassword = true;
+    }
+
+    function cancelPassword() {
+        awaitingPassword = false;
+        passwordFailed = false;
+        pendingPasswordSsid = "";
+    }
+
     function connectWithPassword(ssid, password) {
         wifiConnecting = true;
-        awaitingPassword = false;
-        pendingPasswordSsid = "";
-        connectPasswordProc.environment = ({
-                "SSID": ssid,
-                "PASSWORD": password
-            });
-        connectPasswordProc.command = ["pkexec", "nmcli", "dev", "wifi", "connect", ssid, "password", password];
+        passwordFailed = false;
+        connectPasswordProc.ssid = ssid;
+        connectPasswordProc.command = ["nmcli", "dev", "wifi", "connect", ssid, "password", password];
         connectPasswordProc.running = false;
         connectPasswordProc.running = true;
     }
 
     function changePassword(ssid, password) {
         wifiConnecting = true;
-        awaitingPassword = false;
-        pendingPasswordSsid = "";
-        const qSsid = ShellQuote.shQuote(ssid);
-        changePasswordProc.command = ["pkexec", "bash", "-c", `nmcli connection modify ${qSsid} wifi-sec.psk ${ShellQuote.shQuote(password)} && nmcli dev wifi connect ${qSsid}`];
+        passwordFailed = false;
+        changePasswordProc.command = ["bash", "-c", `nmcli connection modify ${ShellQuote.shQuote(ssid)} wifi-sec.psk ${ShellQuote.shQuote(password)} && nmcli dev wifi connect ${ShellQuote.shQuote(ssid)}`];
         changePasswordProc.running = false;
         changePasswordProc.running = true;
+    }
+
+    function _passwordAttemptDone(code) {
+        wifiConnecting = false;
+        if (code === 0)
+            cancelPassword();
+        else
+            passwordFailed = true;
+        _updateAll();
     }
 
     function disconnectNetwork(ssid) {
@@ -359,11 +375,8 @@ Singleton {
             })
         stderr: SplitParser {
             onRead: line => {
-                if (line.includes("Secrets were required") || line.includes("password")) {
-                    const ssid = connectProc.command[connectProc.command.length - 1];
-                    root.pendingPasswordSsid = ssid;
-                    root.awaitingPassword = true;
-                }
+                if (line.includes("Secrets were required") || line.includes("password"))
+                    root.requestPassword(connectProc.command[connectProc.command.length - 1]);
             }
         }
         onExited: (code, status) => {
@@ -374,22 +387,28 @@ Singleton {
 
     Process {
         id: connectPasswordProc
+        property string ssid: ""
         environment: ({
                 LANG: "C",
                 LC_ALL: "C"
             })
         onExited: (code, status) => {
-            root.wifiConnecting = false;
-            root._updateAll();
+            if (code !== 0) {
+                dropFailedProc.command = ["nmcli", "connection", "delete", "id", ssid];
+                dropFailedProc.running = false;
+                dropFailedProc.running = true;
+            }
+            root._passwordAttemptDone(code);
         }
     }
 
     Process {
+        id: dropFailedProc
+    }
+
+    Process {
         id: changePasswordProc
-        onExited: (code, status) => {
-            root.wifiConnecting = false;
-            root._updateAll();
-        }
+        onExited: (code, status) => root._passwordAttemptDone(code)
     }
 
     Process {

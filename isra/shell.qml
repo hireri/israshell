@@ -80,6 +80,7 @@ ShellRoot {
     }
 
     Logout {}
+    PolkitDialog {}
     GameOverlay {}
 
     component BarZone: Row {

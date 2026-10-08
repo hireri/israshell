@@ -6,6 +6,7 @@ import Quickshell.Wayland
 import Quickshell.Io
 import Quickshell.Widgets
 import QtQuick.Shapes
+import QtQuick.Layouts
 import qs.style
 import qs.icons
 import qs.services
@@ -92,6 +93,20 @@ Item {
             },
         ])
 
+    readonly property bool modeLocked: root.activeTool === "record" && ScreencapService.isRecording
+
+    function selectTool(id) {
+        root.activeTool = id;
+        if (id === "record")
+            ScreencapService.refresh();
+    }
+
+    function cycleTool() {
+        const i = root.pillTools.findIndex(t => t.id === root.activeTool);
+        if (i >= 0)
+            root.selectTool(root.pillTools[(i + 1) % root.pillTools.length].id);
+    }
+
     function envFor(id) {
         switch (id) {
         case "screenshot":
@@ -172,7 +187,6 @@ Item {
         function region(): void {
             if (root.active)
                 return;
-            root.forcedAction = "fullscreen";
             root.activeTool = "screenshot";
             root.forcedAction = "smart";
             root._openOverlay();
@@ -348,6 +362,39 @@ Item {
         return bestDist === Infinity ? padded : Math.max(bestLo, Math.min(bestHi, padded));
     }
 
+    function screenAt(x, y) {
+        return Quickshell.screens.find(s => x >= s.x && x <= s.x + s.width && y >= s.y && y <= s.y + s.height) ?? null;
+    }
+
+    function rectBetween(ax, ay, bx, by) {
+        return {
+            x: Math.min(ax, bx),
+            y: Math.min(ay, by),
+            w: Math.abs(bx - ax),
+            h: Math.abs(by - ay)
+        };
+    }
+
+    function screenBounds() {
+        const s = Quickshell.screens;
+        return {
+            l: Math.min(...s.map(c => c.x)),
+            t: Math.min(...s.map(c => c.y)),
+            r: Math.max(...s.map(c => c.x + c.width)),
+            b: Math.max(...s.map(c => c.y + c.height))
+        };
+    }
+
+    function dragRect(px, py, mx, my, square) {
+        if (!square)
+            return root.rectBetween(px, py, mx, my);
+        const b = root.screenBounds();
+        const sx = mx < px ? -1 : 1;
+        const sy = my < py ? -1 : 1;
+        const size = Math.min(Math.max(Math.abs(mx - px), Math.abs(my - py)), sx > 0 ? b.r - px : px - b.l, sy > 0 ? b.b - py : py - b.t);
+        return root.rectBetween(px, py, px + sx * size, py + sy * size);
+    }
+
     readonly property var clientRects: {
         const pad = root.windowPad;
         const rawRects = CompositorService.clientRects;
@@ -366,7 +413,9 @@ Item {
                         x: x1,
                         y: y1,
                         w: x2 - x1,
-                        h: y2 - y1
+                        h: y2 - y1,
+                        title: r.title ?? "",
+                        appId: r.appId ?? ""
                     });
                 }
             }
@@ -426,7 +475,21 @@ Item {
                 property real globalPressY: 0
                 property real globalMouseX: 0
                 property real globalMouseY: 0
-                property var focusedScreen: null
+                property var pointerScreen: null
+                property var pressScreen: null
+                readonly property var keyboardScreen: dragging ? pressScreen : pointerScreen
+                property bool spaceHeld: false
+
+                property bool hlSeeded: false
+                property string hoverTitle: ""
+                property string hoverSubtitle: ""
+
+                readonly property real selX: dragging ? globalTargetX : globalHlX
+                readonly property real selY: dragging ? globalTargetY : globalHlY
+                readonly property real selW: dragging ? globalTargetW : globalHlW
+                readonly property real selH: dragging ? globalTargetH : globalHlH
+                readonly property real cornerX: globalPressX <= selX + 0.5 ? selX + selW : selX
+                readonly property real cornerY: globalPressY <= selY + 0.5 ? selY + selH : selY
 
                 property real animHlX: 0
                 property real animHlY: 0
@@ -434,24 +497,28 @@ Item {
                 property real animHlH: 0
 
                 Behavior on animHlX {
+                    enabled: sessionRoot.hlSeeded
                     NumberAnimation {
                         duration: 180
                         easing.type: Easing.OutCubic
                     }
                 }
                 Behavior on animHlY {
+                    enabled: sessionRoot.hlSeeded
                     NumberAnimation {
                         duration: 180
                         easing.type: Easing.OutCubic
                     }
                 }
                 Behavior on animHlW {
+                    enabled: sessionRoot.hlSeeded
                     NumberAnimation {
                         duration: 180
                         easing.type: Easing.OutCubic
                     }
                 }
                 Behavior on animHlH {
+                    enabled: sessionRoot.hlSeeded
                     NumberAnimation {
                         duration: 180
                         easing.type: Easing.OutCubic
@@ -459,10 +526,11 @@ Item {
                 }
 
                 function resetDrag() {
+                    cancelled = pressing;
+                    spaceHeld = false;
                     dragging = false;
                     pressing = false;
                     hovering = false;
-                    cancelled = true;
                     globalTargetX = 0;
                     globalTargetY = 0;
                     globalTargetW = 0;
@@ -473,6 +541,98 @@ Item {
                     globalHlH = 0;
                 }
 
+                function setMode(action) {
+                    if (root.modeLocked)
+                        return;
+                    root.forcedAction = action;
+                    updateHover();
+                }
+
+                function updateHover() {
+                    const scr = pointerScreen;
+                    if (cancelled || !scr)
+                        return;
+                    let found = false;
+                    let tx = 0, ty = 0, tw = 0, th = 0;
+                    let title = "", subtitle = "";
+
+                    if (effectiveAction === "fullscreen") {
+                        found = true;
+                        tx = scr.x;
+                        ty = scr.y;
+                        tw = scr.width;
+                        th = scr.height;
+                        title = scr.name;
+                    } else {
+                        const win = windowAtGlobal(globalMouseX, globalMouseY);
+                        if (win) {
+                            found = true;
+                            tx = win.x;
+                            ty = win.y;
+                            tw = win.w;
+                            th = win.h;
+                            title = win.title || win.appId;
+                            subtitle = win.title ? win.appId : "";
+                        }
+                    }
+
+                    if (found && !pressing && !dragging) {
+                        globalHlX = tx;
+                        globalHlY = ty;
+                        globalHlW = tw;
+                        globalHlH = th;
+                        animHlX = tx;
+                        animHlY = ty;
+                        animHlW = tw;
+                        animHlH = th;
+                        hoverTitle = title;
+                        hoverSubtitle = subtitle;
+                        hovering = true;
+                        hlSeeded = true;
+                    } else {
+                        hovering = false;
+                    }
+                }
+
+                function captureHovered() {
+                    if (hovering && globalHlW > 0 && globalHlH > 0) {
+                        root.captureGlobal(globalHlX, globalHlY, globalHlW, globalHlH);
+                    } else if (effectiveAction !== "window" && pointerScreen) {
+                        root.captureGlobal(pointerScreen.x, pointerScreen.y, pointerScreen.width, pointerScreen.height);
+                    } else {
+                        return false;
+                    }
+                    return true;
+                }
+
+                function moveSelection(dx, dy) {
+                    const b = root.screenBounds();
+                    const mx = Math.max(b.l - globalTargetX, Math.min(b.r - globalTargetX - globalTargetW, dx));
+                    const my = Math.max(b.t - globalTargetY, Math.min(b.b - globalTargetY - globalTargetH, dy));
+                    globalTargetX += mx;
+                    globalTargetY += my;
+                    globalPressX += mx;
+                    globalPressY += my;
+                }
+
+                function finishPress() {
+                    if (!pressing && !cancelled)
+                        return;
+                    pressing = false;
+                    if (cancelled) {
+                        cancelled = false;
+                        return;
+                    }
+                    if (dragging) {
+                        if (globalTargetW < 4 || globalTargetH < 4)
+                            resetDrag();
+                        else
+                            root.captureGlobal(globalTargetX, globalTargetY, globalTargetW, globalTargetH);
+                    } else if (!captureHovered()) {
+                        resetDrag();
+                    }
+                }
+
                 function windowAtGlobal(gx, gy) {
                     const rects = root.effectiveClientRects;
                     for (let i = rects.length - 1; i >= 0; i--) {
@@ -481,19 +641,6 @@ Item {
                             return r;
                     }
                     return null;
-                }
-
-                Timer {
-                    id: dragSync
-                    interval: 12
-                    repeat: true
-                    running: sessionRoot.dragging
-                    onTriggered: {
-                        sessionRoot.globalHlX = sessionRoot.globalTargetX;
-                        sessionRoot.globalHlY = sessionRoot.globalTargetY;
-                        sessionRoot.globalHlW = sessionRoot.globalTargetW;
-                        sessionRoot.globalHlH = sessionRoot.globalTargetH;
-                    }
                 }
 
                 Instantiator {
@@ -512,23 +659,63 @@ Item {
                         }
                         exclusionMode: ExclusionMode.Ignore
                         WlrLayershell.layer: WlrLayer.Overlay
-                        WlrLayershell.keyboardFocus: isFocused && !sessionRoot.capturing ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+                        WlrLayershell.keyboardFocus: modelData === sessionRoot.keyboardScreen && !sessionRoot.capturing ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
                         WlrLayershell.namespace: "quickshell:screenshot"
 
-                        readonly property bool isFocused: sessionRoot.focusedScreen === modelData
+                        readonly property bool isPointer: sessionRoot.pointerScreen === modelData
                         property real monX: modelData.x
                         property real monY: modelData.y
                         property int cornerRadius: sessionRoot.dragging ? 10 : 22
 
                         Component.onCompleted: {
                             if (CompositorService.focusedMonitor?.name === modelData.name)
-                                sessionRoot.focusedScreen = modelData;
+                                sessionRoot.pointerScreen = modelData;
                         }
 
                         Shortcut {
-                            enabled: isFocused && !sessionRoot.capturing
+                            enabled: !sessionRoot.capturing
                             sequence: "Escape"
                             onActivated: root._closeOverlay()
+                        }
+
+                        Item {
+                            focus: true
+                            onActiveFocusChanged: if (!activeFocus)
+                                sessionRoot.spaceHeld = false
+
+                            Keys.onPressed: event => {
+                                if (event.isAutoRepeat || sessionRoot.capturing)
+                                    return;
+                                event.accepted = true;
+                                switch (event.key) {
+                                case Qt.Key_Space:
+                                    sessionRoot.spaceHeld = sessionRoot.dragging;
+                                    break;
+                                case Qt.Key_1:
+                                    sessionRoot.setMode("smart");
+                                    break;
+                                case Qt.Key_2:
+                                    sessionRoot.setMode("window");
+                                    break;
+                                case Qt.Key_3:
+                                    sessionRoot.setMode("fullscreen");
+                                    break;
+                                case Qt.Key_Tab:
+                                    root.cycleTool();
+                                    break;
+                                case Qt.Key_Return:
+                                case Qt.Key_Enter:
+                                    if (!sessionRoot.pressing)
+                                        sessionRoot.captureHovered();
+                                    break;
+                                default:
+                                    event.accepted = false;
+                                }
+                            }
+                            Keys.onReleased: event => {
+                                if (event.key === Qt.Key_Space && !event.isAutoRepeat)
+                                    sessionRoot.spaceHeld = false;
+                            }
                         }
 
                         Loader {
@@ -568,10 +755,10 @@ Item {
                             QtObject {
                                 id: currentHole
                                 readonly property bool active: sessionRoot.dragging || sessionRoot.hovering
-                                readonly property real x: (active ? (sessionRoot.dragging ? sessionRoot.globalTargetX : sessionRoot.animHlX) : 0) - overlay.monX
-                                readonly property real y: (active ? (sessionRoot.dragging ? sessionRoot.globalTargetY : sessionRoot.animHlY) : 0) - overlay.monY
-                                readonly property real w: active ? (sessionRoot.dragging ? sessionRoot.globalTargetW : sessionRoot.animHlW) : 0
-                                readonly property real h: active ? (sessionRoot.dragging ? sessionRoot.globalTargetH : sessionRoot.animHlH) : 0
+                                readonly property real x: Math.round(active ? (sessionRoot.dragging ? sessionRoot.globalTargetX : sessionRoot.animHlX) : 0) - overlay.monX
+                                readonly property real y: Math.round(active ? (sessionRoot.dragging ? sessionRoot.globalTargetY : sessionRoot.animHlY) : 0) - overlay.monY
+                                readonly property real w: Math.round(active ? (sessionRoot.dragging ? sessionRoot.globalTargetW : sessionRoot.animHlW) : 0)
+                                readonly property real h: Math.round(active ? (sessionRoot.dragging ? sessionRoot.globalTargetH : sessionRoot.animHlH) : 0)
                             }
 
                             CornerDim {
@@ -645,80 +832,69 @@ Item {
                             }
 
                             Shape {
-                                visible: isFocused
+                                visible: overlay.isPointer && !sessionRoot.dragging
                                 anchors.fill: parent
                                 ShapePath {
+                                    id: crosshairPath
+                                    readonly property real cx: Math.floor(sessionRoot.globalMouseX - overlay.monX) + 0.5
+                                    readonly property real cy: Math.floor(sessionRoot.globalMouseY - overlay.monY) + 0.5
                                     strokeColor: Qt.alpha(root.crosshairColor, 0.35)
                                     strokeWidth: 1
                                     strokeStyle: ShapePath.DashLine
                                     dashPattern: [4, 8]
                                     fillColor: "transparent"
-                                    startX: 0
-                                    startY: sessionRoot.globalMouseY - overlay.monY
-                                    PathLine {
-                                        x: overlay.width
-                                        y: sessionRoot.globalMouseY - overlay.monY
-                                    }
-                                }
-                                ShapePath {
-                                    strokeColor: sessionRoot.dragging ? Qt.alpha(root.crosshairColor, 0.55) : "transparent"
-                                    strokeWidth: 1
-                                    strokeStyle: ShapePath.DashLine
-                                    dashPattern: [4, 8]
-                                    fillColor: "transparent"
-                                    startX: 0
-                                    startY: sessionRoot.globalPressY - overlay.monY
-                                    PathLine {
-                                        x: overlay.width
-                                        y: sessionRoot.globalPressY - overlay.monY
-                                    }
+                                    PathMove { x: 0; y: crosshairPath.cy }
+                                    PathLine { x: overlay.width; y: crosshairPath.cy }
+                                    PathMove { x: crosshairPath.cx; y: 0 }
+                                    PathLine { x: crosshairPath.cx; y: overlay.height }
                                 }
                             }
                             Shape {
-                                visible: isFocused
+                                visible: sessionRoot.dragging
                                 anchors.fill: parent
                                 ShapePath {
-                                    strokeColor: Qt.alpha(root.crosshairColor, 0.35)
+                                    id: edgePath
+                                    readonly property real l: currentHole.x + 0.5
+                                    readonly property real r: currentHole.x + currentHole.w - 0.5
+                                    readonly property real u: currentHole.y + 0.5
+                                    readonly property real d: currentHole.y + currentHole.h - 0.5
+                                    strokeColor: Qt.alpha(root.crosshairColor, 0.55)
                                     strokeWidth: 1
                                     strokeStyle: ShapePath.DashLine
                                     dashPattern: [4, 8]
                                     fillColor: "transparent"
-                                    startX: sessionRoot.globalMouseX - overlay.monX
-                                    startY: 0
-                                    PathLine {
-                                        x: sessionRoot.globalMouseX - overlay.monX
-                                        y: overlay.height
-                                    }
-                                }
-                                ShapePath {
-                                    strokeColor: sessionRoot.dragging ? Qt.alpha(root.crosshairColor, 0.55) : "transparent"
-                                    strokeWidth: 1
-                                    strokeStyle: ShapePath.DashLine
-                                    dashPattern: [4, 8]
-                                    fillColor: "transparent"
-                                    startX: sessionRoot.globalPressX - overlay.monX
-                                    startY: 0
-                                    PathLine {
-                                        x: sessionRoot.globalPressX - overlay.monX
-                                        y: overlay.height
-                                    }
+                                    PathMove { x: 0; y: edgePath.u }
+                                    PathLine { x: overlay.width; y: edgePath.u }
+                                    PathMove { x: 0; y: edgePath.d }
+                                    PathLine { x: overlay.width; y: edgePath.d }
+                                    PathMove { x: edgePath.l; y: 0 }
+                                    PathLine { x: edgePath.l; y: overlay.height }
+                                    PathMove { x: edgePath.r; y: 0 }
+                                    PathLine { x: edgePath.r; y: overlay.height }
                                 }
                             }
 
                             MouseArea {
-                                anchors.fill: parent
+                                id: pointerArea
+                                readonly property real reach: 16384
+                                x: -reach
+                                y: -reach
+                                width: parent.width + reach * 2
+                                height: parent.height + reach * 2
                                 hoverEnabled: true
-                                cursorShape: Qt.CrossCursor
+                                cursorShape: sessionRoot.spaceHeld ? Qt.SizeAllCursor : Qt.CrossCursor
                                 acceptedButtons: Qt.LeftButton | Qt.RightButton
 
                                 onPositionChanged: mouse => {
-                                    const gmx = root.clampToScreenAxis(overlay.monX + mouse.x, true);
-                                    const gmy = root.clampToScreenAxis(overlay.monY + mouse.y, false);
+                                    const gmx = root.clampToScreenAxis(overlay.monX + mouse.x - pointerArea.reach, true);
+                                    const gmy = root.clampToScreenAxis(overlay.monY + mouse.y - pointerArea.reach, false);
+                                    const moveX = gmx - sessionRoot.globalMouseX;
+                                    const moveY = gmy - sessionRoot.globalMouseY;
                                     sessionRoot.globalMouseX = gmx;
                                     sessionRoot.globalMouseY = gmy;
-
-                                    if (!isFocused && !sessionRoot.dragging)
-                                        sessionRoot.focusedScreen = overlay.screen;
+                                    if (!(mouse.buttons & Qt.LeftButton))
+                                        sessionRoot.cancelled = false;
+                                    sessionRoot.pointerScreen = root.screenAt(gmx, gmy) ?? sessionRoot.pointerScreen;
 
                                     if (pressed && (mouse.buttons & Qt.LeftButton)) {
                                         if (sessionRoot.cancelled)
@@ -730,62 +906,19 @@ Item {
                                             if (Math.sqrt(dx * dx + dy * dy) >= 8)
                                                 sessionRoot.dragging = true;
                                         }
-                                        if (sessionRoot.dragging) {
-                                            let dx = gmx - sessionRoot.globalPressX;
-                                            let dy = gmy - sessionRoot.globalPressY;
-                                            if (mouse.modifiers & Qt.ShiftModifier) {
-                                                const size = Math.max(Math.abs(dx), Math.abs(dy));
-                                                dx = dx >= 0 ? size : -size;
-                                                dy = dy >= 0 ? size : -size;
-                                            }
-                                            const x1 = root.clampToScreenAxis(dx >= 0 ? sessionRoot.globalPressX : sessionRoot.globalPressX + dx, true);
-                                            const y1 = root.clampToScreenAxis(dy >= 0 ? sessionRoot.globalPressY : sessionRoot.globalPressY + dy, false);
-                                            const x2 = root.clampToScreenAxis(dx >= 0 ? sessionRoot.globalPressX + dx : sessionRoot.globalPressX, true);
-                                            const y2 = root.clampToScreenAxis(dy >= 0 ? sessionRoot.globalPressY + dy : sessionRoot.globalPressY, false);
-                                            sessionRoot.globalTargetX = x1;
-                                            sessionRoot.globalTargetY = y1;
-                                            sessionRoot.globalTargetW = x2 - x1;
-                                            sessionRoot.globalTargetH = y2 - y1;
+                                        if (sessionRoot.dragging && sessionRoot.spaceHeld) {
+                                            sessionRoot.moveSelection(moveX, moveY);
+                                        } else if (sessionRoot.dragging) {
+                                            const r = root.dragRect(sessionRoot.globalPressX, sessionRoot.globalPressY, gmx, gmy, !!(mouse.modifiers & Qt.ShiftModifier));
+                                            sessionRoot.globalTargetX = r.x;
+                                            sessionRoot.globalTargetY = r.y;
+                                            sessionRoot.globalTargetW = r.w;
+                                            sessionRoot.globalTargetH = r.h;
                                         }
                                         return;
                                     }
 
-                                    if (sessionRoot.cancelled)
-                                        return;
-                                    let hoveringSomething = false;
-                                    let tx = 0, ty = 0, tw = 0, th = 0;
-                                    const action = sessionRoot.effectiveAction;
-
-                                    if (action === "fullscreen") {
-                                        hoveringSomething = true;
-                                        tx = overlay.monX;
-                                        ty = overlay.monY;
-                                        tw = overlay.width;
-                                        th = overlay.height;
-                                    } else if (action === "smart" || action === "window") {
-                                        const win = sessionRoot.windowAtGlobal(gmx, gmy);
-                                        if (win) {
-                                            hoveringSomething = true;
-                                            tx = win.x;
-                                            ty = win.y;
-                                            tw = win.w;
-                                            th = win.h;
-                                        }
-                                    }
-
-                                    if (hoveringSomething && !sessionRoot.pressing && !sessionRoot.dragging) {
-                                        sessionRoot.globalHlX = tx;
-                                        sessionRoot.globalHlY = ty;
-                                        sessionRoot.globalHlW = tw;
-                                        sessionRoot.globalHlH = th;
-                                        sessionRoot.animHlX = tx;
-                                        sessionRoot.animHlY = ty;
-                                        sessionRoot.animHlW = tw;
-                                        sessionRoot.animHlH = th;
-                                        sessionRoot.hovering = true;
-                                    } else {
-                                        sessionRoot.hovering = false;
-                                    }
+                                    sessionRoot.updateHover();
                                 }
 
                                 onPressed: mouse => {
@@ -794,10 +927,11 @@ Item {
                                         return;
                                     }
                                     if (mouse.button === Qt.LeftButton) {
-                                        const gmx = overlay.monX + mouse.x;
-                                        const gmy = overlay.monY + mouse.y;
+                                        const gmx = overlay.monX + mouse.x - pointerArea.reach;
+                                        const gmy = overlay.monY + mouse.y - pointerArea.reach;
                                         sessionRoot.cancelled = false;
                                         sessionRoot.pressing = true;
+                                        sessionRoot.pressScreen = overlay.screen;
                                         sessionRoot.globalPressX = gmx;
                                         sessionRoot.globalPressY = gmy;
                                         sessionRoot.globalTargetX = gmx;
@@ -809,132 +943,184 @@ Item {
                                 }
 
                                 onReleased: mouse => {
-                                    sessionRoot.pressing = false;
-                                    if (mouse.button === Qt.RightButton)
-                                        return;
-                                    if (sessionRoot.cancelled) {
-                                        sessionRoot.cancelled = false;
-                                        return;
-                                    }
+                                    if (mouse.button === Qt.LeftButton)
+                                        sessionRoot.finishPress();
+                                }
 
-                                    const action = sessionRoot.effectiveAction;
-
-                                    if (action === "fullscreen") {
-                                        root.captureGlobal(overlay.monX, overlay.monY, overlay.width, overlay.height);
-                                        return;
-                                    }
-                                    if (sessionRoot.dragging) {
-                                        if (sessionRoot.globalTargetW < 4 || sessionRoot.globalTargetH < 4) {
-                                            sessionRoot.resetDrag();
-                                            return;
-                                        }
-                                        root.captureGlobal(sessionRoot.globalTargetX, sessionRoot.globalTargetY, sessionRoot.globalTargetW, sessionRoot.globalTargetH);
-                                        return;
-                                    }
-                                    if (action === "smart" || action === "window") {
-                                        if (sessionRoot.hovering && sessionRoot.globalHlW > 0 && sessionRoot.globalHlH > 0) {
-                                            root.captureGlobal(sessionRoot.globalHlX, sessionRoot.globalHlY, sessionRoot.globalHlW, sessionRoot.globalHlH);
-                                        } else if (action === "smart") {
-                                            root.captureGlobal(overlay.monX, overlay.monY, overlay.width, overlay.height);
-                                        } else {
-                                            sessionRoot.resetDrag();
-                                        }
-                                        return;
-                                    }
+                                onCanceled: {
                                     sessionRoot.resetDrag();
+                                    sessionRoot.cancelled = false;
                                 }
                             }
 
                             Item {
-                                visible: isFocused
-                                x: Math.min(sessionRoot.globalMouseX - overlay.monX + 16, parent.width - width - 16)
-                                y: Math.min(sessionRoot.globalMouseY - overlay.monY + 16, parent.height - height - 16)
-                                width: tooltipContent.implicitWidth + 24
-                                height: tooltipContent.implicitHeight + 20
+                                id: tip
+                                readonly property real cx: sessionRoot.globalMouseX - overlay.monX
+                                readonly property real cy: sessionRoot.globalMouseY - overlay.monY
+                                readonly property real targetW: tipContent.implicitWidth + 24
+                                readonly property real targetH: tipContent.implicitHeight + 20
+                                readonly property bool flipX: cx + 16 + targetW > parent.width - 16
+                                readonly property bool flipY: cy + 16 + targetH > parent.height - 16
+
+                                visible: opacity > 0
+                                opacity: overlay.isPointer ? 1 : 0
+                                scale: overlay.isPointer ? 1 : 0.94
+                                transformOrigin: flipX ? (flipY ? Item.BottomRight : Item.TopRight) : (flipY ? Item.BottomLeft : Item.TopLeft)
+                                width: targetW
+                                height: targetH
+
+                                property real flipBlendX: flipX ? 1 : 0
+                                property real flipBlendY: flipY ? 1 : 0
+                                x: cx + 16 - flipBlendX * (width + 32)
+                                y: cy + 16 - flipBlendY * (height + 32)
+                                Behavior on flipBlendX {
+                                    NumberAnimation {
+                                        duration: 180
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on flipBlendY {
+                                    NumberAnimation {
+                                        duration: 180
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: 150
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: 150
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on width {
+                                    NumberAnimation {
+                                        duration: 180
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                Behavior on height {
+                                    NumberAnimation {
+                                        duration: 180
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
 
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: 20
-                                    topLeftRadius: 8
+                                    topLeftRadius: !tip.flipX && !tip.flipY ? 8 : 20
+                                    topRightRadius: tip.flipX && !tip.flipY ? 8 : 20
+                                    bottomLeftRadius: !tip.flipX && tip.flipY ? 8 : 20
+                                    bottomRightRadius: tip.flipX && tip.flipY ? 8 : 20
                                     color: root.surfaceColor
                                     border.width: 1
                                     border.color: Colors.md3.outline_variant
                                 }
-                                Column {
-                                    id: tooltipContent
-                                    anchors.centerIn: parent
+
+                                ColumnLayout {
+                                    id: tipContent
+                                    x: 12
+                                    y: 10
                                     spacing: 6
 
-                                    Row {
-                                        visible: sessionRoot.dragging
-                                        spacing: 4
+                                    ColumnLayout {
+                                        visible: sessionRoot.hovering && !sessionRoot.dragging && sessionRoot.hoverTitle !== ""
+                                        Layout.fillWidth: true
+                                        spacing: 1
                                         Text {
-                                            text: Math.round(sessionRoot.globalHlW)
-                                            font.pixelSize: 14
+                                            Layout.fillWidth: true
+                                            Layout.maximumWidth: 280
+                                            text: sessionRoot.hoverTitle
+                                            elide: Text.ElideRight
+                                            font.pixelSize: 13
                                             font.weight: Font.Medium
                                             color: Colors.md3.on_surface
                                         }
                                         Text {
-                                            text: "×"
+                                            visible: sessionRoot.hoverSubtitle !== ""
+                                            Layout.fillWidth: true
+                                            Layout.maximumWidth: 280
+                                            text: sessionRoot.hoverSubtitle
+                                            elide: Text.ElideRight
                                             font.pixelSize: 10
                                             color: Colors.md3.on_surface_variant
-                                            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
                                         }
+                                    }
+                                    Row {
+                                        id: sizeRow
+                                        visible: sessionRoot.dragging || sessionRoot.hovering
+                                        spacing: 4
                                         Text {
-                                            text: Math.round(sessionRoot.globalHlH)
+                                            id: sizeText
+                                            text: Math.round(sessionRoot.selW) + " × " + Math.round(sessionRoot.selH)
                                             font.pixelSize: 14
                                             font.weight: Font.Medium
                                             color: Colors.md3.on_surface
                                         }
                                         Text {
+                                            anchors.baseline: sizeText.baseline
                                             text: Localization.t("screenshot.px")
                                             font.pixelSize: 9
                                             color: Colors.md3.outline
-                                            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
                                         }
                                     }
                                     Rectangle {
-                                        visible: sessionRoot.dragging
-                                        width: tooltipContent.implicitWidth
-                                        height: 1
+                                        visible: sizeRow.visible
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 1
                                         color: Colors.md3.outline_variant
                                         opacity: 0.5
                                     }
-                                    Column {
-                                        spacing: 4
-                                        Row {
+                                    Grid {
+                                        columns: 2
+                                        columnSpacing: 6
+                                        rowSpacing: 4
+                                        verticalItemAlignment: Grid.AlignVCenter
+
+                                        Text {
                                             visible: sessionRoot.dragging
-                                            spacing: 6
-                                            Text {
-                                                text: Localization.t("screenshot.from")
-                                                font.pixelSize: 8
-                                                font.letterSpacing: 1
-                                                color: Colors.md3.outline
-                                                anchors.verticalCenter: parent ? parent.verticalCenter : undefined
-                                            }
-                                            Text {
-                                                text: Math.round(sessionRoot.globalPressX) + ",  " + Math.round(sessionRoot.globalPressY)
-                                                font.pixelSize: 10
-                                                font.family: Config.fontMonospace
-                                                color: Colors.md3.on_surface_variant
-                                            }
+                                            text: Localization.t("screenshot.from")
+                                            font.pixelSize: 8
+                                            font.letterSpacing: 1
+                                            color: Colors.md3.outline
                                         }
-                                        Row {
-                                            spacing: 6
-                                            Text {
-                                                text: sessionRoot.dragging ? Localization.t("screenshot.to") : Localization.t("screenshot.pos")
-                                                font.pixelSize: 8
-                                                font.letterSpacing: 1
-                                                color: Colors.md3.outline
-                                                anchors.verticalCenter: parent ? parent.verticalCenter : undefined
-                                            }
-                                            Text {
-                                                text: Math.round(sessionRoot.globalMouseX) + ",  " + Math.round(sessionRoot.globalMouseY)
-                                                font.pixelSize: 10
-                                                font.family: Config.fontMonospace
-                                                color: Colors.md3.on_surface_variant
-                                            }
+                                        Text {
+                                            visible: sessionRoot.dragging
+                                            text: Math.round(sessionRoot.globalPressX) + ",  " + Math.round(sessionRoot.globalPressY)
+                                            font.pixelSize: 10
+                                            font.family: Config.fontMonospace
+                                            color: Colors.md3.on_surface_variant
                                         }
+                                        Text {
+                                            text: sessionRoot.dragging ? Localization.t("screenshot.to") : Localization.t("screenshot.pos")
+                                            font.pixelSize: 8
+                                            font.letterSpacing: 1
+                                            color: Colors.md3.outline
+                                        }
+                                        Text {
+                                            text: sessionRoot.dragging ? Math.round(sessionRoot.cornerX) + ",  " + Math.round(sessionRoot.cornerY) : Math.round(sessionRoot.globalMouseX) + ",  " + Math.round(sessionRoot.globalMouseY)
+                                            font.pixelSize: 10
+                                            font.family: Config.fontMonospace
+                                            color: Colors.md3.on_surface_variant
+                                        }
+                                    }
+                                    Text {
+                                        visible: !sessionRoot.dragging && !sessionRoot.hovering && sessionRoot.effectiveAction === "smart"
+                                        text: Localization.t("screenshot.hint_screen")
+                                        font.pixelSize: 10
+                                        color: Colors.md3.outline
+                                    }
+                                    Text {
+                                        visible: sessionRoot.dragging
+                                        text: Localization.t("screenshot.hint_move")
+                                        font.pixelSize: 10
+                                        color: sessionRoot.spaceHeld ? Colors.md3.primary : Colors.md3.outline
                                     }
                                 }
                             }
@@ -944,7 +1130,7 @@ Item {
                             id: floatingPill
                             z: 2
 
-                            property bool showPill: isFocused && !sessionRoot.dragging && !sessionRoot.capturing && root.backingReady
+                            property bool showPill: overlay.isPointer && !sessionRoot.dragging && !sessionRoot.capturing && root.backingReady
                             visible: showPill || opacity > 0
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
@@ -1064,11 +1250,7 @@ Item {
                                                     MouseArea {
                                                         anchors.fill: parent
                                                         cursorShape: Qt.PointingHandCursor
-                                                        onClicked: {
-                                                            root.activeTool = modelData.id;
-                                                            if (modelData.id === "record")
-                                                                ScreencapService.refresh();
-                                                        }
+                                                        onClicked: root.selectTool(modelData.id)
                                                     }
                                                 }
                                             }
@@ -1105,7 +1287,7 @@ Item {
 
                                 Item {
                                     id: recordingModeContainer
-                                    readonly property bool showStop: root.activeTool === "record" && ScreencapService.isRecording
+                                    readonly property bool showStop: root.modeLocked
                                     readonly property real innerW: 17 + modeTrack.btnW * 3
                                     width: innerW
                                     height: 56
@@ -1262,7 +1444,7 @@ Item {
                                                             anchors.fill: parent
                                                             cursorShape: Qt.PointingHandCursor
                                                             enabled: !recordingModeContainer.showStop
-                                                            onClicked: root.forcedAction = modelData.action
+                                                            onClicked: sessionRoot.setMode(modelData.action)
                                                         }
                                                     }
                                                 }

@@ -103,7 +103,9 @@ Singleton {
                 w: size[0],
                 h: size[1],
                 workspaceId: w.workspace_id ?? -1,
-                fullscreen: w.is_fullscreen ?? false
+                fullscreen: w.is_fullscreen ?? false,
+                title: w.title ?? "",
+                appId: w.app_id ?? ""
             });
         }
         return rects;
@@ -124,29 +126,45 @@ Singleton {
                 w: w.size[0],
                 h: w.size[1],
                 workspaceId: w.workspace?.id ?? -1,
-                fullscreen: w.fullscreen ?? false
+                fullscreen: w.fullscreen ?? false,
+                title: w.title ?? "",
+                appId: w.class ?? "",
+                floating: w.floating ?? false,
+                focusOrder: w.focusHistoryID ?? 0
             });
         }
-        return rects;
+        const layer = r => r.workspaceId < 0 ? 2 : r.floating ? 1 : 0;
+        return rects.sort((a, b) => layer(a) - layer(b) || b.focusOrder - a.focusOrder);
     }
 
     function _filterToVisibleWorkspaces(rects: var, mons: var): var {
         if (!Array.isArray(rects) || !Array.isArray(mons))
             return [];
 
-        const activeWsIds = [];
+        const screenByWs = {};
         for (const m of mons) {
+            const scr = Quickshell.screens.find(s => s.name === m.name);
+            if (!scr)
+                continue;
             if (m.activeWorkspaceId !== -1)
-                activeWsIds.push(m.activeWorkspaceId);
+                screenByWs[m.activeWorkspaceId] = scr;
+            if (m.specialWorkspaceId)
+                screenByWs[m.specialWorkspaceId] = scr;
         }
 
-        return rects.filter(r => {
-            if (typeof r.w !== "number" || typeof r.h !== "number" || r.w <= 0 || r.h <= 0)
-                return false;
-            if (!activeWsIds.includes(r.workspaceId))
-                return false;
-            return true;
-        }).map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h, workspaceId: r.workspaceId }));
+        const out = [];
+        for (const r of rects) {
+            const scr = screenByWs[r.workspaceId];
+            if (!scr || typeof r.w !== "number" || typeof r.h !== "number")
+                continue;
+            const x1 = Math.max(r.x, scr.x);
+            const y1 = Math.max(r.y, scr.y);
+            const x2 = Math.min(r.x + r.w, scr.x + scr.width);
+            const y2 = Math.min(r.y + r.h, scr.y + scr.height);
+            if (x2 > x1 && y2 > y1)
+                out.push({ x: x1, y: y1, w: x2 - x1, h: y2 - y1, workspaceId: r.workspaceId, title: r.title, appId: r.appId });
+        }
+        return out;
     }
 
     function focusDirection(direction: string): void {

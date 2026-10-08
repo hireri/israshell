@@ -10,6 +10,7 @@ import qs.style
 import qs.services
 import qs.icons
 import qs.windows.components
+import qs.components
 import "../services/ShellQuote.js" as ShellQuote
 
 PageBase {
@@ -266,27 +267,63 @@ PageBase {
             model: NetworkService.sortedNetworks
 
             delegate: Item {
+                id: netRow
                 required property var modelData
                 required property int index
 
                 property bool rowLoading: false
 
+                readonly property bool askPw: NetworkService.awaitingPassword && NetworkService.pendingPasswordSsid === modelData.ssid
+                property real pwProgress: askPw ? 1 : 0
+                Behavior on pwProgress {
+                    NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+                }
+
+                function submitPw() {
+                    if (!pwField.hasText || NetworkService.wifiConnecting)
+                        return;
+                    if (modelData.known)
+                        NetworkService.changePassword(modelData.ssid, pwField.text);
+                    else
+                        NetworkService.connectWithPassword(modelData.ssid, pwField.text);
+                }
+
+                onAskPwChanged: {
+                    if (askPw) {
+                        rowLoading = false;
+                        Qt.callLater(() => pwField.focusInput());
+                    } else {
+                        pwField.clear();
+                    }
+                }
+
+                clip: true
                 implicitWidth: parent?.width ?? 0
-                implicitHeight: 52
+                implicitHeight: 52 + 52 * pwProgress
 
                 Connections {
                     target: NetworkService
                     function onNetworksChanged() {
                         rowLoading = false;
                     }
+                    function onPasswordFailedChanged() {
+                        if (NetworkService.passwordFailed && netRow.askPw) {
+                            pwField.clear();
+                            pwField.shake();
+                            pwField.focusInput();
+                        }
+                    }
                 }
 
                 RowLayout {
                     anchors {
-                        fill: parent
+                        top: parent.top
+                        left: parent.left
+                        right: parent.right
                         leftMargin: 16
                         rightMargin: 14
                     }
+                    height: 52
                     spacing: 8
 
                     Text {
@@ -324,7 +361,7 @@ PageBase {
                         }
 
                         Text {
-                            text: modelData.active ? Localization.t("networkPage.connected") : modelData.known ? Localization.t("networkPage.saved_percent").arg(modelData.strength) : modelData.strength + "%"
+                            text: netRow.askPw && NetworkService.wifiConnecting ? Localization.t("networkPage.connecting") : modelData.active ? Localization.t("networkPage.connected") : modelData.known ? Localization.t("networkPage.saved_percent").arg(modelData.strength) : modelData.strength + "%"
                             font.family: Config.fontFamily
                             font.pixelSize: 11
                             color: modelData.active ? Colors.md3.primary : Colors.md3.outline
@@ -347,6 +384,7 @@ PageBase {
                             radius: 14
                             color: (Config.dim(Colors.md3.surface_container_high))
                             visible: modelData.known
+                            opacity: 1 - netRow.pwProgress
 
                             Text {
                                 anchors.centerIn: parent
@@ -359,7 +397,7 @@ PageBase {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                enabled: !rowLoading
+                                enabled: !rowLoading && !netRow.askPw
                                 onClicked: editConnection(modelData.ssid)
                             }
                         }
@@ -370,6 +408,7 @@ PageBase {
                             radius: 14
                             color: (Config.dim(Colors.md3.surface_container_high))
                             visible: modelData.known && !modelData.active
+                            opacity: 1 - netRow.pwProgress
 
                             Text {
                                 anchors.centerIn: parent
@@ -381,7 +420,7 @@ PageBase {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                enabled: !rowLoading
+                                enabled: !rowLoading && !netRow.askPw
                                 onClicked: {
                                     rowLoading = true;
                                     NetworkService.forgetNetwork(modelData.ssid);
@@ -390,19 +429,39 @@ PageBase {
                         }
 
                         Rectangle {
+                            id: connPill
+                            readonly property bool pwBusy: netRow.askPw && NetworkService.wifiConnecting
+                            readonly property bool pwIdle: netRow.askPw && !pwField.hasText
                             height: 28
-                            width: connTxt.implicitWidth + 16
+                            width: connRow.implicitWidth + 16
                             radius: 14
-                            color: modelData.active ? (Config.dim(Colors.md3.surface_container_high)) : Colors.md3.secondary_container
+                            color: pwIdle || pwBusy || modelData.active ? (Config.dim(Colors.md3.surface_container_high)) : Colors.md3.secondary_container
+                            transform: Translate {
+                                y: 52 * netRow.pwProgress
+                            }
 
-                            Text {
-                                id: connTxt
+                            Row {
+                                id: connRow
                                 anchors.centerIn: parent
-                                text: modelData.active ? Localization.t("networkPage.disconnect") : Localization.t("networkPage.connect")
-                                font.family: Config.fontFamily
-                                font.pixelSize: 11
-                                font.weight: Font.Medium
-                                color: modelData.active ? Colors.md3.on_surface_variant : Colors.md3.on_secondary_container
+                                spacing: 6
+
+                                LoadingSpinner {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: connPill.pwBusy
+                                    running: visible
+                                    size: 12
+                                    color: Colors.md3.on_surface_variant
+                                }
+
+                                Text {
+                                    id: connTxt
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: connPill.pwBusy ? Localization.t("networkPage.connecting") : modelData.active ? Localization.t("networkPage.disconnect") : Localization.t("networkPage.connect")
+                                    font.family: Config.fontFamily
+                                    font.pixelSize: 11
+                                    font.weight: Font.Medium
+                                    color: modelData.active || connPill.pwIdle || connPill.pwBusy ? Colors.md3.on_surface_variant : Colors.md3.on_secondary_container
+                                }
                             }
 
                             MouseArea {
@@ -410,15 +469,70 @@ PageBase {
                                 cursorShape: Qt.PointingHandCursor
                                 enabled: !rowLoading
                                 onClicked: {
-                                    rowLoading = true;
-                                    if (modelData.active)
+                                    if (netRow.askPw) {
+                                        netRow.submitPw();
+                                    } else if (modelData.active) {
+                                        rowLoading = true;
                                         NetworkService.disconnectNetwork(modelData.ssid);
-                                    else
+                                    } else if (!modelData.known && (modelData.security ?? "").length > 0) {
+                                        NetworkService.requestPassword(modelData.ssid);
+                                    } else {
+                                        rowLoading = true;
                                         NetworkService.connectNetwork(modelData.ssid);
+                                    }
                                 }
                             }
                         }
                     }
+                }
+
+                Rectangle {
+                    visible: netRow.pwProgress > 0.01
+                    opacity: netRow.pwProgress
+                    anchors {
+                        right: parent.right
+                        rightMargin: 14
+                    }
+                    y: 12
+                    height: 28
+                    width: cancelTxt.implicitWidth + 16
+                    radius: 14
+                    color: (Config.dim(Colors.md3.surface_container_high))
+
+                    Text {
+                        id: cancelTxt
+                        anchors.centerIn: parent
+                        text: Localization.t("lockSurface.cancel")
+                        font.family: Config.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        color: Colors.md3.on_surface_variant
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: netRow.askPw && !NetworkService.wifiConnecting
+                        onClicked: NetworkService.cancelPassword()
+                    }
+                }
+
+                PasswordField {
+                    id: pwField
+                    visible: netRow.pwProgress > 0.01
+                    opacity: netRow.pwProgress
+                    x: 38
+                    y: 58
+                    width: parent.width - 38 - 112
+                    implicitHeight: 40
+                    height: 40
+                    revealable: true
+                    busy: NetworkService.wifiConnecting
+                    error: NetworkService.passwordFailed
+                    placeholder: Localization.t(NetworkService.passwordFailed ? "networkPage.wrong_password" : "networkPage.password_hint")
+                    onTextChanged: if (hasText && NetworkService.passwordFailed)
+                        NetworkService.passwordFailed = false
+                    onAccepted: netRow.submitPw()
                 }
 
                 Rectangle {

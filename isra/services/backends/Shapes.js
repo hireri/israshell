@@ -1,7 +1,7 @@
 .pragma library
 
 function emptyMonitor() {
-    return { name: "", id: -1, activeWorkspaceId: -1, activeWorkspaceHasFullscreen: false };
+    return { name: "", id: -1, activeWorkspaceId: -1, specialWorkspaceId: 0, activeWorkspaceHasFullscreen: false };
 }
 
 function emptyWindow(extra) {

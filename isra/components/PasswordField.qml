@@ -1,20 +1,36 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import qs.services
 import qs.style
 import qs.icons
 
 Item {
     id: root
 
+    property string placeholder: ""
+    property bool error: false
+    property bool busy: false
+    property bool revealable: false
+    property bool revealed: false
+    property alias text: input.text
+    readonly property bool hasText: input.text.length > 0
+
+    signal accepted
+
     implicitWidth: 260
     implicitHeight: 44
 
-    readonly property bool failed: LockscreenService.showFailure
-    readonly property bool busy: LockscreenService.unlockInProgress
-    readonly property bool hasText: input.text.length > 0
+    function focusInput() {
+        input.forceActiveFocus();
+    }
 
-    readonly property var dotMaterialShapes: ["clover4", "arrow", "pill", "softBurst", "diamond", "clamShell", "pentagon"]
+    function clear() {
+        input.text = "";
+        revealed = false;
+    }
+
+    function shake() {
+        shakeAnim.restart();
+    }
 
     ListModel { id: passwordModel }
 
@@ -33,34 +49,33 @@ Item {
             immediate: true
             color: Colors.md3.on_surface
             random: true
-            shapes: root.dotMaterialShapes
+            shapes: ["clover4", "arrow", "pill", "softBurst", "diamond", "clamShell", "pentagon"]
         }
     }
 
     Rectangle {
         id: box
-        anchors {
-            left: parent.left
-            top: parent.top
-            bottom: parent.bottom
-            right: submit.left
-            rightMargin: 8
-        }
+        anchors.fill: parent
         radius: height / 2
         color: Colors.md3.surface_container_lowest
-        border.width: root.failed ? 2 : 1
-        border.color: root.failed ? Colors.md3.error : Colors.md3.outline_variant
+        border.width: root.error ? 2 : 1
+        border.color: root.error ? Colors.md3.error : Colors.md3.outline_variant
+        clip: true
 
         transform: Translate { id: shift }
 
-        HoverHandler { cursorShape: Qt.IBeamCursor }
-
         SequentialAnimation {
-            id: shake
+            id: shakeAnim
             loops: 2
             NumberAnimation { target: shift; property: "x"; to: -12; duration: 40; easing.type: Easing.InOutQuad }
             NumberAnimation { target: shift; property: "x"; to: 12; duration: 80; easing.type: Easing.InOutQuad }
             NumberAnimation { target: shift; property: "x"; to: 0; duration: 40; easing.type: Easing.InOutQuad }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.IBeamCursor
+            onClicked: input.forceActiveFocus()
         }
 
         Row {
@@ -76,42 +91,43 @@ Item {
             visible: !root.hasText
 
             MaterialIcon {
+                transitionType: "none"
                 anchors.verticalCenter: parent.verticalCenter
                 name: "lock"
                 iconSize: 18
-                color: root.failed ? Colors.md3.error : Colors.md3.on_surface_variant
+                color: root.error ? Colors.md3.error : Colors.md3.on_surface_variant
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: Localization.t(root.failed ? "lockSurface.incorrect_password" : "lockSurface.password")
-                color: root.failed ? Colors.md3.error : Colors.md3.on_surface_variant
+                text: root.placeholder
+                color: root.error ? Colors.md3.error : Colors.md3.on_surface_variant
+                font.family: Config.fontFamily
                 font.pixelSize: 14
             }
         }
 
         TextInput {
             id: input
-            anchors.fill: parent
-            opacity: 0
-            focus: true
-            echoMode: TextInput.Password
-            inputMethodHints: Qt.ImhSensitiveData
+            anchors {
+                left: parent.left
+                leftMargin: 16
+                right: parent.right
+                rightMargin: root.revealable ? 44 : 12
+                verticalCenter: parent.verticalCenter
+            }
+            // Hidden: the dots below are the visible password. Revealed: show the text itself.
+            opacity: root.revealed ? 1 : 0
+            echoMode: root.revealed ? TextInput.Normal : TextInput.Password
+            inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
             enabled: !root.busy
-
-            Component.onCompleted: {
-                text = LockscreenService.currentText;
-                cursorPosition = text.length;
-                forceActiveFocus();
-            }
-
-            onActiveFocusChanged: {
-                if (!activeFocus)
-                    forceActiveFocus();
-            }
+            color: Colors.md3.on_surface
+            selectionColor: Colors.md3.primary
+            selectedTextColor: Colors.md3.on_primary
+            font.family: Config.fontFamily
+            font.pixelSize: 14
+            clip: true
 
             onTextChanged: {
-                LockscreenService.currentText = text;
-
                 const oldLen = passwordModel.count;
                 const newLen = text.length;
                 if (newLen > oldLen) {
@@ -125,7 +141,6 @@ Item {
                     for (let i = 0; i < removeCount; i++)
                         passwordModel.remove(removeAt);
                 }
-
                 textCursor.opacity = 1;
                 cursorBlink.restart();
             }
@@ -136,28 +151,8 @@ Item {
                 cursorBlink.restart();
             }
 
-            Keys.onReturnPressed: LockscreenService.tryUnlock()
-            Keys.onEnterPressed: LockscreenService.tryUnlock()
-
-            Connections {
-                target: LockscreenService
-
-                function onCurrentTextChanged() {
-                    if (input.text !== LockscreenService.currentText)
-                        input.text = LockscreenService.currentText;
-                }
-                function onUnlocked() {
-                    SoundService.unlock();
-                    input.text = "";
-                }
-                function onShowFailureChanged() {
-                    if (LockscreenService.showFailure) {
-                        SoundService.unlockFail();
-                        shake.start();
-                        input.text = "";
-                    }
-                }
-            }
+            Keys.onReturnPressed: root.accepted()
+            Keys.onEnterPressed: root.accepted()
         }
 
         ListView {
@@ -166,14 +161,16 @@ Item {
                 left: parent.left
                 leftMargin: 16
                 right: parent.right
-                rightMargin: 12
+                rightMargin: root.revealable ? 44 : 12
                 top: parent.top
                 bottom: parent.bottom
             }
+            visible: !root.revealed
             clip: true
             model: passwordModel
             orientation: ListView.Horizontal
             spacing: 6
+            interactive: false
             boundsBehavior: Flickable.StopAtBounds
             cacheBuffer: 0
 
@@ -238,7 +235,7 @@ Item {
             }
 
             add: Transition {
-                NumberAnimation { property: "scale"; from: 0; to: 1; duration: 160; easing.type: Easing.OutBack }
+                NumberAnimation { property: "scale"; from: 0; to: 1; duration: 160; easing.type: Easing.OutCubic }
             }
             remove: Transition {
                 ParallelAnimation {
@@ -257,7 +254,7 @@ Item {
             height: 18
             radius: 1
             color: Colors.md3.on_surface
-            visible: input.activeFocus && !root.busy
+            visible: input.activeFocus && !root.busy && !root.revealed
             anchors.verticalCenter: dots.verticalCenter
             x: {
                 const idx = input.cursorPosition;
@@ -283,19 +280,34 @@ Item {
                 NumberAnimation { target: textCursor; property: "opacity"; to: 1; duration: 300; easing.type: Easing.InOutQuad }
             }
         }
-    }
 
-    LockButton {
-        id: submit
-        anchors {
-            right: parent.right
-            verticalCenter: parent.verticalCenter
+        Rectangle {
+            visible: root.revealable && root.hasText
+            anchors {
+                right: parent.right
+                rightMargin: 6
+                verticalCenter: parent.verticalCenter
+            }
+            width: 30
+            height: 30
+            radius: 15
+            color: revealMa.containsMouse ? Colors.md3.secondary_container : "transparent"
+
+            MaterialIcon {
+                transitionType: "none"
+                anchors.centerIn: parent
+                name: root.revealed ? "visibility-off" : "visibility"
+                iconSize: 17
+                color: Colors.md3.on_surface_variant
+            }
+
+            MouseArea {
+                id: revealMa
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.revealed = !root.revealed
+            }
         }
-        size: 44
-        icon: "arrow-forward"
-        readonly property bool ready: root.hasText && !root.busy
-        container: ready ? Colors.md3.primary : Colors.md3.surface_container_highest
-        content: ready ? Colors.md3.on_primary : Colors.md3.on_surface_variant
-        onClicked: if (ready) LockscreenService.tryUnlock()
     }
 }
