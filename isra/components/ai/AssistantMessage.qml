@@ -48,18 +48,15 @@ Item {
         border.width: 1
         border.color: Qt.alpha(Colors.md3.error, 0.4)
 
-        Text {
+        SelectableText {
             id: errorText
             x: 14
             y: 12
             width: Math.min(implicitWidth, errorCard.textLimit)
             text: root.text
-            textFormat: Text.PlainText
-            wrapMode: Text.Wrap
+            textFormat: TextEdit.PlainText
             color: Colors.md3.on_error_container
             font.pixelSize: 14
-            font.family: Config.fontFamily
-            lineHeight: 1.3
         }
 
         Rectangle {

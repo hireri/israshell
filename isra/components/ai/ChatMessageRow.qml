@@ -2,9 +2,9 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import Quickshell.Widgets
 import qs.style
+import qs.services
 import qs.icons
 
 Item {
@@ -14,6 +14,8 @@ Item {
     required property string username
     required property string modelDisplayName
     required property string modelShapeName
+
+    property bool canRegenerate: false
 
     readonly property bool isUser: entry.role === "user"
     readonly property bool isError: entry.isError === true
@@ -31,10 +33,6 @@ Item {
 
     HoverHandler {
         id: rowHover
-    }
-
-    Process {
-        id: copyProc
     }
 
     function _playEntrance(): void {
@@ -68,15 +66,15 @@ Item {
             target: root
             property: "opacity"
             to: 1
-            duration: 280
+            duration: 300
             easing.type: Easing.OutCubic
         }
         NumberAnimation {
             target: rowLayout
             property: "y"
             to: 0
-            duration: 360
-            easing.type: Easing.OutQuint
+            duration: 320
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -141,7 +139,7 @@ Item {
             font.family: Config.fontFamily
         }
 
-        Rectangle {
+        MorphButton {
             id: copyBtn
             visible: !root.isError && root.messageText !== ""
             anchors.left: root.isUser ? undefined : nameText.right
@@ -149,17 +147,14 @@ Item {
             anchors.right: root.isUser ? nameText.left : undefined
             anchors.rightMargin: root.isUser ? 8 : 0
             anchors.verticalCenter: nameText.verticalCenter
-            width: 22
-            height: 22
-            radius: 11
-
+            size: 22
+            iconSize: 13
             property bool copied: false
-
-            readonly property color containerColor: copyBtn.copied ? Colors.md3.primary_container : Colors.md3.secondary_container
-            readonly property color contentColor: copyBtn.copied ? Colors.md3.on_primary_container : Colors.md3.on_secondary_container
-
-            color: Qt.tint(copyBtn.containerColor, Qt.alpha(copyBtn.contentColor, copyMa.containsMouse ? 0.08 : 0))
+            icon: copyBtn.copied ? "check" : "copy"
+            container: copyBtn.copied ? Colors.md3.primary_container : Colors.md3.secondary_container
+            content: copyBtn.copied ? Colors.md3.on_primary_container : Colors.md3.on_secondary_container
             opacity: (rowHover.hovered || copyBtn.copied) ? 1 : 0
+            enabled: opacity > 0
 
             Behavior on opacity {
                 NumberAnimation {
@@ -168,39 +163,39 @@ Item {
                 }
             }
 
-            Behavior on color {
-                ColorAnimation {
-                    duration: 150
-                }
-            }
-
-            MaterialIcon {
-                anchors.centerIn: parent
-                name: copyBtn.copied ? "check" : "copy"
-                iconSize: 13
-                transitionType: "none"
-                color: copyBtn.contentColor
-            }
-
             Timer {
                 id: copiedReset
                 interval: 1600
                 onTriggered: copyBtn.copied = false
             }
 
-            MouseArea {
-                id: copyMa
-                anchors.fill: parent
-                enabled: copyBtn.opacity > 0
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    copyProc.command = ["wl-copy", root.messageText];
-                    copyProc.running = true;
-                    copyBtn.copied = true;
-                    copiedReset.restart();
+            onClicked: {
+                AiAssistantService.copyText(root.messageText);
+                copyBtn.copied = true;
+                copiedReset.restart();
+            }
+        }
+
+        MorphButton {
+            id: regenBtn
+            visible: root.canRegenerate && !root.isError
+            anchors.left: copyBtn.right
+            anchors.leftMargin: 6
+            anchors.verticalCenter: nameText.verticalCenter
+            size: 22
+            iconSize: 13
+            icon: "restart"
+            opacity: rowHover.hovered ? 1 : 0
+            enabled: opacity > 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
+                    easing.type: Easing.OutCubic
                 }
             }
+
+            onClicked: AiAssistantService.regenerate()
         }
 
         Item {

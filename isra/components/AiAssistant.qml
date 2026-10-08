@@ -242,7 +242,10 @@ Item {
 
                 Shortcut {
                     sequence: "Escape"
-                    onActivated: AiAssistantService.close()
+                    onActivated: {
+                        if (!floatingPill.dismissMenu())
+                            AiAssistantService.close();
+                    }
                 }
 
                 MouseArea {
@@ -261,7 +264,7 @@ Item {
                     width: Math.min(parent.width - 96, 560)
                     height: heroText.implicitHeight
 
-                    readonly property bool shouldShow: overlay.isFresh && floatingPill.revealed
+                    readonly property bool shouldShow: overlay.isFresh && floatingPill.revealed && !floatingPill.menuOpen
 
                     opacity: shouldShow ? 1.0 : 0.0
                     scale: shouldShow ? 1.0 : 0.85
@@ -269,20 +272,20 @@ Item {
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: 280
+                            duration: 300
                             easing.type: Easing.OutCubic
                         }
                     }
                     Behavior on scale {
                         NumberAnimation {
-                            duration: 320
-                            easing.type: Easing.OutQuint
+                            duration: 180
+                            easing.type: Easing.OutCubic
                         }
                     }
                     Behavior on anchors.bottomMargin {
                         NumberAnimation {
-                            duration: 260
-                            easing.type: Easing.OutQuint
+                            duration: 180
+                            easing.type: Easing.OutCubic
                         }
                     }
 
@@ -327,20 +330,42 @@ Item {
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: 260
+                            duration: 300
                             easing.type: Easing.OutCubic
                         }
                     }
 
-                    property real _prevContentHeight: 0
+                    readonly property real maxY: Math.max(0, contentHeight - height)
 
-                    onContentHeightChanged: {
-                        const wasAtBottom = contentY + height >= _prevContentHeight - 24;
-                        _prevContentHeight = contentHeight;
-                        if (wasAtBottom)
-                            Qt.callLater(() => {
-                                chatFlick.contentY = Math.max(0, chatFlick.contentHeight - chatFlick.height);
-                            });
+                    property bool stick: true
+                    property bool _snapping: false
+
+                    function snapToBottom(): void {
+                        _snapping = true;
+                        contentY = maxY;
+                        _snapping = false;
+                    }
+
+                    function jumpToBottom(): void {
+                        stick = true;
+                        snapToBottom();
+                    }
+
+                    onContentHeightChanged: if (stick) Qt.callLater(snapToBottom)
+                    onHeightChanged: if (stick) Qt.callLater(snapToBottom)
+                    onContentYChanged: {
+                        if (!_snapping && movingVertically)
+                            stick = contentY >= maxY - 24;
+                    }
+
+                    Connections {
+                        target: AiAssistantService
+
+                        function onHistoryChanged(): void {
+                            const last = AiAssistantService.history[AiAssistantService.history.length - 1];
+                            if (last?.role === "user")
+                                chatFlick.jumpToBottom();
+                        }
                     }
 
                     MouseArea {
@@ -367,6 +392,7 @@ Item {
                                 username: sessionRoot.username
                                 modelDisplayName: sessionRoot.modelName
                                 modelShapeName: sessionRoot.modelShapeName
+                                canRegenerate: index === AiAssistantService.history.length - 1 && entry.role === "model" && !AiAssistantService.isStreaming
                                 onBubbleShown: item => sessionRoot.registerBubble(item)
                                 onBubbleHidden: item => sessionRoot.unregisterBubble(item)
                             }
@@ -417,7 +443,7 @@ Item {
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: 260
+                            duration: 300
                             easing.type: Easing.OutCubic
                         }
                     }
@@ -444,6 +470,39 @@ Item {
                         imagePicker.open();
                         AiAssistantService.close();
                     }
+                    onScreenRequested: AiAssistantService.attachScreenshot(overlay.screen.name)
+                }
+
+                MorphButton {
+                    id: jumpBtn
+                    readonly property bool shouldShow: chatFlick.visible && !chatFlick.stick && chatFlick.maxY > 1 && !floatingPill.menuOpen
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: floatingPill.top
+                    anchors.bottomMargin: 20 + floatingPill.attachmentGap
+                    size: 36
+                    iconSize: 18
+                    icon: "arrow-downward"
+                    container: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+                    content: Colors.md3.on_surface
+                    border.width: 1
+                    border.color: Colors.md3.outline_variant
+                    opacity: shouldShow ? 1 : 0
+                    scale: shouldShow ? 1 : 0.6
+                    visible: opacity > 0
+                    onClicked: chatFlick.jumpToBottom()
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 180
+                            easing.type: Easing.OutCubic
+                        }
+                    }
                 }
 
                 Item {
@@ -459,7 +518,7 @@ Item {
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: 280
+                            duration: 300
                             easing.type: Easing.OutCubic
                         }
                     }
@@ -474,6 +533,7 @@ Item {
                         Behavior on color {
                             ColorAnimation {
                                 duration: 150
+                                easing.type: Easing.OutCubic
                             }
                         }
                     }

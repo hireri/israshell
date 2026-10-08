@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Io
 import qs.style
+import qs.services
 import qs.icons
 import "markdown.js" as Markdown
 import "syntax.js" as Syntax
@@ -186,6 +187,8 @@ Rectangle {
             font.pixelSize: root.fontSize
             font.family: Config.fontMonospace
             onCursorRectangleChanged: codeViewport._followCursor()
+            onSelectedTextChanged: AiAssistantService.reportSelection(codeText, codeText.selectedText)
+            Component.onDestruction: AiAssistantService.reportSelection(codeText, "")
 
             HoverHandler {
                 cursorShape: Qt.IBeamCursor

@@ -17,7 +17,81 @@ Item {
     readonly property bool thinking: AiAssistantService.isStreaming && AiAssistantService.awaitingFirstToken && !AiAssistantService.hasError
     readonly property bool supportsVision: Config.aiAssistant.providers[Config.aiAssistant.provider]?.supportsVision === true
     readonly property real attachmentGap: attachmentPreview.visible ? (attachmentPreview.height + 20) : 0
-    readonly property bool isRecognizedCommand: ["/clear"].includes(inputField.text.trim().toLowerCase())
+
+    readonly property int baseHeight: 56
+    readonly property real maxInputHeight: 150
+    readonly property real inputHeight: Math.min(root.maxInputHeight, inputField.contentHeight)
+
+    readonly property var commands: [
+        {
+            name: "clear",
+            description: Localization.t("aiAssistant.cmd_clear")
+        },
+        {
+            name: "retry",
+            description: Localization.t("aiAssistant.cmd_retry")
+        },
+        {
+            name: "copy",
+            description: Localization.t("aiAssistant.cmd_copy")
+        },
+        {
+            name: "model",
+            hint: "[provider]",
+            takesArg: true,
+            description: Localization.t("aiAssistant.cmd_model")
+        },
+        {
+            name: "screen",
+            description: Localization.t("aiAssistant.cmd_screen")
+        },
+        {
+            name: "attach",
+            description: Localization.t("aiAssistant.cmd_attach")
+        }
+    ]
+
+    property bool menuDismissed: false
+    property int menuIndex: 0
+    property int _recall: -1
+    property bool _recalling: false
+
+    readonly property var _parsed: {
+        const m = /^\/(\S*)(?:\s+([^\n]*))?$/.exec(inputField.text);
+        return m ? {
+            name: m[1].toLowerCase(),
+            arg: m[2]
+        } : null;
+    }
+
+    readonly property var menuItems: {
+        const p = root._parsed;
+        if (!p)
+            return [];
+        if (p.arg === undefined)
+            return root.commands.filter(c => c.name.startsWith(p.name)).map(c => ({
+                        id: c.name,
+                        label: "/" + c.name,
+                        hint: c.hint ?? "",
+                        description: c.description,
+                        takesArg: c.takesArg === true
+                    }));
+        if (p.name === "model")
+            return Object.keys(Config.aiAssistant.providers).filter(k => k.toLowerCase().includes(p.arg.trim().toLowerCase())).slice(0, 7).map(k => ({
+                        id: "model",
+                        arg: k,
+                        label: k,
+                        hint: k === Config.aiAssistant.provider ? "· " + Localization.t("aiAssistant.cmd_current") : "",
+                        description: "",
+                        takesArg: false
+                    }));
+        return [];
+    }
+
+    readonly property bool isRecognizedCommand: root._parsed !== null && root._parsed.arg === undefined && root.commands.some(c => c.name === root._parsed.name)
+    readonly property bool _unknownCommand: root._parsed !== null && root._parsed.arg === undefined && root._parsed.name !== "" && root.menuItems.length === 0
+    readonly property bool menuOpen: !root.thinking && !root.menuDismissed && (root.menuItems.length > 0 || root._unknownCommand)
+    readonly property int menuCurrent: Math.max(0, Math.min(root.menuIndex, root.menuItems.length - 1))
 
     property bool revealed: false
     property int hintIndex: Math.floor(Math.random() * root._hintPhrases.length)
@@ -51,23 +125,95 @@ Item {
     }
 
     signal attachRequested
+    signal screenRequested
+
+    function dismissMenu(): bool {
+        if (!root.menuOpen)
+            return false;
+        root.menuDismissed = true;
+        return true;
+    }
+
+    function _runCommand(id: string, arg: var): void {
+        inputField.text = "";
+        switch (id) {
+        case "clear":
+            AiAssistantService.clearHistory();
+            break;
+        case "retry":
+            AiAssistantService.regenerate();
+            break;
+        case "copy":
+            AiAssistantService.copyLastAnswer();
+            break;
+        case "model":
+            if (arg)
+                AiAssistantService.setProvider(arg);
+            break;
+        case "screen":
+            root.screenRequested();
+            break;
+        case "attach":
+            root.attachRequested();
+            break;
+        }
+    }
+
+    function _setInput(text: string): void {
+        root._recalling = true;
+        inputField.text = text;
+        inputField.cursorPosition = text.length;
+        root._recalling = false;
+    }
+
+    function _complete(i: int): void {
+        const item = root.menuItems[i];
+        if (!item)
+            return;
+        root._setInput(item.arg !== undefined ? "/model " + item.arg : "/" + item.id + (item.takesArg ? " " : ""));
+    }
+
+    function _activate(i: int): void {
+        const item = root.menuItems[i];
+        if (!item)
+            return;
+        if (item.takesArg)
+            root._complete(i);
+        else
+            root._runCommand(item.id, item.arg);
+    }
+
+    function _recallPrompt(step: int): void {
+        const h = AiAssistantService.sentPrompts;
+        const next = root._recall + step;
+        if (next < -1 || next >= h.length)
+            return;
+        root._recall = next;
+        root._setInput(next < 0 ? "" : h[h.length - 1 - next]);
+    }
 
     function focusInput(): void {
         inputField.forceActiveFocus();
     }
 
     function _sendOrInterrupt(): void {
+        if (root.menuOpen) {
+            if (root.menuItems.length > 0)
+                root._activate(root.menuCurrent);
+            return;
+        }
         const text = inputField.text.trim();
         if (text === "" && AiAssistantService.pendingAttachments.length === 0) {
             if (AiAssistantService.isStreaming)
                 AiAssistantService.stop();
             return;
         }
-        if (text.toLowerCase() === "/clear") {
-            inputField.text = "";
-            AiAssistantService.clearHistory();
+        const p = root._parsed;
+        if (p && p.arg === undefined && root.isRecognizedCommand && !root.commands.find(c => c.name === p.name).takesArg) {
+            root._runCommand(p.name, undefined);
             return;
         }
+        root._recall = -1;
         inputField.text = "";
         if (AiAssistantService.isStreaming)
             AiAssistantService.stop();
@@ -173,9 +319,16 @@ Item {
 
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
-    anchors.bottomMargin: (root.isFocused && revealed) ? (root.isFresh ? Math.round((parent.height - height) / 2) - Math.round(attachmentGap / 2) : 32) : -80
+    anchors.bottomMargin: (root.isFocused && revealed) ? (root.isFresh ? Math.round((parent.height - root.baseHeight) / 2) - Math.round(attachmentGap / 2) : 32) : -80
     width: thinking ? thinkingWidth : (root.isFresh ? freshWidth : expandedWidth)
-    height: 56
+    height: thinking ? baseHeight : Math.max(baseHeight, inputHeight + 32)
+
+    Behavior on height {
+        NumberAnimation {
+            duration: 120
+            easing.type: Easing.OutCubic
+        }
+    }
     opacity: (root.isFocused && revealed) ? 1.0 : 0.0
 
     Behavior on width {
@@ -199,7 +352,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: height / 2
+        radius: Math.min(height / 2, 28)
         color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
         border.width: 1
         border.color: Colors.md3.outline_variant
@@ -327,30 +480,18 @@ Item {
         }
         height: parent.height
 
-        Rectangle {
+        MorphButton {
             id: attachBtn
             visible: !root.thinking && AiAssistantService.pendingAttachments.length < AiAssistantService.maxAttachments
             anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            width: 36
-            height: 36
-            radius: 18
-            color: attachMa.containsMouse ? Colors.md3.surface_container_highest : "transparent"
-
-            MaterialIcon {
-                anchors.centerIn: parent
-                name: "add"
-                iconSize: 22
-                color: Colors.md3.on_surface_variant
-            }
-
-            MouseArea {
-                id: attachMa
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.attachRequested()
-            }
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: root.actionBtnMargin
+            size: root.actionBtnSize
+            icon: "add"
+            iconSize: 22
+            container: "transparent"
+            content: Colors.md3.on_surface_variant
+            onClicked: root.attachRequested()
         }
 
         Item {
@@ -363,64 +504,112 @@ Item {
             opacity: 1
             enabled: !root.thinking
 
-            TextInput {
-                id: inputField
-                anchors.fill: parent
-                verticalAlignment: TextInput.AlignVCenter
-                focus: true
-                text: AiAssistantService.draftText
-                color: root.isRecognizedCommand ? "transparent" : Colors.md3.on_surface
-                font.pixelSize: 14
-                font.family: Config.fontFamily
+            Flickable {
+                id: inputFlick
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                height: root.inputHeight
+                contentWidth: width
+                contentHeight: inputField.contentHeight
+                boundsBehavior: Flickable.StopAtBounds
                 clip: true
 
-                onTextChanged: AiAssistantService.draftText = text
-
-                Text {
-                    anchors.fill: parent
-                    verticalAlignment: Text.AlignVCenter
-                    text: Localization.t("aiAssistant.placeholder").arg(Config.aiAssistant.provider)
-                    color: Colors.md3.on_surface_variant
-                    font: parent.font
-                    visible: inputField.text === ""
-                    opacity: 0.45
+                function ensureCursorVisible(): void {
+                    const r = inputField.cursorRectangle;
+                    if (r.y < inputFlick.contentY)
+                        inputFlick.contentY = r.y;
+                    else if (r.y + r.height > inputFlick.contentY + inputFlick.height)
+                        inputFlick.contentY = r.y + r.height - inputFlick.height;
                 }
 
-                Rectangle {
-                    id: commandChip
-                    visible: root.isRecognizedCommand
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    implicitHeight: 24
-                    implicitWidth: chipText.implicitWidth + 16
-                    radius: height / 2
-                    color: Colors.md3.primary_container
+                TextEdit {
+                    id: inputField
+                    width: inputFlick.width
+                    focus: true
+                    text: AiAssistantService.draftText
+                    textFormat: TextEdit.PlainText
+                    wrapMode: TextEdit.Wrap
+                    color: root.isRecognizedCommand ? Colors.md3.primary : Colors.md3.on_surface
+                    font.pixelSize: 14
+                    font.weight: root.isRecognizedCommand ? Font.Medium : Font.Normal
+                    font.family: Config.fontFamily
+                    selectionColor: Qt.alpha(Colors.md3.primary, 0.35)
+                    selectedTextColor: Colors.md3.on_surface
 
-                    Text {
-                        id: chipText
-                        anchors.centerIn: parent
-                        text: inputField.text.trim()
-                        color: Colors.md3.on_primary_container
-                        font.pixelSize: 13
-                        font.family: Config.fontFamily
-                        font.weight: Font.Medium
+                    onTextChanged: {
+                        AiAssistantService.draftText = text;
+                        root.menuDismissed = false;
+                        root.menuIndex = 0;
+                        if (!root._recalling)
+                            root._recall = -1;
                     }
-                }
+                    onCursorRectangleChanged: inputFlick.ensureCursorVisible()
 
-                Keys.onEscapePressed: AiAssistantService.close()
-                Keys.onPressed: event => {
-                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                        event.accepted = true;
-                        root._sendOrInterrupt();
-                        return;
-                    }
-                    if ((event.key === Qt.Key_Backspace || event.key === Qt.Key_Delete) && root.isRecognizedCommand) {
-                        event.accepted = true;
-                        inputField.text = "";
+                    Keys.onPressed: event => {
+                        const key = event.key;
+                        if (key === Qt.Key_Return || key === Qt.Key_Enter) {
+                            event.accepted = true;
+                            if (event.modifiers & (Qt.ShiftModifier | Qt.ControlModifier)) {
+                                inputField.remove(inputField.selectionStart, inputField.selectionEnd);
+                                inputField.insert(inputField.cursorPosition, "\n");
+                            } else {
+                                root._sendOrInterrupt();
+                            }
+                            return;
+                        }
+                        if (root.menuOpen && root.menuItems.length > 0) {
+                            const n = root.menuItems.length;
+                            if (key === Qt.Key_Up || key === Qt.Key_Down) {
+                                root.menuIndex = (root.menuCurrent + (key === Qt.Key_Up ? n - 1 : 1)) % n;
+                                event.accepted = true;
+                            } else if (key === Qt.Key_Tab) {
+                                root._complete(root.menuCurrent);
+                                event.accepted = true;
+                            }
+                            return;
+                        }
+                        if (key === Qt.Key_Up && (inputField.text === "" || root._recall >= 0) && inputField.text.lastIndexOf("\n", inputField.cursorPosition - 1) === -1) {
+                            root._recallPrompt(1);
+                            event.accepted = true;
+                        } else if (key === Qt.Key_Down && root._recall >= 0 && inputField.text.indexOf("\n", inputField.cursorPosition) === -1) {
+                            root._recallPrompt(-1);
+                            event.accepted = true;
+                        } else if (event.matches(StandardKey.Copy) && inputField.selectedText === "" && AiAssistantService.selectedText !== "") {
+                            AiAssistantService.copyText(AiAssistantService.selectedText);
+                            event.accepted = true;
+                        } else if (event.matches(StandardKey.Paste)) {
+                            AiAssistantService.pasteClipboardImage();
+                        }
                     }
                 }
             }
+
+            Text {
+                anchors.fill: inputFlick
+                text: Localization.t("aiAssistant.placeholder").arg(Config.aiAssistant.provider)
+                color: Colors.md3.on_surface_variant
+                font: inputField.font
+                visible: inputField.text === ""
+                opacity: 0.45
+                elide: Text.ElideRight
+            }
         }
+    }
+
+    CommandMenu {
+        id: commandMenu
+        open: root.menuOpen
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.top
+        anchors.bottomMargin: 10 + root.attachmentGap
+        width: Math.max(root.width, 440)
+        height: implicitHeight
+        items: root.menuItems
+        currentIndex: root.menuCurrent
+        emptyText: Localization.t("aiAssistant.cmd_none")
+        onHovered: i => root.menuIndex = i
+        onPicked: i => root._activate(i)
     }
 
     Item {
@@ -445,53 +634,22 @@ Item {
         }
     }
 
-    Rectangle {
+    MorphButton {
         id: actionBtn
         readonly property bool showStop: AiAssistantService.isStreaming && inputField.text.trim() === ""
         readonly property bool hasText: inputField.text.trim() !== ""
         anchors {
             right: parent.right
             rightMargin: root.actionBtnMargin
-            verticalCenter: parent.verticalCenter
+            bottom: parent.bottom
+            bottomMargin: root.actionBtnMargin
         }
-        width: root.actionBtnSize
-        height: root.actionBtnSize
-        radius: width / 2
-        color: {
-            if (showStop)
-                return actionMa.containsMouse ? Colors.md3.primary : Colors.md3.primary_container;
-            if (hasText)
-                return Colors.md3.primary;
-            return actionMa.containsMouse ? Colors.md3.surface_container_highest : Colors.md3.surface_container_high;
-        }
-
-        Behavior on color {
-            ColorAnimation {
-                duration: 150
-            }
-        }
-
-        MaterialIcon {
-            anchors.centerIn: parent
-            name: actionBtn.showStop ? "stop" : "arrow-upward"
-            filled: true
-            iconSize: 18
-            transitionType: "none"
-            color: {
-                if (actionBtn.showStop)
-                    return actionMa.containsMouse ? Colors.md3.on_primary : Colors.md3.on_primary_container;
-                if (actionBtn.hasText)
-                    return Colors.md3.on_primary;
-                return Colors.md3.on_surface;
-            }
-        }
-
-        MouseArea {
-            id: actionMa
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root._sendOrInterrupt()
-        }
+        size: root.actionBtnSize
+        icon: actionBtn.showStop ? "stop" : "arrow-upward"
+        filled: true
+        iconSize: 18
+        container: actionBtn.showStop ? Colors.md3.primary_container : (actionBtn.hasText ? Colors.md3.primary : Colors.md3.surface_container_high)
+        content: actionBtn.showStop ? Colors.md3.on_primary_container : (actionBtn.hasText ? Colors.md3.on_primary : Colors.md3.on_surface_variant)
+        onClicked: root._sendOrInterrupt()
     }
 }

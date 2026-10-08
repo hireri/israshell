@@ -89,25 +89,16 @@ ColumnLayout {
     Component {
         id: proseComp
 
-        Text {
+        SelectableText {
             id: prose
 
             property string body: ""
             property string blockType: "paragraph"
 
             text: prose.body
-            textFormat: Text.MarkdownText
-            wrapMode: Text.Wrap
+            textFormat: TextEdit.MarkdownText
             color: root.textColor
-            linkColor: Colors.md3.primary
             font.pixelSize: root.fontSize
-            font.family: Config.fontFamily
-            lineHeight: prose.blockType === "heading" ? 1.0 : 1.3
-            onLinkActivated: link => Qt.openUrlExternally(link)
-
-            HoverHandler {
-                cursorShape: prose.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor
-            }
         }
     }
 

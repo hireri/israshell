@@ -23,23 +23,14 @@ Item {
         color: Colors.md3.outline
     }
 
-    Text {
+    SelectableText {
         id: quoteText
         anchors.left: parent.left
         anchors.leftMargin: root.barWidth + root.gap
         width: Math.min(implicitWidth, root.maxWidth - root.barWidth - root.gap)
         text: root.body
-        textFormat: Text.MarkdownText
-        wrapMode: Text.Wrap
+        textFormat: TextEdit.MarkdownText
         color: Colors.md3.on_surface_variant
-        linkColor: Colors.md3.primary
         font.pixelSize: root.fontSize
-        font.family: Config.fontFamily
-        lineHeight: 1.3
-        onLinkActivated: link => Qt.openUrlExternally(link)
-
-        HoverHandler {
-            cursorShape: quoteText.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor
-        }
     }
 }

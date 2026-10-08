@@ -110,6 +110,79 @@ Singleton {
 
     signal responseFinished
 
+    property var sentPrompts: []
+    property string selectedText: ""
+    property var _selectionOwner: null
+
+    function reportSelection(owner: var, text: string): void {
+        if (text === "") {
+            if (root._selectionOwner === owner) {
+                root._selectionOwner = null;
+                root.selectedText = "";
+            }
+            return;
+        }
+        const prev = root._selectionOwner;
+        root._selectionOwner = owner;
+        root.selectedText = text;
+        if (prev && prev !== owner)
+            prev.deselect();
+    }
+
+    function copyText(text: string): void {
+        const proc = procComponent.createObject(root);
+        proc.command = ["wl-copy", text];
+        proc.onExited.connect(() => proc.destroy());
+        proc.running = true;
+    }
+
+    function copyLastAnswer(): void {
+        const last = root.history.slice().reverse().find(h => h.role === "model");
+        if (last)
+            root.copyText(last.text);
+    }
+
+    function setProvider(key: string): bool {
+        if (Config.aiAssistant.providers[key] === undefined)
+            return false;
+        Config.update({
+            aiAssistant: Object.assign({}, Config.aiAssistant, {
+                provider: key
+            })
+        });
+        return true;
+    }
+
+    function pasteClipboardImage(): void {
+        if (root.pendingAttachments.length >= root.maxAttachments)
+            return;
+        const proc = procComponent.createObject(root);
+        const collector = collectorComponent.createObject(proc);
+        proc.command = ["bash", "-c", 't=$(wl-paste -l 2>/dev/null | grep -m1 "^image/") || exit 0; echo "$t"; wl-paste -t "$t" | base64 -w0'];
+        proc.stdout = collector;
+        collector.streamFinished.connect(() => {
+            const nl = collector.text.indexOf("\n");
+            const mime = nl > 0 ? collector.text.slice(0, nl).trim() : "";
+            const data = nl > 0 ? collector.text.slice(nl + 1).trim() : "";
+            proc.destroy();
+            if (mime === "" || data === "")
+                return;
+            if (!root.currentProviderSupportsVision()) {
+                root.hasError = true;
+                root.errorText = Localization.t("aiAssistant.provider_lacks_vision");
+                return;
+            }
+            if (root.pendingAttachments.length < root.maxAttachments)
+                root.pendingAttachments = root.pendingAttachments.concat([{
+                        kind: "image",
+                        name: "clipboard." + mime.split("/")[1],
+                        mimeType: mime,
+                        base64: data
+                    }]);
+        });
+        proc.running = true;
+    }
+
     onVisibleChanged: visible ? PanelService.opened(root) : PanelService.closed(root)
 
     property var screenShots: ({})
@@ -220,6 +293,8 @@ Singleton {
         if ((trimmed === "" && root.pendingAttachments.length === 0) || root.isStreaming)
             return;
         root._resendOnly = false;
+        if (trimmed !== "" && root.sentPrompts[root.sentPrompts.length - 1] !== trimmed)
+            root.sentPrompts = root.sentPrompts.concat([trimmed]);
         root._pendingSubmitText = trimmed;
         root._pendingSubmitAttachments = root.pendingAttachments;
         root.pendingAttachments = [];
@@ -228,13 +303,23 @@ Singleton {
 
     readonly property bool canRetry: !isStreaming && hasError && history[history.length - 1]?.role === "user"
 
-    function retry(): void {
-        if (!root.canRetry)
+    readonly property bool canRegenerate: !isStreaming && history.length > 0 && (history[history.length - 1].role === "model" ? history.length > 1 : hasError)
+
+    function regenerate(): void {
+        if (!root.canRegenerate)
             return;
+        if (root.history[root.history.length - 1].role === "model")
+            root.history = root.history.slice(0, -1);
+        root.streamedAnswer = "";
+        root.displayedAnswer = "";
         root._resendOnly = true;
         root._pendingSubmitText = root.history[root.history.length - 1].text ?? "";
         root._pendingSubmitAttachments = [];
         root._trySubmit();
+    }
+
+    function retry(): void {
+        root.regenerate();
     }
 
     function _trySubmit(): void {

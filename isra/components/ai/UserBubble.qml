@@ -37,18 +37,15 @@ Rectangle {
         }
     }
 
-    Text {
+    SelectableText {
         id: bubbleText
         x: 12
         y: attachRow.visible ? attachRow.y + attachRow.height + 8 : 8
-        visible: text !== ""
+        visible: root.entry.text !== ""
         width: Math.min(implicitWidth, root.maxWidth)
-        wrapMode: Text.Wrap
         text: root.entry.text
-        textFormat: Text.PlainText
+        textFormat: TextEdit.PlainText
         color: root.isError ? Colors.md3.on_error_container : Colors.md3.on_surface
         font.pixelSize: 15
-        font.family: Config.fontFamily
-        lineHeight: 1.2
     }
 }
