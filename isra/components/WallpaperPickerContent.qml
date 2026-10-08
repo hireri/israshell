@@ -1465,7 +1465,7 @@ Item {
                             return "";
                         if (card.isVideo)
                             return preview.frame ? ("file://" + preview.frame) : "";
-                        return "file://" + card.entryPath;
+                        return WallpaperService.thumbs[card.entryPath] ?? (WallpaperService.thumbsUnavailable || !/\.(jpe?g|png|webp|gif)$/i.test(card.entryPath) ? "file://" + card.entryPath : "");
                     }
                     fillMode: Image.PreserveAspectCrop
 
