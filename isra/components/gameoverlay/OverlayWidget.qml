@@ -17,7 +17,6 @@ Item {
     readonly property bool resizable: root.meta.resizable !== false
 
     readonly property bool open: GameOverlayService.visible
-    readonly property bool pinned: root.saved.pinned === true
     readonly property bool pinnedActive: GameOverlayService.pinnedActive(root.meta.id)
     readonly property bool canClick: root.meta.canClick !== false
     readonly property bool clickthrough: GameOverlayService.isClickthrough(root.meta.id)
@@ -252,7 +251,7 @@ Item {
                 }
 
                 OverlayButton {
-                    visible: root.pinned && root.canClick
+                    visible: root.pinnedActive && root.canClick
                     icon: "mouse"
                     size: 28
                     toggled: !root.clickthrough
@@ -263,7 +262,7 @@ Item {
                 OverlayButton {
                     icon: "keep"
                     size: 28
-                    toggled: root.pinned
+                    toggled: root.pinnedActive
                     tip: Localization.t("gameOverlay.pin")
                     onClicked: GameOverlayService.togglePinned(root.meta.id)
                 }

@@ -189,7 +189,7 @@ Singleton {
     }
 
     function togglePinned(id) {
-        const pin = widgetState(id).pinned !== true;
+        const pin = !pinnedActive(id);
         setWidgetState(id, { pinned: pin, pinnedFor: pin ? gameAppId : "" });
     }
 
