@@ -25,28 +25,34 @@ Item {
     readonly property var commands: [
         {
             name: "clear",
+            icon: "clear-all",
             description: Localization.t("aiAssistant.cmd_clear")
         },
         {
             name: "retry",
+            icon: "restart",
             description: Localization.t("aiAssistant.cmd_retry")
         },
         {
             name: "copy",
+            icon: "copy",
             description: Localization.t("aiAssistant.cmd_copy")
         },
         {
             name: "model",
+            icon: "swap-horiz",
             hint: "[provider]",
             takesArg: true,
             description: Localization.t("aiAssistant.cmd_model")
         },
         {
             name: "screen",
+            icon: "screenshot",
             description: Localization.t("aiAssistant.cmd_screen")
         },
         {
             name: "attach",
+            icon: "add",
             description: Localization.t("aiAssistant.cmd_attach")
         }
     ]
@@ -71,6 +77,7 @@ Item {
         if (p.arg === undefined)
             return root.commands.filter(c => c.name.startsWith(p.name)).map(c => ({
                         id: c.name,
+                        icon: c.icon,
                         label: "/" + c.name,
                         hint: c.hint ?? "",
                         description: c.description,
@@ -80,6 +87,7 @@ Item {
             return Object.keys(Config.aiAssistant.providers).filter(k => k.toLowerCase().includes(p.arg.trim().toLowerCase())).slice(0, 7).map(k => ({
                         id: "model",
                         arg: k,
+                        icon: k === Config.aiAssistant.provider ? "check" : "memory",
                         label: k,
                         hint: k === Config.aiAssistant.provider ? "· " + Localization.t("aiAssistant.cmd_current") : "",
                         description: "",
