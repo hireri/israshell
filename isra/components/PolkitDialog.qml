@@ -180,7 +180,7 @@ Scope {
 
                 Rectangle {
                     anchors.fill: parent
-                    color: Qt.alpha(Colors.md3.scrim, 0.4)
+                    color: "#8C000000"
                     opacity: root.shown
                 }
 
