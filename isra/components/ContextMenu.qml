@@ -15,6 +15,8 @@ Item {
     readonly property bool blurActive: !root.opaque && Config.blurAllowed(true)
 
     readonly property alias cardItem: card
+
+    readonly property bool blurShown: root.visible && card.opacity > 0.5
     readonly property bool coexistsWithMode: true
 
     readonly property real cardR: 16

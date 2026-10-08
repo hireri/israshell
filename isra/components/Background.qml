@@ -61,12 +61,41 @@ PanelWindow {
 
     readonly property bool lockTransitionActive: LockscreenService.locked || LockscreenService.lockAnimating || LockscreenService.lockVisualActive || LockscreenService.unlockAnimating
 
-    BackgroundEffect.blurRegion: !root.lockTransitionActive && ((root.anyPopupOpen && Config.blurAllowed(true)) || Config.desktopWidgetsBlurActive) ? popupBlurRegion : null
+    readonly property bool menusOpen: backgroundContextMenu.visible || widgetContextMenu.visible
+    readonly property bool fullBlur: Config.desktopWidgetsBlurActive || widgetInspector.visible || EditModeService.active
+
+    BackgroundEffect.blurRegion: {
+        if (root.lockTransitionActive)
+            return null;
+        if (root.fullBlur && (root.anyPopupOpen && Config.blurAllowed(true) || Config.desktopWidgetsBlurActive))
+            return popupBlurRegion;
+        return root.menusOpen && Config.blurAllowed(true) ? menuBlurRegion : null;
+    }
 
     Region {
         id: popupBlurRegion
         width: root.width
         height: root.height
+    }
+
+    Region {
+        id: menuBlurRegion
+        regions: [
+            Region {
+                x: backgroundContextMenu.cardItem.x
+                y: backgroundContextMenu.cardItem.y
+                width: backgroundContextMenu.blurShown ? backgroundContextMenu.cardItem.width : 0
+                height: backgroundContextMenu.blurShown ? backgroundContextMenu.cardItem.height : 0
+                radius: backgroundContextMenu.cardR
+            },
+            Region {
+                x: widgetContextMenu.cardItem.x
+                y: widgetContextMenu.cardItem.y
+                width: widgetContextMenu.blurShown ? widgetContextMenu.cardItem.width : 0
+                height: widgetContextMenu.blurShown ? widgetContextMenu.cardItem.height : 0
+                radius: widgetContextMenu.cardR
+            }
+        ]
     }
 
     MouseArea {
