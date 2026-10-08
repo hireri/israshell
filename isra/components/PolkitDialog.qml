@@ -29,6 +29,7 @@ Scope {
     property string message: ""
     property string supplementary: ""
     property bool supplementaryIsError: false
+    readonly property bool lockedOut: /left to unlock/i.test(root.supplementary)
     property var idNames: []
     property int selIdx: 0
 
@@ -165,7 +166,7 @@ Scope {
                 onActiveChanged: if (active)
                     Qt.callLater(() => field.focusInput())
 
-                readonly property bool blurEnabled: presence > 0.5 && Config.blurAllowed(visible)
+                readonly property bool blurEnabled: root.shown * presence > 0.5 && Config.blurAllowed(visible)
                 BackgroundEffect.blurRegion: blurEnabled ? cardBlur : null
 
                 Region {
@@ -188,7 +189,11 @@ Scope {
                     id: scope
                     anchors.fill: parent
                     focus: true
-                    Keys.onEscapePressed: root.flow?.cancelAuthenticationRequest()
+
+                    Shortcut {
+                        sequence: "Escape"
+                        onActivated: root.flow?.cancelAuthenticationRequest()
+                    }
 
                     readonly property real shown: root.shown
 
@@ -341,7 +346,8 @@ Scope {
                                 revealed: false
                                 busy: root.busy
                                 error: root.wrong
-                                placeholder: Localization.t(root.wrong ? "lockSurface.incorrect_password" : "lockSurface.password")
+                                locked: root.lockedOut
+                                placeholder: root.lockedOut ? root.supplementary.replace(/^\(|\)$/g, "") : Localization.t(root.wrong ? "lockSurface.incorrect_password" : "lockSurface.password")
                                 onTextChanged: {
                                     root.wrong = false;
                                     root.draft = text;
@@ -354,7 +360,7 @@ Scope {
                                 Layout.topMargin: 6
                                 Layout.leftMargin: 16
                                 Layout.rightMargin: 16
-                                visible: text !== ""
+                                visible: text !== "" && !root.lockedOut
                                 wrapMode: Text.Wrap
                                 text: root.supplementary
                                 font.family: Config.fontFamily

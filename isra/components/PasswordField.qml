@@ -9,6 +9,7 @@ Item {
     property string placeholder: ""
     property bool error: false
     property bool busy: false
+    property bool locked: false
     property bool revealable: false
     property bool revealed: false
     property alias text: input.text
@@ -22,6 +23,8 @@ Item {
     function focusInput() {
         input.forceActiveFocus();
     }
+
+    onLockedChanged: if (locked) input.text = ""
 
     function clear() {
         input.text = "";
@@ -57,9 +60,9 @@ Item {
         id: box
         anchors.fill: parent
         radius: height / 2
-        color: Colors.md3.surface_container_lowest
-        border.width: root.error ? 2 : 1
-        border.color: root.error ? Colors.md3.error : Colors.md3.outline_variant
+        color: root.locked ? Qt.alpha(Colors.md3.on_surface, 0.08) : Colors.md3.surface_container_lowest
+        border.width: root.error && !root.locked ? 2 : 1
+        border.color: root.locked ? "transparent" : root.error ? Colors.md3.error : Colors.md3.outline_variant
         clip: true
 
         transform: Translate { id: shift }
@@ -74,7 +77,7 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            cursorShape: Qt.IBeamCursor
+            cursorShape: root.locked ? Qt.ArrowCursor : Qt.IBeamCursor
             onClicked: input.forceActiveFocus()
         }
 
@@ -95,12 +98,12 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 name: "lock"
                 iconSize: 18
-                color: root.error ? Colors.md3.error : Colors.md3.on_surface_variant
+                color: root.locked ? Qt.alpha(Colors.md3.on_surface, 0.38) : root.error ? Colors.md3.error : Colors.md3.on_surface_variant
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.placeholder
-                color: root.error ? Colors.md3.error : Colors.md3.on_surface_variant
+                color: root.locked ? Qt.alpha(Colors.md3.on_surface, 0.38) : root.error ? Colors.md3.error : Colors.md3.on_surface_variant
                 font.family: Config.fontFamily
                 font.pixelSize: 14
             }
@@ -115,11 +118,10 @@ Item {
                 rightMargin: root.revealable ? 44 : 12
                 verticalCenter: parent.verticalCenter
             }
-            // Hidden: the dots below are the visible password. Revealed: show the text itself.
             opacity: root.revealed ? 1 : 0
             echoMode: root.revealed ? TextInput.Normal : TextInput.Password
             inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
-            enabled: !root.busy
+            enabled: !root.busy && !root.locked
             color: Colors.md3.on_surface
             selectionColor: Colors.md3.primary
             selectedTextColor: Colors.md3.on_primary
@@ -254,7 +256,7 @@ Item {
             height: 18
             radius: 1
             color: Colors.md3.on_surface
-            visible: input.activeFocus && !root.busy && !root.revealed
+            visible: input.activeFocus && !root.busy && !root.revealed && !root.locked
             anchors.verticalCenter: dots.verticalCenter
             x: {
                 const idx = input.cursorPosition;
