@@ -13,7 +13,7 @@ Singleton {
     property string detail: ""
     property var users: []
 
-    readonly property bool wanted: GameOverlayService.isOpen("discordVoice") && (status === "authorize" || GameOverlayService.visible || GameOverlayService.instantHidden || GameOverlayService.widgetState("discordVoice").pinned === true)
+    readonly property bool wanted: GameOverlayService.isOpen("discordVoice") && (status === "authorize" || GameOverlayService.visible || GameOverlayService.instantHidden || GameOverlayService.pinnedActive("discordVoice"))
 
     onStatusChanged: {
         if (status === "authorize") {

@@ -15,7 +15,7 @@ Item {
     readonly property string channel: DiscordVoiceService.channel
     readonly property var users: DiscordVoiceService.users
 
-    readonly property string message: root.status === "authorize" ? Localization.t("gameOverlay.discord_authorize") : root.status === "error" ? Localization.t("gameOverlay.discord_error") + (DiscordVoiceService.detail !== "" ? ": " + DiscordVoiceService.detail : "") : root.status === "ok" ? (root.users.length === 0 ? Localization.t("gameOverlay.discord_no_channel") : "") : Localization.t("gameOverlay.discord_waiting")
+    readonly property string message: root.status === "authorize" ? Localization.t("gameOverlay.discord_authorize") : root.status === "error" ? Localization.t("gameOverlay.discord_error") + (DiscordVoiceService.detail !== "" ? ": " + DiscordVoiceService.detail : "") : root.status === "ok" ? "" : Localization.t("gameOverlay.discord_waiting")
 
     implicitWidth: 260
     implicitHeight: column.implicitHeight

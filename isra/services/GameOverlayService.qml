@@ -12,6 +12,7 @@ Singleton {
 
     property string gameTitle: ""
     property string gameMonitor: ""
+    property string gameAppId: ""
 
     property var clickableItems: []
 
@@ -32,7 +33,7 @@ Singleton {
 
     readonly property var crosshair: Crosshair.parse(Config.gameOverlay.crosshairCode)
     readonly property var openWidgets: catalog.filter(w => Config.gameOverlay.open.includes(w.id))
-    readonly property bool hasPinned: openWidgets.some(w => widgetState(w.id).pinned === true)
+    readonly property bool hasPinned: openWidgets.some(w => pinnedActive(w.id))
 
     property bool timerRunning: false
     property real timerBase: 0
@@ -122,6 +123,7 @@ Singleton {
             _syncTimer(CompositorService.activeWindow.pid);
             instantHidden = false;
             gameTitle = CompositorService.activeWindow.title;
+            gameAppId = CompositorService.activeWindow.appId;
             gameMonitor = CompositorService.focusedMonitor.name;
             PanelService.opened(root);
         } else {
@@ -181,8 +183,14 @@ Singleton {
         _update({ widgets: widgets });
     }
 
+    function pinnedActive(id) {
+        const s = widgetState(id);
+        return s.pinned === true && (!s.pinnedFor || s.pinnedFor === CompositorService.activeWindow.appId);
+    }
+
     function togglePinned(id) {
-        setWidgetState(id, { pinned: widgetState(id).pinned !== true });
+        const pin = widgetState(id).pinned !== true;
+        setWidgetState(id, { pinned: pin, pinnedFor: pin ? gameAppId : "" });
     }
 
     function toggleClickthrough(id) {

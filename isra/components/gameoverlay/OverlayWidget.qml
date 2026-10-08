@@ -18,10 +18,11 @@ Item {
 
     readonly property bool open: GameOverlayService.visible
     readonly property bool pinned: root.saved.pinned === true
+    readonly property bool pinnedActive: GameOverlayService.pinnedActive(root.meta.id)
     readonly property bool canClick: root.meta.canClick !== false
     readonly property bool clickthrough: GameOverlayService.isClickthrough(root.meta.id)
-    readonly property bool shown: root.open || root.pinned
-    readonly property bool wantsInput: root.pinned && !root.open && !root.clickthrough
+    readonly property bool shown: root.open || root.pinnedActive
+    readonly property bool wantsInput: root.pinnedActive && !root.open && !root.clickthrough
     readonly property real _chromeShift: root.open ? 0 : T.titleBarHeight - T.padding
 
     function _even(v) {

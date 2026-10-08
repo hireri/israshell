@@ -508,7 +508,6 @@
   "gameOverlay.discord": "Discord",
   "gameOverlay.discord_waiting": "Waiting for Discord…",
   "gameOverlay.discord_authorize": "Approve the request in Discord",
-  "gameOverlay.discord_no_channel": "Not in a voice channel",
   "gameOverlay.discord_error": "Couldn't connect to Discord",
   "gameOverlay.ping_host": "Host",
   "gameOverlay.ping_loss": "Loss",
