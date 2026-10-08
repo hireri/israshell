@@ -14,6 +14,14 @@ Item {
         return Math.max(0.7, Math.min(1.5, Math.min(root.width / 700, root.height / 260)));
     }
 
+    property int decodeW: 0
+    onWidthChanged: if (decodeW === 0) decodeW = Math.ceil(width / 128) * 128; else decodeSettle.restart()
+    Timer {
+        id: decodeSettle
+        interval: 220
+        onTriggered: root.decodeW = Math.ceil(root.width / 128) * 128
+    }
+
     readonly property real pad: 22 * root.u
 
     readonly property real salt: Math.floor(Date.now() / 86400000)
@@ -50,10 +58,12 @@ Item {
                 height: Math.max(band.height, width * (198 / 1200))
                 source: root.scenePath === "" ? "" : "file://" + root.scenePath
                 fillMode: Image.PreserveAspectCrop
-                sourceSize.width: Math.ceil(width)
+                sourceSize.width: root.decodeW
                 asynchronous: true
                 cache: true
-                opacity: status === Image.Ready ? 1 : 0
+                opacity: shown ? 1 : 0
+                property bool shown: false
+                onStatusChanged: if (status === Image.Ready) shown = true
 
                 Behavior on opacity {
                     NumberAnimation { duration: 220; easing.type: Easing.OutCubic }

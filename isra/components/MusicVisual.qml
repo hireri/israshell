@@ -35,6 +35,23 @@ Item {
     }
 
     property int _front: 0
+    property string _target: ""
+    property int _decodeAnchor: 0
+    readonly property int _decodePx: Math.max(64, root._decodeAnchor)
+
+    onWidthChanged: {
+        if (root._decodeAnchor === 0)
+            root._decodeAnchor = Math.ceil(root.width / 64) * 64;
+        else
+            sizeSettle.restart();
+    }
+    on_DecodePxChanged: if (root.artUrl !== "") root._show(root.artUrl, true)
+
+    Timer {
+        id: sizeSettle
+        interval: 220
+        onTriggered: root._decodeAnchor = Math.ceil(root.width / 64) * 64
+    }
 
     function _frontItem() {
         return root._front === 0 ? artA : artB;
@@ -43,7 +60,12 @@ Item {
         return root._front === 0 ? artB : artA;
     }
 
-    function _show(url) {
+    property bool _spinNext: true
+
+    function _show(url, resize) {
+        const key = url === "" ? "" : url + "|" + root._decodePx;
+        root._target = key;
+        root._spinNext = !resize;
         if (url === "") {
             fadeA.stop();
             fadeB.stop();
@@ -56,22 +78,25 @@ Item {
         }
         const front = root._frontItem();
         const back = root._backItem();
-        if (front._key === url && front.status === Image.Ready) {
-            root._spin();
+        if (front._key === key && front.status === Image.Ready) {
+            if (!resize)
+                root._spin();
             return;
         }
-        if (back._key === url && back.status === Image.Ready) {
+        if (back._key === key && back.status === Image.Ready) {
             root._crossfade(1 - root._front);
             return;
         }
-        back._key = url;
+        back._key = key;
+        back.sourceSize = Qt.size(root._decodePx, root._decodePx);
         back.source = url;
     }
 
     function _crossfade(slot) {
         if (slot === root._front)
             return;
-        root._spin();
+        if (root._spinNext)
+            root._spin();
         root._front = slot;
         const frontAnim = slot === 0 ? fadeA : fadeB;
         const backAnim = slot === 0 ? fadeB : fadeA;
@@ -83,17 +108,8 @@ Item {
         backAnim.start();
     }
 
-    MaterialShape {
-        id: bodyShape
+    Item {
         anchors.fill: parent
-        name: root._bodyShapeName
-        shapeSize: parent.width
-        color: Config.desktopWidgetsBlurActive ? Config.dim(Colors.md3.primary_container) : Colors.md3.primary_container
-        rotationDegrees: root._bodyRotation
-        outlined: true
-        strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
-        strokeWidth: 1
-
         layer.enabled: true
         layer.smooth: true
         layer.effect: MultiEffect {
@@ -101,6 +117,18 @@ Item {
             shadowBlur: 0.5
             shadowColor: Qt.alpha("black", 0.2)
             shadowVerticalOffset: 4
+        }
+
+        MaterialShape {
+            id: bodyShape
+            anchors.fill: parent
+            name: root._bodyShapeName
+            shapeSize: parent.width
+            color: Config.desktopWidgetsBlurActive ? Config.dim(Colors.md3.primary_container) : Colors.md3.primary_container
+            rotationDegrees: root._bodyRotation
+            outlined: true
+            strokeColor: Qt.alpha(Colors.md3.outline, 0.5)
+            strokeWidth: 1
         }
     }
 
@@ -131,7 +159,6 @@ Item {
         property string _key: ""
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
-        sourceSize: Qt.size(width, height)
         asynchronous: true
         visible: false
     }
@@ -140,7 +167,6 @@ Item {
         property string _key: ""
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
-        sourceSize: Qt.size(width, height)
         asynchronous: true
         visible: false
     }
@@ -172,14 +198,14 @@ Item {
     Connections {
         target: artA
         function onStatusChanged() {
-            if (artA.status === Image.Ready)
+            if (artA.status === Image.Ready && artA._key === root._target)
                 root._crossfade(0);
         }
     }
     Connections {
         target: artB
         function onStatusChanged() {
-            if (artB.status === Image.Ready)
+            if (artB.status === Image.Ready && artB._key === root._target)
                 root._crossfade(1);
         }
     }
