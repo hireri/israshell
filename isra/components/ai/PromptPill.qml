@@ -611,7 +611,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.top
         anchors.bottomMargin: 10 + root.attachmentGap
-        width: Math.max(root.width, 440)
+        width: Math.max(root.width, 400)
         height: implicitHeight
         items: root.menuItems
         currentIndex: root.menuCurrent

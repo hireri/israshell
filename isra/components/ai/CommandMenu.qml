@@ -12,14 +12,14 @@ Rectangle {
     property int currentIndex: 0
     property string emptyText: ""
 
-    readonly property int rowHeight: 48
-    readonly property int labelColumn: 128
+    readonly property int rowHeight: 38
+    readonly property int labelColumn: 116
 
     signal picked(int index)
     signal hovered(int index)
 
-    implicitHeight: Math.max(1, root.items.length) * root.rowHeight + 16
-    radius: 28
+    implicitHeight: Math.max(1, root.items.length) * root.rowHeight + 12
+    radius: 24
     clip: true
 
     visible: opacity > 0
@@ -54,9 +54,9 @@ Rectangle {
     }
 
     Column {
-        x: 8
-        y: 8
-        width: parent.width - 16
+        x: 6
+        y: 6
+        width: parent.width - 12
 
         Repeater {
             model: root.items
@@ -72,15 +72,9 @@ Rectangle {
                 readonly property bool current: row.index === root.currentIndex
                 readonly property bool pressed: area.pressed
 
-                radius: row.current ? 24 : 16
+                radius: height / 2
                 color: row.current ? Colors.md3.secondary_container : "transparent"
 
-                Behavior on radius {
-                    NumberAnimation {
-                        duration: 120
-                        easing.type: Easing.OutCubic
-                    }
-                }
                 Behavior on color {
                     ColorAnimation {
                         duration: 100
@@ -105,19 +99,13 @@ Rectangle {
                 Rectangle {
                     id: chip
                     anchors.left: parent.left
-                    anchors.leftMargin: 10
+                    anchors.leftMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 32
-                    height: 32
-                    radius: row.current ? 10 : 16
+                    width: 26
+                    height: 26
+                    radius: 13
                     color: row.current ? Colors.md3.primary : Colors.md3.secondary_container
 
-                    Behavior on radius {
-                        NumberAnimation {
-                            duration: 120
-                            easing.type: Easing.OutCubic
-                        }
-                    }
                     Behavior on color {
                         ColorAnimation {
                             duration: 100
@@ -128,7 +116,7 @@ Rectangle {
                     MaterialIcon {
                         anchors.centerIn: parent
                         name: row.modelData.icon ?? "chevron-right"
-                        iconSize: 18
+                        iconSize: 16
                         transitionType: "none"
                         color: row.current ? Colors.md3.on_primary : Colors.md3.on_secondary_container
                     }
@@ -137,7 +125,7 @@ Rectangle {
                 Row {
                     id: labelRow
                     anchors.left: chip.right
-                    anchors.leftMargin: 12
+                    anchors.leftMargin: 10
                     anchors.verticalCenter: parent.verticalCenter
                     width: root.labelColumn
                     spacing: 6
@@ -147,7 +135,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         text: row.modelData.label
                         color: row.current ? Colors.md3.on_secondary_container : Colors.md3.on_surface
-                        font.pixelSize: 14
+                        font.pixelSize: 13
                         font.weight: Font.Medium
                         font.family: Config.fontFamily
                     }
@@ -165,12 +153,12 @@ Rectangle {
                 Text {
                     anchors.left: labelRow.right
                     anchors.right: parent.right
-                    anchors.rightMargin: 16
+                    anchors.rightMargin: 14
                     anchors.verticalCenter: parent.verticalCenter
                     elide: Text.ElideRight
                     text: row.modelData.description
                     color: row.current ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant
-                    font.pixelSize: 13
+                    font.pixelSize: 12
                     font.family: Config.fontFamily
                 }
 
