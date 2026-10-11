@@ -51,10 +51,12 @@ Singleton {
             root._removedEntries = [];
             if (Config.unpinOnNewSource && root._pinnedPlayer !== null) {
                 const pinnedId = root._pinnedPlayer.desktopEntry ?? "";
-                if (root._pendingEntries.some(id => id !== pinnedId && root._livePlayers.some(p => (p.desktopEntry ?? "") === id))) {
-                    root._pinnedPlayer = null;
-                    root._suppressAutoPin = true;
-                    persist.pinnedDesktopEntry = "";
+                const newPlayerId = root._pendingEntries.find(id => id !== pinnedId && root._livePlayers.some(p => (p.desktopEntry ?? "") === id));
+                if (newPlayerId !== undefined) {
+                    const newPlayer = root._livePlayers.find(p => (p.desktopEntry ?? "") === newPlayerId);
+                    root.pin(newPlayer);
+                    root._currentPlayer = newPlayer;
+                    root.playerChangedSilently(newPlayer);
                 }
             }
             root._pendingEntries = [];
