@@ -145,6 +145,8 @@
   "barPage.auto": "Auto",
   "barPage.automatically_fills_center_space": "Automatically fills center space",
   "barPage.background_opacity_level": "Background opacity level",
+  "barPage.unpin_on_new_source": "Auto unpin on new player",
+  "barPage.unpin_on_new_source_hint": "Unpin when another app starts playing",
   "barPage.bar_mode": "Bar mode",
   "barPage.blacklist": "Blacklist",
   "barPage.both": "Both",

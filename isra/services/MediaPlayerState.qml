@@ -5,6 +5,7 @@ import Quickshell.Widgets
 import Quickshell.Services.Mpris
 import QtQuick
 import "ShellQuote.js" as ShellQuote
+import qs.style
 
 Singleton {
     id: root
@@ -14,17 +15,70 @@ Singleton {
         property string pinnedDesktopEntry: ""
     }
 
-    readonly property var players: {
+    readonly property var _livePlayers: {
         const out = [];
         for (const p of Mpris.players.values)
             if (p.trackTitle && p.trackTitle !== "")
                 out.push(p);
         return out;
     }
+    property var _playerSlots: []
+    property var _removedEntries: []
+    property var _pendingEntries: []
+    property bool _playersInitialized: false
+    readonly property var players: {
+        const out = [..._livePlayers];
+        for (const entry of _removedEntries) {
+            const replacement = out.findIndex(p => (p.desktopEntry ?? "") === entry.id);
+            if (replacement >= 0) {
+                const player = out.splice(replacement, 1)[0];
+                out.splice(Math.min(entry.slot, out.length), 0, player);
+            }
+        }
+        return out;
+    }
 
     property var _currentPlayer: null
     property var _pinnedPlayer: null
     property var _openScreen: null
+    property bool _suppressAutoPin: false
+
+    Timer {
+        id: playerGraceTimer
+        interval: 800
+        repeat: false
+        onTriggered: {
+            root._removedEntries = [];
+            if (Config.unpinOnNewSource && root._pinnedPlayer !== null) {
+                const pinnedId = root._pinnedPlayer.desktopEntry ?? "";
+                if (root._pendingEntries.some(id => id !== pinnedId && root._livePlayers.some(p => (p.desktopEntry ?? "") === id))) {
+                    root._pinnedPlayer = null;
+                    root._suppressAutoPin = true;
+                    persist.pinnedDesktopEntry = "";
+                }
+            }
+            root._pendingEntries = [];
+            root._playerSlots = root._livePlayers.map(p => p.desktopEntry ?? "");
+        }
+    }
+
+    on_LivePlayersChanged: {
+        const currentEntries = _livePlayers.map(p => p.desktopEntry ?? "");
+        if (!_playersInitialized) {
+            _playerSlots = currentEntries;
+            _playersInitialized = true;
+            return;
+        }
+        const additions = currentEntries.filter(id => !_playerSlots.includes(id));
+        _pendingEntries = [...new Set([..._pendingEntries, ...additions])];
+        for (let i = 0; i < _playerSlots.length; i++) {
+            const id = _playerSlots[i];
+            if (!currentEntries.includes(id) && !_removedEntries.some(entry => entry.id === id))
+                _removedEntries = [..._removedEntries, { id, slot: i }];
+        }
+        _playerSlots = currentEntries;
+        playerGraceTimer.restart();
+    }
 
     property var artCache: ({})
     property var _artPending: ({})
@@ -152,7 +206,7 @@ Singleton {
                     }
                 }
             }
-            if (_pinnedPlayer === null && persist.pinnedDesktopEntry === "") {
+            if (_pinnedPlayer === null && persist.pinnedDesktopEntry === "" && !_suppressAutoPin) {
                 _pinnedPlayer = _currentPlayer ?? players[0];
                 persist.pinnedDesktopEntry = _pinnedPlayer?.desktopEntry ?? "";
             }
@@ -167,6 +221,7 @@ Singleton {
     readonly property var currentPlayer: _currentPlayer
     readonly property var pinnedPlayer: _pinnedPlayer
     readonly property var openScreen: _openScreen
+    readonly property bool unpinOnNewSource: Config.unpinOnNewSource
 
     readonly property var displayPlayer: {
         if (_pinnedPlayer !== null && players.indexOf(_pinnedPlayer) !== -1)
@@ -220,11 +275,18 @@ Singleton {
         if (players.indexOf(player) === -1)
             return;
         _pinnedPlayer = player;
+        _suppressAutoPin = false;
         persist.pinnedDesktopEntry = player.desktopEntry ?? "";
+    }
+
+    function setUnpinOnNewSource(enabled) {
+        Config.update({ unpinOnNewSource: enabled });
     }
 
     Component.onCompleted: {
         _currentPlayer = players[0] ?? null;
+        _playerSlots = _livePlayers.map(p => p.desktopEntry ?? "");
+        _playersInitialized = true;
     }
 
     IpcHandler {
