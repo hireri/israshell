@@ -20,9 +20,6 @@ Item {
     anchors.fill: parent
 
     Process {
-        id: appletProc
-    }
-    Process {
         id: sysProc
     }
 
@@ -199,7 +196,7 @@ Item {
                             onBtnClicked: {
                                 if (root.controller)
                                     root.controller.isOpen = false;
-                                Quickshell.execDetached(["bash", "-c", "qs kill -c isra; sleep 0.2; qs -n -c isra"]);
+                                Quickshell.execDetached(["bash", "-c", "qs kill -c isra; while qs list --all | grep -q 'israshell'; do sleep 0.1; done; qs -n -c isra"]);
                             }
                         }
 
