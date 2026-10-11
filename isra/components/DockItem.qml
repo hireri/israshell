@@ -7,6 +7,7 @@ import Qt5Compat.GraphicalEffects
 
 import qs.style
 import qs.services
+import "siteIcons.js" as SiteIcons
 
 Item {
     id: root
@@ -78,7 +79,17 @@ Item {
             root.hoverPopup.forget(root);
     }
 
+    readonly property var shownToplevel: toplevels.find(t => t && t.activated) ?? toplevels[0] ?? null
+    readonly property string siteIconPath: {
+        if (!Config.siteIcons)
+            return "";
+        const site = SiteIcons.match(root.appId, shownToplevel?.title);
+        return site ? Quickshell.iconPath(site, "") : "";
+    }
+
     readonly property string iconPath: {
+        if (siteIconPath)
+            return siteIconPath;
         let name = desktopEntry ? desktopEntry.icon : root.appId;
         return Quickshell.iconPath(name, "application-x-executable");
     }

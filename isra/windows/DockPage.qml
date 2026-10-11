@@ -78,6 +78,15 @@ PageBase {
         }
 
         SettingSwitch {
+            label: Localization.t("dockPage.site_icons")
+            sublabel: Localization.t("dockPage.show_the_focused_tab_s_site")
+            checked: Config.siteIcons
+            onToggled: v => Config.update({
+                siteIcons: v
+            })
+        }
+
+        SettingSwitch {
             isLast: true
             label: Localization.t("dockPage.music_player")
             sublabel: Localization.t("dockPage.show_a_compact_music_player")

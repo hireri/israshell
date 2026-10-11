@@ -468,6 +468,8 @@
   "dockPage.icon_size": "Icon size",
   "dockPage.keep_the_dock_out_and": "Keep the dock out and reserve space so windows never cover it",
   "dockPage.music_player": "Music player",
+  "dockPage.site_icons": "Site icons",
+  "dockPage.show_the_focused_tab_s_site": "Show website icons over browsers in the dock",
   "dockPage.screen_edge_the_dock_is": "Screen edge the dock is pinned to",
   "dockPage.show_a_compact_music_player": "Show a compact music player next to the trash bin",
   "dockPage.show_a_button_that_opens": "Show a button that opens the app launcher",
