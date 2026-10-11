@@ -199,7 +199,7 @@ Item {
                     scale: cardStack.cardAIsFront ? 1 : 0.92
                     pinned: MediaPlayerState.pinnedPlayer === player
                     showPin: MediaPlayerState.players.length >= 2
-                    onPinToggled: MediaPlayerState.pin(player)
+                    onPinToggled: MediaPlayerState.togglePin(player)
                     Component.onCompleted: {
                         player = MediaPlayerState.currentPlayer;
                         Qt.callLater(() => cardStack.syncBackCard());
@@ -215,7 +215,7 @@ Item {
                     scale: cardStack.cardAIsFront ? 0.92 : 1
                     pinned: MediaPlayerState.pinnedPlayer === player
                     showPin: MediaPlayerState.players.length >= 2
-                    onPinToggled: MediaPlayerState.pin(player)
+                    onPinToggled: MediaPlayerState.togglePin(player)
                 }
 
                 ParallelAnimation {

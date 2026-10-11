@@ -432,13 +432,6 @@ PageBase {
             })
         }
 
-        SettingSwitch {
-            label: Localization.t("barPage.unpin_on_new_source")
-            sublabel: Localization.t("barPage.unpin_on_new_source_hint")
-            checked: MediaPlayerState.unpinOnNewSource
-            onToggled: v => MediaPlayerState.setUnpinOnNewSource(v)
-        }
-
         SettingSlider {
             isLast: true
             label: Localization.t("barPage.scroll_speed")

@@ -23,7 +23,6 @@ Singleton {
     property bool blurEffects: false
     property real blurOpacity: 1
     property bool desktopWidgetsBlur: false
-    property bool unpinOnNewSource: false
 
     function dim(color) {
         return Qt.alpha(color, Math.max(0, Math.min(1, blurOpacity)));
@@ -348,7 +347,6 @@ Singleton {
             blurEffects: false,
             blurOpacity: 1,
             desktopWidgetsBlur: false,
-            unpinOnNewSource: false,
 
             showBarWeather: true,
             timeFormat: "",

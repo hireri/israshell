@@ -24,7 +24,6 @@ Singleton {
     }
     property var _playerSlots: []
     property var _removedEntries: []
-    property var _pendingEntries: []
     property bool _playersInitialized: false
     readonly property var players: {
         const out = [..._livePlayers];
@@ -39,9 +38,9 @@ Singleton {
     }
 
     property var _currentPlayer: null
+    property var _latestPlayer: null
     property var _pinnedPlayer: null
     property var _openScreen: null
-    property bool _suppressAutoPin: false
 
     Timer {
         id: playerGraceTimer
@@ -49,17 +48,6 @@ Singleton {
         repeat: false
         onTriggered: {
             root._removedEntries = [];
-            if (Config.unpinOnNewSource && root._pinnedPlayer !== null) {
-                const pinnedId = root._pinnedPlayer.desktopEntry ?? "";
-                const newPlayerId = root._pendingEntries.find(id => id !== pinnedId && root._livePlayers.some(p => (p.desktopEntry ?? "") === id));
-                if (newPlayerId !== undefined) {
-                    const newPlayer = root._livePlayers.find(p => (p.desktopEntry ?? "") === newPlayerId);
-                    root.pin(newPlayer);
-                    root._currentPlayer = newPlayer;
-                    root.playerChangedSilently(newPlayer);
-                }
-            }
-            root._pendingEntries = [];
             root._playerSlots = root._livePlayers.map(p => p.desktopEntry ?? "");
         }
     }
@@ -72,14 +60,29 @@ Singleton {
             return;
         }
         const additions = currentEntries.filter(id => !_playerSlots.includes(id));
-        _pendingEntries = [...new Set([..._pendingEntries, ...additions])];
         for (let i = 0; i < _playerSlots.length; i++) {
             const id = _playerSlots[i];
             if (!currentEntries.includes(id) && !_removedEntries.some(entry => entry.id === id))
                 _removedEntries = [..._removedEntries, { id, slot: i }];
         }
         _playerSlots = currentEntries;
+        for (const id of additions) {
+            const player = _livePlayers.find(p => (p.desktopEntry ?? "") === id);
+            if (player?.playbackState === MprisPlaybackState.Playing)
+                playerStarted(player);
+        }
         playerGraceTimer.restart();
+    }
+
+    Instantiator {
+        model: Mpris.players.values
+        delegate: Connections {
+            required property var modelData
+            target: modelData
+            function onPlaybackStateChanged() {
+                root.playerStarted(modelData);
+            }
+        }
     }
 
     property var artCache: ({})
@@ -192,30 +195,33 @@ Singleton {
     onPlayersChanged: {
         if (players.length === 0) {
             _currentPlayer = null;
+            _latestPlayer = null;
             _pinnedPlayer = null;
             _openScreen = null;
             return;
         }
 
-        if (players.length < 2) {
+        if (_latestPlayer !== null && players.indexOf(_latestPlayer) === -1)
+            _latestPlayer = null;
+
+        if (_pinnedPlayer !== null && players.indexOf(_pinnedPlayer) === -1)
             _pinnedPlayer = null;
-        } else {
-            if (_pinnedPlayer === null && persist.pinnedDesktopEntry !== "") {
-                for (const p of players) {
-                    if ((p.desktopEntry ?? "") === persist.pinnedDesktopEntry) {
-                        _pinnedPlayer = p;
-                        break;
-                    }
+
+        if (_pinnedPlayer === null && persist.pinnedDesktopEntry !== "") {
+            for (const p of players) {
+                if ((p.desktopEntry ?? "") === persist.pinnedDesktopEntry) {
+                    _pinnedPlayer = p;
+                    break;
                 }
-            }
-            if (_pinnedPlayer === null && persist.pinnedDesktopEntry === "" && !_suppressAutoPin) {
-                _pinnedPlayer = _currentPlayer ?? players[0];
-                persist.pinnedDesktopEntry = _pinnedPlayer?.desktopEntry ?? "";
             }
         }
 
-        if (_currentPlayer === null || players.indexOf(_currentPlayer) === -1) {
-            _currentPlayer = _pinnedPlayer ?? players[0];
+        const latestPlayerValid = _latestPlayer !== null && players.indexOf(_latestPlayer) !== -1;
+        if (_pinnedPlayer === null && latestPlayerValid && _currentPlayer !== _latestPlayer) {
+            _currentPlayer = _latestPlayer;
+            playerChangedSilently(_currentPlayer);
+        } else if (_currentPlayer === null || players.indexOf(_currentPlayer) === -1) {
+            _currentPlayer = _pinnedPlayer ?? (latestPlayerValid ? _latestPlayer : null) ?? players[0];
             playerChangedSilently(_currentPlayer);
         }
     }
@@ -223,8 +229,6 @@ Singleton {
     readonly property var currentPlayer: _currentPlayer
     readonly property var pinnedPlayer: _pinnedPlayer
     readonly property var openScreen: _openScreen
-    readonly property bool unpinOnNewSource: Config.unpinOnNewSource
-
     readonly property var displayPlayer: {
         if (_pinnedPlayer !== null && players.indexOf(_pinnedPlayer) !== -1)
             return _pinnedPlayer;
@@ -277,16 +281,40 @@ Singleton {
         if (players.indexOf(player) === -1)
             return;
         _pinnedPlayer = player;
-        _suppressAutoPin = false;
         persist.pinnedDesktopEntry = player.desktopEntry ?? "";
+        if (_currentPlayer !== player) {
+            _currentPlayer = player;
+            playerChangedSilently(player);
+        }
     }
 
-    function setUnpinOnNewSource(enabled) {
-        Config.update({ unpinOnNewSource: enabled });
+    function togglePin(player) {
+        if (players.indexOf(player) === -1)
+            return;
+        if (_pinnedPlayer !== player) {
+            pin(player);
+            return;
+        }
+
+        _pinnedPlayer = null;
+        persist.pinnedDesktopEntry = "";
+        _currentPlayer = _latestPlayer !== null && players.indexOf(_latestPlayer) !== -1 ? _latestPlayer : player;
+        playerChangedSilently(_currentPlayer);
+    }
+
+    function playerStarted(player) {
+        if (player.playbackState !== MprisPlaybackState.Playing)
+            return;
+        _latestPlayer = player;
+        if (_pinnedPlayer === null && _currentPlayer !== player) {
+            _currentPlayer = player;
+            playerChangedSilently(player);
+        }
     }
 
     Component.onCompleted: {
-        _currentPlayer = players[0] ?? null;
+        _latestPlayer = players.find(p => p.playbackState === MprisPlaybackState.Playing) ?? null;
+        _currentPlayer = _latestPlayer ?? players[0] ?? null;
         _playerSlots = _livePlayers.map(p => p.desktopEntry ?? "");
         _playersInitialized = true;
     }
