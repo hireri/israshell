@@ -47,8 +47,52 @@ layout(std140, binding = 0) uniform buf {
     vec4 v25;
 };
 
-vec4 V[26];
-float val(int i) { return V[i >> 2][i & 3]; }
+// ---- GLSL 100 (ES2 / GL 2.1) safe helpers ----
+// GLSL 100 has no int overloads of clamp/min/max, so go through float.
+int iclamp(int x, int lo, int hi) { return int(clamp(float(x), float(lo), float(hi))); }
+int imin(int a, int b) { return int(min(float(a), float(b))); }
+int imax(int a, int b) { return int(max(float(a), float(b))); }
+
+// No arrays, no bit ops, no dynamic uniform indexing.
+vec4 getV(int q) {
+    if (q == 0)  return v0;
+    if (q == 1)  return v1;
+    if (q == 2)  return v2;
+    if (q == 3)  return v3;
+    if (q == 4)  return v4;
+    if (q == 5)  return v5;
+    if (q == 6)  return v6;
+    if (q == 7)  return v7;
+    if (q == 8)  return v8;
+    if (q == 9)  return v9;
+    if (q == 10) return v10;
+    if (q == 11) return v11;
+    if (q == 12) return v12;
+    if (q == 13) return v13;
+    if (q == 14) return v14;
+    if (q == 15) return v15;
+    if (q == 16) return v16;
+    if (q == 17) return v17;
+    if (q == 18) return v18;
+    if (q == 19) return v19;
+    if (q == 20) return v20;
+    if (q == 21) return v21;
+    if (q == 22) return v22;
+    if (q == 23) return v23;
+    if (q == 24) return v24;
+    return v25;
+}
+
+float val(int i) {
+    float f = float(i);
+    float qf = floor((f + 0.5) / 4.0);
+    float rf = f - qf * 4.0;
+    vec4 v = getV(int(qf + 0.5));
+    if (rf < 0.5) return v.x;
+    if (rf < 1.5) return v.y;
+    if (rf < 2.5) return v.z;
+    return v.w;
+}
 
 vec3 mixc(float t) { return mix(colBase.rgb, colAlt.rgb, clamp(t, 0.0, 1.0)); }
 vec4 over(vec4 top, vec4 bot) { return top + bot * (1.0 - top.a); }
@@ -58,15 +102,15 @@ vec4 px(vec3 c, float a) { return vec4(c * a, a); }
 vec2 curve(float x, int N) {
     float s = res.x / float(N - 1);
     float u = x / s;
-    int i = clamp(int(floor(u + 0.5)), 0, N - 1);
+    int i = iclamp(int(floor(u + 0.5)), 0, N - 1);
     float yi = val(i) * maxHeight;
     if (smoothCurve < 0.5) {
-        int j = clamp(u < float(i) ? i - 1 : i + 1, 0, N - 1);
+        int j = iclamp(u < float(i) ? i - 1 : i + 1, 0, N - 1);
         float yj = val(j) * maxHeight;
         return vec2(mix(yi, yj, abs(u - float(i))), (yj - yi) * float(j - i) / s);
     }
-    float yp = (yi + val(max(i - 1, 0)) * maxHeight) * 0.5;
-    float yn = (yi + val(min(i + 1, N - 1)) * maxHeight) * 0.5;
+    float yp = (yi + val(imax(i - 1, 0)) * maxHeight) * 0.5;
+    float yn = (yi + val(imin(i + 1, N - 1)) * maxHeight) * 0.5;
     float t = u - float(i) + 0.5;
     if (i == N - 1 && t < 0.5) return vec2(mix(yp, yi, 2.0 * t), 2.0 * (yi - yp) / s);
     float y = (1.0 - t) * (1.0 - t) * yp + 2.0 * t * (1.0 - t) * yi + t * t * yn;
@@ -78,7 +122,6 @@ void main() {
     float d = fromBottom > 0.5 ? res.y - p.y : p.y;
     int N = int(n);
     if (N < 2 || d > peak * maxHeight + 10.0) { fragColor = vec4(0.0); return; }
-    V = vec4[26](v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);
 
     float strokeA = min(1.0, alpha * 2.5);
     vec4 acc = vec4(0.0);
@@ -114,7 +157,7 @@ void main() {
 
         if (renderType < 1.5) {
             // bars
-            int i = clamp(int(floor(p.x / pitch)), 0, N - 1);
+            int i = iclamp(int(floor(p.x / pitch)), 0, N - 1);
             float pct = val(i);
             float h = pct * maxHeight;
             float x0 = float(i) * pitch;
@@ -147,7 +190,7 @@ void main() {
             // blocks
             float bh = 6.0, gap = 2.0, bp = bh + gap;
             float maxBlocks = floor(maxHeight / bp);
-            int i = clamp(int(floor(p.x / pitch)), 0, N - 1);
+            int i = iclamp(int(floor(p.x / pitch)), 0, N - 1);
             float pct = val(i);
             float act = floor(pct * maxHeight / bp + 0.5);
             float x0 = float(i) * pitch;
@@ -165,7 +208,7 @@ void main() {
                 }
             }
             if (drawStroke > 0.5) {
-                int c = clamp(int(floor((p.x + spacing * 0.5) / pitch)), 0, N - 1);
+                int c = iclamp(int(floor((p.x + spacing * 0.5) / pitch)), 0, N - 1);
                 float cact = floor(val(c) * maxHeight / bp + 0.5);
                 float pk = cact > 0.0 ? (cact - 1.0) * bp + bh : 0.0;
                 float cov = clamp(0.75 - abs(d - pk) + 0.5, 0.0, 1.0);
