@@ -17,7 +17,7 @@ PanelWindow {
     mask: Region {}
 
     WlrLayershell.namespace: "quickshell:cava"
-    WlrLayershell.layer: WlrLayer.Bottom
+    WlrLayershell.layer: WlrLayer.Background
     anchors {
         left: true
         right: true
@@ -25,6 +25,14 @@ PanelWindow {
         bottom: Config.cava.position === 1
     }
     implicitHeight: Math.ceil(barHeight) + 4
+
+    BackgroundEffect.blurRegion: Config.desktopWidgetsBlurActive ? blurRegion : null
+
+    Region {
+        id: blurRegion
+        width: root.width
+        height: root.height
+    }
 
     CavaVisualizer {
         anchors.fill: parent
