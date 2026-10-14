@@ -231,6 +231,9 @@ Item {
             for (const entry of entries) {
                 entry.groupKey = entry.groupKey ?? "";
                 entry.live = false;
+
+                if ((entry.image ?? "").startsWith("image://qsimage/"))
+                    entry.image = "";
                 entry.notifId = entry.notifId ?? root._notifId(entry.appName ?? "", entry.summary ?? "", entry.body ?? "");
                 if (seen[entry.notifId])
                     continue;

@@ -38,6 +38,12 @@ Item {
         return "";
     }
 
+    readonly property string _bodyImage: {
+        const m = (entry.body ?? "").match(/<img\s+src=["']([^"']+)["'][^>]*\/?>/);
+        const img = m ? m[1] : "";
+        return img === "" || img.startsWith("/") || img.includes("://") ? img : Quickshell.iconPath(img, "");
+    }
+
     readonly property string relativeTime: {
         const m = Math.floor((Date.now() - entry.time) / 60000);
         if (m < 1)
@@ -172,7 +178,7 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        text: (root.entry.body && root.entry.body.length > 0) ? root.entry.body : root.entry.summary
+                        text: ((root.entry.body && root.entry.body.length > 0) ? root.entry.body : root.entry.summary).replace(/<img[^>]*>/g, "")
                         color: Colors.md3.on_surface_variant
                         font.family: Config.fontFamily
                         font.pixelSize: 12
@@ -210,6 +216,27 @@ Item {
                         hoverEnabled: true
                         onClicked: NotificationService.removeHistoryEntry(root.index)
                     }
+                }
+            }
+
+            ClippingRectangle {
+                Layout.fillWidth: true
+                visible: root._bodyImage !== "" && attachmentImg.status !== Image.Error
+                radius: 12
+                color: Qt.alpha(Colors.md3.surface_container_lowest, Config.blurOpacity)
+                Layout.preferredHeight: attachmentImg.implicitWidth > 0
+                    ? Math.min(width * (attachmentImg.implicitHeight / attachmentImg.implicitWidth), 220)
+                    : 160
+
+                Image {
+                    id: attachmentImg
+                    anchors.fill: parent
+                    source: root._bodyImage
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    mipmap: true
+                    autoTransform: true
+                    sourceSize.width: 640
                 }
             }
 
