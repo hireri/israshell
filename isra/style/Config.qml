@@ -175,6 +175,11 @@ Singleton {
         return QsTileService.defaultLayout();
     }
     property var quickSettingsTiles: __qsTilesDefaults()
+
+    function __powerMenuDefaults() {
+        return { entries: [{ id: "firmware" }, { id: "hybrid" }, { id: "exit" }] };
+    }
+    property var powerMenu: __powerMenuDefaults()
     property var nightLight: ({
             scheduleEnabled: true,
             autoDarkMode: false,
@@ -430,6 +435,7 @@ Singleton {
             bar: __barDefaults(),
             floatingDock: __floatingDockDefaults(),
             quickSettingsTiles: __qsTilesDefaults(),
+            powerMenu: __powerMenuDefaults(),
             nightLight: {
                 scheduleEnabled: true,
                 autoDarkMode: false,
@@ -643,6 +649,8 @@ Singleton {
             result.bar = WidgetService.reconcile(result.bar);
         if (result.quickSettingsTiles)
             result.quickSettingsTiles = QsTileService.reconcile(result.quickSettingsTiles);
+        if (result.powerMenu)
+            result.powerMenu = PowerMenuService.reconcile(result.powerMenu);
 
         if (result.desktopWidgets) {
             const legacyTinted = data.weyes?.tinted ?? false;

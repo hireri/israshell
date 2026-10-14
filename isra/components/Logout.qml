@@ -36,6 +36,37 @@ Scope {
         PowerMenuState.hide();
     }
 
+    function clearBusy() {
+        releaseTimer.stop();
+        root.releaseReady = false;
+        root.busy = false;
+    }
+
+    readonly property var stripRows: {
+        const e = PowerMenuService.entries;
+        const out = [];
+        for (let i = 0; i < e.length; i += 4)
+            out.push(e.slice(i, i + 4));
+        return out;
+    }
+
+    Connections {
+        target: PowerMenuService
+        function onPhaseChanged() {
+            const e = PowerMenuService.running;
+            if (PowerMenuService.phase === "working" && e !== null && e.hold && !root.busy)
+                root.startBusy(e.busyText);
+        }
+        function onFinished(entry, ok) {
+            if (!ok)
+                root.clearBusy();
+            else if (!entry.hold)
+                PowerMenuState.hide();
+            else if (!root.busy)
+                root.startBusy(entry.busyText);
+        }
+    }
+
     Connections {
         target: PowerMenuState
         function onVisibleChanged() {
@@ -149,7 +180,7 @@ Scope {
 
                 WlrLayershell.namespace: "quickshell:powerMenu"
                 WlrLayershell.layer: WlrLayer.Overlay
-                WlrLayershell.keyboardFocus: PowerMenuState.visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+                WlrLayershell.keyboardFocus: PowerMenuState.visible && !(authMode && !showPrompt) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
                 exclusionMode: ExclusionMode.Ignore
                 color: "transparent"
                 anchors {
@@ -177,6 +208,24 @@ Scope {
                 property string userHost: Quickshell.env("USER")
                 property string uptimeStr: ""
                 property var hoveredButton: null
+
+                readonly property bool waitingAuth: PowerMenuService.phase === "waiting"
+                readonly property bool authMode: waitingAuth || (PowerMenuService.phase === "auth" && PowerMenuService.promptInline)
+                readonly property bool showPrompt: authMode && PowerMenuService.screen === modelData
+
+                onShowPromptChanged: {
+                    if (showPrompt)
+                        Qt.callLater(() => authField.focusInput());
+                    else
+                        contentItem.forceActiveFocus();
+                }
+
+                function execEntry(entry) {
+                    if (root.busy || PowerMenuService.running !== null)
+                        return;
+                    hoveredButton = null;
+                    PowerMenuService.run(entry, modelData);
+                }
 
                 function execButton(button) {
                     if (root.busy)
@@ -274,14 +323,22 @@ Scope {
                 contentItem {
                     focus: PowerMenuState.visible
                     Keys.onPressed: event => {
+                        if (PowerMenuService.running !== null) {
+                            if (event.key === Qt.Key_Escape)
+                                PowerMenuService.cancel();
+                            return;
+                        }
                         if (root.busy)
                             return;
                         if (event.key === Qt.Key_Escape) {
                             PowerMenuState.hide();
                         } else {
-                            for (let i = 0; i < buttons.length; i++)
-                                if (event.key === buttons[i].keybind)
-                                    w.execButton(buttons[i]);
+                            for (const b of buttons)
+                                if (event.key === b.keybind)
+                                    w.execButton(b);
+                            for (const e of PowerMenuService.entries)
+                                if (event.key === e.keybind)
+                                    w.execEntry(e);
                         }
                     }
                 }
@@ -304,7 +361,7 @@ Scope {
                         columns: 3
                         columnSpacing: 38
                         rowSpacing: 38
-                        opacity: root.busy ? 0.0 : 1.0
+                        opacity: root.busy ? 0.0 : (PowerMenuService.running !== null ? 0.35 : 1.0)
                         Behavior on opacity {
                             NumberAnimation {
                                 duration: 250
@@ -346,7 +403,7 @@ Scope {
                                 MouseArea {
                                     id: ma
                                     anchors.fill: parent
-                                    enabled: !root.busy
+                                    enabled: !root.busy && PowerMenuService.running === null
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onEntered: w.hoveredButton = circle.modelData
@@ -362,11 +419,188 @@ Scope {
                         }
                     }
 
+                    Item {
+                        id: stripArea
+                        anchors.top: buttonGrid.bottom
+                        anchors.topMargin: 32
+                        anchors.horizontalCenter: buttonGrid.horizontalCenter
+                        width: Math.max(stripCol.implicitWidth, authRow.implicitWidth)
+                        height: Math.max(stripCol.implicitHeight, 44)
+
+                        Column {
+                            id: stripCol
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: 12
+                            opacity: root.busy || w.authMode ? 0.0 : (PowerMenuService.running !== null ? 0.35 : 1.0)
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: 250
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            Repeater {
+                                model: root.stripRows
+                                delegate: Row {
+                                    id: stripRow
+                                    required property var modelData
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    spacing: 12
+
+                                    Repeater {
+                                        model: stripRow.modelData
+                                        delegate: Rectangle {
+                                            id: chip
+                                            required property var modelData
+
+                                            height: 44
+                                            width: chipRow.implicitWidth + 32
+                                            radius: 22
+                                            color: Colors.md3.surface_container_high
+
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                radius: parent.radius
+                                                color: Qt.alpha(Colors.md3.on_surface, chipMa.containsMouse ? 0.1 : 0.0)
+                                                Behavior on color {
+                                                    ColorAnimation {
+                                                        duration: 180
+                                                    }
+                                                }
+                                            }
+
+                                            Row {
+                                                id: chipRow
+                                                anchors.centerIn: parent
+                                                spacing: 8
+
+                                                MaterialIcon {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    name: chip.modelData.icon
+                                                    iconSize: 20
+                                                    filled: true
+                                                    color: Colors.md3.on_surface
+                                                    transitionType: "none"
+                                                }
+
+                                                Text {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: chip.modelData.text
+                                                    font.pixelSize: 13
+                                                    font.weight: Font.Medium
+                                                    font.family: Config.fontFamily
+                                                    color: Colors.md3.on_surface
+                                                    renderType: Text.NativeRendering
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                id: chipMa
+                                                anchors.fill: parent
+                                                enabled: !root.busy && PowerMenuService.running === null
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: w.execEntry(chip.modelData)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Row {
+                            id: authRow
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: 10
+                            opacity: w.showPrompt ? 1.0 : 0.0
+                            visible: opacity > 0
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: 250
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
+
+                            PasswordField {
+                                id: authField
+                                width: 300
+                                height: 44
+                                revealed: false
+                                busy: PolkitService.busy
+                                error: PolkitService.wrong
+                                locked: w.waitingAuth || PolkitService.lockedOut
+                                placeholder: w.waitingAuth ? Localization.t("logout.waiting_auth") : PolkitService.lockedOut ? PolkitService.supplementary.replace(/^\(|\)$/g, "") : Localization.t(PolkitService.wrong ? "lockSurface.incorrect_password" : "lockSurface.password")
+                                onTextChanged: {
+                                    PolkitService.wrong = false;
+                                    PolkitService.draft = text;
+                                }
+                                onAccepted: PolkitService.submit(authField.text)
+
+                                Binding {
+                                    target: authField
+                                    property: "text"
+                                    value: PolkitService.draft
+                                }
+
+                                Connections {
+                                    target: PolkitService
+                                    function onFailed() {
+                                        if (w.showPrompt)
+                                            authField.shake();
+                                    }
+                                    function onBusyChanged() {
+                                        if (!PolkitService.busy && w.showPrompt)
+                                            authField.focusInput();
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: 44
+                                width: cancelLabel.implicitWidth + 40
+                                radius: 22
+                                color: Colors.md3.surface_container_high
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: parent.radius
+                                    color: Qt.alpha(Colors.md3.on_surface, cancelMa.containsMouse ? 0.1 : 0.0)
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: 180
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    id: cancelLabel
+                                    anchors.centerIn: parent
+                                    text: Localization.t("lockSurface.cancel")
+                                    font.pixelSize: 13
+                                    font.weight: Font.Medium
+                                    font.family: Config.fontFamily
+                                    color: Colors.md3.on_surface
+                                    renderType: Text.NativeRendering
+                                }
+
+                                MouseArea {
+                                    id: cancelMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: PowerMenuService.cancel()
+                                }
+                            }
+                        }
+                    }
+
                     Rectangle {
                         id: tooltip
 
-                        anchors.top: buttonGrid.bottom
-                        anchors.topMargin: 24
+                        anchors.top: stripArea.bottom
+                        anchors.topMargin: 20
                         anchors.horizontalCenter: buttonGrid.horizontalCenter
 
                         property string label: ""
@@ -377,8 +611,8 @@ Scope {
                         radius: 18
                         color: Colors.md3.surface_container_high
 
-                        opacity: shown && !root.busy ? 1.0 : 0.0
-                        scale: shown && !root.busy ? 1.0 : 0.82
+                        opacity: shown && !root.busy && !w.authMode ? 1.0 : 0.0
+                        scale: shown && !root.busy && !w.authMode ? 1.0 : 0.82
                         transformOrigin: Item.Top
 
                         Behavior on opacity {
@@ -490,6 +724,60 @@ Scope {
                                     tooltipHideTimer.restart();
                                 }
                             }
+                        }
+                    }
+
+                    Text {
+                        id: authMessage
+                        anchors.top: stripArea.bottom
+                        anchors.topMargin: 20
+                        anchors.horizontalCenter: buttonGrid.horizontalCenter
+                        width: 520
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.Wrap
+                        text: PolkitService.message
+                        font.pixelSize: 12
+                        font.family: Config.fontFamily
+                        color: Colors.md3.on_surface_variant
+                        renderType: Text.NativeRendering
+                        opacity: w.showPrompt && !w.waitingAuth ? 1.0 : 0.0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 250
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: errorBanner
+                        anchors.top: tooltip.bottom
+                        anchors.topMargin: 12
+                        anchors.horizontalCenter: buttonGrid.horizontalCenter
+                        height: 36
+                        radius: 18
+                        width: Math.min(560, errorText.implicitWidth + 40)
+                        color: Colors.md3.error_container
+                        opacity: PowerMenuService.error !== "" && !root.busy && !w.authMode && PowerMenuService.running === null ? 1.0 : 0.0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 200
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Text {
+                            id: errorText
+                            anchors.centerIn: parent
+                            width: parent.width - 40
+                            elide: Text.ElideRight
+                            horizontalAlignment: Text.AlignHCenter
+                            text: PowerMenuService.error
+                            font.pixelSize: 13
+                            font.weight: Font.Medium
+                            font.family: Config.fontFamily
+                            color: Colors.md3.on_error_container
+                            renderType: Text.NativeRendering
                         }
                     }
 
@@ -697,9 +985,9 @@ Scope {
                                 spacing: 0
 
                                 Repeater {
-                                    model: buttons
+                                    model: buttons.concat(PowerMenuService.entries.filter(e => e.keybind > 0))
                                     delegate: Row {
-                                        required property LogoutButton modelData
+                                        required property var modelData
                                         required property int index
                                         spacing: 0
 

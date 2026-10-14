@@ -12,6 +12,7 @@ Rectangle {
     property alias inputMethodHints: field.inputMethodHints
 
     signal committed(string text)
+    signal edited(string text)
 
     function commit() {
         root.committed(field.text);
@@ -48,6 +49,8 @@ Rectangle {
         leftPadding: 12
         rightPadding: 12
         background: Item {}
+
+        onTextChanged: root.edited(text)
 
         Keys.onReturnPressed: {
             root.commit();

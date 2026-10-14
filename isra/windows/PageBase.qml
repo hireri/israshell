@@ -20,6 +20,23 @@ Item {
     onActiveChanged: if (active)
         flick.contentY = 0
 
+    function reveal(item, h) {
+        const top = item.mapToItem(flick.contentItem, 0, 0).y;
+        const y = Math.max(0, Math.min(top - 8, Math.max(flick.contentY, top + h + 16 - flick.height)));
+        if (y === flick.contentY)
+            return;
+        revealAnim.to = y;
+        revealAnim.restart();
+    }
+
+    NumberAnimation {
+        id: revealAnim
+        target: flick
+        property: "contentY"
+        duration: 300
+        easing.type: Easing.OutCubic
+    }
+
     Flickable {
         id: flick
         anchors.fill: parent

@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Services.Polkit
 import qs.style
 import qs.services
 import qs.icons
@@ -12,7 +11,17 @@ import qs.icons
 Scope {
     id: root
 
-    readonly property var flow: agent.flow
+    readonly property var flow: PolkitService.flow
+    readonly property bool busy: PolkitService.busy
+    readonly property bool wrong: PolkitService.wrong
+    readonly property string message: PolkitService.message
+    readonly property string supplementary: PolkitService.supplementary
+    readonly property bool supplementaryIsError: PolkitService.supplementaryIsError
+    readonly property bool lockedOut: PolkitService.lockedOut
+    readonly property var idNames: PolkitService.idNames
+    readonly property int selIdx: PolkitService.selIdx
+
+    readonly property bool wanted: PolkitService.active && !PowerMenuService.promptInline
 
     property bool alive: false
     property real shown: 0
@@ -20,61 +29,6 @@ Scope {
         NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
     }
     property var targetScreen: null
-    property string draft: ""
-    property bool wrong: false
-    signal failed
-
-    readonly property bool busy: !(root.flow?.isResponseRequired ?? false)
-
-    property string message: ""
-    property string supplementary: ""
-    property bool supplementaryIsError: false
-    readonly property bool lockedOut: /left to unlock/i.test(root.supplementary)
-    property var idNames: []
-    property int selIdx: 0
-
-    function _idNames() {
-        const out = [];
-        for (const i of root.flow.identities)
-            out.push(i.displayName);
-        return out;
-    }
-
-    function _selIdx() {
-        const l = root.flow.identities;
-        for (let i = 0; i < l.length; i++)
-            if (l[i] === root.flow.selectedIdentity)
-                return i;
-        return 0;
-    }
-
-    function submit(text) {
-        if (!busy && text.length > 0)
-            root.flow.submit(text);
-    }
-
-    Binding { target: root; property: "message"; value: root.flow?.message ?? ""; when: root.flow !== null; restoreMode: Binding.RestoreNone }
-    Binding { target: root; property: "supplementary"; value: root.flow?.supplementaryMessage ?? ""; when: root.flow !== null; restoreMode: Binding.RestoreNone }
-    Binding { target: root; property: "supplementaryIsError"; value: root.flow?.supplementaryIsError ?? false; when: root.flow !== null; restoreMode: Binding.RestoreNone }
-    Binding { target: root; property: "idNames"; value: root.flow ? root._idNames() : []; when: root.flow !== null; restoreMode: Binding.RestoreNone }
-    Binding { target: root; property: "selIdx"; value: root.flow ? root._selIdx() : 0; when: root.flow !== null; restoreMode: Binding.RestoreNone }
-
-    Connections {
-        target: agent
-        function onFlowChanged() {
-            root.draft = "";
-            root.wrong = false;
-        }
-    }
-
-    Connections {
-        target: root.flow
-        function onAuthenticationFailed() {
-            root.draft = "";
-            root.wrong = true;
-            root.failed();
-        }
-    }
 
     function _focusedScreen() {
         return Quickshell.screens.find(s => s.name === CompositorService.focusedMonitor.name) ?? Quickshell.screens[0];
@@ -83,7 +37,7 @@ Scope {
     Timer {
         interval: 100
         repeat: true
-        running: root.alive && agent.isActive
+        running: root.alive && root.wanted
         onTriggered: if (!cursor.running)
             cursor.running = true
     }
@@ -110,28 +64,21 @@ Scope {
     Timer {
         id: closeTimer
         interval: 200
-        onTriggered: if (!agent.isActive)
+        onTriggered: if (!root.wanted)
             root.alive = false
     }
 
-    PolkitAgent {
-        id: agent
-
-        onIsActiveChanged: {
-            if (isActive) {
-                closeTimer.stop();
-                Qt.callLater(() => root.shown = 1);
-                if (!root.alive) {
-                    root.targetScreen = root._focusedScreen();
-                    root.draft = "";
-                    root.wrong = false;
-                }
-                root.alive = true;
-                PanelService.closeAll(true);
-            } else {
-                root.shown = 0;
-                closeTimer.restart();
-            }
+    onWantedChanged: {
+        if (wanted) {
+            closeTimer.stop();
+            Qt.callLater(() => root.shown = 1);
+            if (!root.alive)
+                root.targetScreen = root._focusedScreen();
+            root.alive = true;
+            PanelService.closeAll(true);
+        } else {
+            root.shown = 0;
+            closeTimer.restart();
         }
     }
 
@@ -192,13 +139,13 @@ Scope {
 
                     Shortcut {
                         sequence: "Escape"
-                        onActivated: root.flow?.cancelAuthenticationRequest()
+                        onActivated: PolkitService.cancel()
                     }
 
                     readonly property real shown: root.shown
 
                     Connections {
-                        target: root
+                        target: PolkitService
                         function onFailed() {
                             field.shake();
                         }
@@ -215,7 +162,7 @@ Scope {
                     Binding {
                         target: field
                         property: "text"
-                        value: root.draft
+                        value: PolkitService.draft
                     }
 
                     Rectangle {
@@ -333,7 +280,7 @@ Scope {
                                             MouseArea {
                                                 anchors.fill: parent
                                                 cursorShape: Qt.PointingHandCursor
-                                                onClicked: root.flow.selectedIdentity = root.flow.identities[idChip.index]
+                                                onClicked: PolkitService.selectIdentity(idChip.index)
                                             }
                                         }
                                     }
@@ -349,10 +296,10 @@ Scope {
                                 locked: root.lockedOut
                                 placeholder: root.lockedOut ? root.supplementary.replace(/^\(|\)$/g, "") : Localization.t(root.wrong ? "lockSurface.incorrect_password" : "lockSurface.password")
                                 onTextChanged: {
-                                    root.wrong = false;
-                                    root.draft = text;
+                                    PolkitService.wrong = false;
+                                    PolkitService.draft = text;
                                 }
-                                onAccepted: root.submit(field.text)
+                                onAccepted: PolkitService.submit(field.text)
                             }
 
                             Text {
@@ -376,7 +323,7 @@ Scope {
                                 LockButton {
                                     size: 40
                                     label: Localization.t("lockSurface.cancel")
-                                    onClicked: root.flow?.cancelAuthenticationRequest()
+                                    onClicked: PolkitService.cancel()
                                 }
 
                                 Rectangle {
@@ -432,7 +379,7 @@ Scope {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: okBtn.ready ? Qt.PointingHandCursor : Qt.ArrowCursor
-                                        onClicked: root.submit(field.text)
+                                        onClicked: PolkitService.submit(field.text)
                                     }
                                 }
                             }

@@ -105,6 +105,15 @@ Singleton {
             source: "LocalePage.qml"
         },
         {
+            key: "powermenu",
+            titleKey: "powerMenuPage.title",
+            sublabelKey: "powerMenuPage.sidebar",
+            icon: "shutdown",
+            iconTransition: "circle",
+            group: 3,
+            source: "PowerMenuPage.qml"
+        },
+        {
             key: "system",
             titleKey: "settingsWindow.system",
             sublabelKey: "settingsWindow.about_paths_keybinds",

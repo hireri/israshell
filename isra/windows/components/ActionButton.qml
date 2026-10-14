@@ -8,13 +8,16 @@ Rectangle {
 
     property string icon
     property string label
+    property string tooltip: ""
+    property bool danger: false
 
     signal clicked
 
     implicitHeight: 34
     implicitWidth: row.implicitWidth + 24
     radius: 12
-    color: area.containsMouse ? Config.dim(Colors.md3.surface_container_highest) : Config.dim(Colors.md3.surface_container_high)
+    color: root.danger ? Colors.md3.error_container : (area.containsMouse ? Config.dim(Colors.md3.surface_container_highest) : Config.dim(Colors.md3.surface_container_high))
+    opacity: root.enabled ? 1 : 0.38
 
     Behavior on color {
         ColorAnimation {
@@ -32,7 +35,7 @@ Rectangle {
             visible: root.icon !== ""
             name: root.icon
             iconSize: 18
-            color: Colors.md3.on_surface
+            color: root.danger ? Colors.md3.on_error_container : Colors.md3.on_surface
             transitionType: "none"
         }
 
@@ -42,18 +45,18 @@ Rectangle {
             font.family: Config.fontFamily
             font.pixelSize: 13
             font.weight: Font.Medium
-            color: Colors.md3.on_surface
+            color: root.danger ? Colors.md3.on_error_container : Colors.md3.on_surface
             renderType: Text.NativeRendering
         }
+    }
+
+    Tooltip {
+        text: root.tooltip
     }
 
     MouseArea {
         id: area
         anchors.fill: parent
-    Tooltip {
-        text: root.tooltip
-    }
-
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
