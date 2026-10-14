@@ -200,6 +200,25 @@ Item {
         root._setInput(next < 0 ? "" : h[h.length - 1 - next]);
     }
 
+    readonly property bool dictating: VoiceService.capture && VoiceService.phase !== "idle"
+    readonly property bool listening: root.dictating && VoiceService.phase === "recording"
+
+    function _toggleDictation(): void {
+        VoiceService.toggleCapture();
+        root.focusInput();
+    }
+
+    Connections {
+        target: VoiceService
+        function onDictated(text: string): void {
+            inputField.insert(inputField.cursorPosition, text);
+            root.focusInput();
+        }
+    }
+
+    Component.onDestruction: if (root.dictating)
+        VoiceService.cancel()
+
     function focusInput(): void {
         inputField.forceActiveFocus();
     }
@@ -595,7 +614,13 @@ Item {
 
             Text {
                 anchors.fill: inputFlick
-                text: Localization.t("aiAssistant.placeholder").arg(Config.aiAssistant.provider)
+                text: {
+                    if (root.listening)
+                        return Localization.t("voice.listening") + "  " + VoiceService.elapsed;
+                    if (root.dictating)
+                        return VoiceService.phase === "transcribing" ? Localization.t("voice.transcribing") : VoiceService.message;
+                    return Localization.t("aiAssistant.placeholder").arg(Config.aiAssistant.provider);
+                }
                 color: Colors.md3.on_surface_variant
                 font: inputField.font
                 visible: inputField.text === ""
@@ -646,6 +671,7 @@ Item {
         id: actionBtn
         readonly property bool showStop: AiAssistantService.isStreaming && inputField.text.trim() === ""
         readonly property bool hasText: inputField.text.trim() !== ""
+        readonly property bool showMic: !actionBtn.showStop && inputField.text === "" && VoiceService.ready
         anchors {
             right: parent.right
             rightMargin: root.actionBtnMargin
@@ -653,11 +679,15 @@ Item {
             bottomMargin: root.actionBtnMargin
         }
         size: root.actionBtnSize
-        icon: actionBtn.showStop ? "stop" : "arrow-upward"
+        icon: actionBtn.showStop || root.listening ? "stop" : (actionBtn.showMic ? "mic" : "arrow-upward")
         filled: true
         iconSize: 18
-        container: actionBtn.showStop ? Colors.md3.primary_container : (actionBtn.hasText ? Colors.md3.primary : Colors.md3.surface_container_high)
-        content: actionBtn.showStop ? Colors.md3.on_primary_container : (actionBtn.hasText ? Colors.md3.on_primary : Colors.md3.on_surface_variant)
-        onClicked: root._sendOrInterrupt()
+        container: actionBtn.showStop || root.dictating ? Colors.md3.primary_container : (actionBtn.hasText ? Colors.md3.primary : (actionBtn.showMic ? Colors.md3.secondary_container : Colors.md3.surface_container_high))
+        content: actionBtn.showStop || root.dictating ? Colors.md3.on_primary_container : (actionBtn.hasText ? Colors.md3.on_primary : (actionBtn.showMic ? Colors.md3.on_secondary_container : Colors.md3.on_surface_variant))
+        onClicked: actionBtn.showMic ? root._toggleDictation() : root._sendOrInterrupt()
+
+        Tooltip {
+            text: actionBtn.showMic ? Localization.t(root.listening ? "screencapControls.stop_dictation" : "screencapControls.dictate") : ""
+        }
     }
 }

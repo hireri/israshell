@@ -11,6 +11,8 @@ Singleton {
     property string phase: "idle"
     property string message: ""
     property string elapsed: "0:00"
+    property bool capture: false
+    signal dictated(string text)
 
     readonly property var cfg: Config.voice
     readonly property bool busy: phase === "recording" || phase === "transcribing"
@@ -124,6 +126,7 @@ Singleton {
     }
 
     function press() {
+        root.capture = false;
         root._held = true;
         start();
     }
@@ -136,6 +139,17 @@ Singleton {
         if (phase === "recording") {
             stop();
         } else {
+            root.capture = false;
+            root._held = false;
+            start();
+        }
+    }
+
+    function toggleCapture() {
+        if (phase === "recording") {
+            stop();
+        } else if (!busy) {
+            root.capture = true;
             root._held = false;
             start();
         }
@@ -213,7 +227,7 @@ Singleton {
         } else if (r.text) {
             const chunk = (root._gotText ? " " : "") + r.text;
             root._gotText = true;
-            if (root.output === "copy" || root._noWtype) {
+            if (root.output === "copy" || root._noWtype || root.capture) {
                 root._acc += chunk;
             } else {
                 root._typeQueue.push(chunk);
@@ -238,7 +252,10 @@ Singleton {
     function _maybeFinish() {
         if (root.phase !== "transcribing" || streamProc.running || typeProc.running || root._typeQueue.length > 0)
             return;
-        if (root._acc !== "") {
+        if (root._acc !== "" && root.capture) {
+            root.dictated(root._acc);
+            root._finish("idle", "");
+        } else if (root._acc !== "") {
             copyProc.fellBack = root._noWtype;
             copyProc.command = ["wl-copy", "--", root._acc];
             copyProc.running = true;

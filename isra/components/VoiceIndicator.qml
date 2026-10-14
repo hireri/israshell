@@ -10,7 +10,7 @@ Scope {
 
     readonly property int effectivePosition: Config.osdFollowBar ? (Config.bar.position === 1 ? 3 : 1) : Config.osdPosition
     readonly property bool recording: VoiceService.phase === "recording"
-    readonly property bool open: VoiceService.phase !== "idle"
+    readonly property bool open: VoiceService.phase !== "idle" && !VoiceService.capture
 
     readonly property string liveLabel: {
         switch (VoiceService.phase) {
