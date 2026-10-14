@@ -31,6 +31,15 @@ Item {
 
     Component.onCompleted: PanelService.register(root, root.controllerRegistry, null, "")
 
+    BarTooltip {
+        autoHover: true
+        gap: 4
+        text: {
+            LocaleService.barTimeText;
+            return Qt.formatDate(new Date(), Qt.locale().dateFormat(Locale.LongFormat));
+        }
+    }
+
     Rectangle {
         id: clockRoot
         anchors.fill: parent

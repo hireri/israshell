@@ -534,6 +534,12 @@ Item {
                             }
                         }
 
+                        Tooltip {
+                            flat: true
+                            suppressed: cell.dragging || (root.controller?.dragActive ?? false)
+                            text: cell.d?.title ?? ""
+                        }
+
                         MouseArea {
                             id: ma
                             property bool wasDragged: false

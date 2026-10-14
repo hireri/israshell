@@ -1,6 +1,7 @@
 import QtQuick
 import qs.icons
 import qs.style
+import qs.components
 
 Rectangle {
     id: root
@@ -49,6 +50,10 @@ Rectangle {
     MouseArea {
         id: area
         anchors.fill: parent
+    Tooltip {
+        text: root.tooltip
+    }
+
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()

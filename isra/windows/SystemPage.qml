@@ -8,6 +8,7 @@ import Quickshell.Widgets
 import qs.style
 import qs.services
 import qs.windows.components
+import qs.components
 import qs.icons
 
 PageBase {
@@ -227,6 +228,10 @@ PageBase {
                         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onClicked: Updater.applyUpdate()
                     }
+
+                    Tooltip {
+                        text: Localization.t("systemPage.tooltip_install_update")
+                    }
                 }
 
                 Rectangle {
@@ -445,6 +450,10 @@ PageBase {
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: ConfigPresetService.applyPreset(presetRow.modelData.path)
                                 }
+
+                                Tooltip {
+                                    text: Localization.t("systemPage.tooltip_apply_preset")
+                                }
                             }
 
                             Rectangle {
@@ -544,6 +553,7 @@ PageBase {
             SettingSwitch {
                 label: Localization.t("systemPage.use_hyprlock")
                 sublabel: Localization.t("systemPage.delegate_locking_to_hyprlock_instead")
+                tooltip: Localization.t("systemPage.tooltip_use_hyprlock")
                 checked: Config.useHyprlock
                 onToggled: v => Config.update({ useHyprlock: v })
             }
@@ -601,6 +611,7 @@ PageBase {
             SettingSwitch {
                 label: Localization.t("systemPage.low_battery_notify")
                 sublabel: Localization.t("systemPage.warn_when_battery_is_low")
+                tooltip: Localization.t("systemPage.tooltip_battery_needs_battery")
                 enabled: BatteryService.hasBattery
                 opacity: enabled ? 1.0 : 0.4
                 checked: Config.battery.lowBatteryNotify
@@ -614,6 +625,7 @@ PageBase {
             SettingSlider {
                 isLast: true
                 label: Localization.t("systemPage.low_battery_threshold")
+                tooltip: Localization.t("systemPage.tooltip_low_battery_threshold")
                 enabled: BatteryService.hasBattery && Config.battery.lowBatteryNotify
                 opacity: enabled ? 1.0 : 0.4
                 from: 5
@@ -651,6 +663,7 @@ PageBase {
             SettingSwitch {
                 label: Localization.t("backgroundPage.enable")
                 sublabel: Localization.t("systemPage.localsend_discoverable_desc")
+                tooltip: Localization.t("systemPage.tooltip_localsend_unavailable")
                 checked: LocalSendService.ready
                 enabled: LocalSendService.reachable
                 onToggled: v => LocalSendService.setEnabled(v)
@@ -667,6 +680,7 @@ PageBase {
             SettingSwitch {
                 label: Localization.t("systemPage.encryption") || "Encryption"
                 sublabel: Localization.t("systemPage.localsend_encryption_desc") || "Encrypt file transfers (HTTPS)"
+                tooltip: Localization.t("systemPage.tooltip_encryption_after_transfer")
                 checked: LocalSendService.encryptionTarget
                 enabled: LocalSendService.reachable
                 onToggled: v => LocalSendService.setEncryption(v)
@@ -861,6 +875,10 @@ PageBase {
                                                 VoiceService.deleteModel(tile.modelData.id);
                                         }
                                     }
+
+                                    Tooltip {
+                                        text: tile.loading ? Localization.t("systemPage.tooltip_cancel_download") : tile.have ? Localization.t("systemPage.tooltip_delete_model") : Localization.t("systemPage.tooltip_download_model")
+                                    }
                                 }
                             }
                         }
@@ -883,11 +901,11 @@ PageBase {
                 options: [
                     {
                         label: Localization.t("voicePage.output_type"),
-                        value: "type"
+                        value: "type",
                     },
                     {
                         label: Localization.t("voicePage.output_copy"),
-                        value: "copy"
+                        value: "copy",
                     }
                 ]
                 currentValue: VoiceService.output

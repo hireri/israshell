@@ -101,22 +101,26 @@ PageBase {
                 {
                     label: "",
                     value: 0,
-                    icon: huggingIconComp
+                    icon: huggingIconComp,
+                    tooltip: Localization.t("barPage.tooltip_mode_hugging"),
                 },
                 {
                     label: "",
                     value: 1,
-                    icon: straightIconComp
+                    icon: straightIconComp,
+                    tooltip: Localization.t("barPage.tooltip_mode_attached"),
                 },
                 {
                     label: "",
                     value: 3,
-                    icon: chromeOsIconComp
+                    icon: chromeOsIconComp,
+                    tooltip: Localization.t("barPage.tooltip_mode_chromebook"),
                 },
                 {
                     label: "",
                     value: 2,
-                    icon: floatingIconComp
+                    icon: floatingIconComp,
+                    tooltip: Localization.t("barPage.tooltip_mode_floating"),
                 }
             ]
             currentValue: Config.bar.mode 
@@ -158,7 +162,7 @@ PageBase {
                 },
                 {
                     label: Localization.t("barPage.full"),
-                    value: 2
+                    value: 2,
                 }
             ]
             currentValue: Config.bar.transparency
@@ -215,7 +219,7 @@ PageBase {
                 readonly property var actions: [
                     { key: "wifi", label: Localization.t("qsTileService.wifi") },
                     { key: "bluetooth", label: Localization.t("qsTileService.bluetooth") },
-                    { key: "sound", label: Localization.t("barPage.sound") },
+                    { key: "sound", label: Localization.t("barPage.sound"), tooltip: Localization.t("barPage.tooltip_sound_icon") },
                     { key: "caffeine", label: Localization.t("qsTileService.caffeine") },
                     { key: "nightlight", label: Localization.t("qsTileService.night_light") },
                     { key: "dnd", label: Localization.t("barPage.dnd") },
@@ -224,7 +228,7 @@ PageBase {
                     { key: "mic", label: Localization.t("qsTileService.microphone") },
                     { key: "screenshare", label: Localization.t("barPage.screenshare") },
                     { key: "traffic", label: Localization.t("barPage.traffic") },
-                    { key: "dns", label: Localization.t("qsTileService.dns") },
+                    { key: "dns", label: Localization.t("qsTileService.dns"), tooltip: Localization.t("barPage.tooltip_dns") },
                     { key: "gamemode", label: Localization.t("qsTileService.game_mode") },
                     { key: "powerprofile", label: Localization.t("qsTileService.power_profile") }
                 ]
@@ -235,6 +239,7 @@ PageBase {
                     FilterChip {
                         required property var modelData
                         label: modelData.label
+                        tooltip: modelData.tooltip ?? ""
                         active: Config.quicksettings.icons.includes(modelData.key)
                         onToggled: isActive => {
                             const key = modelData.key;
@@ -296,15 +301,15 @@ PageBase {
             options: [
                 {
                     label: "6",
-                    value: 0
+                    value: 0,
                 },
                 {
                     label: Localization.t("barPage.vi"),
-                    value: 1
+                    value: 1,
                 },
                 {
                     label: "六",
-                    value: 2
+                    value: 2,
                 }
             ]
             currentValue: Config.workspaces.style
@@ -440,6 +445,7 @@ PageBase {
             to: 100
             stepSize: 5
             unit: ""
+            tooltip: Localization.t("barPage.tooltip_scroll_speed")
             value: Config.bar.carouselSpeed
             onMoved: v => Config.update({
                 bar: Object.assign({}, Config.bar, {
@@ -472,11 +478,11 @@ PageBase {
                 },
                 {
                     label: Localization.t("barPage.pie"),
-                    value: 1
+                    value: 1,
                 },
                 {
                     label: Localization.t("settingsWindow.bar"),
-                    value: 2
+                    value: 2,
                 }
             ]
             currentValue: Config.sysMonitor?.style ?? 0

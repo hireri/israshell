@@ -7,6 +7,7 @@ import qs.style
 import qs.icons
 import qs.services
 import qs.windows.components
+import qs.components
 
 PageBase {
     pageId: "aiassistant"
@@ -239,6 +240,7 @@ PageBase {
         SettingSelect {
             label: Localization.t("aiAssistantPage.api_type")
             sublabel: Localization.t("aiAssistantPage.protocol_used_to_talk_to_this")
+            tooltip: Localization.t("aiAssistantPage.tooltip_api_type")
             options: [
                 {
                     label: "Gemini",
@@ -271,6 +273,7 @@ PageBase {
         SettingInput {
             label: Localization.t("aiAssistantPage.endpoint")
             sublabel: Localization.t("aiAssistantPage.base_url_requests_are_sent_to")
+            tooltip: Localization.t("aiAssistantPage.tooltip_endpoint")
             value: Config.aiAssistant.providers[Config.aiAssistant.provider]?.endpoint ?? ""
             fieldWidth: 260
             fieldHeight: 44

@@ -77,8 +77,6 @@ Rectangle {
     }
 
     Tooltip {
-        anchorItem: root
         text: root.tip
-        open: area.containsMouse && root.tip !== ""
     }
 }

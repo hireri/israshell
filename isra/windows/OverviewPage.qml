@@ -7,6 +7,7 @@ import Quickshell
 import Quickshell.Widgets
 import qs.style
 import qs.services
+import qs.components
 import qs.windows.components
 import qs.icons
 
@@ -168,6 +169,10 @@ PageBase {
                                         let c = Qt.color(colorString);
                                         let luminance = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
                                         return luminance < 0.5;
+                                    }
+
+                                    Tooltip {
+                                        text: Localization.t("overviewPage.tooltip_source_color")
                                     }
 
                                     Text {
@@ -349,6 +354,17 @@ PageBase {
                                 }
                             }
 
+                            Tooltip {
+                                text: ({
+                                        "scheme-tonal-spot": Localization.t("overviewPage.tooltip_scheme_tonal_spot"),
+                                        "scheme-rainbow": Localization.t("overviewPage.tooltip_scheme_rainbow"),
+                                        "scheme-vibrant": Localization.t("overviewPage.tooltip_scheme_vibrant"),
+                                        "scheme-expressive": Localization.t("overviewPage.tooltip_scheme_expressive"),
+                                        "scheme-fruit-salad": Localization.t("overviewPage.tooltip_scheme_fruit_salad"),
+                                        "scheme-monochrome": Localization.t("overviewPage.tooltip_scheme_monochrome")
+                                    })[modelData] ?? ""
+                            }
+
                             MouseArea {
                                 id: swatch
                                 anchors.fill: parent
@@ -410,6 +426,10 @@ PageBase {
                     }
                 }
 
+                Tooltip {
+                    text: Localization.t("overviewPage.tooltip_shuffle_folder")
+                }
+
                 MouseArea {
                     id: folderMouse
                     anchors.fill: parent
@@ -462,6 +482,10 @@ PageBase {
                     }
                 }
 
+                Tooltip {
+                    text: Localization.t("overviewPage.tooltip_random_download")
+                }
+
                 MouseArea {
                     id: konachanMouse
                     anchors.fill: parent
@@ -512,6 +536,10 @@ PageBase {
                         }
                         elide: Text.ElideRight
                     }
+                }
+
+                Tooltip {
+                    text: Localization.t("overviewPage.tooltip_random_download")
                 }
 
                 MouseArea {
@@ -568,6 +596,10 @@ PageBase {
                     }
                 }
 
+                Tooltip {
+                    text: Localization.t("overviewPage.tooltip_random_download")
+                }
+
                 MouseArea {
                     id: danbooruMouse
                     anchors.fill: parent
@@ -620,6 +652,7 @@ PageBase {
             id: blurSwitch
             label: Localization.t("displayPage.background_blur")
             sublabel: Localization.t("displayPage.apply_blur_effect_to_panels")
+            tooltip: Localization.t("overviewPage.tooltip_blur_game_mode")
             checked: Config.blurEffects
             onToggled: v => Config.update({
                     blurEffects: v

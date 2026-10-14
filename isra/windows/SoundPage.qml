@@ -250,6 +250,7 @@ PageBase {
         SettingSelect {
             label: Localization.t("soundPage.sound_theme")
             sublabel: Localization.t("soundPage.which_installed_sound_theme_to_use")
+            tooltip: Localization.t("soundPage.tooltip_theme_fallback")
             enabled: Config.sounds.enabled
             opacity: enabled ? 1.0 : 0.4
             options: SoundService.availableThemes.map(name => ({
@@ -323,6 +324,7 @@ PageBase {
             isLast: true
             label: Localization.t("soundPage.silenced_apps")
             sublabel: Localization.t("soundPage.dont_play_a_sound_for_these_apps")
+            tooltip: Localization.t("soundPage.tooltip_silenced_apps")
             enabled: Config.sounds.enabled
             opacity: enabled ? 1.0 : 0.4
 
@@ -441,6 +443,7 @@ PageBase {
         SettingChips {
             isLast: true
             label: Localization.t("backgroundPage.position")
+            tooltip: Localization.t("soundPage.tooltip_popup_position_follow")
             enabled: !(Config.notifications.popupFollowBar ?? true)
             opacity: enabled ? 1.0 : 0.4
             options: [

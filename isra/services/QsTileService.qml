@@ -713,6 +713,7 @@ Singleton {
 
     readonly property var compactComponentMap: _indexBy("compactComponent")
     readonly property var wideComponentMap: _indexBy("wideComponent")
+    readonly property var labelMap: _indexBy("label")
 
     function defaultLayout() {
         const disabled = new Set(defaultDisabledIds);

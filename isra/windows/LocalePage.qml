@@ -231,6 +231,7 @@ PageBase {
         SettingSelect {
             label: Localization.t("localePage.language")
             sublabel: Localization.t("localePage.language_sublabel")
+            tooltip: Localization.t("localePage.tooltip_language_outdated")
             options: page._installedLanguages
             currentValue: Config.language
             onSelected: v => Config.update({
@@ -255,6 +256,10 @@ PageBase {
                         duration: 120
                         easing.type: Easing.OutCubic
                     }
+                }
+
+                Tooltip {
+                    text: Localization.t("localePage.tooltip_regenerate")
                 }
 
                 Text {
@@ -309,6 +314,7 @@ PageBase {
         SettingChips {
             label: Localization.t("localePage.translation_tone")
             sublabel: Localization.t("localePage.translation_tone_sublabel")
+            tooltip: Localization.t("localePage.tooltip_translation_tone")
             options: [
                 {
                     label: Localization.t("localePage.tone_formal"),
@@ -316,11 +322,11 @@ PageBase {
                 },
                 {
                     label: Localization.t("localePage.tone_playful"),
-                    value: "playful"
+                    value: "playful",
                 },
                 {
                     label: Localization.t("localePage.tone_concise"),
-                    value: "concise"
+                    value: "concise",
                 }
             ]
             currentValue: Config.translationTone
@@ -332,6 +338,7 @@ PageBase {
         SettingSelect {
             isLast: true
             label: Localization.t("localePage.request_new_language")
+            tooltip: Localization.t("localePage.tooltip_request_language")
             sublabel: {
                 if (!page._hasProviderKey)
                     return Localization.t("localePage.set_gemini_key_hint");
@@ -404,6 +411,7 @@ PageBase {
 
         SettingChips {
             label: Localization.t("localePage.hour_format")
+            tooltip: Localization.t("localePage.tooltip_hour_format")
             options: [
                 {
                     label: Localization.t("localePage.12h"),
@@ -434,6 +442,7 @@ PageBase {
         SettingInput {
             label: Localization.t("localePage.custom_time_format")
             sublabel: Localization.t("localePage.overrides_clock_settings_leave_empty")
+            tooltip: Localization.t("localePage.tooltip_custom_time_format")
             value: Config.timeFormat
             placeholder: Localization.t("localePage.hh_mm")
             onCommitted: v => Config.update({
@@ -469,6 +478,7 @@ PageBase {
 
         SettingChips {
             label: Localization.t("localePage.date_order")
+            tooltip: Localization.t("localePage.tooltip_date_order")
             options: [
                 {
                     label: Localization.t("localePage.day_first"),
@@ -488,6 +498,7 @@ PageBase {
         SettingInput {
             label: Localization.t("localePage.custom_date_format")
             sublabel: Localization.t("localePage.overrides_date_order_leave_empty")
+            tooltip: Localization.t("localePage.tooltip_custom_date_format")
             value: Config.dateFormat
             placeholder: Localization.t("localePage.ddd_dd_mm")
             onCommitted: v => Config.update({

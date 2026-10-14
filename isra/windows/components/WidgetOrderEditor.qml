@@ -5,6 +5,7 @@ import QtQuick.Controls.Basic
 import qs.style
 import qs.icons
 import qs.services
+import qs.components
 
 Item {
     id: root
@@ -409,6 +410,7 @@ Item {
                                 visible: rowRoot.zone === "center" && root.centerData.mode === "anchor"
                                 width: visible ? 28 : 0
                                 active: rowRoot.pivot
+                                tooltip: Localization.t("tooltip.center_anchor")
                                 enabled: !rowRoot.hidden
                                 opacity: rowRoot.hidden ? 0.35 : 1.0
                                 onClicked: root._setPivot(rowRoot.index)
@@ -452,9 +454,14 @@ Item {
     component IconToggleButton: Item {
         id: btn
         property bool active: false
+        property string tooltip: ""
         signal clicked
 
         height: parent.height
+
+        Tooltip {
+            text: btn.tooltip
+        }
 
         Rectangle {
             anchors.fill: parent

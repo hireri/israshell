@@ -60,6 +60,7 @@ PageBase {
         TempSliderRow {
             label: Localization.t("displayPage.night")
             sublabel: Localization.t("displayPage.applied_when_night_light_is")
+            tooltip: Localization.t("displayPage.tooltip_temperature_direction")
 
             strip.value: Config.nightLight.nightTemp
             strip.onMoved: v => NightLightService.setNightTemp(Math.round(v))
@@ -128,6 +129,7 @@ PageBase {
             opacity: enabled ? 1.0 : 0.4
             label: Localization.t("displayPage.sunrise")
             sublabel: Localization.t("displayPage.night_light_off_light_mode")
+            tooltip: Localization.t("displayPage.tooltip_sun_times_forecast")
             value: Config.nightLight.sunrise
             onCommitted: v => NightLightService.setSunrise(v)
         }
@@ -137,6 +139,7 @@ PageBase {
             opacity: enabled ? 1.0 : 0.4
             label: Localization.t("displayPage.sunset")
             sublabel: Localization.t("displayPage.night_light_on_dark_mode")
+            tooltip: Localization.t("displayPage.tooltip_sun_times_forecast")
             value: Config.nightLight.sunset
             onCommitted: v => NightLightService.setSunset(v)
         }
@@ -287,6 +290,7 @@ PageBase {
             id: blurSwitch
             label: Localization.t("displayPage.background_blur")
             sublabel: Localization.t("displayPage.apply_blur_effect_to_panels")
+            tooltip: Localization.t("displayPage.tooltip_blur_game_mode")
             checked: Config.blurEffects
             onToggled: v => Config.update({
                     blurEffects: v
@@ -309,6 +313,7 @@ PageBase {
         SettingSwitch {
             label: Localization.t("displayPage.desktop_widget_blur")
             sublabel: Localization.t("displayPage.apply_blur_effect_to_desktop_widgets")
+            tooltip: Localization.t("displayPage.tooltip_desktop_blur_needs_blur")
             enabled: Config.blurEffects
             opacity: enabled ? 1.0 : 0.4
             checked: Config.desktopWidgetsBlur
@@ -359,6 +364,7 @@ PageBase {
         SettingChips {
             isLast: true
             label: Localization.t("backgroundPage.position")
+            tooltip: Localization.t("displayPage.tooltip_osd_position_follow")
             enabled: !Config.osdFollowBar
             opacity: enabled ? 1.0 : 0.4
             options: [

@@ -740,6 +740,11 @@ CAVAEOF`]
                         }
                     }
                 }
+                Tooltip {
+                    flat: true
+                    text: root.pinned ? Localization.t("tooltip.unpin_player") : Localization.t("tooltip.pin_player")
+                }
+
                 MouseArea {
                     id: pinMa
                     anchors.fill: parent

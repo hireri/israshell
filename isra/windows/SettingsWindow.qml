@@ -5,6 +5,7 @@ import Quickshell
 import qs.style
 import qs.services
 import qs.windows.components
+import qs.components
 import qs.windows
 import qs.icons
 

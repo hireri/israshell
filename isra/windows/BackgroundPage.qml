@@ -49,6 +49,7 @@ PageBase {
         SettingSlider {
             label: Localization.t("backgroundPage.grid_cell_size")
             sublabel: Localization.t("backgroundPage.size_of_one_grid_cell")
+            tooltip: Localization.t("backgroundPage.tooltip_grid_visible_on_hover")
             from: 30
             to: 100
             stepSize: 2
@@ -93,6 +94,7 @@ PageBase {
         SettingSwitch {
             label: Localization.t("backgroundPage.use_awww")
             sublabel: Localization.t("backgroundPage.delegate_wallpaper_to_awww_instead")
+            tooltip: Localization.t("backgroundPage.tooltip_awww_requirements")
             checked: Config.useAwww
             onToggled: v => Config.update({ useAwww: v })
         }
@@ -128,6 +130,7 @@ PageBase {
         SettingSlider {
             label: Localization.t("backgroundPage.transition_displacement")
             sublabel: Localization.t("backgroundPage.how_far_the_wallpapers_drift_or_grow")
+            tooltip: Localization.t("backgroundPage.tooltip_displacement_zero")
             from: 0
             to: 100
             stepSize: 1
@@ -141,6 +144,7 @@ PageBase {
         SettingSlider {
             label: Localization.t("backgroundPage.wipe_direction")
             sublabel: Localization.t("backgroundPage.angle_both_wallpapers_move_during_a_wipe")
+            tooltip: Localization.t("backgroundPage.tooltip_wipe_direction_scope")
             enabled: Config.background.transitionType === "wipe" || Config.background.transitionType === "random"
             opacity: enabled ? 1.0 : 0.4
             from: 0
@@ -156,6 +160,7 @@ PageBase {
         SettingSwitch {
             label: Localization.t("backgroundPage.reverse_circle_wipe")
             sublabel: Localization.t("backgroundPage.shrink_the_old_wallpaper_away_instead_of_growing_the_new_one_in")
+            tooltip: Localization.t("backgroundPage.tooltip_circle_reverse_scope")
             enabled: Config.background.transitionType === "circle" || Config.background.transitionType === "random"
             opacity: enabled ? 1.0 : 0.4
             checked: Config.background.circleReverse
@@ -183,6 +188,7 @@ PageBase {
         SettingSlider {
             label: Localization.t("backgroundPage.video_volume")
             sublabel: Localization.t("backgroundPage.video_volume_sub")
+            tooltip: Localization.t("backgroundPage.tooltip_video_volume_scope")
             enabled: Config.background.videoSound
             opacity: enabled ? 1.0 : 0.4
             from: 0
@@ -199,6 +205,7 @@ PageBase {
             isLast: true
             label: Localization.t("backgroundPage.mute_on_media")
             sublabel: Localization.t("backgroundPage.mute_on_media_sub")
+            tooltip: Localization.t("backgroundPage.tooltip_mute_on_media")
             enabled: Config.background.videoSound
             opacity: enabled ? 1.0 : 0.4
             checked: Config.background.muteOnMedia
@@ -560,7 +567,7 @@ PageBase {
                 options: [
                     {
                         label: Localization.t("backgroundPage.mono"),
-                        value: "mono"
+                        value: "mono",
                     },
                     {
                         label: Localization.t("backgroundPage.edges"),
@@ -634,7 +641,7 @@ PageBase {
                     },
                     {
                         label: Localization.t("backgroundPage.loudness"),
-                        value: "loudness"
+                        value: "loudness",
                     },
                     {
                         label: Localization.t("backgroundPage.gradient_v"),

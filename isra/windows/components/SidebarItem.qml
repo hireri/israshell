@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.style
+import qs.components
 import "IconSlotSync.js" as IconSlotSync
 
 Rectangle {
@@ -98,6 +99,11 @@ Rectangle {
 
     function _syncIcon() {
         IconSlotSync.syncIconSlot(iconSlot.children, 20, () => root.active ? Colors.md3.on_secondary_container : Colors.md3.outline, root.active);
+    }
+
+    Tooltip {
+        side: "right"
+        text: root.collapsed ? root.label : ""
     }
 
     MouseArea {

@@ -1,10 +1,12 @@
 import QtQuick
 import qs.style
+import qs.components
 
 Rectangle {
     id: root
 
     property string label: ""
+    property string tooltip: ""
     property bool active: false
     signal toggled(bool active)
 
@@ -29,6 +31,10 @@ Rectangle {
         Behavior on color {
             ColorAnimation { duration: 150; easing.type: Easing.OutCubic }
         }
+    }
+
+    Tooltip {
+        text: root.tooltip
     }
 
     MouseArea {

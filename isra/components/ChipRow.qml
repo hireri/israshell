@@ -117,6 +117,10 @@ Row {
                 }
             }
 
+            Tooltip {
+                text: chip.modelData.tooltip ?? ""
+            }
+
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor

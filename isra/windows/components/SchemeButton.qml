@@ -1,5 +1,6 @@
 import QtQuick
 import qs.style
+import qs.components
 
 Rectangle {
     id: root
@@ -7,6 +8,7 @@ Rectangle {
     default property alias content: row.data
 
     property string label: ""
+    property string tooltip: ""
     property bool active: false
     signal clicked
 
@@ -63,6 +65,10 @@ Rectangle {
                 }
             }
         }
+    }
+
+    Tooltip {
+        text: root.tooltip
     }
 
     MouseArea {

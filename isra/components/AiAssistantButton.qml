@@ -132,6 +132,12 @@ Item {
         }
     }
 
+    BarTooltip {
+        autoHover: true
+        gap: 4
+        text: Localization.t("widgetService.ai_assistant")
+    }
+
     Process {
         id: toggleProc
         command: ["qs", "-c", "isra", "ipc", "call", "aiassistant", "toggle"]

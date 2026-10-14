@@ -859,6 +859,11 @@ Item {
                             }
                         }
 
+                        Tooltip {
+                            flat: true
+                            text: WallpaperService.isDark ? Localization.t("tooltip.switch_to_light") : Localization.t("tooltip.switch_to_dark")
+                        }
+
                         MouseArea {
                             id: themeBtnMA
                             anchors.fill: parent
@@ -1815,6 +1820,11 @@ Item {
                         iconSize: 14
                         transitionType: "crossfade-scale"
                         color: bcard.saved ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                    }
+
+                    Tooltip {
+                        flat: true
+                        text: bcard.saved ? "" : Localization.t("tooltip.save_wallpaper")
                     }
 
                     MouseArea {

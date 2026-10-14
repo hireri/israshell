@@ -148,11 +148,13 @@ PageBase {
             ActionButton {
                 icon: "copy"
                 label: Localization.t("gameOverlayPage.copy_code")
+                tooltip: Localization.t("gameOverlayPage.tooltip_copy_code")
                 onClicked: Quickshell.execDetached(["wl-copy", "--", Config.gameOverlay.crosshairCode])
             }
 
             ActionButton {
                 label: Localization.t("gameOverlayPage.paste_code")
+                tooltip: Localization.t("gameOverlayPage.tooltip_paste_code")
                 onClicked: pasteProc.running = true
             }
 

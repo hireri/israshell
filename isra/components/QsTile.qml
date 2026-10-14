@@ -140,6 +140,12 @@ Item {
         }
     }
 
+    Tooltip {
+        flat: true
+        suppressed: root.isDragging || root.isResizing
+        text: !root.isWide ? (QsTileService.labelMap[root.tileId] ?? "") : ""
+    }
+
     Rectangle {
         id: hoverOutline
         anchors.fill: parent

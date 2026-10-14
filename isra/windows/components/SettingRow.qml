@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import qs.style
 import qs.services
+import qs.components
 
 Item {
     id: root
@@ -11,6 +12,7 @@ Item {
     property color iconBg: Colors.md3.primary_container
     property string label: ""
     property string sublabel: ""
+    property string tooltip: ""
 
     property bool isLast: false
 
@@ -94,12 +96,14 @@ Item {
             }
 
             ColumnLayout {
+                id: labelCol
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 spacing: 2
                 visible: root.label !== ""
 
                 Text {
+                    id: labelText
                     text: root.label
                     font.family: Config.fontFamily
                     font.pixelSize: root.compact ? 12 : 13
@@ -109,6 +113,7 @@ Item {
                 }
 
                 Text {
+                    id: sublabelText
                     text: root.sublabel
                     font.family: Config.fontFamily
                     font.pixelSize: root.compact ? 10 : 11
@@ -119,6 +124,11 @@ Item {
                 }
             }
         }
+    }
+
+    Tooltip {
+        anchorItem: root.label !== "" ? labelCol : root
+        text: root.tooltip !== "" ? root.tooltip : (labelText.truncated || sublabelText.truncated ? root.label + (root.sublabel !== "" ? "\n" + root.sublabel : "") : "")
     }
 
     Row {

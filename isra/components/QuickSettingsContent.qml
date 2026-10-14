@@ -191,12 +191,14 @@ Item {
 
                         ActionIconBtn {
                             btnIcon: "edit"
+                            tooltip: Localization.t("quickSettings.edit_tiles")
                             onBtnClicked: if (root.controller)
                                 root.controller.editMode = true
                         }
 
                         ActionIconBtn {
                             btnIcon: "restart"
+                            tooltip: Localization.t("tooltip.restart_shell")
                             onBtnClicked: {
                                 if (root.controller)
                                     root.controller.isOpen = false;
@@ -206,6 +208,7 @@ Item {
 
                         ActionIconBtn {
                             btnIcon: "settings"
+                            tooltip: Localization.t("settingsWindow.settings")
                             onBtnClicked: {
                                 if (root.controller)
                                     root.controller.isOpen = false;
@@ -217,6 +220,7 @@ Item {
                         ActionIconBtn {
                             id: userRowRight
                             btnIcon: "shutdown"
+                            tooltip: Localization.t("tooltip.power_menu")
                             danger: true
                             onBtnClicked: {
                                 if (root.controller)
@@ -746,6 +750,7 @@ Item {
     component ActionIconBtn: Rectangle {
         id: aBtn
         property string btnIcon: ""
+        property string tooltip: ""
         property bool danger: false
         signal btnClicked
 
@@ -765,6 +770,11 @@ Item {
             anchors.centerIn: parent
             iconSize: 16
             color: aBtnMA.containsMouse ? (aBtn.danger ? Colors.md3.on_error : Colors.md3.on_surface) : Colors.md3.on_surface_variant
+        }
+
+        Tooltip {
+            flat: true
+            text: aBtn.tooltip
         }
 
         MouseArea {

@@ -1,11 +1,14 @@
 import QtQuick
+import Quickshell
 import qs.services
 import qs.style
 
 Tooltip {
     id: root
 
-    property var panelWindow: null
+    property var panelWindow: QsWindow.window
+
+    autoHover: false
 
     suppressed: PanelService.current !== null
 

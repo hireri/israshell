@@ -79,6 +79,12 @@ Item {
         }
     }
 
+    BarTooltip {
+        autoHover: true
+        gap: 4
+        text: Localization.t("widgetService.app_launcher")
+    }
+
     Process {
         id: launcherToggleProc
         command: ["qs", "-c", "isra", "ipc", "call", "launcher", "toggle"]

@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import qs.style
+import qs.components
 
 ColumnLayout {
     id: root
@@ -54,6 +55,10 @@ ColumnLayout {
                 Behavior on topRightRadius { NumberAnimation { duration: 150 } }
                 Behavior on bottomLeftRadius { NumberAnimation { duration: 150 } }
                 Behavior on bottomRightRadius { NumberAnimation { duration: 150 } }
+
+                Tooltip {
+                    text: modelData.replace(/_/g, " ")
+                }
 
                 MouseArea {
                     anchors.fill: parent

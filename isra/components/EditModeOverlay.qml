@@ -65,6 +65,10 @@ Item {
             transitionType: "none"
         }
 
+        Tooltip {
+            text: btn.tooltip
+        }
+
         MouseArea {
             id: btnMouse
             anchors.fill: parent
@@ -174,12 +178,14 @@ Item {
 
             ToolButton {
                 icon: "add"
+                tooltip: Localization.t("tooltip.add_widget")
                 active: widgetDrawer.open
                 onActivated: widgetDrawer.toggle()
             }
 
             ToolButton {
                 icon: "history"
+                tooltip: Localization.t("tooltip.undo_edits")
                 onActivated: EditModeService.undoChanges()
             }
 

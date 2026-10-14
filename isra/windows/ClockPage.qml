@@ -98,8 +98,29 @@ PageBase {
         return opt.choices.map(c => ({
             value: c.value,
             label: c.iconOnly ? "" : pageRoot.lt(c.label),
-            icon: c.icon ? pageRoot.icons[c.icon] : undefined
+            icon: c.icon ? pageRoot.icons[c.icon] : undefined,
+            tooltip: c.iconOnly ? pageRoot.lt(c.label) : ""
         }));
+    }
+
+    readonly property var tooltipKeys: ({
+        "secondHandStyle": "clockPage.tooltip_needs_seconds",
+        "secondHandColor": "clockPage.tooltip_needs_seconds",
+        "secondHandWidth": "clockPage.tooltip_needs_seconds",
+        "fontWidth": "clockPage.tooltip_needs_flex_font",
+        "fontRoundness": "clockPage.tooltip_needs_flex_font",
+        "fontSlant": "clockPage.tooltip_needs_flex_font",
+        "shadowBlur": "clockPage.tooltip_needs_shadow",
+        "shadowX": "clockPage.tooltip_needs_shadow",
+        "shadowY": "clockPage.tooltip_needs_shadow",
+        "shadowOpacity": "clockPage.tooltip_needs_shadow",
+        "dateSpacing": "clockPage.tooltip_date_spacing",
+        "timeSpacing": "clockPage.tooltip_time_spacing"
+    })
+
+    function tipOf(opt) {
+        const key = pageRoot.tooltipKeys[opt.key];
+        return key ? pageRoot.lt(key) : "";
     }
 
     Component {
@@ -376,6 +397,7 @@ PageBase {
         SettingChips {
             label: Localization.t("clockPage.presets")
             sublabel: Localization.t("clockPage.presets_sub")
+            tooltip: Localization.t("clockPage.tooltip_presets")
             options: ClockOptions.presets().map(p => ({ value: p.id, label: pageRoot.lt(p.label) }))
             currentValue: pageRoot.activePreset
             onSelected: v => {
@@ -388,6 +410,7 @@ PageBase {
         SettingActions {
             isLast: true
             label: Localization.t("clockPage.reset_all")
+            tooltip: Localization.t("clockPage.tooltip_reset_all")
             sublabel: pageRoot.undoSnapshot !== null ? pageRoot.undoText : Localization.t("clockPage.reset_all_sub")
 
             ActionButton {
@@ -428,6 +451,7 @@ PageBase {
                         SettingSwitch {
                             required property var modelData
                             settingKey: modelData.key
+                            tooltip: pageRoot.tipOf(modelData)
                             visible: pageRoot.isShown(modelData)
                             enabled: !pageRoot.isLocked(modelData)
                             opacity: enabled ? 1 : 0.6
@@ -446,6 +470,7 @@ PageBase {
                             readonly property real factor: modelData.display ?? 1
 
                             settingKey: modelData.key
+                            tooltip: pageRoot.tipOf(modelData)
                             visible: pageRoot.isShown(modelData)
                             enabled: !pageRoot.isLocked(modelData)
                             opacity: enabled ? 1 : 0.6
@@ -465,6 +490,7 @@ PageBase {
                         SettingChips {
                             required property var modelData
                             settingKey: modelData.key
+                            tooltip: pageRoot.tipOf(modelData)
                             visible: pageRoot.isShown(modelData)
                             enabled: !pageRoot.isLocked(modelData)
                             opacity: enabled ? 1 : 0.6
@@ -481,6 +507,7 @@ PageBase {
                         SettingSelect {
                             required property var modelData
                             settingKey: modelData.key
+                            tooltip: pageRoot.tipOf(modelData)
                             visible: pageRoot.isShown(modelData)
                             enabled: !pageRoot.isLocked(modelData)
                             opacity: enabled ? 1 : 0.6
@@ -497,6 +524,7 @@ PageBase {
                         SettingSelect {
                             required property var modelData
                             settingKey: modelData.key
+                            tooltip: pageRoot.tipOf(modelData)
                             visible: pageRoot.isShown(modelData)
                             enabled: !pageRoot.isLocked(modelData)
                             opacity: enabled ? 1 : 0.6

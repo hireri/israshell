@@ -42,6 +42,12 @@ Rectangle {
         }
     }
 
+    BarTooltip {
+        autoHover: true
+        gap: 4
+        text: root.width >= root.maxActiveWidth ? root.displayedTitle : ""
+    }
+
     property bool layerA: true
 
     property string iconSourceA: ""
