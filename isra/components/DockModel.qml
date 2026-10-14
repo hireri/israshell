@@ -29,8 +29,6 @@ Item {
         return appId !== "" && pinnedApps.indexOf(appId) !== -1;
     }
 
-    signal pinRequested()
-
     function togglePinned(appId: string): void {
         let pins = pinnedApps.slice();
         let idx = pins.indexOf(appId);
@@ -39,7 +37,6 @@ Item {
         } else {
             pins.push(appId);
         }
-        pinRequested();
         Config.update({ pinnedApps: pins });
     }
 

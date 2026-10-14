@@ -53,6 +53,7 @@ Item {
 
     property int lastFocusIndex: 0
     property var desktopEntry: null
+    readonly property string displayName: desktopEntry?.name ?? appId
 
     function updateDesktopEntry(): void {
         if (!dockRoot || !root.appId) {
@@ -304,7 +305,7 @@ Item {
         }
 
         onEntered: {
-            if (root.isRunning && !root.dragging && dockRoot.draggingKey === "") {
+            if (!root.dragging && dockRoot.draggingKey === "") {
                 root.hoverPopup.request(root);
             }
         }

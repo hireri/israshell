@@ -1359,5 +1359,9 @@
   "barPage.tooltip_mode_floating": "Floating",
   "barPage.tooltip_mode_chromebook": "Chromebook",
   "tooltip.restart_shell": "Restart shell",
-  "tooltip.power_menu": "Power menu"
+  "tooltip.power_menu": "Power menu",
+  "dockMenu.open_trash": "Open Trash",
+  "dockMenu.empty_trash": "Empty Trash",
+  "dockTrash.tooltip_empty": "Trash is empty",
+  "dockTrash.tooltip_full": "Trash has items"
 }

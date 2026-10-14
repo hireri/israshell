@@ -96,6 +96,15 @@ Item {
     property real latchedCentreX: 0
     property real latchedCentreY: 0
 
+    Behavior on latchedCentreX {
+        enabled: root.animateIn && root.glide
+        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+    }
+    Behavior on latchedCentreY {
+        enabled: root.animateIn && root.glide
+        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+    }
+
     function relayout(): void {
         if (!dockRoot || !host) return;
 
@@ -115,35 +124,17 @@ Item {
     onTargetButtonChanged: relayout()
     onIsOpenChanged: if (isOpen) relayout()
 
-    Timer {
-        id: pinTrackTimer
-        interval: 16
-        repeat: true
-        property int ticksLeft: 0
-        onTriggered: {
-            root.relayout();
-            ticksLeft--;
-            if (ticksLeft <= 0) stop();
-        }
-    }
-
-    Connections {
-        target: root.dockModel
-        function onPinRequested(): void {
-            root.relayout();
-            pinTrackTimer.ticksLeft = 18;
-            pinTrackTimer.restart();
-        }
+    FrameAnimation {
+        running: root.isOpen
+        onTriggered: root.relayout()
     }
 
     property var appToplevels: targetButton ? targetButton.toplevels : []
 
-    onAppToplevelsChanged: {
-        syncCardModel();
-        if (isOpen && (!appToplevels || appToplevels.length === 0)) {
-            hide();
-        }
-    }
+    readonly property bool nameOnly: targetButton !== null && (!appToplevels || appToplevels.length === 0)
+    readonly property real popupHeight: nameOnly ? 34 : contentHeight
+
+    onAppToplevelsChanged: syncCardModel()
 
     property int dockEdge: (Config && Config.bar && Config.bar.position === 0) ? 0 : 1
     readonly property bool sideEdge: dockEdge === 2 || dockEdge === 3
@@ -155,6 +146,7 @@ Item {
     readonly property int edgeMargin: 8
 
     property bool animateIn: false
+    property bool glide: false
     property bool containsMouse: popupHover.hovered
 
     property Item nextTargetButton: null
@@ -255,6 +247,7 @@ Item {
         repeat: false
         onTriggered: {
             root.useListTransitions = true;
+            root.glide = false;
         }
     }
 
@@ -276,6 +269,7 @@ Item {
                 restoreTransitionsTimer.stop();
 
                 root.useListTransitions = false;
+                root.glide = true;
                 root.targetButton = button;
                 root.targetKey = button.itemKey;
                 root.nextTargetButton = null;
@@ -311,6 +305,7 @@ Item {
         onTriggered: {
             if (root.nextTargetButton) {
                 root.lastSwitchTime = Date.now();
+                root.glide = true;
                 root.targetButton = root.nextTargetButton;
                 root.targetKey = root.nextTargetButton.itemKey;
                 root.nextTargetButton = null;
@@ -359,6 +354,7 @@ Item {
             root.targetKey = "";
             root.contentVisible = true;
             root.useListTransitions = true;
+            root.glide = false;
             restoreTransitionsTimer.stop();
             scrollAnimation.stop();
             previewListView.contentX = 0;
@@ -373,7 +369,7 @@ Item {
         return count > 0 ? Math.max(0, count * 180 + (count - 1) * 10) : 0;
     }
 
-    readonly property real cappedContentWidth: Math.min(
+    readonly property real cappedContentWidth: nameOnly ? nameLabel.implicitWidth + 28 : Math.min(
         targetWidth + 14,
         maxContentWidth,
         Math.max(180, (host ? host.width : 900) - edgeMargin * 2))
@@ -383,9 +379,9 @@ Item {
         if (sideEdge)
             return dockEdge === 2
                 ? (latchedDockX + latchedDockWidth + gap)
-                : (latchedDockX - gap - cappedContentWidth);
-        const raw = latchedCentreX - cappedContentWidth / 2;
-        return Math.round(Math.max(edgeMargin, Math.min(raw, host.width - cappedContentWidth - edgeMargin)));
+                : (latchedDockX - gap - popupContent.width);
+        const raw = latchedCentreX - popupContent.width / 2;
+        return Math.round(Math.max(edgeMargin, Math.min(raw, host.width - popupContent.width - edgeMargin)));
     }
 
     readonly property real cardY: {
@@ -393,12 +389,13 @@ Item {
         if (!sideEdge)
             return barOnTop
                 ? (latchedDockY + latchedDockHeight + gap)
-                : (latchedDockY - gap - contentHeight);
-        const raw = latchedCentreY - contentHeight / 2;
-        return Math.round(Math.max(edgeMargin, Math.min(raw, host.height - contentHeight - edgeMargin)));
+                : (latchedDockY - gap - popupContent.height);
+        const raw = latchedCentreY - popupContent.height / 2;
+        return Math.round(Math.max(edgeMargin, Math.min(raw, host.height - popupContent.height - edgeMargin)));
     }
 
     readonly property bool allCardsReady: {
+        if (nameOnly) return true;
         if (cardModel.count === 0) return false;
         for (let i = 0; i < cardModel.count; i++) {
             let card = previewListView.contentItem.children[i];
@@ -492,7 +489,7 @@ Item {
         visible: root.isOpen
 
         implicitWidth: root.targetWidth + 14
-        implicitHeight: root.contentHeight
+        implicitHeight: root.popupHeight
         width: root.cappedContentWidth
         height: implicitHeight
 
@@ -500,16 +497,12 @@ Item {
         y: root.cardY
 
         Behavior on width {
+            enabled: root.animateIn
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
 
-        Behavior on x {
-            enabled: root.isOpen && root.animateIn
-            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-        }
-
-        Behavior on y {
-            enabled: root.isOpen && root.animateIn
+        Behavior on height {
+            enabled: root.animateIn
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
 
@@ -547,8 +540,20 @@ Item {
                 }
             }
 
+            Text {
+                id: nameLabel
+                anchors.centerIn: parent
+                visible: root.nameOnly
+                text: root.targetButton?.displayName ?? ""
+                font.pixelSize: 12
+                font.family: (Config && Config.fontFamily) ? Config.fontFamily : "sans-serif"
+                font.weight: Font.Medium
+                color: Colors.md3.on_surface
+            }
+
             ListView {
                 id: previewListView
+                visible: !root.nameOnly
                 anchors.fill: parent
                 anchors.margins: 7
                 orientation: ListView.Horizontal
@@ -585,9 +590,9 @@ Item {
                     }
                 }
 
-                add: root.useListTransitions ? root.listAdd : null
-                remove: root.useListTransitions ? root.listRemove : null
-                displaced: root.useListTransitions ? root.listDisplaced : null
+                add: root.useListTransitions && root.animateIn ? root.listAdd : null
+                remove: root.useListTransitions && root.animateIn ? root.listRemove : null
+                displaced: root.useListTransitions && root.animateIn ? root.listDisplaced : null
 
                 delegate: Rectangle {
                     id: previewCard

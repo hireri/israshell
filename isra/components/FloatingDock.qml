@@ -420,6 +420,7 @@ Item {
                     active: Config.floatingDock.showTrash
                     sourceComponent: DockTrashBin {
                         dockRoot: pill
+                        hoverPopup: hoverPopup
                         onBusyChanged: dockRoot.trashBusy = busy
                         onFileHoveringChanged: dockRoot.trashFileHovering = fileHovering
                     }

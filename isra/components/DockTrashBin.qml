@@ -7,11 +7,13 @@ import QtQuick
 import Qt5Compat.GraphicalEffects
 
 import qs.style
+import qs.icons
 
 Item {
     id: root
 
     required property Item dockRoot
+    property DockHover hoverPopup: null
 
     readonly property int cellSize: dockRoot.itemCellSize ?? 28
     readonly property int glyphSize: dockRoot.itemGlyphSize ?? 18
@@ -57,6 +59,23 @@ Item {
     function openTrash(): void {
         Quickshell.execDetached(["gio", "open", "trash:///"]);
     }
+
+    function emptyTrash(): void {
+        root.busy = true;
+        trashProc.command = ["gio", "trash", "--empty"];
+        trashProc.running = true;
+    }
+
+    function menuEntries(): var {
+        return [
+            { text: Localization.t("dockMenu.open_trash"), icon: openIcon, action: () => root.openTrash() },
+            { isSep: true },
+            { text: Localization.t("dockMenu.empty_trash"), icon: emptyIcon, danger: true, action: () => root.emptyTrash() }
+        ];
+    }
+
+    Component { id: openIcon; MaterialIcon { name: "add"; iconSize: 16 } }
+    Component { id: emptyIcon; MaterialIcon { name: "delete-forever"; iconSize: 16 } }
 
     Process {
         id: checkFullProc
@@ -110,11 +129,25 @@ Item {
     HoverHandler {
         id: hover
         cursorShape: Qt.PointingHandCursor
+        onHoveredChanged: if (hovered) checkFullProc.running = true
+    }
+
+    Tooltip {
+        text: Localization.t(root.full ? "dockTrash.tooltip_full" : "dockTrash.tooltip_empty")
+        side: ["", "top", "right", "left"][root.hoverPopup?.dockEdge ?? 1]
+        suppressed: root.hoverPopup?.menuOpen ?? false
     }
 
     TapHandler {
         acceptedButtons: Qt.LeftButton
         onTapped: root.openTrash()
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        enabled: root.hoverPopup !== null
+        onClicked: root.hoverPopup.openMenu(root, root.menuEntries())
     }
 
     DropArea {
