@@ -33,6 +33,7 @@ Singleton {
     property string pendingPasswordSsid: ""
     property bool awaitingPassword: false
     property bool passwordFailed: false
+    property var _knownSsids: new Set()
 
     property bool _netReady: false
     onWifiConnectedChanged: {
@@ -186,14 +187,15 @@ Singleton {
             signalProc.running = true;
             vpnProc.running = false;
             vpnProc.running = true;
+            knownProc.running = false;
+            knownProc.running = true;
         }
     }
 
-    // vpnProfiles: [{ name, uuid, active, last }] most recently used first, so index 0 is what the tile reconnects.
     Process {
         id: vpnProc
         running: true
-        command: ["nmcli", "-t", "-f", "TYPE,NAME,UUID,ACTIVE,TIMESTAMP,DEVICE", "connection", "show"]
+        command: ["nmcli", "-t", "-f", "TYPE,NAME,UUID,ACTIVE,TIMESTAMP,DEVICE,AUTOCONNECT", "connection", "show"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const profiles = [];
@@ -201,7 +203,7 @@ Singleton {
                     const parts = line.replace(/\\:/g, "\u0000").split(":").map(x => x.replace(/\u0000/g, ":"));
                     if (parts.length < 5 || (parts[0] !== "vpn" && parts[0] !== "wireguard"))
                         continue;
-                    profiles.push({ name: parts[1], uuid: parts[2], active: parts[3] === "yes", last: Number(parts[4]) || 0, device: parts[5] ?? "" });
+                    profiles.push({ name: parts[1], uuid: parts[2], active: parts[3] === "yes", last: Number(parts[4]) || 0, device: parts[5] ?? "", boot: parts[6] === "yes" });
                 }
                 profiles.sort((a, b) => b.last - a.last);
                 root.vpnProfiles = profiles;
@@ -219,7 +221,6 @@ Singleton {
         }
     }
 
-    // uuid -> server host (port dropped); only WireGuard profiles carry one.
     Process {
         id: vpnEndpointProc
         stdout: StdioCollector {
@@ -248,7 +249,6 @@ Singleton {
         vpnToggleProc.running = false;
         vpnToggleProc.running = true;
     }
-    // One tunnel at a time: they all claim the default route, so bring the others down first.
     function vpnConnect(uuid) {
         vpnToggleProc.command = ["sh", "-c", 'target=$1; shift; for u; do nmcli connection down uuid "$u"; done; nmcli connection up uuid "$target"', "_", uuid, ...vpnActive.map(p => p.uuid).filter(u => u !== uuid)];
         vpnToggleProc.running = false;
@@ -256,12 +256,18 @@ Singleton {
     }
     function vpnDisconnect(uuid) { _vpnRun(["connection", "down", "uuid", uuid]); }
     function vpnRename(uuid, name) { if (name.trim() !== "") _vpnRun(["connection", "modify", "uuid", uuid, "connection.id", name.trim()]); }
+    function vpnSetBoot(uuid) {
+        const on = vpnProfiles.find(p => p.uuid === uuid)?.boot ? "no" : "yes";
+        vpnToggleProc.command = ["sh", "-c", 'target=$1; val=$2; shift 2; for u; do nmcli connection modify uuid "$u" connection.autoconnect no; done; nmcli connection modify uuid "$target" connection.autoconnect "$val"', "_", uuid, on, ...vpnProfiles.map(p => p.uuid)];
+        vpnToggleProc.running = false;
+        vpnToggleProc.running = true;
+    }
     function vpnDelete(uuid) { _vpnRun(["connection", "delete", "uuid", uuid]); }
     function vpnImport(urls) {
         const files = urls.map(u => String(u).replace(/^file:\/\//, "")).filter(f => f.endsWith(".conf"));
         if (files.length === 0)
             return;
-        vpnToggleProc.command = ["sh", "-c", 'for f; do nmcli connection import type wireguard file "$f"; done', "_", ...files];
+        vpnToggleProc.command = ["sh", "-c", 'for f; do nmcli connection import type wireguard file "$f" && nmcli connection modify "$(basename "${f%.conf}")" connection.autoconnect no; done', "_", ...files];
         vpnToggleProc.running = false;
         vpnToggleProc.running = true;
     }
@@ -441,7 +447,7 @@ Singleton {
                         ssid: parts[3]?.replace(/__COLON__/g, ":") ?? "",
                         bssid: parts[4]?.replace(/__COLON__/g, ":") ?? "",
                         security: parts[5] || "",
-                        known: false
+                        known: root._knownSsids.has(parts[3]?.replace(/__COLON__/g, ":") ?? "")
                     };
                 }).filter(n => n.ssid.length > 0);
 
@@ -479,6 +485,7 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const known = new Set(text.trim().split("\n").map(l => l.trim()));
+                root._knownSsids = known;
                 for (const n of root.networks)
                     n.known = known.has(n.ssid);
                 root.networksChanged();

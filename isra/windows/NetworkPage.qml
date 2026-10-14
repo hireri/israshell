@@ -41,7 +41,7 @@ PageBase {
     }
 
     function editConnection(ssid) {
-        editProc.command = ["bash", "-c", `nm-connection-editor --edit="$(nmcli -g uuid,name connection show | grep ${ShellQuote.shQuote(ssid)} | head -1 | cut -d: -f1)"`];
+        editProc.command = ["bash", "-c", `nm-connection-editor --edit="$(nmcli -g connection.uuid connection show id ${ShellQuote.shQuote(ssid)})"`];
         editProc.running = false;
         editProc.running = true;
     }
@@ -404,6 +404,9 @@ PageBase {
                                 enabled: !rowLoading && !netRow.askPw
                                 onClicked: editConnection(modelData.ssid)
                             }
+                            Tooltip {
+                                text: Localization.t("networkPage.tooltip_edit_connection")
+                            }
                         }
 
                         Rectangle {
@@ -429,6 +432,9 @@ PageBase {
                                     rowLoading = true;
                                     NetworkService.forgetNetwork(modelData.ssid);
                                 }
+                            }
+                            Tooltip {
+                                text: Localization.t("networkPage.tooltip_forget_network")
                             }
                         }
 
@@ -623,6 +629,9 @@ PageBase {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: BluetoothService.setDiscovering(true)
                     }
+                    Tooltip {
+                        text: Localization.t("networkPage.tooltip_scan_devices")
+                    }
                 }
 
                 Rectangle {
@@ -646,6 +655,9 @@ PageBase {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         onClicked: BluetoothService.setDiscovering(false)
+                    }
+                    Tooltip {
+                        text: Localization.t("networkPage.tooltip_stop_scanning")
                     }
                 }
             }
@@ -775,6 +787,9 @@ PageBase {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: BluetoothService.forgetDevice(modelData)
+                            }
+                            Tooltip {
+                                text: Localization.t("networkPage.tooltip_forget_device")
                             }
                         }
                     }
@@ -1013,6 +1028,9 @@ PageBase {
                     outerLeft: 14
                     outerRight: 14
                     onClicked: vpnFilePicker.open()
+                    Tooltip {
+                        text: Localization.t("networkPage.tooltip_vpn_import")
+                    }
 
                     DropArea {
                         anchors.fill: parent
@@ -1129,13 +1147,29 @@ PageBase {
                             onClicked: vpnRow.modelData.active ? NetworkService.vpnDisconnect(vpnRow.modelData.uuid) : NetworkService.vpnConnect(vpnRow.modelData.uuid)
                         }
                         VpnPill {
+                            icon: "star"
+                            text: vpnRow.modelData.boot ? Localization.t("networkPage.vpn_boot") : ""
+                            fill: vpnRow.modelData.boot ? Colors.md3.tertiary_container : Config.dim(Colors.md3.surface_container_high)
+                            content: vpnRow.modelData.boot ? Colors.md3.on_tertiary_container : Colors.md3.on_surface_variant
+                            onClicked: NetworkService.vpnSetBoot(vpnRow.modelData.uuid)
+                            Tooltip {
+                                text: vpnRow.modelData.boot ? Localization.t("networkPage.tooltip_vpn_boot_disable") : Localization.t("networkPage.tooltip_vpn_boot_enable")
+                            }
+                        }
+                        VpnPill {
                             icon: vpnRow.renaming ? "check" : "edit"
                             onClicked: vpnRow.renaming ? renameField.commit() : vpnRow.renaming = true
+                            Tooltip {
+                                text: vpnRow.renaming ? "" : Localization.t("networkPage.tooltip_vpn_rename")
+                            }
                         }
                         VpnPill {
                             icon: "delete"
                             outerRight: 14
                             onClicked: NetworkService.vpnDelete(vpnRow.modelData.uuid)
+                            Tooltip {
+                                text: Localization.t("networkPage.tooltip_vpn_delete")
+                            }
                         }
                     }
                 }
