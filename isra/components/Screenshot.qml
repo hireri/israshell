@@ -516,6 +516,8 @@ Item {
                 readonly property var selShape: editIndex >= 0 ? draft : (selIndex >= 0 ? doc.shapes[selIndex] ?? null : null)
                 readonly property bool drawing: editIndex >= 0 ? draft !== editStart : (draft !== null && !Markup.isEmpty(draft))
                 property bool spaceHeld: false
+                property bool circling: false
+                property var circlePoints: []
 
                 property bool hlSeeded: false
                 property string hoverTitle: ""
@@ -614,6 +616,8 @@ Item {
                 function resetDrag() {
                     cancelled = pressing;
                     spaceHeld = false;
+                    circling = false;
+                    circlePoints = [];
                     dragging = false;
                     pressing = false;
                     hovering = false;
@@ -1104,7 +1108,17 @@ Item {
                         cancelled = false;
                         return;
                     }
-                    if (dragging) {
+                    if (circling) {
+                        const pts = circlePoints;
+                        const b = root.screenBounds();
+                        const pad = 13;
+                        const x1 = Math.max(b.l, Math.min(...pts.map(p => p.x)) - pad);
+                        const y1 = Math.max(b.t, Math.min(...pts.map(p => p.y)) - pad);
+                        const x2 = Math.min(b.r, Math.max(...pts.map(p => p.x)) + pad);
+                        const y2 = Math.min(b.b, Math.max(...pts.map(p => p.y)) + pad);
+                        circling = false;
+                        root.captureGlobal(x1, y1, x2 - x1, y2 - y1);
+                    } else if (dragging) {
                         if (globalTargetW < 4 || globalTargetH < 4)
                             resetDrag();
                         else if (shouldStage(mods))
@@ -1436,6 +1450,25 @@ Item {
                                 }
                             }
 
+                            Shape {
+                                id: circleShape
+                                readonly property var pts: sessionRoot.circlePoints.map(p => Qt.point(p.x - overlay.monX, p.y - overlay.monY))
+                                visible: sessionRoot.circling
+                                anchors.fill: parent
+                                preferredRendererType: Shape.CurveRenderer
+                                ShapePath {
+                                    strokeWidth: 6
+                                    strokeColor: "white"
+                                    fillColor: "transparent"
+                                    capStyle: ShapePath.RoundCap
+                                    joinStyle: ShapePath.RoundJoin
+                                    pathHints: ShapePath.PathLinear
+                                    PathPolyline {
+                                        path: circleShape.pts
+                                    }
+                                }
+                            }
+
                             Rectangle {
                                 id: selectionOutline
                                 visible: currentHole.active
@@ -1511,7 +1544,7 @@ Item {
                             }
 
                             Shape {
-                                visible: overlay.isPointer && !sessionRoot.dragging && !sessionRoot.staged && sessionRoot.effTool === "region"
+                                visible: overlay.isPointer && !sessionRoot.dragging && !sessionRoot.circling && !sessionRoot.staged && sessionRoot.effTool === "region"
                                 anchors.fill: parent
                                 ShapePath {
                                     id: crosshairPath
@@ -1587,11 +1620,22 @@ Item {
                                         if (sessionRoot.cancelled)
                                             return;
                                         const action = sessionRoot.effectiveAction;
-                                        if (!sessionRoot.dragging && action !== "window" && action !== "fullscreen") {
+                                        if (!sessionRoot.dragging && !sessionRoot.circling && action !== "window" && action !== "fullscreen") {
                                             const dx = gmx - sessionRoot.globalPressX;
                                             const dy = gmy - sessionRoot.globalPressY;
-                                            if (Math.sqrt(dx * dx + dy * dy) >= 8)
-                                                sessionRoot.dragging = true;
+                                            if (Math.sqrt(dx * dx + dy * dy) >= 8) {
+                                                if (root.activeTool === "cts") {
+                                                    sessionRoot.circling = true;
+                                                    sessionRoot.hovering = false;
+                                                    sessionRoot.circlePoints = [{ x: sessionRoot.globalPressX, y: sessionRoot.globalPressY }];
+                                                } else {
+                                                    sessionRoot.dragging = true;
+                                                }
+                                            }
+                                        }
+                                        if (sessionRoot.circling) {
+                                            sessionRoot.circlePoints = Markup.addPoint(sessionRoot.circlePoints, gmx, gmy);
+                                            return;
                                         }
                                         if (sessionRoot.dragging && sessionRoot.spaceHeld) {
                                             sessionRoot.moveSelection(moveX, moveY);
@@ -2016,7 +2060,7 @@ Item {
                             id: floatingPill
                             z: 2
 
-                            property bool showPill: overlay.screen === sessionRoot.gestureScreen && !sessionRoot.dragging && !sessionRoot.drawing && !sessionRoot.capturing && root.backingReady && !sessionRoot.staged
+                            property bool showPill: overlay.screen === sessionRoot.gestureScreen && !sessionRoot.dragging && !sessionRoot.circling && !sessionRoot.drawing && !sessionRoot.capturing && root.backingReady && !sessionRoot.staged
                             visible: (showPill || opacity > 0) && !sessionRoot.capturing
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
