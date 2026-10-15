@@ -11,6 +11,10 @@ Singleton {
     property bool isRecognizing: false
     property string recordingTime: "00:00"
     property double startTime: 0
+    property var recordRegion: null
+    property bool recordingGif: false
+
+    Component.onCompleted: refresh()
 
     function toolEnabled(name) {
         if (name === "colorpicker" && CompositorService.backendName !== "hyprland")
@@ -27,17 +31,40 @@ Singleton {
 
     function toggleRecognitionOptimistic() {
         root.isRecognizing = !root.isRecognizing;
+        confirmTimer.restart();
     }
 
     function markRecordingStoppedOptimistic() {
         root.isRecording = false;
         root.recordingTime = "00:00";
+        root.recordRegion = null;
+        root.recordingGif = false;
+        confirmTimer.restart();
+    }
+
+    function stopRecording(): void {
+        Quickshell.execDetached(["sh", "-c", "qs -c isra ipc call screenshot record"]);
+    }
+
+    function _setRegion(text) {
+        const m = /^(-?\d+),(-?\d+) (\d+)x(\d+)/.exec(text.trim());
+        const r = m ? { x: +m[1], y: +m[2], w: +m[3], h: +m[4] } : null;
+        const c = root.recordRegion;
+        const same = r === null ? (c === null) : (c !== null && c.x === r.x && c.y === r.y && c.w === r.w && c.h === r.h);
+        if (!same)
+            root.recordRegion = r;
     }
 
     Process {
         id: recordingCheckProc
-        command: ["sh", "-c", "test -f /tmp/screenrec-region.pid"]
+        command: ["sh", "-c", "test -f /tmp/screenrec-region.pid || exit 1; cat /tmp/screenrec-region.geometry 2>/dev/null; echo; cat /tmp/screenrec-region.format 2>/dev/null; exit 0"]
         running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root._setRegion(text);
+                root.recordingGif = /^gif$/m.test(text);
+            }
+        }
         onExited: exitCode => {
             var currentlyRunning = (exitCode === 0);
 
@@ -47,6 +74,7 @@ Singleton {
             } else if (!currentlyRunning && root.isRecording) {
                 root.isRecording = false;
                 root.recordingTime = "00:00";
+                root.recordingGif = false;
             }
         }
     }
@@ -66,8 +94,14 @@ Singleton {
     Timer {
         id: pollTimer
         interval: 1000
-        running: true
+        running: root.isRecording || root.isRecognizing
         repeat: true
+        onTriggered: root.refresh()
+    }
+
+    Timer {
+        id: confirmTimer
+        interval: 1500
         onTriggered: root.refresh()
     }
 

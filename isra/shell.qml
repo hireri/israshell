@@ -332,6 +332,9 @@ ShellRoot {
                     Region {
                         item: floatingDockLoader.item?.sensorStripItem ?? null
                     }
+                    Region {
+                        item: recordRegionIndicator.chipShown ? recordRegionIndicator.chipItem : null
+                    }
                 }
                 mask: (anyMergedPanelOpen || dockMenuOpen) ? null : barOnlyMask
 
@@ -349,6 +352,14 @@ ShellRoot {
                 IdleInhibitor {
                     enabled: CaffeineService.active
                     window: window
+                }
+
+                RecordRegionIndicator {
+                    id: recordRegionIndicator
+                    anchors.fill: parent
+                    z: 2
+                    screen: window.modelData
+                    visible: !window.shouldHide
                 }
 
                 Item {

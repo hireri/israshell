@@ -269,7 +269,9 @@ Singleton {
             recordPath: "~/.config/hypr/scripts/record.sh",
             ctsPath: "~/.config/quickshell/isra/scripts/cts.sh",
             ocrPath: "~/.config/quickshell/isra/scripts/ocr.sh",
-            songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
+            songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh",
+            recordFormat: "mp4",
+            instantCapture: true
         })
     property bool useAwww: false
     property var clock: ClockOptions.defaults()
@@ -525,7 +527,9 @@ Singleton {
                 recordPath: "~/.config/quickshell/isra/scripts/record.sh",
                 ctsPath: "~/.config/quickshell/isra/scripts/cts.sh",
                 ocrPath: "~/.config/quickshell/isra/scripts/ocr.sh",
-                songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh"
+                songrecPath: "~/.config/quickshell/isra/scripts/songrec.sh",
+                recordFormat: "mp4",
+                instantCapture: true
             },
             clock: ClockOptions.defaults(),
             gameOverlay: {

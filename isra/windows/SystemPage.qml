@@ -1014,6 +1014,23 @@ PageBase {
         }
 
         SectionCard {
+            label: Localization.t("systemPage.screenshots")
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                isLast: true
+                label: Localization.t("systemPage.instant_capture")
+                sublabel: Localization.t("systemPage.instant_capture_sub")
+                checked: Config.screencap.instantCapture
+                onToggled: v => Config.update({
+                        screencap: Object.assign({}, Config.screencap, {
+                            instantCapture: v
+                        })
+                    })
+            }
+        }
+
+        SectionCard {
             label: Localization.t("systemPage.script_paths")
             Layout.fillWidth: true
 

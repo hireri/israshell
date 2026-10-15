@@ -24,12 +24,16 @@ NOTIFY_RECORDING_REGION_BODY="${NOTIFY_RECORDING_REGION_BODY:-Recording region..
 PIDFILE="/tmp/screenrec-region.pid"
 TIMERPID_FILE="/tmp/screenrec-region.timer.pid"
 FILEPATH_FILE="/tmp/screenrec-region.filepath"
+GEOMFILE="/tmp/screenrec-region.geometry"
+FORMATFILE="/tmp/screenrec-region.format"
 OUTPUT_DIR="$HOME/Videos/Recordings"
 GIF_DIR="$HOME/Videos/Recordings/GIFs"
 THUMB="/tmp/screenrec-thumb.jpg"
 MAX_DURATION=300
 MAX_W=1920
 MAX_H=1080
+GIF_FPS="${GIF_FPS:-24}"
+GIF_MAX_W="${GIF_MAX_W:-960}"
 
 mkdir -p "$OUTPUT_DIR" "$GIF_DIR"
 
@@ -97,6 +101,7 @@ get_audio_device() {
 
 convert_to_gif() {
     local input="$1"
+    local remove_source="${2:-0}"
     local basename="${input%.mp4}"
     local basename="${basename##*/}"
     local output="$GIF_DIR/${basename}.gif"
@@ -105,10 +110,13 @@ convert_to_gif() {
         -i "video-x-generic" -a "Screen Recorder" -t 4000
 
     ffmpeg -i "$input" \
-        -vf "fps=15,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" \
+        -vf "fps=$GIF_FPS,scale='min($GIF_MAX_W,iw)':-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" \
         -loop 0 -y "$output" 2>/dev/null
 
     if [ $? -eq 0 ]; then
+        if [ "$remove_source" = 1 ]; then
+            rm -f "$input"
+        fi
         ACTION=$(notify-send \
             -A "open=$NOTIFY_OPEN_GIF_ACTION" -A "folder=$NOTIFY_VIEW_FOLDER_ACTION" \
             "$NOTIFY_GIF_SAVED_TITLE" "${basename}.gif" \
@@ -124,11 +132,14 @@ convert_to_gif() {
 }
 
 stop_recording() {
+    FORMAT=$(cat "$FORMATFILE" 2>/dev/null)
+
     kill -INT "$(cat "$PIDFILE")" 2>/dev/null
-    rm -f "$PIDFILE"
+    rm -f "$PIDFILE" "$GEOMFILE" "$FORMATFILE"
 
     if [ -f "$TIMERPID_FILE" ]; then
-        kill "$(cat "$TIMERPID_FILE")" 2>/dev/null
+        TIMER_PID=$(cat "$TIMERPID_FILE")
+        [ "$TIMER_PID" != "$BASHPID" ] && kill "$TIMER_PID" 2>/dev/null
         rm -f "$TIMERPID_FILE"
     fi
 
@@ -140,6 +151,11 @@ stop_recording() {
     if [ -z "$LATEST" ] || [ ! -f "$LATEST" ]; then
         notify-send "$NOTIFY_RECORDING_SAVED_TITLE" "$(printf "$NOTIFY_SAVED_TO_BODY" "$OUTPUT_DIR")" \
             -i "video-x-generic" -a "Screen Recorder" -t 8000
+        exit 0
+    fi
+
+    if [ "$FORMAT" = gif ]; then
+        convert_to_gif "$LATEST" 1
         exit 0
     fi
 
@@ -193,6 +209,8 @@ else
     [ -z "$1" ] && exit 1
 
     GEOMETRY="$1"
+    FORMAT="${2:-mp4}"
+    [ "$FORMAT" = gif ] || FORMAT=mp4
     AUDIO_DEVICE=$(get_audio_device)
     FILEPATH="$OUTPUT_DIR/recording_$(date +%Y-%m-%d_%H-%M-%S).mp4"
     echo "$FILEPATH" > "$FILEPATH_FILE"
@@ -203,25 +221,34 @@ else
         GSR_GEOMETRY="$GEOMETRY"
     fi
 
+    if [ "$FORMAT" = gif ]; then
+        FPS="$GIF_FPS"
+    else
+        FPS=60
+    fi
+
     GSR_OPTS=(
         -w region -region "$GSR_GEOMETRY"
         -k h264
         -q high
         -s 0x0
-        -f 60
-        -ac aac
+        -f "$FPS"
         -o "$FILEPATH"
     )
 
-    if [ -n "$AUDIO_DEVICE" ]; then
-        setsid gpu-screen-recorder "${GSR_OPTS[@]}" -a "device:$AUDIO_DEVICE" </dev/null >/dev/null 2>&1 &
+    if [ "$FORMAT" = gif ]; then
+        setsid gpu-screen-recorder "${GSR_OPTS[@]}" </dev/null >/dev/null 2>&1 &
+    elif [ -n "$AUDIO_DEVICE" ]; then
+        setsid gpu-screen-recorder "${GSR_OPTS[@]}" -ac aac -a "device:$AUDIO_DEVICE" </dev/null >/dev/null 2>&1 &
     else
         notify-send "$NOTIFY_WARNING_TITLE" "$NOTIFY_NO_AUDIO_BODY" \
             -i "dialog-warning" -a "Screen Recorder" -t 6000
-        setsid gpu-screen-recorder "${GSR_OPTS[@]}" </dev/null >/dev/null 2>&1 &
+        setsid gpu-screen-recorder "${GSR_OPTS[@]}" -ac aac </dev/null >/dev/null 2>&1 &
     fi
 
     echo $! > "$PIDFILE"
+    printf '%s\n' "$GEOMETRY" > "$GEOMFILE"
+    printf '%s\n' "$FORMAT" > "$FORMATFILE"
 
     ( sleep $MAX_DURATION && \
       [ -f "$PIDFILE" ] && \
