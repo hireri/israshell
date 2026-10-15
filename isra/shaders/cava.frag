@@ -128,7 +128,8 @@ void main() {
 
     if (renderType < 0.5) {
         vec2 cy = curve(p.x, N);
-        float e = cy.x - d;
+        // ponytail: drop the baseline 1.25px past the edge so a silent stroke isn't a visible line
+        float e = cy.x - d - 1.25;
         float g = sqrt(cy.y * cy.y + 1.0);
         if (drawFill > 0.5) {
             float cov = clamp(e / g + 0.5, 0.0, 1.0);
