@@ -29,6 +29,13 @@ Rectangle {
         id: row
         anchors.centerIn: parent
         spacing: 8
+        scale: area.pressed ? 0.92 : 1
+        Behavior on scale {
+            NumberAnimation {
+                duration: 120
+                easing.type: Easing.OutCubic
+            }
+        }
 
         MaterialIcon {
             anchors.verticalCenter: parent.verticalCenter

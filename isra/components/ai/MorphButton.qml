@@ -55,6 +55,13 @@ Rectangle {
         filled: root.filled
         iconSize: root.iconSize
         transitionType: "none"
+        scale: area.pressed ? 0.85 : 1
+        Behavior on scale {
+            NumberAnimation {
+                duration: 120
+                easing.type: Easing.OutCubic
+            }
+        }
         color: root.content
     }
 

@@ -194,9 +194,8 @@ Item {
                     }
                     Behavior on scale {
                         NumberAnimation {
-                            duration: 140
-                            easing.type: Easing.OutBack
-                            easing.overshoot: 1.4
+                            duration: 120
+                            easing.type: Easing.OutCubic
                         }
                     }
 
@@ -233,9 +232,10 @@ Item {
             required property var modelData
             readonly property bool _copied: root._copiedFace === modelData.face
 
-            width: Math.max(64, faceLbl.implicitWidth + 18)
+            width: Math.max(64, (tile._copied ? copiedLbl.implicitWidth : faceLbl.implicitWidth) + 18)
             height: root._tileHeight
             radius: 12
+            clip: true
             color: tile._copied ? Colors.md3.primary_container : (tileMa.containsMouse ? Colors.md3.secondary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity))
             scale: tileMa.pressed ? 0.94 : 1.0
 
@@ -247,20 +247,49 @@ Item {
             }
             Behavior on scale {
                 NumberAnimation {
-                    duration: 160
-                    easing.type: Easing.OutBack
-                    easing.overshoot: 1.6
+                    duration: 120
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on width {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
                 }
             }
 
             Text {
                 id: faceLbl
                 anchors.centerIn: parent
-                text: tile._copied ? Localization.t("kaomojiWidget.copied") : tile.modelData.face
-                color: tile._copied ? Colors.md3.on_primary_container : (tileMa.containsMouse ? Colors.md3.on_secondary_container : Colors.md3.on_surface)
-                font.pixelSize: tile._copied ? 12 : 17
+                text: tile.modelData.face
+                color: tileMa.containsMouse ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+                font.pixelSize: 17
                 font.family: Config.fontFamily
-                font.weight: tile._copied ? Font.Medium : Font.Normal
+                opacity: tile._copied ? 0 : 1
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+
+            Text {
+                id: copiedLbl
+                anchors.centerIn: parent
+                text: Localization.t("kaomojiWidget.copied")
+                color: Colors.md3.on_primary_container
+                font.pixelSize: 12
+                font.family: Config.fontFamily
+                font.weight: Font.Medium
+                opacity: tile._copied ? 1 : 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
 
             MouseArea {

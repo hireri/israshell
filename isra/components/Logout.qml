@@ -383,10 +383,10 @@ Scope {
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: parent.radius
-                                    color: Qt.alpha(modelData.contentColor, ma.containsMouse ? 0.1 : 0.0)
+                                    color: Qt.alpha(modelData.contentColor, ma.containsMouse ? 0.08 : 0.0)
                                     Behavior on color {
                                         ColorAnimation {
-                                            duration: 180
+                                            duration: 120
                                         }
                                     }
                                 }
@@ -398,6 +398,13 @@ Scope {
                                     filled: true
                                     color: modelData.contentColor
                                     transitionType: "none"
+                                    scale: ma.pressed ? 0.85 : 1
+                                    Behavior on scale {
+                                        NumberAnimation {
+                                            duration: 120
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
                                 }
 
                                 MouseArea {
@@ -461,10 +468,10 @@ Scope {
                                             Rectangle {
                                                 anchors.fill: parent
                                                 radius: parent.radius
-                                                color: Qt.alpha(Colors.md3.on_surface, chipMa.containsMouse ? 0.1 : 0.0)
+                                                color: Qt.alpha(Colors.md3.on_surface, chipMa.containsMouse ? 0.08 : 0.0)
                                                 Behavior on color {
                                                     ColorAnimation {
-                                                        duration: 180
+                                                        duration: 120
                                                     }
                                                 }
                                             }
@@ -473,6 +480,13 @@ Scope {
                                                 id: chipRow
                                                 anchors.centerIn: parent
                                                 spacing: 8
+                                                scale: chipMa.pressed ? 0.92 : 1
+                                                Behavior on scale {
+                                                    NumberAnimation {
+                                                        duration: 120
+                                                        easing.type: Easing.OutCubic
+                                                    }
+                                                }
 
                                                 MaterialIcon {
                                                     anchors.verticalCenter: parent.verticalCenter
@@ -566,10 +580,10 @@ Scope {
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: parent.radius
-                                    color: Qt.alpha(Colors.md3.on_surface, cancelMa.containsMouse ? 0.1 : 0.0)
+                                    color: Qt.alpha(Colors.md3.on_surface, cancelMa.containsMouse ? 0.08 : 0.0)
                                     Behavior on color {
                                         ColorAnimation {
-                                            duration: 180
+                                            duration: 120
                                         }
                                     }
                                 }
@@ -577,6 +591,13 @@ Scope {
                                 Text {
                                     id: cancelLabel
                                     anchors.centerIn: parent
+                                    scale: cancelMa.pressed ? 0.92 : 1
+                                    Behavior on scale {
+                                        NumberAnimation {
+                                            duration: 120
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
                                     text: Localization.t("lockSurface.cancel")
                                     font.pixelSize: 13
                                     font.weight: Font.Medium

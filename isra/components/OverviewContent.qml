@@ -304,8 +304,8 @@ Item {
                         anchors.margins: -root.ringWidth
                         radius: root.tileRadius + root.ringWidth
                         color: "transparent"
-                        border.width: tile.isSelected || tile.hot ? root.ringWidth : (tile.isActive ? 1 : 0)
-                        border.color: tile.isSelected || tile.hot ? Colors.md3.primary : Colors.md3.outline
+                        border.width: tile.hot ? root.ringWidth : (tile.isActive && !tile.isSelected ? 1 : 0)
+                        border.color: tile.hot ? Colors.md3.primary : Colors.md3.outline
                         Behavior on border.color {
                             ColorAnimation {
                                 duration: 140
@@ -334,6 +334,33 @@ Item {
                             const id = tile.wsId;
                             root.controller?.closeThen(() => CompositorService.focusWorkspace(id, ""));
                         }
+                    }
+                }
+            }
+
+            Rectangle {
+                readonly property int sel: root.controller?.selected ?? -1
+                visible: sel >= 0
+                x: root.tileX(sel + 1, "") - root.ringWidth
+                y: root.tileY(sel + 1, "") - root.ringWidth
+                width: root.tileW + 2 * root.ringWidth
+                height: root.tileH + 2 * root.ringWidth
+                radius: root.tileRadius + root.ringWidth
+                color: "transparent"
+                border.width: root.ringWidth
+                border.color: Colors.md3.primary
+                Behavior on x {
+                    enabled: root.isOpen
+                    NumberAnimation {
+                        duration: 160
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on y {
+                    enabled: root.isOpen
+                    NumberAnimation {
+                        duration: 160
+                        easing.type: Easing.OutCubic
                     }
                 }
             }

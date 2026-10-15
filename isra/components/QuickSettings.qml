@@ -451,8 +451,8 @@ Item {
         }
         Behavior on scale {
             NumberAnimation {
-                duration: 400
-                easing.type: Easing.OutBack
+                duration: 250
+                easing.type: Easing.OutCubic
             }
         }
 

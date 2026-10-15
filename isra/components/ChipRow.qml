@@ -50,6 +50,12 @@ Row {
             width: targetWidth
 
             color: active ? Colors.md3.primary : (Config.dim(Colors.md3.surface_container_high))
+            property color fg: active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+            Behavior on fg {
+                ColorAnimation {
+                    duration: 120
+                }
+            }
 
             topLeftRadius: (active || isFirst) ? root.fullRadius : root.smallRadius
             bottomLeftRadius: (active || isFirst) ? root.fullRadius : root.smallRadius
@@ -101,7 +107,7 @@ Row {
                     property bool iconActive: chip.active
                     onLoaded: {
                         if (item && item.hasOwnProperty("color"))
-                            item.color = Qt.binding(() => chip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant);
+                            item.color = Qt.binding(() => chip.fg);
                     }
                 }
 
@@ -113,7 +119,7 @@ Row {
                     font.family: Config.fontFamily
                     font.pixelSize: root.large ? 14 : 12
                     font.weight: chip.active ? Font.Medium : Font.Normal
-                    color: chip.active ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                    color: chip.fg
                 }
             }
 

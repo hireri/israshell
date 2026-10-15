@@ -34,6 +34,19 @@ SettingRow {
                 color: isCustom ? Colors.md3.surface_container_high : "#" + modelData
                 border.width: selected ? 2 : 1
                 border.color: selected ? Colors.md3.primary : Colors.md3.outline_variant
+                scale: swatchMouse.pressed ? 0.85 : swatchMouse.containsMouse ? 1.1 : 1
+
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: 120
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on border.color {
+                    ColorAnimation {
+                        duration: 120
+                    }
+                }
 
                 MaterialIcon {
                     visible: swatch.isCustom
@@ -45,7 +58,9 @@ SettingRow {
                 }
 
                 MouseArea {
+                    id: swatchMouse
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.picked(swatch.index)
                 }

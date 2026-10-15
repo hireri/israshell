@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.style
 import qs.services
 import qs.icons
+import qs.components
 
 Item {
     id: root
@@ -18,77 +19,78 @@ Item {
 
     anchors.fill: parent
 
-    RowLayout {
+    Item {
+        id: track
         anchors.fill: parent
         anchors.margins: 6
-        spacing: 4
+        readonly property real segW: (width - 4 * (root.segmentOrder.length - 1)) / root.segmentOrder.length
 
-        Repeater {
-            model: root.segmentOrder
+        SlidingIndicator {
+            id: profileInd
+            index: root.segmentOrder.indexOf(root.profileIndex)
+            step: track.segW + 4
+            inset: 0
+            size: track.segW
+            color: Colors.md3.primary
+        }
 
-            delegate: Item {
-                id: segment
+        RowLayout {
+            anchors.fill: parent
+            spacing: 4
 
-                required property int index
-                required property int modelData
+            Repeater {
+                model: root.segmentOrder
 
-                readonly property int profileIdx: segment.modelData
-                readonly property bool selected: segment.profileIdx === root.profileIndex
-                readonly property bool isOuter: segment.index === 0 || segment.index === root.segmentOrder.length - 1
-                readonly property bool isLeft: segment.index === 0
-                readonly property bool isRight: segment.index === root.segmentOrder.length - 1
+                delegate: Item {
+                    id: segment
 
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+                    required property int index
+                    required property int modelData
 
-                readonly property color segBaseColor: selected
-                    ? Colors.md3.primary
-                    : Colors.md3.surface_container_highest
-                readonly property real segAlpha: selected
-                    ? 1
-                    : (segMouse.containsMouse && !root.forceOff ? Config.blurOpacity : 0)
-                readonly property color segTextColor: selected
-                    ? Colors.md3.on_primary
-                    : Colors.md3.on_surface_variant
+                    readonly property int profileIdx: segment.modelData
+                    readonly property bool selected: segment.profileIdx === root.profileIndex
+                    readonly property bool isOuter: segment.index === 0 || segment.index === root.segmentOrder.length - 1
+                    readonly property bool isLeft: segment.index === 0
+                    readonly property bool isRight: segment.index === root.segmentOrder.length - 1
 
-                readonly property real outerRadius: parent.height / 2
-                readonly property real innerRadius: 8
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
-                Rectangle {
-                    anchors.fill: parent
-                    color: Qt.alpha(segment.segBaseColor, segment.segAlpha)
+                    readonly property real segAlpha: !selected && segMouse.containsMouse && !root.forceOff ? Config.blurOpacity : 0
 
-                    readonly property real leftRadius: (segment.selected || segment.isLeft) ? segment.outerRadius : segment.innerRadius
-                    readonly property real rightRadius: (segment.selected || segment.isRight) ? segment.outerRadius : segment.innerRadius
+                    readonly property real outerRadius: parent.height / 2
+                    readonly property real innerRadius: 8
 
-                    topLeftRadius: leftRadius
-                    bottomLeftRadius: leftRadius
-                    topRightRadius: rightRadius
-                    bottomRightRadius: rightRadius
+                    Rectangle {
+                        anchors.fill: parent
+                        color: Qt.alpha(Colors.md3.surface_container_highest, segment.segAlpha)
 
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Behavior on topLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                    Behavior on topRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                    Behavior on bottomLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                    Behavior on bottomRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                }
+                        readonly property real leftRadius: segment.isLeft ? segment.outerRadius : segment.innerRadius
+                        readonly property real rightRadius: segment.isRight ? segment.outerRadius : segment.innerRadius
 
-                PowerProfileIcon {
-                    anchors.centerIn: parent
-                    iconSize: 18
-                    profileMode: segment.profileIdx
-                    color: segment.segTextColor
+                        topLeftRadius: leftRadius
+                        bottomLeftRadius: leftRadius
+                        topRightRadius: rightRadius
+                        bottomRightRadius: rightRadius
 
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                    }
 
-                MouseArea {
-                    id: segMouse
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    hoverEnabled: true
-                    enabled: !root.forceOff
-                    onClicked: PowerProfileService.setProfile(segment.profileIdx)
+                    PowerProfileIcon {
+                        anchors.centerIn: parent
+                        iconSize: 18
+                        profileMode: segment.profileIdx
+                        color: profileInd.covers(segment.x + segment.width / 2) ? Colors.md3.on_primary : Colors.md3.on_surface_variant
+                    }
+
+                    MouseArea {
+                        id: segMouse
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        enabled: !root.forceOff
+                        onClicked: PowerProfileService.setProfile(segment.profileIdx)
+                    }
                 }
             }
         }

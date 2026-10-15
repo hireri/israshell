@@ -58,7 +58,7 @@ Item {
         }
         width: parent.width
         color: {
-            if (root.isOpen) {
+            if (menu.isOpen) {
                 Colors.md3.secondary_container
             } else if (Config.bar.transparentPills) {
                 Qt.alpha(Colors.md3.secondary_container, 0)

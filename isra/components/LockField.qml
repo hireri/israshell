@@ -238,7 +238,7 @@ Item {
             }
 
             add: Transition {
-                NumberAnimation { property: "scale"; from: 0; to: 1; duration: 160; easing.type: Easing.OutBack }
+                NumberAnimation { property: "scale"; from: 0; to: 1; duration: 160; easing.type: Easing.OutCubic }
             }
             remove: Transition {
                 ParallelAnimation {

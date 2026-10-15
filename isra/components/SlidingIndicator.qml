@@ -7,6 +7,9 @@ Rectangle {
     property int span: 1
     property real step: 44
     property real inset: 4
+    property real size: step - 2 * inset
+    property bool smear: true
+    property int followDuration: 200
 
     property bool _ready: false
     property bool _fwd: true
@@ -20,7 +23,13 @@ Rectangle {
         if (l !== _l)
             _fwd = l > _l;
         _l = l;
-        _r = (index + span) * step - inset;
+        _r = l + size + (span - 1) * step;
+    }
+
+    function _snap() {
+        _ready = false;
+        _place();
+        _ready = true;
     }
 
     function covers(cx) {
@@ -29,10 +38,9 @@ Rectangle {
 
     onIndexChanged: _place()
     onSpanChanged: _place()
-    Component.onCompleted: {
-        _place();
-        _ready = true;
-    }
+    onStepChanged: _snap()
+    onSizeChanged: _snap()
+    Component.onCompleted: _snap()
 
     x: _l
     width: Math.max(_r - _l, 4)
@@ -44,14 +52,14 @@ Rectangle {
     Behavior on _l {
         enabled: root._ready
         NumberAnimation {
-            duration: root._fwd ? 380 : 240
+            duration: !root.smear ? root.followDuration : root._fwd ? 380 : 240
             easing.type: Easing.OutCubic
         }
     }
     Behavior on _r {
         enabled: root._ready
         NumberAnimation {
-            duration: root._fwd ? 240 : 380
+            duration: !root.smear ? root.followDuration : root._fwd ? 240 : 380
             easing.type: Easing.OutCubic
         }
     }

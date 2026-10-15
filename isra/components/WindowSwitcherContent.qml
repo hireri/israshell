@@ -118,23 +118,25 @@ Item {
             model: root.entries
             currentIndex: root.index
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, GridView.Contain)
+            highlightFollowsCurrentItem: true
+            highlightMoveDuration: root.settled ? 160 : 0
+            highlight: Rectangle {
+                width: 260
+                height: 216
+                radius: 18
+                color: Colors.md3.primary_container
+            }
 
             delegate: Rectangle {
                 id: card
                 required property var modelData
                 required property int index
-                readonly property bool selected: index === root.index
+                readonly property bool selected: strip.highlightItem !== null && x + width / 2 > strip.highlightItem.x && x + width / 2 < strip.highlightItem.x + strip.highlightItem.width && y + height / 2 > strip.highlightItem.y && y + height / 2 < strip.highlightItem.y + strip.highlightItem.height
 
                 width: 260
                 height: 216
                 radius: 18
-                color: selected ? Colors.md3.primary_container : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-                Behavior on color {
-                    enabled: root.settled
-                    ColorAnimation {
-                        duration: 120
-                    }
-                }
+                color: selected ? "transparent" : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
                 Item {
                     id: thumb

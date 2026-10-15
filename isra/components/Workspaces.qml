@@ -82,6 +82,16 @@ Rectangle {
 
     property bool hasActiveWorkspace: activeWorkspaceId > 0 || (isNiri && niriWorkspaces.length > 0)
 
+    property int _ballWs: -1
+    function _moveBall() {
+        activeIndicator.smear = root.activeWorkspaceId !== root._ballWs;
+        root._ballWs = root.activeWorkspaceId;
+        activeIndicator.index = root.activeVisualIndex;
+    }
+    onActiveVisualIndexChanged: Qt.callLater(_moveBall)
+    onActiveWorkspaceIdChanged: Qt.callLater(_moveBall)
+    Component.onCompleted: _moveBall()
+
     readonly property int repeaterModel: {
         if (isNiri) {
             return Math.max(1, niriWorkspaces.length);
@@ -186,23 +196,13 @@ Rectangle {
         implicitWidth: Math.max(0, row.implicitWidth - 8)
         height: 24
 
-        Rectangle {
+        SlidingIndicator {
             id: activeIndicator
-            width: 24
-            height: 24
-            radius: 12
+            step: 32
+            inset: 0
+            size: 24
             color: Colors.md3.primary
             visible: root.hasActiveWorkspace
-
-            x: root.activeVisualIndex * 32
-            y: 0
-
-            Behavior on x {
-                NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.OutCubic
-                }
-            }
         }
 
         Row {
@@ -352,7 +352,7 @@ Rectangle {
                                 text: root.getWorkspaceLabel(wsItem)
 
                                 color: {
-                                    if (wsItem.isActiveHere)
+                                    if (activeIndicator.covers(wsItem.x + 12))
                                         return Colors.md3.on_primary;
                                     if (wsItem.isActiveOther)
                                         return Colors.md3.on_surface;
@@ -375,12 +375,6 @@ Rectangle {
                                 Behavior on scale {
                                     NumberAnimation {
                                         duration: 200
-                                        easing.type: Easing.OutCubic
-                                    }
-                                }
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 150
                                         easing.type: Easing.OutCubic
                                     }
                                 }
