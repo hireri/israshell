@@ -952,6 +952,7 @@
   "screenshot.tip_width_2": "Thin",
   "screenshot.tip_width_4": "Medium",
   "screenshot.tip_width_8": "Thick",
+  "screenshot.tip_fill": "Fill (F)",
   "screenshot.tip_delete": "Delete (Del)",
   "screenshot.tip_undo": "Undo (Ctrl+Z)",
   "screenshot.tip_redo": "Redo (Ctrl+Y)",

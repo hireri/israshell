@@ -234,10 +234,16 @@ function translate(s, dx, dy) {
     return c;
 }
 
-function withStyle(s, color, width) {
-    const c = Object.assign({}, s, { color: color, width: width });
+function isFillable(type) {
+    return type === "rect" || type === "ellipse";
+}
+
+function withStyle(s, patch) {
+    const c = Object.assign({}, s, patch);
+    if (!isFillable(s.type))
+        delete c.fill;
     if (s.type === "text" && typeof s.tw === "number" && typeof s.th === "number") {
-        const k = fontSize(width) / fontSize(s.width);
+        const k = fontSize(c.width) / fontSize(s.width);
         c.tw = s.tw * k;
         c.th = s.th * k;
     }

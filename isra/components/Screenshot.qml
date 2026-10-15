@@ -26,6 +26,7 @@ Item {
     property string activeTool: "screenshot"
     property string markupColor: "#ff3b30"
     property int markupWidth: 4
+    property bool markupFill: false
     property string _capturedPath: ""
     property bool _closing: false
 
@@ -962,6 +963,8 @@ Item {
                             x2: gx,
                             y2: gy
                         };
+                        if (Markup.isFillable(tool))
+                            d.fill = root.markupFill;
                         if (tool === "pen" || tool === "highlighter")
                             d.points = [{
                                     x: gx,
@@ -1053,10 +1056,18 @@ Item {
                     }
                 }
 
-                function restyleSelected() {
+                function restyleSelected(patch) {
                     const s = selIndex >= 0 ? doc.shapes[selIndex] : null;
-                    if (s && (s.color !== root.markupColor || s.width !== root.markupWidth))
-                        commitShapes(Markup.replaceAt(doc.shapes, selIndex, Markup.withStyle(s, root.markupColor, root.markupWidth)));
+                    const next = s ? Markup.withStyle(s, patch) : null;
+                    if (next && JSON.stringify(next) !== JSON.stringify(s))
+                        commitShapes(Markup.replaceAt(doc.shapes, selIndex, next));
+                }
+
+                function setFill(on) {
+                    root.markupFill = on;
+                    restyleSelected({
+                        fill: on
+                    });
                 }
 
                 function nudge(dx, dy) {
@@ -1240,6 +1251,12 @@ Item {
                                         event.accepted = false;
                                     else
                                         root.cycleTool();
+                                    break;
+                                case Qt.Key_F:
+                                    if (canvas && !ctrl)
+                                        sessionRoot.setFill(!root.markupFill);
+                                    else
+                                        event.accepted = false;
                                     break;
                                 case Qt.Key_G:
                                     if (root.activeTool === "record" && !root.modeLocked)
@@ -1965,18 +1982,30 @@ Item {
                             tool: sessionRoot.tool
                             color: root.markupColor
                             strokeWidth: root.markupWidth
+                            fill: root.markupFill
+                            fillShape: {
+                                const t = sessionRoot.selShape?.type ?? sessionRoot.tool;
+                                return Markup.isFillable(t) ? t : "";
+                            }
                             canUndo: sessionRoot.doc.past.length > 0
                             canRedo: sessionRoot.doc.future.length > 0
                             canDelete: sessionRoot.selIndex >= 0
                             onToolPicked: id => sessionRoot.setTool(id)
                             onColorPicked: c => {
                                 root.markupColor = c;
-                                sessionRoot.restyleSelected();
+                                sessionRoot.restyleSelected({
+                                    color: c
+                                });
                             }
                             onWidthPicked: w => {
                                 root.markupWidth = w;
-                                sessionRoot.restyleSelected();
+                                root.markupFill = false;
+                                sessionRoot.restyleSelected({
+                                    width: w,
+                                    fill: false
+                                });
                             }
+                            onFillPicked: on => sessionRoot.setFill(on)
                             onDeleteRequested: sessionRoot.deleteSelected()
                             onUndoRequested: sessionRoot.undo()
                             onRedoRequested: sessionRoot.redo()
@@ -2060,19 +2089,11 @@ Item {
                                             radius: height / 2
                                             color: Colors.md3.surface_container_highest
                                         }
-                                        Rectangle {
-                                            width: toolTrack.btnW - 8
-                                            height: toolTrack.btnH - 8
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            radius: height / 2
+                                        SlidingIndicator {
+                                            id: pillToolInd
+                                            index: toolTrack.activeIndex
+                                            step: toolTrack.btnW
                                             color: Colors.md3.secondary
-                                            x: toolTrack.activeIndex * toolTrack.btnW + 4
-                                            Behavior on x {
-                                                NumberAnimation {
-                                                    duration: 200
-                                                    easing.type: Easing.OutCubic
-                                                }
-                                            }
                                         }
                                         Row {
                                             anchors.fill: parent
@@ -2083,13 +2104,7 @@ Item {
                                                     required property int index
                                                     width: toolTrack.btnW
                                                     height: toolTrack.btnH
-                                                    readonly property bool isActive: root.activeTool === modelData.id
-                                                    property color iconColor: isActive ? Colors.md3.on_secondary : Colors.md3.on_surface
-                                                    Behavior on iconColor {
-                                                        ColorAnimation {
-                                                            duration: 200
-                                                        }
-                                                    }
+                                                    property color iconColor: pillToolInd.covers(x + width / 2) ? Colors.md3.on_secondary : Colors.md3.on_surface
 
                                                     Loader {
                                                         id: toolIconLoader
@@ -2190,19 +2205,11 @@ Item {
                                                 radius: height / 2
                                                 color: Colors.md3.surface_container_highest
                                             }
-                                            Rectangle {
-                                                width: formatTrack.btnW - 8
-                                                height: formatTrack.btnH - 8
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                radius: height / 2
+                                            SlidingIndicator {
+                                                id: formatInd
+                                                index: formatTrack.activeIndex
+                                                step: formatTrack.btnW
                                                 color: Colors.md3.secondary
-                                                x: formatTrack.activeIndex * formatTrack.btnW + 4
-                                                Behavior on x {
-                                                    NumberAnimation {
-                                                        duration: 200
-                                                        easing.type: Easing.OutCubic
-                                                    }
-                                                }
                                             }
                                             Row {
                                                 anchors.fill: parent
@@ -2220,7 +2227,6 @@ Item {
                                                     Item {
                                                         required property var modelData
                                                         required property int index
-                                                        readonly property bool isActive: formatTrack.activeIndex === index
                                                         width: formatTrack.btnW
                                                         height: formatTrack.btnH
 
@@ -2228,12 +2234,7 @@ Item {
                                                             name: modelData.icon
                                                             anchors.centerIn: parent
                                                             iconSize: 20
-                                                            color: isActive ? Colors.md3.on_secondary : Colors.md3.on_surface
-                                                            Behavior on color {
-                                                                ColorAnimation {
-                                                                    duration: 200
-                                                                }
-                                                            }
+                                                            color: formatInd.covers(parent.x + parent.width / 2) ? Colors.md3.on_secondary : Colors.md3.on_surface
                                                         }
                                                         MouseArea {
                                                             anchors.fill: parent
@@ -2290,27 +2291,13 @@ Item {
                                                 color: Colors.md3.surface_container_highest
                                             }
 
-                                            ClippingRectangle {
+                                            SlidingIndicator {
                                                 id: indicatorPill
-                                                width: recordingModeContainer.showStop ? modeTrack.btnW * 3 - 8 : modeTrack.btnW - 8
-                                                height: modeTrack.btnH - 8
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                radius: height / 2
+                                                index: recordingModeContainer.showStop ? 0 : modeTrack.activeIndex
+                                                span: recordingModeContainer.showStop ? 3 : 1
+                                                step: modeTrack.btnW
+                                                clip: true
                                                 color: recordingModeContainer.showStop ? (ScreencapService.recordingGif ? Colors.md3.tertiary : Colors.md3.error) : Colors.md3.primary
-                                                x: recordingModeContainer.showStop ? 4 : modeTrack.activeIndex * modeTrack.btnW + 4
-
-                                                Behavior on x {
-                                                    NumberAnimation {
-                                                        duration: 200
-                                                        easing.type: Easing.OutCubic
-                                                    }
-                                                }
-                                                Behavior on width {
-                                                    NumberAnimation {
-                                                        duration: 200
-                                                        easing.type: Easing.OutCubic
-                                                    }
-                                                }
                                                 Behavior on color {
                                                     ColorAnimation {
                                                         duration: 200
@@ -2388,13 +2375,7 @@ Item {
                                                         required property var modelData
                                                         width: modeTrack.btnW
                                                         height: modeTrack.btnH
-                                                        readonly property bool isActive: root.forcedAction === modelData.action
-                                                        property color iconColor: isActive ? Colors.md3.on_primary : Colors.md3.on_surface
-                                                        Behavior on iconColor {
-                                                            ColorAnimation {
-                                                                duration: 200
-                                                            }
-                                                        }
+                                                        property color iconColor: indicatorPill.covers(x + width / 2) ? Colors.md3.on_primary : Colors.md3.on_surface
 
                                                         Loader {
                                                             id: modeIconLoader

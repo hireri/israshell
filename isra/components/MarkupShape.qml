@@ -55,7 +55,7 @@ Item {
                 y: root.lbox.y
                 width: root.lbox.w
                 height: root.lbox.h
-                color: "transparent"
+                color: root.shape.fill ? root.shape.color : "transparent"
                 border.color: root.shape.color
                 border.width: root.shape.width
             }
@@ -72,7 +72,7 @@ Item {
                 ShapePath {
                     strokeColor: root.shape.color
                     strokeWidth: root.shape.width
-                    fillColor: "transparent"
+                    fillColor: root.shape.fill ? root.shape.color : "transparent"
                     PathAngleArc {
                         centerX: root.lbox.x + root.lbox.w / 2
                         centerY: root.lbox.y + root.lbox.h / 2
