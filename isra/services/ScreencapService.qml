@@ -13,6 +13,9 @@ Singleton {
     property double startTime: 0
     property var recordRegion: null
     property bool recordingGif: false
+    property bool converting: false
+    property int convertProgress: -1
+    property int recordPills: 0
 
     Component.onCompleted: refresh()
 
@@ -35,6 +38,8 @@ Singleton {
     }
 
     function markRecordingStoppedOptimistic() {
+        root.converting = root.recordingGif;
+        root.convertProgress = -1;
         root.isRecording = false;
         root.recordingTime = "00:00";
         root.recordRegion = null;
@@ -43,7 +48,7 @@ Singleton {
     }
 
     function stopRecording(): void {
-        Quickshell.execDetached(["sh", "-c", "qs -c isra ipc call screenshot record"]);
+        Quickshell.execDetached(["sh", "-c", "qs -c isra ipc call screenshot stopRecord"]);
     }
 
     function _setRegion(text) {
@@ -57,12 +62,16 @@ Singleton {
 
     Process {
         id: recordingCheckProc
-        command: ["sh", "-c", "test -f /tmp/screenrec-region.pid || exit 1; cat /tmp/screenrec-region.geometry 2>/dev/null; echo; cat /tmp/screenrec-region.format 2>/dev/null; exit 0"]
+        command: ["sh", "-c", "cat /tmp/screenrec-region.geometry 2>/dev/null; echo; cat /tmp/screenrec-region.format 2>/dev/null; for f in /tmp/screenrec-convert.*; do [ -f \"$f\" ] || continue; if kill -0 \"${f##*.}\" 2>/dev/null; then echo \"conv:$(cat \"$f\")\"; else rm -f \"$f\"; fi; done; test -f /tmp/screenrec-region.pid"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
                 root._setRegion(text);
                 root.recordingGif = /^gif$/m.test(text);
+                const conv = text.match(/^conv:\d*$/gm);
+                const pct = conv ? conv[conv.length - 1].slice(5) : "";
+                root.converting = conv !== null || (root.converting && confirmTimer.running);
+                root.convertProgress = pct !== "" ? +pct : -1;
             }
         }
         onExited: exitCode => {
@@ -93,8 +102,8 @@ Singleton {
 
     Timer {
         id: pollTimer
-        interval: 1000
-        running: root.isRecording || root.isRecognizing
+        interval: root.converting ? 500 : 1000
+        running: root.isRecording || root.isRecognizing || root.converting
         repeat: true
         onTriggered: root.refresh()
     }

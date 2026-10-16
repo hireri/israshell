@@ -846,17 +846,23 @@ Rectangle {
     Component {
         id: recordComp
         Item {
+            id: recordItem
             height: 32
             width: recordBg.width
+
+            readonly property bool converting: ScreencapService.converting && !ScreencapService.isRecording
+
+            Component.onCompleted: ScreencapService.recordPills++
+            Component.onDestruction: ScreencapService.recordPills--
 
             Rectangle {
                 id: recordBg
                 anchors.verticalCenter: parent.verticalCenter
                 readonly property int textWidth: ScreencapService.recordingTime.length > 5 ? 57 : 38
-                width: ScreencapService.isRecording ? 32 + 8 + textWidth : 32
+                width: ScreencapService.isRecording ? 32 + 8 + textWidth : (recordItem.converting ? 5 + 18 + 6 + convText.implicitWidth + 11 : 32)
                 height: 26
                 radius: 16
-                color: ScreencapService.isRecording ? Qt.alpha(Colors.md3.error, 0.15) : (recordHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
+                color: ScreencapService.isRecording ? Qt.alpha(Colors.md3.error, 0.15) : recordItem.converting ? Qt.alpha(Colors.md3.tertiary, 0.15) : (recordHover.containsMouse ? Qt.alpha(Colors.md3.on_surface, 0.08) : "transparent")
 
                 Behavior on width {
                     NumberAnimation {
@@ -877,9 +883,60 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left
                     anchors.leftMargin: ScreencapService.isRecording ? 5 : 7
+                    visible: !recordItem.converting
                     color: ScreencapService.isRecording ? Colors.md3.error : Colors.md3.on_surface
                     Behavior on color {
                         ColorAnimation {
+                            duration: 200
+                        }
+                    }
+                }
+
+                ProgressRing {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 5
+                    width: 18
+                    height: 18
+                    strokeWidth: 2.5
+                    visible: recordItem.converting && ScreencapService.convertProgress >= 0
+                    wavy: true
+                    progress: ScreencapService.convertProgress / 100
+                    Behavior on progress {
+                        NumberAnimation {
+                            duration: 500
+                            easing.type: Easing.Linear
+                        }
+                    }
+                    activeColor: Colors.md3.tertiary
+                    trackColor: Qt.alpha(Colors.md3.tertiary, 0.25)
+                }
+
+                LoadingSpinner {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 6
+                    size: 16
+                    color: Colors.md3.tertiary
+                    visible: recordItem.converting && ScreencapService.convertProgress < 0
+                }
+
+                Text {
+                    id: convText
+                    anchors.left: parent.left
+                    anchors.leftMargin: 5 + 18 + 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: ScreencapService.convertProgress >= 0 ? ScreencapService.convertProgress + "%" : "GIF"
+                    font.family: Config.fontFamily
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                    color: Colors.md3.tertiary
+                    opacity: recordItem.converting ? 1 : 0
+                    font.features: {
+                        "tnum": 1
+                    }
+                    Behavior on opacity {
+                        NumberAnimation {
                             duration: 200
                         }
                     }
@@ -921,7 +978,7 @@ Rectangle {
                     recordScript.startDetached();
                 }
                 onEntered: {
-                    tooltipWindow.show(parent, ScreencapService.isRecording ? Localization.t("screencapControls.stop_recording") : Localization.t("screencapControls.start_recording"));
+                    tooltipWindow.show(parent, ScreencapService.isRecording ? Localization.t("screencapControls.stop_recording") : recordItem.converting ? Localization.t("recordScript.converting_gif_title") : Localization.t("screencapControls.start_recording"));
                 }
                 onExited: tooltipWindow.hide()
             }

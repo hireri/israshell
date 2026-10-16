@@ -128,6 +128,7 @@ Item {
             };
         case "record":
             return {
+                NOTIFY_CONVERTING: ScreencapService.recordPills > 0 ? "0" : "1",
                 NOTIFY_OPTIMIZE_FAILED_TITLE: Localization.t("recordScript.optimize_failed_title"),
                 NOTIFY_OPTIMIZE_FAILED_BODY: Localization.t("recordScript.optimize_failed_body"),
                 NOTIFY_CONVERTING_GIF_TITLE: Localization.t("recordScript.converting_gif_title"),
@@ -180,10 +181,11 @@ Item {
         id: stopRecordingProc
         command: ["sh", "-c", Config.screencap.recordPath]
         environment: root.envFor("record")
-        running: false
-        onExited: {
-            ScreencapService.refresh();
-        }
+    }
+
+    function stopRecording() {
+        ScreencapService.markRecordingStoppedOptimistic();
+        stopRecordingProc.startDetached();
     }
 
     IpcHandler {
@@ -232,12 +234,18 @@ Item {
             root._openOverlay();
         }
 
+        function stopRecord(): void {
+            if (ScreencapService.isRecording)
+                root.stopRecording();
+        }
+
         function record(): void {
             if (root.active)
                 return;
             if (ScreencapService.isRecording) {
-                stopRecordingProc.running = true;
+                root.stopRecording();
             } else {
+                root.setRecordFormat("mp4");
                 root.forcedAction = "smart";
                 root.activeTool = "record";
                 root._openOverlay();
@@ -2386,10 +2394,7 @@ Item {
                                                     anchors.fill: parent
                                                     cursorShape: Qt.PointingHandCursor
                                                     enabled: recordingModeContainer.showStop
-                                                    onClicked: {
-                                                        ScreencapService.markRecordingStoppedOptimistic();
-                                                        stopRecordingProc.running = true;
-                                                    }
+                                                    onClicked: root.stopRecording()
                                                 }
                                             }
                                             Row {

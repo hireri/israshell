@@ -26,6 +26,7 @@ TIMERPID_FILE="/tmp/screenrec-region.timer.pid"
 FILEPATH_FILE="/tmp/screenrec-region.filepath"
 GEOMFILE="/tmp/screenrec-region.geometry"
 FORMATFILE="/tmp/screenrec-region.format"
+CONVFILE="/tmp/screenrec-convert.$$"
 OUTPUT_DIR="$HOME/Videos/Recordings"
 GIF_DIR="$HOME/Videos/Recordings/GIFs"
 THUMB="/tmp/screenrec-thumb.jpg"
@@ -105,15 +106,35 @@ convert_to_gif() {
     local basename="${input%.mp4}"
     local basename="${basename##*/}"
     local output="$GIF_DIR/${basename}.gif"
+    local pal="/tmp/screenrec-palette.$$.png"
+    local filt="fps=$GIF_FPS,scale='min($GIF_MAX_W,iw)':-1:flags=lanczos"
+    local dur_us ok=1
 
-    notify-send "$NOTIFY_CONVERTING_GIF_TITLE" "${input##*/}" \
+    trap 'rm -f "$CONVFILE" "$pal"' EXIT
+    echo palette > "$CONVFILE"
+
+    [ "${NOTIFY_CONVERTING:-1}" = 0 ] || notify-send "$NOTIFY_CONVERTING_GIF_TITLE" "${input##*/}" \
         -i "video-x-generic" -a "Screen Recorder" -t 4000
 
-    ffmpeg -i "$input" \
-        -vf "fps=$GIF_FPS,scale='min($GIF_MAX_W,iw)':-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" \
-        -loop 0 -y "$output" 2>/dev/null
+    dur_us=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$input" 2>/dev/null \
+        | awk '{printf "%d", $1 * 1000000}')
 
-    if [ $? -eq 0 ]; then
+    ffmpeg -nostdin -loglevel error -i "$input" \
+        -vf "$filt,palettegen=max_colors=128:stats_mode=diff" -y "$pal" && {
+        ffmpeg -nostdin -loglevel error -progress pipe:1 -i "$input" -i "$pal" \
+            -lavfi "$filt[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" \
+            -loop 0 -y "$output" | while IFS== read -r k v; do
+            [ "$k" = out_time_us ] && [ "${dur_us:-0}" -gt 0 ] || continue
+            case "$v" in '' | *[!0-9]*) continue ;; esac
+            p=$((v * 100 / dur_us))
+            echo $((p > 99 ? 99 : p)) > "$CONVFILE"
+        done
+        [ "${PIPESTATUS[0]}" -eq 0 ]
+    } && ok=0
+
+    rm -f "$CONVFILE" "$pal"
+
+    if [ "$ok" -eq 0 ]; then
         if [ "$remove_source" = 1 ]; then
             rm -f "$input"
         fi
@@ -132,9 +153,12 @@ convert_to_gif() {
 }
 
 stop_recording() {
-    FORMAT=$(cat "$FORMATFILE" 2>/dev/null)
+    local pid format latest
 
-    kill -INT "$(cat "$PIDFILE")" 2>/dev/null
+    format=$(cat "$FORMATFILE" 2>/dev/null)
+    pid=$(cat "$PIDFILE" 2>/dev/null)
+
+    kill -INT "$pid" 2>/dev/null
     rm -f "$PIDFILE" "$GEOMFILE" "$FORMATFILE"
 
     if [ -f "$TIMERPID_FILE" ]; then
@@ -143,18 +167,29 @@ stop_recording() {
         rm -f "$TIMERPID_FILE"
     fi
 
-    sleep 1
+    for _ in $(seq 50); do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.1
+    done
 
-    LATEST=$(cat "$FILEPATH_FILE" 2>/dev/null)
+    latest=$(cat "$FILEPATH_FILE" 2>/dev/null)
     rm -f "$FILEPATH_FILE"
 
-    if [ -z "$LATEST" ] || [ ! -f "$LATEST" ]; then
+    if [ -z "$latest" ] || [ ! -f "$latest" ]; then
         notify-send "$NOTIFY_RECORDING_SAVED_TITLE" "$(printf "$NOTIFY_SAVED_TO_BODY" "$OUTPUT_DIR")" \
             -i "video-x-generic" -a "Screen Recorder" -t 8000
         exit 0
     fi
 
-    if [ "$FORMAT" = gif ]; then
+    setsid "${BASH_SOURCE[0]}" finish "$latest" "$format" </dev/null >/dev/null 2>&1 &
+    [ "$format" = gif ] && echo palette > "/tmp/screenrec-convert.$!"
+    exit 0
+}
+
+finish_recording() {
+    LATEST="$1"
+
+    if [ "$2" = gif ]; then
         convert_to_gif "$LATEST" 1
         exit 0
     fi
@@ -203,7 +238,9 @@ stop_recording() {
     esac
 }
 
-if [ -f "$PIDFILE" ]; then
+if [ "$1" = finish ]; then
+    finish_recording "$2" "$3"
+elif [ -f "$PIDFILE" ]; then
     stop_recording
 else
     [ -z "$1" ] && exit 1

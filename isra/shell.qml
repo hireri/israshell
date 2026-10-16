@@ -368,14 +368,28 @@ ShellRoot {
                     z: 1
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    readonly property real edgeGap: (screenScope.barMode === 2) ? screenScope.floatingGap : 0
-                    height: window.barHeight - edgeGap
-                    anchors.leftMargin: (screenScope.barMode === 2) ? 12 : 0
-                    anchors.rightMargin: (screenScope.barMode === 2) ? 12 : 0
-                    clip: screenScope.barMode === 3
+                    property real floatProgress: screenScope.barMode === 2 ? 1 : 0
+                    property real dropProgress: screenScope.barMode === 3 ? 1 : 0
+                    property real cornerShape: window.huggingCornersVisible ? -1 : screenScope.barMode >= 2 ? 1 : 0
+                    Behavior on floatProgress {
+                        NumberAnimation { duration: 280; easing.type: Easing.InOutCubic }
+                    }
+                    Behavior on dropProgress {
+                        NumberAnimation { duration: 280; easing.type: Easing.InOutCubic }
+                    }
+                    Behavior on cornerShape {
+                        NumberAnimation { duration: 280; easing.type: Easing.InOutCubic }
+                    }
+                    readonly property real edgeGap: screenScope.floatingGap * floatProgress
+                    height: 44 + 2 * floatProgress
+                    anchors.leftMargin: 12 * floatProgress
+                    anchors.rightMargin: 12 * floatProgress
+                    clip: barContainer.height > height
 
                     readonly property real topY: edgeGap
                     readonly property real bottomY: parent.height - height - edgeGap
+                    readonly property int pillHeight: 32
+                    readonly property real pillInset: (height - pillHeight) / 2
 
                     function rebindY() {
                         const side = state;
@@ -440,16 +454,18 @@ ShellRoot {
                         id: barContainer
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        height: (screenScope.barMode === 3) ? parent.height * 2 : parent.height
-                        y: (screenScope.barMode === 3 && Config.bar.position === 0) ? -parent.height : 0
+                        height: parent.height * (1 + visualContent.dropProgress)
+                        y: Config.bar.position === 0 ? -parent.height * visualContent.dropProgress : 0
 
-                        radius: (screenScope.barMode === 3) ? 0 : (screenScope.barMode === 2) ? 22 : 0
-                        bottomLeftRadius: (screenScope.barMode === 3 && Config.bar.position === 0) ? height / 4 : radius
-                        bottomRightRadius: (screenScope.barMode === 3 && Config.bar.position === 0) ? height / 4 : radius
-                        topLeftRadius: (screenScope.barMode === 3 && Config.bar.position === 1) ? height / 4 : radius
-                        topRightRadius: (screenScope.barMode === 3 && Config.bar.position === 1) ? height / 4 : radius
+                        readonly property bool atTop: Config.bar.position === 0
+                        readonly property real innerRadius: 22 * Math.max(0, visualContent.cornerShape)
+                        readonly property real outerRadius: 22 * visualContent.floatProgress
+                        topLeftRadius: atTop ? outerRadius : innerRadius
+                        topRightRadius: atTop ? outerRadius : innerRadius
+                        bottomLeftRadius: atTop ? innerRadius : outerRadius
+                        bottomRightRadius: atTop ? innerRadius : outerRadius
 
-                        border.width: (screenScope.barMode === 2) ? 1 : 0
+                        border.width: visualContent.floatProgress
                         border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
                         Behavior on border.color {
                             ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
@@ -485,89 +501,86 @@ ShellRoot {
                                 }
                             }
                         }
+                    }
+
+                    Item {
+                        id: barContent
+                        anchors.fill: parent
+                        anchors.leftMargin: visualContent.pillInset
+                        anchors.rightMargin: visualContent.pillInset
+
+                        BarMenu {
+                            id: barContextMenu
+                            panelWindow: window
+                            controllerRegistry: screenScope.panelControllers
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            acceptedButtons: Qt.RightButton
+                            onClicked: mouse => {
+                                var globalPos = mapToGlobal(mouse.x, mouse.y);
+                                barContextMenu.open(globalPos);
+                            }
+                        }
+
+                        BarZone {
+                            id: leftZone
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            registry: barWidgetComponents
+                            itemNames: screenScope.visibleBarLeft
+                        }
 
                         Item {
                             anchors.fill: parent
-                            
-                            anchors.topMargin: (screenScope.barMode === 3 && Config.bar.position === 0) ? parent.height / 2 : 0
-                            anchors.bottomMargin: (screenScope.barMode === 3 && Config.bar.position === 1) ? parent.height / 2 : 0
-                            
-                            anchors.rightMargin: (screenScope.barMode === 3) ? 5 : 8
-                            anchors.leftMargin: (screenScope.barMode === 3) ? 5 : 6
 
-                            BarMenu {
-                                id: barContextMenu
-                                panelWindow: window
-                                controllerRegistry: screenScope.panelControllers
+                            readonly property int centerAnchorIndex: screenScope.visibleBarCenterItems.indexOf(Config.bar.center.anchor)
+                            readonly property bool centerUseAnchor: Config.bar.center.mode === "anchor" && centerAnchorIndex !== -1
+
+                            BarZone {
+                                id: centerAutoZone
+                                anchors.centerIn: parent
+                                visible: !parent.centerUseAnchor
+                                registry: barWidgetComponents
+                                itemNames: !parent.centerUseAnchor ? screenScope.visibleBarCenterItems : []
                             }
 
-                            MouseArea {
-                                anchors.fill: parent
-                                acceptedButtons: Qt.RightButton
-                                onClicked: mouse => {
-                                    var globalPos = mapToGlobal(mouse.x, mouse.y);
-                                    barContextMenu.open(globalPos);
-                                }
+                            Loader {
+                                id: centerAnchorLoader
+                                anchors.centerIn: parent
+                                active: parent.centerUseAnchor
+                                sourceComponent: parent.centerUseAnchor ? barWidgetComponents[Config.bar.center.anchor] : null
                             }
 
                             BarZone {
-                                id: leftZone
-                                anchors.left: parent.left
+                                id: centerBeforeZone
+                                anchors.right: centerAnchorLoader.left
+                                anchors.rightMargin: 12
                                 anchors.verticalCenter: parent.verticalCenter
+                                visible: parent.centerUseAnchor
                                 registry: barWidgetComponents
-                                itemNames: screenScope.visibleBarLeft
-                            }
-
-                            Item {
-                                anchors.fill: parent
-
-                                readonly property int centerAnchorIndex: screenScope.visibleBarCenterItems.indexOf(Config.bar.center.anchor)
-                                readonly property bool centerUseAnchor: Config.bar.center.mode === "anchor" && centerAnchorIndex !== -1
-
-                                BarZone {
-                                    id: centerAutoZone
-                                    anchors.centerIn: parent
-                                    visible: !parent.centerUseAnchor
-                                    registry: barWidgetComponents
-                                    itemNames: !parent.centerUseAnchor ? screenScope.visibleBarCenterItems : []
-                                }
-
-                                Loader {
-                                    id: centerAnchorLoader
-                                    anchors.centerIn: parent
-                                    active: parent.centerUseAnchor
-                                    sourceComponent: parent.centerUseAnchor ? barWidgetComponents[Config.bar.center.anchor] : null
-                                }
-
-                                BarZone {
-                                    id: centerBeforeZone
-                                    anchors.right: centerAnchorLoader.left
-                                    anchors.rightMargin: 12
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    visible: parent.centerUseAnchor
-                                    registry: barWidgetComponents
-                                    itemNames: parent.centerUseAnchor ? screenScope.visibleBarCenterItems.slice(0, parent.centerAnchorIndex) : []
-                                }
-
-                                BarZone {
-                                    id: centerAfterZone
-                                    anchors.left: centerAnchorLoader.right
-                                    anchors.leftMargin: 12
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    visible: parent.centerUseAnchor
-                                    registry: barWidgetComponents
-                                    itemNames: parent.centerUseAnchor ? screenScope.visibleBarCenterItems.slice(parent.centerAnchorIndex + 1) : []
-                                }
+                                itemNames: parent.centerUseAnchor ? screenScope.visibleBarCenterItems.slice(0, parent.centerAnchorIndex) : []
                             }
 
                             BarZone {
-                                id: rightZone
-                                anchors.right: parent.right
+                                id: centerAfterZone
+                                anchors.left: centerAnchorLoader.right
+                                anchors.leftMargin: 12
                                 anchors.verticalCenter: parent.verticalCenter
+                                visible: parent.centerUseAnchor
                                 registry: barWidgetComponents
-                                itemNames: screenScope.visibleBarRight
-                                separators: true
+                                itemNames: parent.centerUseAnchor ? screenScope.visibleBarCenterItems.slice(parent.centerAnchorIndex + 1) : []
                             }
+                        }
+
+                        BarZone {
+                            id: rightZone
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            registry: barWidgetComponents
+                            itemNames: screenScope.visibleBarRight
+                            separators: true
                         }
                     }
                 }
@@ -621,11 +634,7 @@ ShellRoot {
                         readonly property int huggingCornerRadius: 26
 
                         property real swapMaskProgress: 0
-                        property real modeMaskProgress: window.huggingCornersVisible ? 0 : -1
-                        Behavior on modeMaskProgress {
-                            NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
-                        }
-                        readonly property real maskProgress: Math.max(-1, swapMaskProgress + modeMaskProgress)
+                        readonly property real maskProgress: Math.max(-1, swapMaskProgress - 1 - visualContent.cornerShape)
 
                         property int activeSide: 0
                         Component.onCompleted: activeSide = Config.bar.position
