@@ -43,6 +43,8 @@ Item {
     readonly property real contentWidth: root.width - root.sideMargin * 2
 
     default property alias content: trailingSlot.data
+    property Item leading: null
+    onLeadingChanged: if (root.leading) root.leading.parent = leadingSlot
 
     implicitHeight: Math.max(root.compact ? 44 : 56, contentCol.implicitHeight + (root.compact ? 14 : 20))
     implicitWidth: parent?.width ?? 0
@@ -93,6 +95,14 @@ Item {
                     cache: true
                     sourceSize: Qt.size(36, 36)
                 }
+            }
+
+            Item {
+                id: leadingSlot
+                visible: root.leading !== null
+                Layout.alignment: Qt.AlignVCenter
+                implicitWidth: root.leading?.width ?? 0
+                implicitHeight: root.leading?.height ?? 0
             }
 
             ColumnLayout {

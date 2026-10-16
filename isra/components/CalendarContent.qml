@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.style
 
-Item {
+FocusScope {
     id: root
 
     property var controller: null
@@ -10,19 +10,16 @@ Item {
     readonly property bool isOpen: controller ? controller.isOpen : false
 
     anchors.fill: parent
+    focus: root.isOpen
 
-    Item {
-        id: keyHandler
-        anchors.fill: parent
-        focus: root.isOpen
+    Component.onCompleted: forceActiveFocus()
+    onIsOpenChanged: if (isOpen)
+        forceActiveFocus()
 
-        Component.onCompleted: forceActiveFocus()
-
-        Keys.onEscapePressed: event => {
-            event.accepted = true;
-            if (root.controller)
-                root.controller.isOpen = false;
-        }
+    Keys.onEscapePressed: event => {
+        event.accepted = true;
+        if (root.controller)
+            root.controller.isOpen = false;
     }
 
     Item {
@@ -68,10 +65,6 @@ Item {
             isOpen: root.isOpen
             edgeMargin: root.controller?.panelWindow.barHeight ?? 0
 
-            onCalendarRequested: if (root.controller)
-                root.controller.isOpen = false
-            onSettingsRequested: if (root.controller)
-                root.controller.isOpen = false
         }
     }
 }

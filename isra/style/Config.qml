@@ -322,6 +322,15 @@ Singleton {
             gutter: 8,
             margin: 24
         })
+    property var calendar: ({
+            roots: [],
+            hidden: [],
+            holidays: false,
+            holidayRegion: "",
+            autoSync: false,
+            syncMinutes: 5,
+            reminders: true
+        })
     property var pomodoro: ({
             running: false,
             phaseIndex: 0,
@@ -579,6 +588,15 @@ Singleton {
                 cellSize: 50,
                 gutter: 8,
                 margin: 24
+            },
+            calendar: {
+                roots: [],
+                hidden: [],
+                holidays: false,
+                holidayRegion: "",
+                autoSync: false,
+                syncMinutes: 5,
+                reminders: true
             },
             pomodoro: {
                 running: false,

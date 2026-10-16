@@ -105,6 +105,15 @@ Singleton {
             source: "LocalePage.qml"
         },
         {
+            key: "calendar",
+            titleKey: "settingsWindow.calendar",
+            sublabelKey: "settingsWindow.calendar_sources_sync",
+            icon: "calendar-month",
+            iconTransition: "none",
+            group: 3,
+            source: "CalendarPage.qml"
+        },
+        {
             key: "powermenu",
             titleKey: "powerMenuPage.title",
             sublabelKey: "powerMenuPage.sidebar",

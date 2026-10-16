@@ -8,14 +8,23 @@ Rectangle {
     property string text
     property string placeholder
     property bool password: false
+    property bool monospace: true
+    property int fontSize: 12
+    property int hPadding: 12
     property alias validator: field.validator
     property alias inputMethodHints: field.inputMethodHints
 
     signal committed(string text)
     signal edited(string text)
+    signal accepted
+    signal escaped
 
     function commit() {
         root.committed(field.text);
+    }
+
+    function focusField() {
+        field.forceActiveFocus();
     }
 
     function clear() {
@@ -42,22 +51,24 @@ Rectangle {
         text: root.text
         placeholderText: root.placeholder
         echoMode: root.password ? TextInput.Password : TextInput.Normal
-        font.family: root.password ? Config.fontFamily : Config.fontMonospace
-        font.pixelSize: 12
+        font.family: root.password || !root.monospace ? Config.fontFamily : Config.fontMonospace
+        font.pixelSize: root.fontSize
         color: Colors.md3.on_surface
         placeholderTextColor: Colors.md3.outline
-        leftPadding: 12
-        rightPadding: 12
+        leftPadding: root.hPadding
+        rightPadding: root.hPadding
         background: Item {}
 
         onTextChanged: root.edited(text)
 
         Keys.onReturnPressed: {
+            root.accepted();
             root.commit();
             focus = false;
         }
         Keys.onEscapePressed: {
             text = root.text;
+            root.escaped();
             focus = false;
         }
         onFocusChanged: {

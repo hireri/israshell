@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell
 import qs.style
 import qs.icons
 import qs.services
@@ -9,9 +8,37 @@ Item {
 
     required property bool isOpen
     property real edgeMargin: 0
+    property var editing: null
+    property bool editorOpen: false
+    property bool editorLoaded: false
 
-    signal calendarRequested
-    signal settingsRequested
+    readonly property var dayMap: {
+        const cs = calGrid.cells;
+        return CalendarService.byDay(new Date(cs[0].y, cs[0].m, cs[0].d).getTime(), new Date(cs[41].y, cs[41].m, cs[41].d + 1).getTime());
+    }
+    readonly property var selEvents: {
+        const d = calGrid.selectedDate;
+        return CalendarService.byDay(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime())[calGrid.selKey] ?? [];
+    }
+    readonly property var eventCounts: {
+        const o = {};
+        for (const k in dayMap)
+            o[k] = dayMap[k].length;
+        return o;
+    }
+
+    function openEditor(ev) {
+        if (ev?.readOnly)
+            return;
+        editing = ev;
+        editorLoaded = true;
+        editorOpen = true;
+    }
+
+    function closeEditor() {
+        editorOpen = false;
+        root.forceActiveFocus();
+    }
 
     readonly property var shape: ({
             extraSmall: 4,
@@ -50,6 +77,21 @@ Item {
             air: Colors.md3.secondary
         })
 
+    onIsOpenChanged: {
+        if (isOpen) {
+            hourScroll.recenter();
+            reloadTimer.restart();
+        } else {
+            editorOpen = false;
+        }
+    }
+
+    Timer {
+        id: reloadTimer
+        interval: root.motion.medium3 + 50
+        onTriggered: CalendarService.reload()
+    }
+
     implicitWidth: card.implicitWidth
     implicitHeight: card.implicitHeight
     property alias cardItem: card
@@ -72,8 +114,8 @@ Item {
             }
         }
 
-        implicitWidth: 300
-        implicitHeight: content.implicitHeight + 32
+        implicitWidth: 601
+        implicitHeight: Math.max(content.implicitHeight + 16 + 86, calPane.implicitHeight) + 32
 
         color: Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
         radius: root.shape.large
@@ -82,8 +124,9 @@ Item {
 
         Column {
             id: content
-            anchors.fill: parent
-            anchors.margins: 16
+            x: 16
+            y: 16
+            width: 268
             spacing: 16
 
             Column {
@@ -181,7 +224,7 @@ Item {
             Rectangle {
                 width: parent.width
                 height: 1
-                color: Colors.md3.outline_variant
+                color: Qt.alpha(Colors.md3.outline_variant, 0.4)
                 Behavior on color {
                     ColorAnimation {
                         duration: root.motion.short4
@@ -299,106 +342,108 @@ Item {
                 }
             }
 
-            Row {
-                width: parent.width
-                spacing: 8
+        }
 
-                Rectangle {
-                    id: calendarBtn
-                    width: (parent.width - 8) / 2
-                    height: 36
-                    radius: root.shape.full
-                    color: Colors.md3.secondary_container
+        Rectangle {
+            x: 16
+            y: 16 + content.implicitHeight + 16
+            width: 268
+            height: card.implicitHeight - 32 - content.implicitHeight - 16
+            radius: root.shape.large
+            color: Colors.md3.surface_container
 
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: parent.radius
-                        color: Colors.md3.on_secondary_container
-                        opacity: calendarMA.containsMouse ? 0.08 : 0.0
-                        Behavior on opacity {
-                            NumberAnimation { duration: root.motion.short2 }
-                        }
-                    }
+            WeatherHourScroll {
+                id: hourScroll
+                anchors.fill: parent
+                anchors.margins: 8
+            }
+        }
 
-                    Row {
-                        anchors.centerIn: parent
-                        spacing: 8
+        Rectangle {
+            x: 16 + 268 + 16
+            y: 16
+            width: 1
+            height: card.implicitHeight - 32
+            color: Qt.alpha(Colors.md3.outline_variant, 0.4)
+        }
 
-                        MaterialIcon {
-                            name: "calendar-month"
-                            iconSize: 16
-                            color: Colors.md3.on_secondary_container
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Text {
-                            text: Localization.t("clockCalendar.calendar")
-                            font.family: Config.fontFamily
-                            font.pixelSize: root.type.bodySmall
-                            font.weight: Font.Medium
-                            color: Colors.md3.on_secondary_container
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
-
-                    MouseArea {
-                        id: calendarMA
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.calendarRequested()
-                            Quickshell.execDetached(["gnome-calendar"])
-                        }
-                    }
+        Column {
+            id: calPane
+            x: 16 + 268 + 33
+            y: root.editorOpen ? 8 : 16
+            width: 268
+            spacing: 12
+            opacity: root.editorOpen ? 0 : 1
+            visible: opacity > 0
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
                 }
+            }
+            Behavior on y {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                }
+            }
 
-                Rectangle {
-                    id: settingsBtn
-                    width: (parent.width - 8) / 2
-                    height: 36
-                    radius: root.shape.full
-                    color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+            CalendarGrid {
+                id: calGrid
+                firstDayOfWeek: Config.weekMonday ? 1 : 0
+                isOpen: root.isOpen
+                eventCounts: root.eventCounts
+            }
 
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: parent.radius
-                        color: Colors.md3.on_surface
-                        opacity: settingsMA.containsMouse ? 0.08 : 0.0
-                        Behavior on opacity {
-                            NumberAnimation { duration: root.motion.short2 }
+            CalendarDayStrip {
+                width: parent.width
+                height: Math.max(144, content.implicitHeight + 16 + 86 - calGrid.implicitHeight - calPane.spacing)
+                day: calGrid.selectedDate
+                events: root.selEvents
+                onAddRequested: root.openEditor(null)
+                onEventClicked: ev => root.openEditor(ev)
+            }
+        }
+
+        Loader {
+            active: root.editorLoaded
+            sourceComponent: Component {
+                CalendarEditor {
+                    x: 16 + 268 + 33
+                    y: root.editorOpen ? 16 : 24
+                    event: root.editing
+                    day: calGrid.selectedDate
+                    calendars: CalendarService.writableCalendars
+                    height: card.implicitHeight - 32
+                    opacity: root.editorOpen ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutCubic
                         }
                     }
-
-                    Row {
-                        anchors.centerIn: parent
-                        spacing: 8
-
-                        MaterialIcon {
-                            name: "settings"
-                            iconSize: 16
-                            color: Colors.md3.on_surface
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Text {
-                            text: Localization.t("settingsWindow.settings")
-                            font.family: Config.fontFamily
-                            font.pixelSize: root.type.bodySmall
-                            font.weight: Font.Medium
-                            color: Colors.md3.on_surface
-                            anchors.verticalCenter: parent.verticalCenter
+                    Behavior on y {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutCubic
                         }
                     }
-
-                    MouseArea {
-                        id: settingsMA
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.settingsRequested()
-                            Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "settings", "open", "locale"])
-                        }
+                    onSaved: ev => CalendarService.save(ev, ok => {
+                        if (ok)
+                            root.closeEditor();
+                    })
+                    onDeleted: (ev, onlyThis) => {
+                        const done = ok => {
+                            if (ok)
+                                root.closeEditor();
+                        };
+                        if (onlyThis)
+                            CalendarService.removeOccurrence(ev.uid, ev.start, done);
+                        else
+                            CalendarService.remove(ev.uid, done);
                     }
+                    onCancelled: root.closeEditor()
                 }
             }
         }

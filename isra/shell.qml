@@ -66,6 +66,7 @@ ShellRoot {
 
     readonly property var _updater: Updater
     readonly property var _fedd: FeddService
+    readonly property var _calendarReminders: CalendarReminders
 
     Loader {
         id: settingsLoader

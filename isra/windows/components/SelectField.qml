@@ -29,6 +29,7 @@ Control {
     })
 
     property int optimalWidth: 140
+    property real radius: 8
 
     TextMetrics {
         id: textMetrics
@@ -232,7 +233,7 @@ Control {
     }
 
     background: Rectangle {
-        radius: 8
+        radius: combo.radius
         color: (Config.dim(Colors.md3.surface_container_high))
         border.width: (textField.activeFocus || popupMenu.visible) ? 2 : 1
         border.color: (textField.activeFocus || popupMenu.visible) ? Colors.md3.primary : Colors.md3.surface_variant
@@ -369,7 +370,7 @@ Control {
                 return Math.min(calculatedHeight, 280);
             }
             color: Colors.md3.surface_container_high
-            radius: 8
+            radius: Math.min(combo.radius, 12)
             border.width: 1
             border.color: Colors.md3.surface_variant
 

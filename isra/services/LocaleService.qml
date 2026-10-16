@@ -44,6 +44,7 @@ Singleton {
     readonly property bool weatherIsDay: _weatherIsDay
     readonly property string weatherLocation: _weatherLocation
     readonly property var weatherHourly: _weatherHourly
+    readonly property var weatherHourlyWindow: _weatherHourlyWindow
     readonly property var weatherDaily: _weatherDaily
 
     readonly property bool weatherLoading: _weatherLoading
@@ -97,6 +98,7 @@ Singleton {
     property bool _weatherIsDay: true
     property string _weatherLocation: ""
     property var _weatherHourly: []
+    property var _weatherHourlyWindow: []
     property var _weatherDaily: []
 
     property string _weatherAqi: "—"
@@ -201,6 +203,26 @@ Singleton {
             return "";
         const fmt = Config.hourFormat === 0 ? "HH" : (Config.hourFormat === 2 ? "hAP" : "hap");
         return when.toLocaleString(root._qtLocale, fmt);
+    }
+
+    function formatDateLong(when) {
+        if (!when)
+            return "";
+        return when.toLocaleDateString(root._qtLocale, Config.dateOrder === 1 ? "dddd, MMMM d" : "dddd, d MMMM");
+    }
+
+    function formatDateMedium(when) {
+        if (!when)
+            return "";
+        return when.toLocaleDateString(root._qtLocale, Config.dateOrder === 1 ? "ddd, MMM d, yyyy" : "ddd, d MMM yyyy");
+    }
+
+    function monthYear(year, month) {
+        return root._qtLocale.monthName(month, Locale.LongFormat) + " " + year;
+    }
+
+    function weekdayName(dow, format) {
+        return root._qtLocale.dayName(dow, format);
     }
 
     function formatWeekday(when) {
@@ -342,6 +364,7 @@ Singleton {
             + "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day"
             + "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,weather_code"
             + "&hourly=precipitation_probability,temperature_2m,weather_code,is_day"
+            + "&past_hours=24&forecast_hours=48"
             + "&temperature_unit=" + tempUnit
             + "&timezone=auto"
             + "&forecast_days=7";
@@ -354,7 +377,8 @@ Singleton {
 
         const precipProb = hourly.precipitation_probability || [];
         let maxChance = 0;
-        for (let i = 0; i < Math.min(24, precipProb.length); i++) {
+        const dayStart = Math.max(0, (hourly.time || []).findIndex(t => t.startsWith(daily.time[0])));
+        for (let i = dayStart; i < Math.min(dayStart + 24, precipProb.length); i++) {
             const chance = parseInt(precipProb[i]);
             if (chance > maxChance)
                 maxChance = chance;
@@ -379,6 +403,16 @@ Singleton {
             });
             if (hourlyOut.length >= 24)
                 break;
+        }
+
+        const windowOut = [];
+        for (let i = 0; i < times.length; i++) {
+            windowOut.push({
+                time: _parseOpenMeteoDateTime(times[i]),
+                temp: Math.round(hourly.temperature_2m?.[i] ?? 0),
+                code: parseInt(hourly.weather_code?.[i] ?? 0),
+                isDay: parseInt(hourly.is_day?.[i] ?? 1) !== 0
+            });
         }
 
         const dailyOut = [];
@@ -413,6 +447,7 @@ Singleton {
             code: parseInt(cur.weather_code),
             isDay: parseInt(cur.is_day) !== 0,
             hourly: hourlyOut,
+            hourlyWindow: windowOut,
             daily: dailyOut
         };
     }
@@ -525,6 +560,7 @@ Singleton {
             root._weatherCode = parsed.code ?? 0;
             root._weatherIsDay = parsed.isDay ?? true;
             root._weatherHourly = parsed.hourly ?? [];
+            root._weatherHourlyWindow = parsed.hourlyWindow ?? [];
             root._weatherDaily = parsed.daily ?? [];
             if (Config.cityName)
                 root._weatherLocation = Config.cityName;
