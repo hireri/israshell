@@ -22,7 +22,7 @@ Item {
         { k: Localization.t("fetchCard.memory"), v: SystemInfo.memory }
     ]
 
-    readonly property bool wide: root.width > root.height * 1.25
+    readonly property bool wide: root.width >= 300
     property bool appliedWide: false
     property bool _started: false
 
@@ -43,16 +43,10 @@ Item {
         NumberAnimation { target: content; property: "opacity"; to: 1; duration: 160; easing.type: Easing.OutCubic }
     }
 
-    readonly property real _u: {
-        if (root.width <= 0 || root.height <= 0)
-            return 1;
-        return Math.max(0.6, Math.min(1.5, Math.min(root.width / 398, root.height / 224)));
-    }
-
     readonly property real _radius: 20
 
-    readonly property bool _logoVisible: root.showLogo && root.appliedWide && root.width > 260
-    readonly property real _pad: 16 * root._u
+    readonly property bool _logoVisible: root.showLogo && root.appliedWide
+    readonly property real _pad: 16
 
     Rectangle {
         anchors.fill: parent
@@ -78,7 +72,7 @@ Item {
                 visible: root._logoVisible
                 x: root._pad
                 anchors.verticalCenter: parent.verticalCenter
-                implicitSize: Math.max(40, Math.min(root.height - root._pad * 2, 84 * root._u))
+                implicitSize: Math.max(40, Math.min(root.height - root._pad * 2, 96))
                 source: Quickshell.iconPath(SystemInfo.logo, "distributor-logo-linux")
                 smooth: true
             }
@@ -86,21 +80,21 @@ Item {
             Column {
                 id: info
 
-                x: root._logoVisible ? logo.x + logo.implicitSize + 16 * root._u : root._pad
+                x: root._logoVisible ? logo.x + logo.implicitSize + 16 : root._pad
                 width: root.width - x - root._pad
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 3 * root._u
+                spacing: 3
 
-                readonly property real rowH: 15 * root._u
+                readonly property real rowH: 15
                 readonly property real available: root.height - root._pad * 2
-                    - info.rowH - 8 * root._u
-                    - (root.showSwatches ? 14 * root._u : 0)
-                readonly property int maxRows: Math.max(1, Math.floor(info.available / (info.rowH + 3 * root._u)))
+                    - info.rowH - 8
+                    - (root.showSwatches ? 14 : 0)
+                readonly property int maxRows: Math.max(1, Math.floor(info.available / (info.rowH + 3)))
 
                 Text {
                     text: SystemInfo.username + "@" + SystemInfo.hostname
                     font.family: Config.fontMonospace
-                    font.pixelSize: 13 * root._u
+                    font.pixelSize: 13
                     font.weight: Font.Bold
                     color: Colors.md3.primary
                     width: info.width
@@ -115,7 +109,7 @@ Item {
 
                 Item {
                     width: 1
-                    height: 4 * root._u
+                    height: 4
                 }
 
                 Repeater {
@@ -126,12 +120,12 @@ Item {
 
                         width: info.width
                         height: info.rowH
-                        spacing: 6 * root._u
+                        spacing: 6
 
                         Text {
                             text: modelData.k
                             font.family: Config.fontMonospace
-                            font.pixelSize: 11 * root._u
+                            font.pixelSize: 11
                             font.weight: Font.Bold
                             color: Colors.md3.on_surface
                         }
@@ -140,7 +134,7 @@ Item {
                             width: parent.width - x
                             text: modelData.v
                             font.family: Config.fontMonospace
-                            font.pixelSize: 11 * root._u
+                            font.pixelSize: 11
                             color: Colors.md3.on_surface_variant
                             elide: Text.ElideRight
                         }
@@ -150,12 +144,12 @@ Item {
                 Item {
                     visible: root.showSwatches
                     width: 1
-                    height: 6 * root._u
+                    height: 6
                 }
 
                 Row {
                     visible: root.showSwatches
-                    spacing: 4 * root._u
+                    spacing: 4
 
                     Repeater {
                         model: [
@@ -172,9 +166,9 @@ Item {
                         Rectangle {
                             required property var modelData
 
-                            width: 10 * root._u
-                            height: 10 * root._u
-                            radius: 3 * root._u
+                            width: 10
+                            height: 10
+                            radius: 3
                             color: modelData
                             antialiasing: true
                         }

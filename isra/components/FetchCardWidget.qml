@@ -9,8 +9,8 @@ DesktopWidgetShell {
     label: Localization.t("widgetDrawer.fetchcard")
     sizeMode: "free"
     aspectLocked: false
-    minSpan: ({ w: 4, h: 3 })
-    maxSpan: ({ w: 12, h: 8 })
+    minSpan: ({ w: 3, h: 2 })
+    maxSpan: ({ w: 10, h: 5 })
     frameCornerRadius: 20
 
     settingsPanel: Component {
