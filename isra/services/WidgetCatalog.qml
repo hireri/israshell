@@ -19,6 +19,8 @@ Singleton {
     Component { id: githubHeatmapPreview; GithubHeatmapVisual {} }
     Component { id: sunMoonPreview; SunMoonVisual {} }
     Component { id: fetchCardPreview; FetchCardVisual {} }
+    Component { id: healthCardPreview; SystemHealthVisual { interactive: false } }
+    Component { id: screenTimeCardPreview; ScreenTimeVisual { interactive: false } }
 
     readonly property var types: [
         {
@@ -103,6 +105,20 @@ Singleton {
             label: Localization.t("widgetDrawer.fetchcard"),
             icon: "terminal",
             preview: fetchCardPreview,
+            stackable: false
+        },
+        {
+            type: "healthcard",
+            label: Localization.t("widgetDrawer.healthcard"),
+            icon: "overview",
+            preview: healthCardPreview,
+            stackable: false
+        },
+        {
+            type: "screentimecard",
+            label: Localization.t("widgetDrawer.screentimecard"),
+            icon: "history",
+            preview: screenTimeCardPreview,
             stackable: false
         }
     ]

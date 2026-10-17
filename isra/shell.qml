@@ -133,6 +133,7 @@ ShellRoot {
                 required property int index
                 implicitWidth: row.implicitWidth
                 implicitHeight: row.implicitHeight
+                visible: slotLoader.item?.wantsSpace !== false
                 readonly property bool isOpen: slotLoader.item && slotLoader.item.isOpen === true
 
                 Row {

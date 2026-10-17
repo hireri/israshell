@@ -18,11 +18,15 @@ Singleton {
     Component { id: dockComp; BarDock {} }
     Component { id: launcherComp; LauncherButton {} }
     Component { id: sysMonitorComp; SysMonitor {} }
+    Component { id: systemHealthComp; SystemHealthChip {} }
+    Component { id: screenTimeComp; ScreenTimeChip {} }
 
     readonly property var definitions: [
         { id: "aiAssistant",   label: Localization.t("widgetService.ai_assistant"),   defaultZone: "left",     component: aiAssistantComp },
         { id: "activeWindow",  label: Localization.t("widgetService.active_window"),  defaultZone: "left",     component: activeWindowComp },
         { id: "sysMonitor",    label: Localization.t("widgetService.system_monitor"), defaultZone: "left",    component: sysMonitorComp },
+        { id: "systemHealth",  label: Localization.t("widgetService.system_health"), defaultZone: "disabled", component: systemHealthComp },
+        { id: "screenTime",    label: Localization.t("widgetService.screen_time"),   defaultZone: "disabled", component: screenTimeComp },
         { id: "media",         label: Localization.t("widgetService.media_player"),   defaultZone: "center",   component: mediaComp },
         { id: "workspaces",    label: Localization.t("widgetService.workspaces"),     defaultZone: "center",   component: workspacesComp },
         { id: "clock",         label: Localization.t("widgetService.clock"),          defaultZone: "center",   component: clockComp },
