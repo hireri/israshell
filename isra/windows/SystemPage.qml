@@ -302,6 +302,22 @@ PageBase {
         }
 
         SectionCard {
+            label: Localization.t("systemApp.title")
+            Layout.fillWidth: true
+
+            SettingRow {
+                label: Localization.t("systemApp.shortcut_title")
+                sublabel: Localization.t("systemApp.shortcut_sub")
+
+                ActionButton {
+                    icon: "arrow-outward"
+                    label: Localization.t("systemApp.open")
+                    onClicked: Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "system", "open", "overview"])
+                }
+            }
+        }
+
+        SectionCard {
             label: Localization.t("systemPage.updates")
             Layout.fillWidth: true
 

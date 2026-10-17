@@ -198,6 +198,30 @@ Singleton {
             stopVideo: true,
             muteSounds: true
         })
+    property var screentime: ({
+            enabled: true,
+            paused: false,
+            idleSeconds: 120,
+            appFocus: true,
+            hourly: true,
+            workspaces: true,
+            fullscreen: true,
+            media: true,
+            notifications: true,
+            unlocks: true,
+            windowTitles: false,
+            retentionDays: 90,
+            excluded: [],
+            categoryOverrides: {}
+        })
+    property var health: ({
+            enabled: true,
+            intervalMinutes: 30,
+            barChipLevel: "info",
+            newsSeen: 0,
+            newsRead: [],
+            disabledChecks: []
+        })
     property var notifications: ({
             popupTimeout: 5,
             showAllMonitors: false,
@@ -464,6 +488,30 @@ Singleton {
                 grayscaleTheme: false,
                 stopVideo: true,
                 muteSounds: true
+            },
+            screentime: {
+                enabled: true,
+                paused: false,
+                idleSeconds: 120,
+                appFocus: true,
+                hourly: true,
+                workspaces: true,
+                fullscreen: true,
+                media: true,
+                notifications: true,
+                unlocks: true,
+                windowTitles: false,
+                retentionDays: 90,
+                excluded: [],
+                categoryOverrides: {}
+            },
+            health: {
+                enabled: true,
+                intervalMinutes: 30,
+                barChipLevel: "info",
+                newsSeen: 0,
+                newsRead: [],
+                disabledChecks: []
             },
             notifications: {
                 popupTimeout: 5,

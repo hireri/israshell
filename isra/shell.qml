@@ -58,6 +58,7 @@ ShellRoot {
 
     IpcHandlers {
         settingsLoader: settingsLoader
+        systemLoader: systemLoader
         wallpaperPanels: rootShell.wallpaperPanels
         quickSettingsPanels: rootShell.quickSettingsPanels
     }
@@ -67,6 +68,7 @@ ShellRoot {
     readonly property var _updater: Updater
     readonly property var _fedd: FeddService
     readonly property var _calendarReminders: CalendarReminders
+    readonly property var _screenTime: ScreenTimeService
 
     Loader {
         id: settingsLoader
@@ -79,6 +81,22 @@ ShellRoot {
             function onVisibleChanged() {
                 if (!settingsLoader.item.visible) {
                     Qt.callLater(() => settingsLoader.active = false);
+                }
+            }
+        }
+    }
+
+    Loader {
+        id: systemLoader
+        active: false
+        sourceComponent: SystemWindow {}
+
+        Connections {
+            target: systemLoader.item
+            enabled: systemLoader.item !== null
+            function onVisibleChanged() {
+                if (!systemLoader.item.visible) {
+                    Qt.callLater(() => systemLoader.active = false);
                 }
             }
         }
