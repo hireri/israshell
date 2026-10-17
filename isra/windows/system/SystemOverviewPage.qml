@@ -43,6 +43,11 @@ PageBase {
 
     readonly property int updates: (HealthService.result("updates.repo")?.count ?? 0) + (HealthService.result("updates.aur")?.count ?? 0) + (HealthService.result("updates.flatpak")?.count ?? 0)
     readonly property var mounts: HealthService.result("storage.mounts")?.mounts ?? []
+    readonly property real storageWorst: page.mounts.reduce((a, m) => Math.max(a, m.pct ?? 0), 0)
+    readonly property var storageRows: {
+        const rest = page.mounts.filter(m => m !== page.rootMount && !/^\/(boot|efi)(\/|$)/.test(m.mount)).sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0));
+        return (page.rootMount ? [page.rootMount] : []).concat(rest).slice(0, 3);
+    }
     readonly property var rootMount: page.mounts.find(m => m.mount === "/") ?? page.mounts[0] ?? null
     readonly property var mem: HealthService.result("sys.memory")
     readonly property real memUsed: page.mem && page.mem.memTotal > 0 ? (page.mem.memTotal - page.mem.memAvailable) / page.mem.memTotal : 0
@@ -52,6 +57,22 @@ PageBase {
     readonly property var failedUnits: HealthService.result("svc.list")?.failed ?? []
     readonly property int svcDown: page.failedUnits.length
     readonly property int svcRunning: page.services.filter(s => s.state === "run").length
+    // One dot per service up to 24; beyond that each dot stands for a share of the total, keeping every
+    // non-empty state visible (a failing unit never rounds away to nothing).
+    readonly property var svcDots: {
+        const n = page.services.length;
+        if (n === 0)
+            return [];
+        const dots = Math.min(24, n);
+        const share = count => count > 0 ? Math.max(1, Math.round(count * dots / n)) : 0;
+        const nFail = Math.min(share(page.svcDown), dots);
+        const nDown = Math.min(share(page.services.filter(s => s.state === "down").length), dots - nFail);
+        const out = [];
+        for (let i = 0; i < nFail; i++) out.push("failed");
+        for (let i = 0; i < nDown; i++) out.push("down");
+        for (let i = out.length; i < dots; i++) out.push("run");
+        return out;
+    }
     readonly property var hourTotals: {
         const h = ScreenTimeService.today.hourly ?? ({});
         const out = [];
@@ -272,23 +293,61 @@ PageBase {
             id: storageCard
             Layout.fillWidth: true
             Layout.preferredHeight: 148
-            visible: page.rootMount !== null
-            label: page.rootMount?.mount ?? ""
+            visible: page.mounts.length > 0
+            label: Localization.t("systemApp.storage")
             icon: "folder"
             shape: "clover4"
-            tone: (page.rootMount?.pct ?? 0) >= 95 ? "bad" : (page.rootMount?.pct ?? 0) >= 85 ? "warn" : "neutral"
-            value: Localization.t("systemApp.free_of_total").replace("%1", Fmt.bytes((page.rootMount?.total ?? 0) - (page.rootMount?.used ?? 0)))
-            sublabel: Localization.t("systemApp.free_of").replace("%1", Fmt.bytes(page.rootMount?.total ?? 0))
+            tone: page.storageWorst >= 95 ? "bad" : page.storageWorst >= 85 ? "warn" : "neutral"
             onClicked: SystemPages.openPage("storage")
 
-            UsageBar {
-                anchors.centerIn: parent
-                width: parent.width
-                implicitHeight: 12
-                height: 12
-                radius: 6
-                value: (page.rootMount?.pct ?? 0) / 100
-                fillColor: storageCard.tonal ? storageCard.accent : Colors.md3.primary
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 4
+
+                Repeater {
+                    model: page.storageRows
+
+                    ColumnLayout {
+                        id: vol
+                        required property var modelData
+
+                        Layout.fillWidth: true
+                        spacing: 1
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: vol.modelData.mount
+                                font.family: Config.fontFamily
+                                font.pixelSize: 11
+                                font.weight: Font.Medium
+                                color: storageCard.ink
+                                elide: Text.ElideMiddle
+                            }
+
+                            Text {
+                                text: Localization.t("systemApp.free_of_total").replace("%1", Fmt.bytes(vol.modelData.total - vol.modelData.used))
+                                font.family: Config.fontFamily
+                                font.pixelSize: 11
+                                color: Qt.alpha(storageCard.ink, 0.75)
+                            }
+                        }
+
+                        WavyProgress {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 10
+                            amplitude: 1.5
+                            wavelength: 12
+                            animated: false
+                            value: (vol.modelData.pct ?? 0) / 100
+                            color: (vol.modelData.pct ?? 0) >= 95 ? Colors.md3.error : (vol.modelData.pct ?? 0) >= 85 ? Colors.md3.tertiary : (storageCard.tonal ? storageCard.accent : Colors.md3.primary)
+                            trackColor: Qt.alpha(storageCard.ink, 0.12)
+                        }
+                    }
+                }
             }
         }
 
@@ -305,9 +364,11 @@ PageBase {
             sublabel: Localization.t("systemApp.of").replace("%1", Fmt.bytes(page.mem?.memTotal ?? 0))
             onClicked: SystemPages.openPage("system")
 
-            ProgressRing {
-                anchors.centerIn: parent
-                width: Math.min(parent.width, parent.height)
+            overlay: ProgressRing {
+                anchors.right: parent.right
+                anchors.rightMargin: 14
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.min(memCard.height * 0.7, memCard.width * 0.5)
                 height: width
                 strokeWidth: 8
                 progress: page.memUsed
@@ -318,7 +379,7 @@ PageBase {
                     anchors.centerIn: parent
                     text: Fmt.pctText(page.memUsed)
                     font.family: Config.fontFamily
-                    font.pixelSize: 13
+                    font.pixelSize: 26
                     font.weight: Font.Medium
                     color: memCard.ink
                 }
@@ -334,20 +395,65 @@ PageBase {
             icon: "thermostat"
             shape: "sunny"
             tone: page.hottest >= 90 ? "bad" : page.hottest >= 80 ? "warn" : "neutral"
-            sublabel: page.sensors.length > 0 ? (page.sensors[0].label !== "" ? page.sensors[0].label : page.sensors[0].name) : ""
             onClicked: SystemPages.openPage("system")
 
-            RingGauge {
+            RowLayout {
                 anchors.centerIn: parent
-                width: Math.min(parent.width, parent.height)
-                height: width
-                start: 135
-                sweep: 270
-                thickness: 8
-                value: page.hottest / 100
-                color: tempCard.tonal ? tempCard.accent : Colors.md3.primary
-                trackColor: Qt.alpha(tempCard.ink, 0.12)
-                text: Math.round(page.hottest) + "°"
+                width: parent.width
+                spacing: 12
+
+                RingGauge {
+                    Layout.preferredWidth: 64
+                    Layout.preferredHeight: 64
+                    start: 135
+                    sweep: 270
+                    thickness: 7
+                    value: page.hottest / 100
+                    color: tempCard.tonal ? tempCard.accent : Colors.md3.primary
+                    trackColor: Qt.alpha(tempCard.ink, 0.12)
+                    text: Math.round(page.hottest) + "°"
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+
+                    Repeater {
+                        model: page.sensors.slice(0, 3)
+
+                        RowLayout {
+                            id: sensor
+                            required property var modelData
+
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Rectangle {
+                                Layout.preferredWidth: 6
+                                Layout.preferredHeight: 6
+                                radius: 3
+                                color: sensor.modelData.celsius >= 90 ? Colors.md3.error : sensor.modelData.celsius >= 80 ? Colors.md3.tertiary : Qt.alpha(tempCard.ink, 0.35)
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: sensor.modelData.label !== "" ? sensor.modelData.label : sensor.modelData.name
+                                font.family: Config.fontFamily
+                                font.pixelSize: 11
+                                color: Qt.alpha(tempCard.ink, 0.8)
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                text: Math.round(sensor.modelData.celsius) + "°"
+                                font.family: Config.fontFamily
+                                font.pixelSize: 11
+                                font.weight: Font.Medium
+                                color: tempCard.ink
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -369,18 +475,33 @@ PageBase {
                 spacing: 5
 
                 Repeater {
-                    model: page.services.slice(0, 40)
+                    model: page.svcDots
 
-                    Rectangle {
+                    Item {
                         id: dot
-                        required property var modelData
+                        required property string modelData
                         width: 11
                         height: 11
-                        radius: dot.modelData.state === "run" ? 5.5 : 3
-                        color: dot.modelData.state === "run" ? Colors.md3.primary : dot.modelData.state === "failed" ? Colors.md3.error : Qt.alpha(svcCard.ink, 0.25)
 
-                        Behavior on radius {
-                            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 11
+                            height: 11
+                            visible: dot.modelData !== "failed"
+                            radius: dot.modelData === "run" ? 5.5 : 3
+                            color: dot.modelData === "run" ? Colors.md3.primary : Qt.alpha(svcCard.ink, 0.25)
+
+                            Behavior on radius {
+                                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                            }
+                        }
+
+                        MaterialShape {
+                            anchors.centerIn: parent
+                            visible: dot.modelData === "failed"
+                            name: "burst"
+                            shapeSize: 14
+                            color: Colors.md3.error
                         }
                     }
                 }

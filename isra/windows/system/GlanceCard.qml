@@ -16,6 +16,7 @@ Rectangle {
     signal clicked
 
     default property alias viz: vizSlot.data
+    property alias overlay: overlaySlot.data
 
     readonly property bool tonal: root.tone !== "neutral"
     readonly property color ink: root.tone === "bad" ? Colors.md3.on_error_container : root.tone === "warn" ? Colors.md3.on_tertiary_container : root.tone === "primary" ? Colors.md3.on_primary_container : Colors.md3.on_surface
@@ -109,5 +110,10 @@ Rectangle {
             color: Qt.alpha(root.ink, 0.75)
             elide: Text.ElideRight
         }
+    }
+
+    Item {
+        id: overlaySlot
+        anchors.fill: parent
     }
 }

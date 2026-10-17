@@ -11,6 +11,7 @@ Item {
     property real amplitude: 2.5
     property real wavelength: 18
     property real phase: 0
+    property bool animated: true
 
     property real shown: value
     Behavior on shown {
@@ -39,7 +40,7 @@ Item {
         to: -root.wavelength
         duration: 900
         loops: Animation.Infinite
-        running: root.visible
+        running: root.visible && root.animated
     }
 
     Shape {
