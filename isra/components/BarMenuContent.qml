@@ -40,11 +40,25 @@ Item {
         }
     }
 
+    Component {
+        id: healthIconComp
+        MaterialIcon {
+            name: "overview"
+            iconSize: 16
+            color: Colors.md3.on_surface_variant
+        }
+    }
+
     readonly property var entries: [
         {
             text: Localization.t("barMenu.mission_center"),
             icon: missionCenterIconComp,
             action: () => Quickshell.execDetached(["missioncenter"])
+        },
+        {
+            text: Localization.t("systemApp.health"),
+            icon: healthIconComp,
+            action: () => Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "system", "open", "overview"])
         },
         {
             text: Localization.t("settingsWindow.settings"),

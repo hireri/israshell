@@ -48,6 +48,11 @@ ContextMenu {
             action: () => root.run(["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"])
         },
         {
+            text: Localization.t("systemApp.health"),
+            icon: healthIconComp,
+            action: () => root.run(["qs", "-c", "isra", "ipc", "call", "system", "open", "overview"])
+        },
+        {
             isSep: true
         },
         {
@@ -103,6 +108,13 @@ ContextMenu {
         id: wallpaperIconComp
         MaterialIcon {
             name: "wallpapers"
+            iconSize: 16
+        }
+    }
+    Component {
+        id: healthIconComp
+        MaterialIcon {
+            name: "overview"
             iconSize: 16
         }
     }
