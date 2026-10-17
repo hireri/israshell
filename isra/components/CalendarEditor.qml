@@ -17,12 +17,12 @@ FocusScope {
     signal deleted(var ev, bool onlyThis)
     signal cancelled()
 
-    readonly property int rowH: 40
     readonly property int titleH: 44
     readonly property int footH: 40
-    readonly property int rowCount: 7 + (root.calendars.length > 1 ? 1 : 0)
+    readonly property int rowH: Math.max(28, Math.min(40, Math.floor((root.height - titleH - footH - rowCount * 6) / (rowCount - 1))))
+    readonly property int rowCount: 8 + (root.calendars.length > 1 ? 1 : 0)
     readonly property real contentH: titleH + (rowCount - 1) * rowH
-    readonly property real gap: Math.max(8, Math.min(16, Math.floor((root.height - contentH - footH) / rowCount)))
+    readonly property real gap: Math.max(6, Math.min(16, Math.floor((root.height - contentH - footH) / rowCount)))
     readonly property bool recurring: !!(root.event && root.event.recurring)
     readonly property bool canSave: root._title.trim() !== ""
     readonly property int timeW: Config.hourFormat === 0 ? 60 : 72
@@ -72,7 +72,7 @@ FocusScope {
     }] : [])
 
     implicitWidth: 268
-    implicitHeight: contentH + footH + 8 * rowCount
+    implicitHeight: 400
     width: implicitWidth
     height: implicitHeight
 
