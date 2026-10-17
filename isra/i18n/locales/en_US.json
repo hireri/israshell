@@ -1419,6 +1419,7 @@
   "systemApp.n_stopped": "%1 stopped",
   "systemApp.n_failed": "%1 failed",
   "systemApp.svc_off_boot": "Off at boot",
+  "systemApp.svc_user": "user service",
   "systemApp.svc_up_for": "Up %1",
   "systemApp.svc_stop": "Stop",
   "systemApp.svc_start": "Start",

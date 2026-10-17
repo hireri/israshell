@@ -40,16 +40,16 @@ const pipeline = (p, id, edits) => {
 
 {
     assert.deepStrictEqual(P.parseDetect(lines("pkg pacman", "init runit", "aur paru", "priv sudo", "svdir /var/service", "os artix")),
-        {pkg: "pacman", init: "runit", aur: "paru", priv: "sudo", svdir: "/var/service", os: "artix"});
+        {pkg: "pacman", init: "runit", aur: "paru", priv: "sudo", svdir: "/var/service", usvdir: "", os: "artix"});
     assert.deepStrictEqual(P.parseDetect(lines("pkg nix", "init bogus", "aur trizen", "priv su", "svdir relative", "os ???")),
-        {pkg: "", init: "", aur: "", priv: "sudo", svdir: "", os: ""});
+        {pkg: "", init: "", aur: "", priv: "sudo", svdir: "", usvdir: "", os: ""});
     assert.strictEqual(P.parseDetect(lines("pkg apt", "aur yay")).aur, "");
     assert.strictEqual(P.parseDetect("init runit").svdir, "/run/runit/service");
     assert.strictEqual(P.parseDetect("init runit\nsvdir /x;rm").svdir, "/run/runit/service");
     assert.strictEqual(P.parseDetect("init runit\nsvdir /x; rm -rf ~").svdir, "/run/runit/service");
     assert.strictEqual(P.parseDetect("svdir /x;rm").svdir, "");
     assert.strictEqual(P.parseDetect('os "opensuse-tumbleweed"').os, "opensuse-tumbleweed");
-    assert.deepStrictEqual(P.parseDetect(""), {pkg: "", init: "", aur: "", priv: "sudo", svdir: "", os: ""});
+    assert.deepStrictEqual(P.parseDetect(""), {pkg: "", init: "", aur: "", priv: "sudo", svdir: "", usvdir: "", os: ""});
 }
 
 {
@@ -57,7 +57,7 @@ const pipeline = (p, id, edits) => {
     shSyntax(script);
     const r = sh(script);
     r.stdout.split("\n").filter((l) => l.length > 0).forEach((l) => {
-        assert.ok(/^(pkg|init|aur|priv|svdir|os) \S+$/.test(l), "unexpected detect line: " + l);
+        assert.ok(/^(pkg|init|aur|priv|svdir|usvdir|os) \S+$/.test(l), "unexpected detect line: " + l);
     });
     P.parseDetect(r.stdout);
 }
@@ -193,10 +193,10 @@ const pipeline = (p, id, edits) => {
     const p = pipeline(plat("", "systemd"), "svc.list", edits);
     assert.strictEqual(p.code, 0);
     assert.deepStrictEqual(p.result.services, [
-        {name: "sshd", state: "run", pid: null, seconds: null, normallyUp: true},
-        {name: "foo", state: "failed", pid: null, seconds: null, normallyUp: false},
-        {name: "bar", state: "down", pid: null, seconds: null, normallyUp: true},
-        {name: "getty@tty1", state: "run", pid: null, seconds: null, normallyUp: true}
+        {name: "sshd", state: "run", pid: null, seconds: null, normallyUp: true, scope: "system"},
+        {name: "foo", state: "failed", pid: null, seconds: null, normallyUp: false, scope: "system"},
+        {name: "bar", state: "down", pid: null, seconds: null, normallyUp: true, scope: "system"},
+        {name: "getty@tty1", state: "run", pid: null, seconds: null, normallyUp: true, scope: "system"}
     ]);
     assert.deepStrictEqual(p.result.failed, ["foo"]);
     assert.strictEqual(p.result.severity, "bad");
@@ -217,8 +217,8 @@ const pipeline = (p, id, edits) => {
     assert.deepStrictEqual(p.result, {
         severity: "bad",
         services: [
-            {name: "sshd", state: "run", pid: null, seconds: null, normallyUp: true},
-            {name: "cronie", state: "failed", pid: null, seconds: null, normallyUp: false}
+            {name: "sshd", state: "run", pid: null, seconds: null, normallyUp: true, scope: "system"},
+            {name: "cronie", state: "failed", pid: null, seconds: null, normallyUp: false, scope: "system"}
         ],
         failed: ["cronie"]
     });
@@ -234,9 +234,9 @@ const pipeline = (p, id, edits) => {
         ["s6-rc-db list services 2>/dev/null", "cat " + fs6]
     ]);
     assert.deepStrictEqual(p.result.services, [
-        {name: "sshd", state: "run", pid: null, seconds: null, normallyUp: true},
-        {name: "nfs", state: "down", pid: null, seconds: null, normallyUp: true},
-        {name: "cronie", state: "run", pid: null, seconds: null, normallyUp: true}
+        {name: "sshd", state: "run", pid: null, seconds: null, normallyUp: true, scope: "system"},
+        {name: "nfs", state: "down", pid: null, seconds: null, normallyUp: true, scope: "system"},
+        {name: "cronie", state: "run", pid: null, seconds: null, normallyUp: true, scope: "system"}
     ]);
     assert.strictEqual(p.result.severity, "ok");
     const fempty = fixture("s6-services-empty", "");
@@ -258,10 +258,10 @@ const pipeline = (p, id, edits) => {
         "[     {X}] foo (exit status: 1)"
     );
     assert.deepStrictEqual(H.run(dinitSvc, out, 0).services, [
-        {name: "boot", state: "run", pid: null, seconds: null, normallyUp: true},
-        {name: "sshd", state: "run", pid: null, seconds: null, normallyUp: false},
-        {name: "nfs", state: "down", pid: null, seconds: null, normallyUp: false},
-        {name: "foo", state: "failed", pid: null, seconds: null, normallyUp: false}
+        {name: "boot", state: "run", pid: null, seconds: null, normallyUp: true, scope: "system"},
+        {name: "sshd", state: "run", pid: null, seconds: null, normallyUp: false, scope: "system"},
+        {name: "nfs", state: "down", pid: null, seconds: null, normallyUp: false, scope: "system"},
+        {name: "foo", state: "failed", pid: null, seconds: null, normallyUp: false, scope: "system"}
     ]);
     assert.deepStrictEqual(H.run(dinitSvc, out, 0).failed, ["foo"]);
     assert.strictEqual(H.run(dinitSvc, out, 0).severity, "bad");
@@ -308,6 +308,19 @@ const pipeline = (p, id, edits) => {
     assert.strictEqual(P.supports({pkg: "pacman", init: "systemd"}, "nope"), false);
     assert.strictEqual(P.supports({pkg: "", init: ""}, "update"), false);
     assert.strictEqual(P.supports({pkg: "zypper", init: "s6"}, "stopService"), true);
+}
+
+{
+    const rp = plat("pacman", "runit", {usvdir: "/home/u/.runit/runsvdir"});
+    const r = P.INIT.runit.parse("a\tdown\t1\t\ts\nb\trun\t1\t5\tu\nb\trun\t1\t5\ts\n", 0);
+    assert.deepStrictEqual(r.services.map(x => x.name + ":" + x.scope), ["a:system", "b:user", "b:system"]);
+    assert.strictEqual(P.command(rp, "restartService", "b", "user").cmd, "sv restart /home/u/.runit/runsvdir/b");
+    assert.strictEqual(P.command(rp, "restartService", "b", "user").quiet, "sv restart /home/u/.runit/runsvdir/b");
+    assert.strictEqual(P.command(rp, "restartService", "a", "system").cmd, "sudo sv restart /run/runit/service/a");
+    assert.strictEqual(P.command(rp, "restartService", "a", "system").quiet, "pkexec sv restart /run/runit/service/a");
+    assert.strictEqual(P.command(Object.assign({}, rp, {priv: "doas"}), "stopService", "a", "system").quiet, null);
+    assert.ok(P.command(plat("pacman", "runit"), "restartService", "b", "user").error);
+    assert.strictEqual(P.parseDetect("init runit\nsvdir /run/runit/service\nusvdir /home/u/.runit/runsvdir").usvdir, "/home/u/.runit/runsvdir");
 }
 
 fs.rmSync(tmp, {recursive: true, force: true});

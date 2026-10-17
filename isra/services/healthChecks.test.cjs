@@ -369,10 +369,10 @@ const SVC = lines(
 const svc = parse("svc.list", SVC, 0);
 assert.strictEqual(svc.severity, "bad");
 assert.deepStrictEqual(svc.services, [
-    {name: "sshd", state: "run", pid: null, seconds: 4500, normallyUp: true},
-    {name: "dbus", state: "run", pid: null, seconds: null, normallyUp: false},
-    {name: "sddm", state: "down", pid: null, seconds: null, normallyUp: false},
-    {name: "foo", state: "failed", pid: null, seconds: null, normallyUp: true}
+    {name: "sshd", state: "run", pid: null, seconds: 4500, normallyUp: true, scope: "system"},
+    {name: "dbus", state: "run", pid: null, seconds: null, normallyUp: false, scope: "system"},
+    {name: "sddm", state: "down", pid: null, seconds: null, normallyUp: false, scope: "system"},
+    {name: "foo", state: "failed", pid: null, seconds: null, normallyUp: true, scope: "system"}
 ]);
 assert.deepStrictEqual(svc.failed, ["foo"]);
 assert.strictEqual(parse("svc.list", "dbus\trun\t1\t\n", 0).severity, "ok");

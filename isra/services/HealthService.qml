@@ -280,7 +280,20 @@ Singleton {
         Quickshell.execDetached({ command: root._terminal.concat(['printf "\\033[1m$ %s\\033[0m\\n\\n" "$1"; eval "$1"', "sh", cmd]), workingDirectory: Quickshell.env("HOME") });
     }
 
-    function runAction(action: string, arg: string): string {
+    // Runs without a terminal; only opens one if the command fails. quiet === null means only a terminal can ask for the password.
+    function _runOrTerminal(quiet: var, fallback: string): void {
+        if (quiet === null || quiet === undefined) {
+            root._inTerminal(fallback);
+            return;
+        }
+        if (quietRun.running)
+            return;
+        quietRun.fallback = fallback;
+        quietRun.command = ["sh", "-c", quiet];
+        quietRun.running = true;
+    }
+
+    function runAction(action: string, arg: string, scope: string): string {
         switch (action) {
         case "update": {
             const flatpak = (root.results["updates.flatpak"]?.count ?? 0) > 0 ? "flatpak update" : "";
@@ -290,15 +303,27 @@ Singleton {
             root._inTerminal([c.cmd ?? "", flatpak].filter(x => x !== "").join("; "));
             return "ok";
         }
+        case "reboot": {
+            const c = P.command(root.platform, action, arg);
+            if (c.error)
+                return root._actionError(action, c.error);
+            root._runOrTerminal(c.cmd, c.cmd);
+            return "ok";
+        }
+        case "restartService":
+        case "stopService":
+        case "startService": {
+            const c = P.command(root.platform, action, arg, scope);
+            if (c.error)
+                return root._actionError(action, c.error);
+            root._runOrTerminal(c.quiet, c.cmd);
+            return "ok";
+        }
         case "pacdiff":
         case "cleanCache":
         case "removeOrphans":
-        case "restartService":
-        case "stopService":
-        case "startService":
-        case "serviceLogs":
-        case "reboot": {
-            const c = P.command(root.platform, action, arg);
+        case "serviceLogs": {
+            const c = P.command(root.platform, action, arg, scope);
             if (c.error)
                 return root._actionError(action, c.error);
             root._inTerminal(c.cmd);

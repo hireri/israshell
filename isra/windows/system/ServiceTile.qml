@@ -12,11 +12,11 @@ Rectangle {
 
     signal clicked
 
-    readonly property color ink: root.tone === "bad" && !root.selected ? Colors.md3.on_error_container : root.selected ? Colors.md3.on_secondary_container : Colors.md3.on_surface
+    readonly property color ink: root.tone === "bad" ? Colors.md3.on_error_container : root.tone === "ok" && root.selected ? Colors.md3.on_primary_container : root.selected ? Colors.md3.on_secondary_container : Colors.md3.on_surface
 
     implicitHeight: 64
     radius: root.selected ? 24 : 18
-    color: root.selected ? Colors.md3.secondary_container : root.tone === "bad" ? Colors.md3.error_container : Config.dim(area.containsMouse ? Colors.md3.surface_container_high : Colors.md3.surface_container)
+    color: root.tone === "bad" ? Colors.md3.error_container : root.selected ? (root.tone === "ok" ? Colors.md3.primary_container : Colors.md3.secondary_container) : Config.dim(area.containsMouse ? Colors.md3.surface_container_high : Colors.md3.surface_container)
     scale: area.pressed ? 0.97 : 1
 
     Behavior on color {

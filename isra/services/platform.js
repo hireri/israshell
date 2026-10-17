@@ -91,10 +91,11 @@ function parseServices(stdout) {
         if (f.length < 3) return;
         var name = f[0].trim();
         var state = f[1].trim();
-        if (!LIST_NAME.test(name) || seen[name] || ["run", "down", "failed"].indexOf(state) < 0) return;
-        seen[name] = true;
+        var scope = f[4] !== undefined && f[4].trim() === "u" ? "user" : "system";
+        if (!LIST_NAME.test(name) || seen[name + "/" + scope] || ["run", "down", "failed"].indexOf(state) < 0) return;
+        seen[name + "/" + scope] = true;
         var secs = parseInt(f[3], 10);
-        services.push({name: name, state: state, pid: null, seconds: state === "run" && secs > 0 ? secs : null, normallyUp: f[2].trim() === "1"});
+        services.push({name: name, state: state, pid: null, seconds: state === "run" && secs > 0 ? secs : null, normallyUp: f[2].trim() === "1", scope: scope});
     });
     return servicesResult(services);
 }
@@ -114,7 +115,7 @@ function parseDinit(stdout, code) {
         var flags = m[1];
         var rest = m[3];
         var state = /X/.test(flags) || /failed|exit status: [1-9]/i.test(rest) ? "failed" : (/\+/.test(flags) ? "run" : "down");
-        services.push({name: m[2], state: state, pid: null, seconds: null, normallyUp: flags.indexOf("[") >= 0});
+        services.push({name: m[2], state: state, pid: null, seconds: null, normallyUp: flags.indexOf("[") >= 0, scope: "system"});
     });
     return servicesResult(services);
 }
@@ -323,6 +324,11 @@ function fileLogs(dirs) {
 
 var SOFT_REBOOT = "loginctl reboot 2>/dev/null || sudo reboot";
 
+function runitSv(verb, n, plat, scope) {
+    var user = scope === "user";
+    return (user ? "" : "sudo ") + "sv " + verb + " " + (user ? plat.usvdir : plat.svdir) + "/" + n;
+}
+
 var INIT = {
     systemd: {
         detect: "[ -d /run/systemd/system ]",
@@ -341,14 +347,14 @@ var INIT = {
     runit: {
         detect: "pgrep -x runsvdir >/dev/null",
         list: function (plat) {
-            return "D=" + plat.svdir + String.raw`; for p in $(pgrep -x runsv); do n=$(tr '\0' ' ' 2>/dev/null </proc/$p/cmdline | awk '{ print $2 }'); n=$(basename "$n" 2>/dev/null); [ -n "$n" ] || continue; c=$(pgrep -P $p -l | awk '$2 != "runsv" && $2 != "svlogd" && $2 != "vlogger" && $2 != "logger" { print $1; exit }'); st=down; s=; if [ -n "$c" ]; then st=run; s=$(ps -o etimes= -p $c | tr -d ' '); fi; u=1; [ -e "$D/$n/down" ] && u=0; printf '%s\t%s\t%s\t%s\n' "$n" "$st" "$u" "$s"; done`;
+            return "D=" + plat.svdir + "; U=" + plat.usvdir + String.raw`; for p in $(pgrep -x runsv); do n=$(tr '\0' ' ' 2>/dev/null </proc/$p/cmdline | awk '{ print $2 }'); n=$(basename "$n" 2>/dev/null); [ -n "$n" ] || continue; if [ -d "$D/$n" ]; then d=$D/$n; sc=s; elif [ -n "$U" ] && [ -d "$U/$n" ]; then d=$U/$n; sc=u; else continue; fi; c=$(pgrep -P $p -l | awk '$2 != "runsv" && $2 != "svlogd" && $2 != "vlogger" && $2 != "logger" { print $1; exit }'); st=down; s=; if [ -n "$c" ]; then st=run; s=$(ps -o etimes= -p $c | tr -d ' '); fi; u=1; [ -e "$d/down" ] && u=0; printf '%s\t%s\t%s\t%s\t%s\n' "$n" "$st" "$u" "$s" "$sc"; done`;
         },
         parse: okCodes([0], parseServices),
         actions: {
-            restartService: function (n, plat) { return "sudo sv restart " + plat.svdir + "/" + n; },
-            stopService: function (n, plat) { return "sudo sv stop " + plat.svdir + "/" + n; },
-            startService: function (n, plat) { return "sudo sv start " + plat.svdir + "/" + n; },
-            serviceLogs: function (n, plat) { return fileLogs([plat.svdir])(n); },
+            restartService: function (n, plat, scope) { return runitSv("restart", n, plat, scope); },
+            stopService: function (n, plat, scope) { return runitSv("stop", n, plat, scope); },
+            startService: function (n, plat, scope) { return runitSv("start", n, plat, scope); },
+            serviceLogs: function (n, plat, scope) { return fileLogs([scope === "user" ? plat.usvdir : plat.svdir])(n); },
             reboot: function () { return SOFT_REBOOT; }
         }
     },
@@ -407,21 +413,22 @@ function detectScript() {
     s += INIT_ORDER.map(function (k) { return "if " + INIT[k].detect + "; then echo 'init " + k + "'; "; }).join("el") + "fi\n";
     s += "for h in paru yay; do if command -v $h >/dev/null; then echo \"aur $h\"; break; fi; done\n";
     s += "if command -v sudo >/dev/null; then echo 'priv sudo'; elif command -v doas >/dev/null; then echo 'priv doas'; fi\n";
-    s += "p=$(pgrep -xo runsvdir) && tr '\\0' '\\n' </proc/$p/cmdline 2>/dev/null | grep -m1 '^/' | sed 's/^/svdir /'\n";
+    s += "for p in $(pgrep -x runsvdir); do d=$(tr '\\0' '\\n' </proc/$p/cmdline 2>/dev/null | grep -m1 '^/'); case \"$(tr '\\0' ' ' </proc/$p/cmdline 2>/dev/null)\" in *-P*) echo \"svdir $d\";; *) echo \"usvdir $d\";; esac; done\n";
     s += "[ -r /etc/os-release ] && . /etc/os-release && echo \"os $ID\"\n";
     return s;
 }
 
 function parseDetect(stdout) {
-    var p = {pkg: "", init: "", aur: "", priv: "sudo", svdir: "", os: ""};
+    var p = {pkg: "", init: "", aur: "", priv: "sudo", svdir: "", usvdir: "", os: ""};
     lines(stdout).forEach(function (l) {
-        var m = /^(pkg|init|aur|priv|svdir|os)\s+(\S+)$/.exec(l);
+        var m = /^(pkg|init|aur|priv|svdir|usvdir|os)\s+(\S+)$/.exec(l);
         if (!m) return;
         if (m[1] === "pkg" && has(PKG, m[2])) p.pkg = m[2];
         else if (m[1] === "init" && has(INIT, m[2])) p.init = m[2];
         else if (m[1] === "aur" && /^(paru|yay)$/.test(m[2])) p.aur = m[2];
         else if (m[1] === "priv" && /^(sudo|doas)$/.test(m[2])) p.priv = m[2];
         else if (m[1] === "svdir" && SAFE_PATH.test(m[2])) p.svdir = m[2];
+        else if (m[1] === "usvdir" && SAFE_PATH.test(m[2])) p.usvdir = m[2];
         else if (m[1] === "os" && SAFE_NAME.test(m[2].replace(/"/g, ""))) p.os = m[2].replace(/"/g, "");
     });
     if (p.pkg !== "pacman") p.aur = "";
@@ -441,14 +448,19 @@ function withPriv(cmd, plat) {
     return plat.priv === "doas" ? cmd.replace(/\bsudo -E /g, "doas ").replace(/\bsudo /g, "doas ") : cmd;
 }
 
-function command(plat, action, arg) {
+function command(plat, action, arg, scope) {
     var serviceAction = ["restartService", "stopService", "startService", "serviceLogs", "reboot"].indexOf(action) >= 0;
     var backend = serviceAction ? (has(INIT, plat.init) ? INIT[plat.init] : null) : (has(PKG, plat.pkg) ? PKG[plat.pkg] : null);
     if (!backend) return {error: serviceAction ? "no supported service manager found" : "no supported package manager found"};
     var fn = has(backend.actions, action) ? backend.actions[action] : null;
     if (!fn) return {error: action + " is not supported with " + (serviceAction ? plat.init : plat.pkg)};
     if (serviceAction && action !== "reboot" && !SAFE_NAME.test(text(arg))) return {error: "bad service name"};
-    return {cmd: withPriv(fn(arg, plat), plat)};
+    if (scope === "user" && plat.init === "runit" && !plat.usvdir) return {error: "no user service directory found"};
+    var raw = fn(arg, plat, scope);
+    var cmd = withPriv(raw, plat);
+    // quiet: runs without a terminal, privileged parts through polkit; null when only a terminal can ask for a password
+    var quiet = raw.indexOf("sudo ") < 0 ? cmd : (plat.priv === "doas" ? null : raw.replace(/\bsudo /g, "pkexec "));
+    return {cmd: cmd, quiet: quiet};
 }
 
 function supports(plat, action) {

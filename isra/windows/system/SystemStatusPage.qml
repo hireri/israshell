@@ -41,6 +41,7 @@ PageBase {
         const rank = st => ({ failed: 0, down: 1, run: 2 })[st];
         return page.services.map(s => ({
             name: s.name,
+            scope: s.scope ?? "system",
             state: s.state,
             tone: s.state === "failed" ? "bad" : s.state === "run" ? "ok" : "neutral",
             sub: s.state === "failed" ? Localization.t("systemApp.svc_failed") : s.state === "run" ? (s.seconds !== null ? Localization.t("systemApp.svc_up_for").replace("%1", Fmt.ago(0, s.seconds * 1000)) : Localization.t("systemApp.svc_running")) : s.normallyUp ? Localization.t("systemApp.svc_stopped") : Localization.t("systemApp.svc_off_boot"),
@@ -56,6 +57,11 @@ PageBase {
     readonly property int svcRunning: page.svcAll.filter(r => r.state === "run").length
     readonly property int svcStopped: page.svcAll.filter(r => r.state === "down").length
     readonly property int svcFailed: page.svcAll.filter(r => r.state === "failed").length
+    readonly property string svcTone: page.svcSel?.tone === "bad" || page.svcSel?.tone === "ok" ? page.svcSel.tone : ""
+
+    function svcSub(r: var): string {
+        return r.sub + (r.scope === "user" ? " · " + Localization.t("systemApp.svc_user") : "");
+    }
 
     function metricColor(id: string): color {
         return page.colored ? SystemInfo.metrics.find(m => m.id === id).color : Colors.md3.primary;
@@ -315,25 +321,28 @@ PageBase {
             shape: page.svcSel?.tone === "bad" ? "burst" : page.svcSel?.tone === "ok" ? "cookie9" : "circle"
             icon: page.svcSel?.tone === "bad" ? "error" : page.svcSel?.tone === "ok" ? "check" : "close"
             title: page.svcSel?.name ?? ""
-            sublabel: page.svcSel?.sub ?? ""
+            sublabel: page.svcSel ? page.svcSub(page.svcSel) : ""
 
             actions: [
                 ActionButton {
                     visible: page.svcSel?.manage === true
                     primary: true
+                    tone: page.svcTone
                     icon: "restart"
                     label: Localization.t("systemApp.restart")
-                    onClicked: HealthService.runAction("restartService", page.svcSel.name)
+                    onClicked: HealthService.runAction("restartService", page.svcSel.name, page.svcSel.scope)
                 },
                 ActionButton {
                     visible: page.svcSel?.manage === true
+                    tone: page.svcTone
                     label: page.svcSel?.state === "run" ? Localization.t("systemApp.svc_stop") : Localization.t("systemApp.svc_start")
-                    onClicked: HealthService.runAction(page.svcSel.state === "run" ? "stopService" : "startService", page.svcSel.name)
+                    onClicked: HealthService.runAction(page.svcSel.state === "run" ? "stopService" : "startService", page.svcSel.name, page.svcSel.scope)
                 },
                 ActionButton {
                     visible: page.svcSel?.manage === true
+                    tone: page.svcTone
                     label: Localization.t("systemApp.svc_logs")
-                    onClicked: HealthService.runAction("serviceLogs", page.svcSel.name)
+                    onClicked: HealthService.runAction("serviceLogs", page.svcSel.name, page.svcSel.scope)
                 }
             ]
         }
@@ -355,7 +364,7 @@ PageBase {
 
                     Layout.fillWidth: true
                     name: tile.modelData.name
-                    sublabel: tile.modelData.sub
+                    sublabel: page.svcSub(tile.modelData)
                     tone: tile.modelData.tone
                     selected: page.svcSel?.name === tile.modelData.name
                     onClicked: page.svcPicked = tile.modelData.name
