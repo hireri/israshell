@@ -24,11 +24,14 @@ Singleton {
     property int consumers: 0
 
     readonly property var rank: ({ ok: 0, info: 1, warn: 2, bad: 3 })
-    readonly property var groupWorst: root._groupWorst(root.results, root.applicable, root.cfg.disabledChecks)
+    readonly property var dismissed: root.cfg.dismissed ?? ({})
+    readonly property var hidden: root._hiddenIds(root.results, root.dismissed)
+    readonly property int hiddenCount: Object.keys(root.hidden).length
+    readonly property var groupWorst: root._groupWorst(root.results, root.applicable, root.cfg.disabledChecks, root.hidden)
     readonly property string worst: root._worstOf(Object.keys(root.groupWorst).map(g => root.groupWorst[g]))
-    readonly property var attentionIds: root._attentionIds(root.results, root.applicable, root.cfg.disabledChecks)
+    readonly property var attentionIds: root._attentionIds(root.results, root.applicable, root.cfg.disabledChecks, root.hidden)
     readonly property int attention: root.attentionIds.length
-    readonly property var highlights: root._highlights(root.results, root.applicable, root.cfg.disabledChecks)
+    readonly property var highlights: root._highlights(root.results, root.applicable, root.cfg.disabledChecks, root.hidden)
 
     readonly property real progress: root._total > 0 ? 1 - (root._pending.length + (root._job !== "" ? 1 : 0)) / root._total : 0
 
@@ -55,8 +58,43 @@ Singleton {
         return root.results[id] ?? null;
     }
 
-    function _live(c: var, applicable: var, disabled: var): bool {
-        return applicable[c.id] === true && disabled.indexOf(c.id) < 0;
+    function _live(c: var, applicable: var, disabled: var, hidden: var): bool {
+        return applicable[c.id] === true && disabled.indexOf(c.id) < 0 && hidden[c.id] !== true;
+    }
+
+    // What a finding looked like when it was dismissed. If this changes (a new failing unit, another kernel,
+    // a worse severity) the dismissal no longer applies. Counts are left out on purpose so routine churn doesn't resurface it.
+    function _sig(r: var): string {
+        return [r.severity, (r.failed ?? []).join(","), (r.issues ?? []).length, r.installed ?? "", r.unread ?? ""].join("|");
+    }
+
+    function _hiddenIds(results: var, dismissed: var): var {
+        const out = {};
+        const now = Date.now();
+        for (const id of Object.keys(dismissed)) {
+            const d = dismissed[id];
+            const r = results[id];
+            if (r && d.until > now && d.sig === root._sig(r))
+                out[id] = true;
+        }
+        return out;
+    }
+
+    function dismiss(id: string): void {
+        const r = root.results[id];
+        if (!r)
+            return;
+        const now = Date.now();
+        const keep = {};
+        for (const k of Object.keys(root.dismissed))
+            if (root.dismissed[k].until > now)
+                keep[k] = root.dismissed[k];
+        keep[id] = { sig: root._sig(r), until: now + 7 * 86400000 };
+        Config.update({ health: Object.assign({}, Config.health, { dismissed: keep }) });
+    }
+
+    function restoreDismissed(): void {
+        Config.update({ health: Object.assign({}, Config.health, { dismissed: {} }) });
     }
 
     function _worstOf(list: var): string {
@@ -67,22 +105,22 @@ Singleton {
         return best;
     }
 
-    function _groupWorst(results: var, applicable: var, disabled: var): var {
+    function _groupWorst(results: var, applicable: var, disabled: var, hidden: var): var {
         const out = {};
         for (const c of root.checkList) {
             const r = results[c.id];
-            if (!r || !root._live(c, applicable, disabled))
+            if (!r || !root._live(c, applicable, disabled, hidden))
                 continue;
             out[c.group] = root._worstOf([out[c.group] ?? "ok", r.severity]);
         }
         return out;
     }
 
-    function _attentionIds(results: var, applicable: var, disabled: var): var {
+    function _attentionIds(results: var, applicable: var, disabled: var, hidden: var): var {
         const out = [];
         for (const c of root.checkList) {
             const r = results[c.id];
-            if (r && root._live(c, applicable, disabled) && (r.severity === "warn" || r.severity === "bad"))
+            if (r && root._live(c, applicable, disabled, hidden) && (r.severity === "warn" || r.severity === "bad"))
                 out.push(c.id);
         }
         return out;
@@ -92,11 +130,11 @@ Singleton {
         return Localization.t("systemApp." + key).replace("%1", a).replace("%2", b);
     }
 
-    function _highlights(results: var, applicable: var, disabled: var): var {
+    function _highlights(results: var, applicable: var, disabled: var, hidden: var): var {
         const get = id => {
             const c = HC.byId(id, root.checkList);
             const r = results[id];
-            return c && r && root._live(c, applicable, disabled) ? r : null;
+            return c && r && root._live(c, applicable, disabled, hidden) ? r : null;
         };
         const out = [];
         const add = (id, sev, icon, page, short, text) => out.push({ id: id, sev: sev, icon: icon, page: page, short: short, text: text });
@@ -443,6 +481,16 @@ Singleton {
             runner.exitCode = code;
             runner.gotExit = true;
             runner.tryFinish();
+        }
+    }
+
+    Process {
+        id: quietRun
+        property string fallback: ""
+        onExited: code => {
+            // 126 is pkexec reporting the password dialog was dismissed; don't reopen it in a terminal
+            if (code !== 0 && code !== 126)
+                root._inTerminal(quietRun.fallback);
         }
     }
 

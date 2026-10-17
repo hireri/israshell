@@ -27,7 +27,7 @@ PageBase {
         for (const g of page.areas)
             for (const c of HealthService.checks(g)) {
                 const r = HealthService.results[c.id];
-                if (r && HealthService.isApplicable(c.id) && HealthService.isEnabled(c.id) && (r.severity === "warn" || r.severity === "bad"))
+                if (r && HealthService.isApplicable(c.id) && HealthService.isEnabled(c.id) && HealthService.hidden[c.id] !== true && (r.severity === "warn" || r.severity === "bad"))
                     out.push({ id: c.id, area: g, bad: r.severity === "bad" });
             }
         return out;
@@ -255,9 +255,23 @@ PageBase {
                         checkId: row.modelData.id
                         target: page.areaPage[row.modelData.area]
                     }
+
+                    ActionButton {
+                        icon: "check"
+                        tooltip: Localization.t("systemApp.dismiss_tip")
+                        onClicked: HealthService.dismiss(row.modelData.id)
+                    }
                 }
             }
         }
+    }
+
+    ActionButton {
+        Layout.alignment: Qt.AlignLeft
+        visible: HealthService.enabled && HealthService.hiddenCount > 0
+        icon: "visibility"
+        label: Localization.t("systemApp.n_dismissed").replace("%1", HealthService.hiddenCount) + " · " + Localization.t("systemApp.show_dismissed")
+        onClicked: HealthService.restoreDismissed()
     }
 
     GridLayout {

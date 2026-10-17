@@ -220,7 +220,8 @@ Singleton {
             barChipLevel: "info",
             newsSeen: 0,
             newsRead: [],
-            disabledChecks: []
+            disabledChecks: [],
+            dismissed: ({})
         })
     property var notifications: ({
             popupTimeout: 5,
@@ -511,7 +512,8 @@ Singleton {
                 barChipLevel: "info",
                 newsSeen: 0,
                 newsRead: [],
-                disabledChecks: []
+                disabledChecks: [],
+                dismissed: ({})
             },
             notifications: {
                 popupTimeout: 5,
