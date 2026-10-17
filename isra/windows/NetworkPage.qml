@@ -251,19 +251,6 @@ PageBase {
                     visible: NetworkService.scanning
                 }
             }
-
-            Rectangle {
-                anchors {
-                    bottom: parent.bottom
-                    left: parent.left
-                    leftMargin: 18
-                    right: parent.right
-                    rightMargin: 18
-                }
-                height: 1
-                color: Colors.md3.outline_variant
-                opacity: 0.5
-            }
         }
 
         Repeater {
@@ -544,20 +531,6 @@ PageBase {
                         NetworkService.passwordFailed = false
                     onAccepted: netRow.submitPw()
                 }
-
-                Rectangle {
-                    visible: index < netRepeater.count - 1
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        leftMargin: 18
-                        right: parent.right
-                        rightMargin: 18
-                    }
-                    height: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.5
-                }
             }
         }
     }
@@ -660,19 +633,6 @@ PageBase {
                         text: Localization.t("networkPage.tooltip_stop_scanning")
                     }
                 }
-            }
-
-            Rectangle {
-                anchors {
-                    bottom: parent.bottom
-                    left: parent.left
-                    leftMargin: 18
-                    right: parent.right
-                    rightMargin: 18
-                }
-                height: 1
-                color: Colors.md3.outline_variant
-                opacity: BluetoothService.knownDevices.length > 0 ? 0.5 : 0
             }
         }
 
@@ -794,20 +754,6 @@ PageBase {
                         }
                     }
                 }
-
-                Rectangle {
-                    visible: index < btRepeater.count - 1
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        leftMargin: 18
-                        right: parent.right
-                        rightMargin: 18
-                    }
-                    height: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.5
-                }
             }
         }
     }
@@ -896,20 +842,6 @@ PageBase {
                             onClicked: BluetoothService.pairDevice(modelData)
                         }
                     }
-                }
-
-                Rectangle {
-                    visible: index < newBtRepeater.count - 1
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        leftMargin: 18
-                        right: parent.right
-                        rightMargin: 18
-                    }
-                    height: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.5
                 }
             }
         }
@@ -1044,19 +976,6 @@ PageBase {
                     }
                 }
             }
-
-            Rectangle {
-                anchors {
-                    bottom: parent.bottom
-                    left: parent.left
-                    leftMargin: 18
-                    right: parent.right
-                    rightMargin: 18
-                }
-                height: 1
-                color: Colors.md3.outline_variant
-                opacity: NetworkService.vpnProfiles.length > 0 ? 0.5 : 0
-            }
         }
 
         Repeater {
@@ -1172,20 +1091,6 @@ PageBase {
                             }
                         }
                     }
-                }
-
-                Rectangle {
-                    visible: vpnRow.index < vpnRepeater.count - 1
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        leftMargin: 18
-                        right: parent.right
-                        rightMargin: 18
-                    }
-                    height: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.5
                 }
             }
         }

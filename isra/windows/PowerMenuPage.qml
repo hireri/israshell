@@ -333,18 +333,6 @@ PageBase {
                     onCancelled: page.closeForm()
                     onRevealRequested: h => page.reveal(row, header.height + h)
                 }
-
-                Rectangle {
-                    visible: !row.open
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.leftMargin: 18
-                    anchors.right: parent.right
-                    anchors.rightMargin: 18
-                    height: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.5
-                }
             }
         }
 
@@ -373,7 +361,6 @@ PageBase {
 
         PowerEntryForm {
             id: draftForm
-            topRule: true
             open: page.formOpen && page.editIndex === -1
             draft: page.draft
             valid: page.formValid

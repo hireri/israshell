@@ -477,36 +477,6 @@ PageBase {
                             }
                         }
                     }
-
-                    Rectangle {
-                        visible: presetRow.index < presetRepeater.count - 1
-                        anchors {
-                            bottom: parent.bottom
-                            left: parent.left
-                            leftMargin: 18
-                            right: parent.right
-                            rightMargin: 18
-                        }
-                        height: 1
-                        color: Colors.md3.outline_variant
-                        opacity: 0.5
-                    }
-                }
-            }
-
-            Item {
-                visible: ConfigPresetService.entries.length > 0
-                width: parent?.width ?? 0
-                height: 1
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 18
-                    anchors.right: parent.right
-                    anchors.rightMargin: 18
-                    height: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.5
                 }
             }
 

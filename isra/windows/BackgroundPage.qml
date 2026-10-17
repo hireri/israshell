@@ -250,22 +250,10 @@ PageBase {
         }
     }
 
-    Rectangle {
+    SectionCard {
         Layout.fillWidth: true
-        implicitHeight: layoutInner.implicitHeight + 32
-        radius: 20
-        color: (Config.dim(Colors.md3.surface_container))
 
-        ColumnLayout {
-            id: layoutInner
-            anchors {
-                left: parent.left
-                right: parent.right
-                verticalCenter: parent.verticalCenter
-                margins: 16
-            }
-            spacing: 16
-
+        SectionBlock {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 4
@@ -469,7 +457,9 @@ PageBase {
                     }
                 }
             }
+        }
 
+        SectionBlock {
             ClippingRectangle {
                 id: singlePreview
                 Layout.fillWidth: true
@@ -502,14 +492,9 @@ PageBase {
                     useMock: true
                 }
             }
+        }
 
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: Colors.md3.outline_variant
-                opacity: 0.15
-            }
-
+        SectionBlock {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 16
@@ -531,178 +516,171 @@ PageBase {
                         })
                 }
             }
+        }
 
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: Colors.md3.outline_variant
-                opacity: 0.15
-            }
-
-            SettingChips {
-                label: Localization.t("backgroundPage.position")
-                options: [
-                    {
-                        label: Localization.t("backgroundPage.top"),
-                        value: 0,
-                        icon: arrowUpwardComp
-                    },
-                    {
-                        label: Localization.t("backgroundPage.bottom"),
-                        value: 1,
-                        icon: arrowDownwardComp
-                    }
-                ]
-                currentValue: Config.cava.position
-                onSelected: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            position: v
-                        })
+        SettingChips {
+            label: Localization.t("backgroundPage.position")
+            options: [
+                {
+                    label: Localization.t("backgroundPage.top"),
+                    value: 0,
+                    icon: arrowUpwardComp
+                },
+                {
+                    label: Localization.t("backgroundPage.bottom"),
+                    value: 1,
+                    icon: arrowDownwardComp
+                }
+            ]
+            currentValue: Config.cava.position
+            onSelected: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        position: v
                     })
-            }
+                })
+        }
 
-            SettingChips {
-                label: Localization.t("backgroundPage.layout")
-                sublabel: Localization.t("backgroundPage.how_bars_are_arranged_across")
-                options: [
-                    {
-                        label: Localization.t("backgroundPage.mono"),
-                        value: "mono",
-                    },
-                    {
-                        label: Localization.t("backgroundPage.edges"),
-                        value: "edges"
-                    },
-                    {
-                        label: Localization.t("backgroundPage.center"),
-                        value: "center"
-                    }
-                ]
-                currentValue: Config.cava.layout
-                onSelected: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            layout: v
-                        })
+        SettingChips {
+            label: Localization.t("backgroundPage.layout")
+            sublabel: Localization.t("backgroundPage.how_bars_are_arranged_across")
+            options: [
+                {
+                    label: Localization.t("backgroundPage.mono"),
+                    value: "mono",
+                },
+                {
+                    label: Localization.t("backgroundPage.edges"),
+                    value: "edges"
+                },
+                {
+                    label: Localization.t("backgroundPage.center"),
+                    value: "center"
+                }
+            ]
+            currentValue: Config.cava.layout
+            onSelected: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        layout: v
                     })
-            }
+                })
+        }
 
-            SettingChips {
-                label: Localization.t("backgroundPage.curve_type")
-                sublabel: Config.cava.renderType === "curve" ? Localization.t("backgroundPage.smoothing_applied_to_the_curve") : Localization.t("backgroundPage.requires_curve_render_type")
-                enabled: Config.cava.renderType === "curve"
-                opacity: enabled ? 1.0 : 0.4
-                options: [
-                    {
-                        label: Localization.t("backgroundPage.smooth"),
-                        value: "smooth"
-                    },
-                    {
-                        label: Localization.t("backgroundPage.sharp"),
-                        value: "sharp"
-                    }
-                ]
-                currentValue: Config.cava.curveType
-                onSelected: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            curveType: v
-                        })
+        SettingChips {
+            label: Localization.t("backgroundPage.curve_type")
+            sublabel: Config.cava.renderType === "curve" ? Localization.t("backgroundPage.smoothing_applied_to_the_curve") : Localization.t("backgroundPage.requires_curve_render_type")
+            enabled: Config.cava.renderType === "curve"
+            opacity: enabled ? 1.0 : 0.4
+            options: [
+                {
+                    label: Localization.t("backgroundPage.smooth"),
+                    value: "smooth"
+                },
+                {
+                    label: Localization.t("backgroundPage.sharp"),
+                    value: "sharp"
+                }
+            ]
+            currentValue: Config.cava.curveType
+            onSelected: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        curveType: v
                     })
-            }
+                })
+        }
 
-            SettingSwitch {
-                label: Localization.t("backgroundPage.fill")
-                sublabel: Localization.t("backgroundPage.draw_a_filled_gradient_area")
-                checked: Config.cava.drawFill
-                onToggled: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            drawFill: v
-                        })
+        SettingSwitch {
+            label: Localization.t("backgroundPage.fill")
+            sublabel: Localization.t("backgroundPage.draw_a_filled_gradient_area")
+            checked: Config.cava.drawFill
+            onToggled: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        drawFill: v
                     })
-            }
+                })
+        }
 
-            SettingSwitch {
-                label: Localization.t("backgroundPage.stroke")
-                sublabel: Localization.t("backgroundPage.draw_an_outline_along_the")
-                checked: Config.cava.drawStroke
-                onToggled: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            drawStroke: v
-                        })
+        SettingSwitch {
+            label: Localization.t("backgroundPage.stroke")
+            sublabel: Localization.t("backgroundPage.draw_an_outline_along_the")
+            checked: Config.cava.drawStroke
+            onToggled: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        drawStroke: v
                     })
-            }
+                })
+        }
 
-            SettingChips {
-                label: Localization.t("backgroundPage.color_style")
-                sublabel: Localization.t("backgroundPage.how_colors_are_applied_across")
-                options: [
-                    {
-                        label: Localization.t("backgroundPage.solid"),
-                        value: "solid"
-                    },
-                    {
-                        label: Localization.t("backgroundPage.loudness"),
-                        value: "loudness",
-                    },
-                    {
-                        label: Localization.t("backgroundPage.gradient_v"),
-                        value: "gradient-v"
-                    },
-                    {
-                        label: Localization.t("backgroundPage.gradient_h"),
-                        value: "gradient-h"
-                    }
-                ]
-                currentValue: Config.cava.colorStyle
-                onSelected: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            colorStyle: v
-                        })
+        SettingChips {
+            label: Localization.t("backgroundPage.color_style")
+            sublabel: Localization.t("backgroundPage.how_colors_are_applied_across")
+            options: [
+                {
+                    label: Localization.t("backgroundPage.solid"),
+                    value: "solid"
+                },
+                {
+                    label: Localization.t("backgroundPage.loudness"),
+                    value: "loudness",
+                },
+                {
+                    label: Localization.t("backgroundPage.gradient_v"),
+                    value: "gradient-v"
+                },
+                {
+                    label: Localization.t("backgroundPage.gradient_h"),
+                    value: "gradient-h"
+                }
+            ]
+            currentValue: Config.cava.colorStyle
+            onSelected: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        colorStyle: v
                     })
-            }
+                })
+        }
 
-            SettingSlider {
-                label: Localization.t("backgroundPage.bars")
-                sublabel: Localization.t("backgroundPage.number_of_frequency_bars_rendered")
-                from: 8
-                to: 100
-                stepSize: 2
-                value: Config.cava.bars
-                onMoved: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            bars: Math.round(v)
-                        })
+        SettingSlider {
+            label: Localization.t("backgroundPage.bars")
+            sublabel: Localization.t("backgroundPage.number_of_frequency_bars_rendered")
+            from: 8
+            to: 100
+            stepSize: 2
+            value: Config.cava.bars
+            onMoved: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        bars: Math.round(v)
                     })
-            }
+                })
+        }
 
-            SettingSlider {
-                label: Localization.t("backgroundPage.height")
-                sublabel: Localization.t("backgroundPage.height_of_the_visualizer_in")
-                from: 5
-                to: 100
-                unit: "%"
-                value: Config.cava.heightPct
-                onMoved: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            heightPct: Math.round(v)
-                        })
+        SettingSlider {
+            label: Localization.t("backgroundPage.height")
+            sublabel: Localization.t("backgroundPage.height_of_the_visualizer_in")
+            from: 5
+            to: 100
+            unit: "%"
+            value: Config.cava.heightPct
+            onMoved: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        heightPct: Math.round(v)
                     })
-            }
+                })
+        }
 
-            SettingSlider {
-                label: Localization.t("backgroundPage.opacity")
-                sublabel: Localization.t("backgroundPage.overlay_opacity_of_the_visualizer")
-                from: 0.05
-                to: 1.0
-                stepSize: 0.05
-                decimals: 2
-                value: Config.cava.opacity
-                onMoved: v => Config.update({
-                        cava: Object.assign({}, Config.cava, {
-                            opacity: v
-                        })
+        SettingSlider {
+            label: Localization.t("backgroundPage.opacity")
+            sublabel: Localization.t("backgroundPage.overlay_opacity_of_the_visualizer")
+            from: 0.05
+            to: 1.0
+            stepSize: 0.05
+            decimals: 2
+            value: Config.cava.opacity
+            onMoved: v => Config.update({
+                    cava: Object.assign({}, Config.cava, {
+                        opacity: v
                     })
-                isLast: true
-            }
+                })
+            isLast: true
         }
     }
 

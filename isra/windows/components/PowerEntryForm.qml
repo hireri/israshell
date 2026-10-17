@@ -7,7 +7,6 @@ Item {
     id: root
 
     property bool open: false
-    property bool topRule: false
     property var draft: ({})
     property bool valid: false
     readonly property real bodyHeight: loader.item ? (loader.item as Item).implicitHeight : 0
@@ -104,22 +103,6 @@ Item {
             id: col
 
             property bool pickerOpen: false
-
-            Item {
-                visible: root.topRule
-                width: col.width
-                height: visible ? 1 : 0
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 18
-                    anchors.right: parent.right
-                    anchors.rightMargin: 18
-                    height: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.5
-                }
-            }
 
             FormRow {
                 label: Localization.t("powerMenuPage.label")

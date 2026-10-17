@@ -37,27 +37,21 @@ PageBase {
         label: Localization.t("soundPage.output")
         Layout.fillWidth: true
 
-        Rectangle {
-            height: 6
-            width: 1
-            color: "transparent"
-        }
+        Column {
+            width: parent?.width ?? 0
+            topPadding: 6
+            bottomPadding: 6
 
-        AudioDeviceList {
-            sink: true
-        }
+            AudioDeviceList {
+                sink: true
+            }
 
-        VolumeRow {
-            muted: AudioService.muted
-            volume: AudioService.volume
-            onMuteToggled: AudioService.toggleMute()
-            onVolumeMoved: v => AudioService.setVolume(v)
-        }
-
-        Rectangle {
-            height: 4
-            width: 1
-            color: "transparent"
+            VolumeRow {
+                muted: AudioService.muted
+                volume: AudioService.volume
+                onMuteToggled: AudioService.toggleMute()
+                onVolumeMoved: v => AudioService.setVolume(v)
+            }
         }
     }
 
@@ -65,95 +59,89 @@ PageBase {
         label: Localization.t("soundPage.input")
         Layout.fillWidth: true
 
-        Rectangle {
-            height: 6
-            width: 1
-            color: "transparent"
-        }
+        Column {
+            width: parent?.width ?? 0
+            topPadding: 6
+            bottomPadding: 6
 
-        AudioDeviceList {
-            sink: false
-        }
+            AudioDeviceList {
+                sink: false
+            }
 
-        VolumeRow {
-            glyph: "󰍬"
-            mutedGlyph: "󰍭"
-            muted: AudioService.sourceMuted
-            volume: AudioService.sourceVolume
-            onMuteToggled: AudioService.toggleSourceMute()
-            onVolumeMoved: v => AudioService.setSourceVolume(v)
-        }
-
-        Item {
-            implicitWidth: parent?.width ?? 0
-            implicitHeight: 10
+            VolumeRow {
+                glyph: "󰍬"
+                mutedGlyph: "󰍭"
+                muted: AudioService.sourceMuted
+                volume: AudioService.sourceVolume
+                onMuteToggled: AudioService.toggleSourceMute()
+                onVolumeMoved: v => AudioService.setSourceVolume(v)
+            }
 
             Item {
-                id: micTrack
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    verticalCenter: parent.verticalCenter
-                    leftMargin: 12
-                    rightMargin: 12
-                }
-                height: 6
+                implicitWidth: parent?.width ?? 0
+                implicitHeight: 10
 
-                property real gap: 4
-                property real level: AudioService.micLevel
-                property real effectiveGap: (level <= 0 || level >= 1) ? 0 : gap
-                property real fillW: Math.max(0, width * level - effectiveGap)
-                property color fillColor: {
-                    if (AudioService.sourceMuted)
-                        return Colors.md3.outline;
-                    if (AudioService.micLevel > 0.85)
-                        return Colors.md3.error;
-                    if (AudioService.micLevel > 0.6)
-                        return Colors.md3.tertiary;
-                    return Colors.md3.primary;
-                }
-
-                Behavior on fillW {
-                    NumberAnimation {
-                        duration: 10
-                    }
-                }
-                Behavior on fillColor {
-                    ColorAnimation {
-                        duration: 5
-                    }
-                }
-
-                Rectangle {
-                    id: micBarLeft
+                Item {
+                    id: micTrack
                     anchors {
                         left: parent.left
-                        verticalCenter: parent.verticalCenter
-                    }
-                    width: micTrack.fillW
-                    height: micTrack.height
-                    radius: height / 2
-                    color: micTrack.fillColor
-                }
-
-                Rectangle {
-                    anchors {
-                        left: micBarLeft.right
-                        leftMargin: micTrack.effectiveGap
                         right: parent.right
                         verticalCenter: parent.verticalCenter
+                        leftMargin: 12
+                        rightMargin: 12
                     }
-                    height: micTrack.height
-                    radius: height / 2
-                    color: Colors.md3.surface_variant
+                    height: 6
+
+                    property real gap: 4
+                    property real level: AudioService.micLevel
+                    property real effectiveGap: (level <= 0 || level >= 1) ? 0 : gap
+                    property real fillW: Math.max(0, width * level - effectiveGap)
+                    property color fillColor: {
+                        if (AudioService.sourceMuted)
+                            return Colors.md3.outline;
+                        if (AudioService.micLevel > 0.85)
+                            return Colors.md3.error;
+                        if (AudioService.micLevel > 0.6)
+                            return Colors.md3.tertiary;
+                        return Colors.md3.primary;
+                    }
+
+                    Behavior on fillW {
+                        NumberAnimation {
+                            duration: 10
+                        }
+                    }
+                    Behavior on fillColor {
+                        ColorAnimation {
+                            duration: 5
+                        }
+                    }
+
+                    Rectangle {
+                        id: micBarLeft
+                        anchors {
+                            left: parent.left
+                            verticalCenter: parent.verticalCenter
+                        }
+                        width: micTrack.fillW
+                        height: micTrack.height
+                        radius: height / 2
+                        color: micTrack.fillColor
+                    }
+
+                    Rectangle {
+                        anchors {
+                            left: micBarLeft.right
+                            leftMargin: micTrack.effectiveGap
+                            right: parent.right
+                            verticalCenter: parent.verticalCenter
+                        }
+                        height: micTrack.height
+                        radius: height / 2
+                        color: Colors.md3.surface_variant
+                    }
                 }
             }
-        }
-
-        Rectangle {
-            height: 12
-            width: 1
-            color: "transparent"
         }
     }
 
@@ -208,20 +196,6 @@ PageBase {
                         if (streamRow.modelData.audio)
                             streamRow.modelData.audio.volume = v;
                     }
-                }
-
-                Rectangle {
-                    visible: streamRow.index < streamRepeater.count - 1
-                    anchors {
-                        bottom: parent.bottom
-                        left: parent.left
-                        leftMargin: 18
-                        right: parent.right
-                        rightMargin: 18
-                    }
-                    height: 1
-                    color: Colors.md3.outline_variant
-                    opacity: 0.5
                 }
             }
         }

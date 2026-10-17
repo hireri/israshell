@@ -24,55 +24,88 @@ Column {
         leftPadding: 2
     }
 
-    Rectangle {
-        id: card
+    Item {
         width: root.width
-        height: cardColumn.implicitHeight
-        color: (Config.dim(Colors.md3.surface_container))
-        radius: 18
+        height: cardColumn.height
+
+        Item {
+            id: backLayer
+            anchors.fill: parent
+        }
 
         Column {
             id: cardColumn
             width: parent.width
-            onChildrenChanged: Qt.callLater(root._updateDividers)
+            spacing: 3
+            onChildrenChanged: Qt.callLater(root._updateShape)
         }
     }
 
     default property alias items: cardColumn.data
 
-    Component.onCompleted: Qt.callLater(_updateDividers)
+    Component {
+        id: backing
+
+        Rectangle {
+            required property Item target
+
+            x: target.x
+            y: target.y
+            width: target.width
+            height: target.height
+            visible: target.visible
+            color: Config.dim(Colors.md3.surface_container)
+
+            Behavior on topLeftRadius {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+
+            Behavior on bottomLeftRadius {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+        }
+    }
+
+    Component.onCompleted: Qt.callLater(_updateShape)
 
     property var _trackedRows: []
+    property var _backs: new Map()
 
-    function _updateDividers() {
-        const rows = [];
+    function _updateShape() {
+        const items = [];
         const kids = cardColumn.children;
         for (let i = 0; i < kids.length; i++) {
             const k = kids[i];
-            if (typeof k.itemAt === "function") {
-                for (let j = 0; j < k.count; j++) {
-                    const item = k.itemAt(j);
-                    if (item && item.hasOwnProperty("isLast"))
-                        rows.push(item);
-                }
-            } else if (k.hasOwnProperty("isLast")) {
-                rows.push(k);
-            }
+            if (typeof k.itemAt !== "function" && !k.hasOwnProperty("lineCount"))
+                items.push(k);
         }
 
-        for (const row of rows) {
-            if (root._trackedRows.indexOf(row) === -1) {
-                root._trackedRows.push(row);
-                row.visibleChanged.connect(() => Qt.callLater(root._updateDividers));
+        for (const item of items) {
+            if (root._trackedRows.indexOf(item) === -1) {
+                root._trackedRows.push(item);
+                item.visibleChanged.connect(() => Qt.callLater(root._updateShape));
             }
-            if (root.compact && row.hasOwnProperty("compact"))
-                row.compact = true;
+            if (root.compact && item.hasOwnProperty("compact"))
+                item.compact = true;
         }
 
-        const visibleRows = rows.filter(r => r.visible);
-        for (let i = 0; i < rows.length; i++)
-            rows[i].isLast = false;
-        for (let i = 0; i < visibleRows.length; i++)
-            visibleRows[i].isLast = (i === visibleRows.length - 1);
+        const shown = items.filter(r => r.visible);
+        for (let i = 0; i < shown.length; i++) {
+            const item = shown[i];
+            const top = i === 0 ? 18 : 6;
+            const bottom = i === shown.length - 1 ? 18 : 6;
+            if (item.hasOwnProperty("topRadius")) {
+                item.topRadius = top;
+                item.bottomRadius = bottom;
+                continue;
+            }
+            let back = root._backs.get(item);
+            if (!back) {
+                back = backing.createObject(backLayer, { target: item });
+                root._backs.set(item, back);
+            }
+            back.topLeftRadius = back.topRightRadius = top;
+            back.bottomLeftRadius = back.bottomRightRadius = bottom;
+        }
     }
 }

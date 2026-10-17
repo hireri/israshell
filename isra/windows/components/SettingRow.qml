@@ -49,16 +49,24 @@ Item {
     implicitHeight: Math.max(root.compact ? 44 : 56, contentCol.implicitHeight + (root.compact ? 14 : 20))
     implicitWidth: parent?.width ?? 0
 
+    property real topRadius: 18
+    property real bottomRadius: 18
+
     Rectangle {
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.leftMargin: root.sideMargin
-        anchors.right: parent.right
-        anchors.rightMargin: root.sideMargin
-        height: 1
-        color: Colors.md3.outline_variant
-        visible: !root.isLast
-        opacity: 0.5
+        anchors.fill: parent
+        color: Config.dim(Colors.md3.surface_container)
+        topLeftRadius: root.topRadius
+        topRightRadius: root.topRadius
+        bottomLeftRadius: root.bottomRadius
+        bottomRightRadius: root.bottomRadius
+
+        Behavior on topLeftRadius {
+            NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+        }
+
+        Behavior on bottomLeftRadius {
+            NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+        }
     }
 
     ColumnLayout {

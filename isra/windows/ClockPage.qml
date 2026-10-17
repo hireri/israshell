@@ -223,22 +223,10 @@ PageBase {
         }
     }
 
-    Rectangle {
+    SectionCard {
         Layout.fillWidth: true
-        implicitHeight: layoutInner.implicitHeight + 32
-        radius: 20
-        color: Config.dim(Colors.md3.surface_container)
 
-        ColumnLayout {
-            id: layoutInner
-            anchors {
-                left: parent.left
-                right: parent.right
-                verticalCenter: parent.verticalCenter
-                margins: 16
-            }
-            spacing: 16
-
+        SectionBlock {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 4
@@ -324,7 +312,9 @@ PageBase {
                     }
                 }
             }
+        }
 
+        SectionBlock {
             ClippingRectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 180
@@ -359,14 +349,9 @@ PageBase {
                     shadow: true
                 }
             }
+        }
 
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: Colors.md3.outline_variant
-                opacity: 0.15
-            }
-
+        SectionBlock {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 16
