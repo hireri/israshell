@@ -9,6 +9,10 @@ Item {
 
     property string mode: "apps"
     property string widgetType: ""
+    property bool sortAlpha: true
+    property int skinToneIndex: 0
+    property bool canClear: false
+    readonly property bool hasText: input.text !== ""
 
     signal queryChanged(string q)
     signal escapePressed
@@ -16,6 +20,13 @@ Item {
     signal downPressed
     signal enterPressed
     signal tabPressed
+    signal backtabPressed
+    signal pageUpPressed
+    signal pageDownPressed
+    signal deletePressed
+    signal sortToggled
+    signal clearRequested
+    signal skinToneCycled
 
     property string _prefix: ""
     readonly property var _prefixTriggers: [";", ":"]
@@ -83,14 +94,37 @@ Item {
             "translate": Localization.t("launcher.type_to_translate")
         })
 
+    readonly property var _toneIcons: ["🖐️", "🖐🏻", "🖐🏼", "🖐🏽", "🖐🏾", "🖐🏿"]
+
+    readonly property string _shapeKey: (mode === "apps" && widgetType && _icon[widgetType]) ? widgetType : mode
+    readonly property var _shapes: ({
+            "apps": "cookie9",
+            "clipboard": "cookie4",
+            "emoji": "cookie6",
+            "translate": "cookie7",
+            "math": "cookie12",
+            "color": "circle",
+            "kaomoji": "cookie6",
+            "timestamp": "cookie12",
+            "define": "cookie7",
+            "whois": "circle",
+            "password": "cookie4",
+            "weather": "circle",
+            "wolfram": "cookie9"
+        })
+
+    function snapTabs() {
+        tabs.snap();
+    }
+
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+        color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
         border.width: 1
         border.color: Colors.md3.outline_variant
 
-        Rectangle {
+        Item {
             id: iconCircle
             anchors {
                 verticalCenter: parent.verticalCenter
@@ -99,27 +133,33 @@ Item {
             }
             width: 42
             height: 42
-            radius: 21
-            color: Colors.md3.primary
+
+            MaterialShape {
+                anchors.centerIn: parent
+                shapeSize: 42
+                name: root._shapes[root._shapeKey] ?? "cookie9"
+                color: Colors.md3.primary
+                immediate: true
+            }
 
             MaterialIcon {
                 anchors.centerIn: parent
                 name: root._activeIcon
                 color: Colors.md3.on_primary
                 filled: true
-                iconSize: 24
+                iconSize: 22
                 transitionType: "none"
             }
         }
 
         Rectangle {
-            id: innerPill
+            id: field
             anchors {
                 left: iconCircle.right
-                right: parent.right
+                right: tabs.left
                 verticalCenter: parent.verticalCenter
-                leftMargin: 12
-                rightMargin: 7
+                leftMargin: 8
+                rightMargin: 8
             }
             height: 42
             radius: height / 2
@@ -131,7 +171,7 @@ Item {
                     right: parent.right
                     verticalCenter: parent.verticalCenter
                     leftMargin: 14
-                    rightMargin: 14
+                    rightMargin: 3
                 }
                 spacing: 6
 
@@ -140,7 +180,7 @@ Item {
                     implicitWidth: pfxLbl.implicitWidth + 14
                     implicitHeight: 22
                     radius: 11
-                    color: Colors.md3.primary_container
+                    color: Colors.md3.secondary_container
                     Layout.alignment: Qt.AlignVCenter
 
                     Text {
@@ -148,7 +188,7 @@ Item {
                         anchors.centerIn: parent
                         anchors.verticalCenterOffset: -1
                         text: root._prefix
-                        color: Colors.md3.primary
+                        color: Colors.md3.on_secondary_container
                         font.pixelSize: 13
                         font.family: Config.fontFamily
                         font.weight: Font.Medium
@@ -160,7 +200,9 @@ Item {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
                     color: Colors.md3.on_surface
-                    font.pixelSize: 14
+                    selectionColor: Colors.md3.primary
+                    selectedTextColor: Colors.md3.on_primary
+                    font.pixelSize: 15
                     font.family: Config.fontFamily
                     clip: true
                     focus: true
@@ -171,8 +213,9 @@ Item {
                         text: root._placeholder[root.mode] ?? ""
                         color: Colors.md3.on_surface_variant
                         font: parent.font
+                        elide: Text.ElideRight
                         visible: input.text === ""
-                        opacity: 0.45
+                        opacity: 0.6
                     }
 
                     onTextChanged: {
@@ -195,6 +238,12 @@ Item {
                                 event.accepted = true;
                             }
                             break;
+                        case Qt.Key_Delete:
+                            if (event.modifiers & Qt.ShiftModifier) {
+                                event.accepted = true;
+                                root.deletePressed();
+                            }
+                            break;
                         case Qt.Key_Up:
                             event.accepted = true;
                             root.upPressed();
@@ -203,10 +252,22 @@ Item {
                             event.accepted = true;
                             root.downPressed();
                             break;
+                        case Qt.Key_PageUp:
+                            event.accepted = true;
+                            root.pageUpPressed();
+                            break;
+                        case Qt.Key_PageDown:
+                            event.accepted = true;
+                            root.pageDownPressed();
+                            break;
                         case Qt.Key_Return:
                         case Qt.Key_Enter:
                             event.accepted = true;
                             root.enterPressed();
+                            break;
+                        case Qt.Key_Backtab:
+                            event.accepted = true;
+                            root.backtabPressed();
                             break;
                         case Qt.Key_Tab:
                             event.accepted = true;
@@ -215,6 +276,44 @@ Item {
                         }
                     }
                 }
+
+                LauncherIconBtn {
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: root.mode === "apps" && root.widgetType === "" && input.text === ""
+                    icon: "sort-by-alpha"
+                    tint: root.sortAlpha ? Colors.md3.on_surface_variant : Colors.md3.primary
+                    tip: Localization.t(root.sortAlpha ? "launcher.tip_sort_category" : "launcher.tip_sort_alpha")
+                    onClicked: root.sortToggled()
+                }
+                LauncherIconBtn {
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: root.mode === "clipboard"
+                    enabled: root.canClear
+                    icon: "delete"
+                    tip: Localization.t("launcher.tip_clear")
+                    onClicked: root.clearRequested()
+                }
+                LauncherIconBtn {
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: root.mode === "emoji"
+                    glyph: root._toneIcons[root.skinToneIndex] ?? ""
+                    tip: Localization.t("launcher.tip_skin_tone")
+                    onClicked: root.skinToneCycled()
+                }
+            }
+        }
+
+        LauncherTabs {
+            id: tabs
+            anchors {
+                right: parent.right
+                rightMargin: 8
+                verticalCenter: parent.verticalCenter
+            }
+            mode: root.mode
+            onTabRequested: prefix => {
+                root.prefill(prefix);
+                input.forceActiveFocus();
             }
         }
     }

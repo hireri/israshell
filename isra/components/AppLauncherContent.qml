@@ -48,6 +48,7 @@ Item {
         _launcherInput.reset();
         if (root.controller._pendingPrefix !== "")
             _launcherInput.prefill(root.controller._pendingPrefix);
+        _launcherInput.snapTabs();
         Qt.callLater(() => {
             _launcherInput.forceInputFocus();
             _launcherList.resetToTop();
@@ -79,7 +80,7 @@ Item {
         width: {
             const controller = root.controller;
             if (!controller)
-                return 420;
+                return 460;
             if (controller.mode === "apps") {
                 if (controller.widgetType === "kaomoji")
                     return 480;
@@ -89,9 +90,9 @@ Item {
                         return 640;
                     if (len > 45)
                         return 520;
-                    return 420;
+                    return 460;
                 }
-                return 420;
+                return 460;
             }
             if (controller.mode === "emoji")
                 return 480;
@@ -156,6 +157,25 @@ Item {
             onDownPressed: _launcherList.moveDown()
             onEnterPressed: _launcherList.activateCurrent()
             onTabPressed: _launcherList.moveDown()
+            onBacktabPressed: _launcherList.moveUp()
+            onPageUpPressed: _launcherList.pageUp()
+            onPageDownPressed: _launcherList.pageDown()
+            onDeletePressed: _launcherList.deleteCurrent()
+            sortAlpha: root.controller?._sortAlpha ?? true
+            skinToneIndex: _launcherList.skinToneIndex
+            canClear: (root.controller?._clipEntries.length ?? 0) > 0
+            onSortToggled: {
+                if (root.controller)
+                    root.controller._sortAlpha = !root.controller._sortAlpha;
+                _launcherList.resetToTop();
+            }
+            onClearRequested: {
+                clearProc.running = true;
+                clearClipboardProc.running = true;
+                if (root.controller)
+                    root.controller._clipEntries = [];
+            }
+            onSkinToneCycled: _launcherList.skinToneIndex = (_launcherList.skinToneIndex + 1) % 6
         }
 
         ClippingRectangle {
@@ -166,7 +186,7 @@ Item {
                 left: parent.left
                 right: parent.right
             }
-            radius: 20
+            radius: 28
             color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
             clip: true
 
@@ -335,15 +355,16 @@ Item {
                 left: parent.left
                 right: parent.right
             }
-            radius: 20
+            radius: 28
             color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
             clip: true
 
             border.width: 1
             border.color: Colors.md3.outline_variant
 
-            readonly property int _max: root.controller?.mode === "clipboard" ? 600 : 400
-            height: _launcherList.count === 0 ? 220 : Math.min(_max, Math.max(60, _launcherList.listContentHeight + 40))
+            visible: !(root.widgetShown && _launcherList.count === 0)
+            readonly property int _max: root.controller?.mode === "clipboard" ? 600 : 448
+            height: _launcherList.count === 0 ? 168 : Math.min(_max, Math.max(60, _launcherList.listContentHeight))
 
             Behavior on height {
                 enabled: !(root.controller?._opening ?? false)
@@ -355,26 +376,6 @@ Item {
 
             Column {
                 anchors.fill: parent
-
-                LauncherHeader {
-                    id: listHeader
-                    width: parent.width
-                    mode: root.controller?.mode ?? "apps"
-                    count: root.controller?.unifiedModel.values.length ?? 0
-                    sortAlpha: root.controller?._sortAlpha ?? true
-                    onClearRequested: {
-                        clearProc.running = true;
-                        clearClipboardProc.running = true;
-                        if (root.controller)
-                            root.controller._clipEntries = [];
-                    }
-                    onSortToggled: {
-                        if (root.controller)
-                            root.controller._sortAlpha = !root.controller._sortAlpha;
-                        _launcherList.resetToTop();
-                    }
-                    onSkinToneChanged: index => _launcherList.skinToneIndex = index
-                }
 
                 Process {
                     id: clearProc
@@ -393,11 +394,13 @@ Item {
                 LauncherList {
                     id: _launcherList
                     width: parent.width
-                    height: parent.height - listHeader.height
+                    height: parent.height
                     model: root.controller?.unifiedModel ?? null
                     mode: root.controller?.mode ?? "apps"
                     onItemActivated: entry => root.controller?._handleActivation(entry)
                     onActionActivated: root.controller?.close()
+                    onClipDeleteRequested: id => root.controller?.deleteClip(id)
+                    busy: root.controller?.busy ?? false
                 }
             }
         }

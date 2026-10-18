@@ -2,7 +2,9 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 import qs.services
+import qs.style
 import "../services/fuzzy.js" as Fuzzy
+import "../services/calc.js" as Calc
 
 Scope {
     id: root
@@ -30,6 +32,34 @@ Scope {
     property string _query: ""
 
     property bool _sortAlpha: true
+
+    property var _usage: ({})
+    readonly property int _frequentCount: 5
+
+    FileView {
+        id: usageFile
+        path: Config.configDir + "/launcher_usage.json"
+        watchChanges: false
+        blockLoading: true
+        printErrors: false
+        Component.onCompleted: root._loadUsage()
+    }
+
+    function _loadUsage() {
+        try {
+            const u = JSON.parse(usageFile.text());
+            root._usage = (u && typeof u === "object") ? u : {};
+        } catch (e) {
+            root._usage = {};
+        }
+    }
+
+    function _recordLaunch(id) {
+        const u = Object.assign({}, root._usage);
+        u[id] = (u[id] ?? 0) + 1;
+        root._usage = u;
+        usageFile.setText(JSON.stringify(u));
+    }
 
     readonly property string mode: {
         const q = _query;
@@ -87,13 +117,7 @@ Scope {
         if (/^(?:w|wolfram)\s+\S+/i.test(q))
             return "wolfram";
 
-        if (/^[+-]?[\d.,]+\s*°?\s*[a-zA-Z][a-zA-Z\/]{0,19}\s+(?:to|in)\s+°?\s*[a-zA-Z][a-zA-Z\/]{0,19}$/i.test(q))
-            return "math";
-        if (/\d/.test(q) && /[+\-*\/^%]/.test(q))
-            return "math";
-        if (/\b(?:sqrt|cbrt|sind?|cosd?|tand?|asin|acos|atan2?|log|ln|exp|abs|floor|ceil|round|trunc|pow|min|max)\s*\(/.test(q))
-            return "math";
-        if (/\b(?:pi|e)\b/.test(q) && /[+\-*\/^%]/.test(q))
+        if (Calc.classify(q))
             return "math";
         if (/^(?:pw|gen|pwgen)(?:\s|$)/i.test(q))
             return "password";
@@ -222,7 +246,7 @@ Scope {
 
     Process {
         id: emojiLoader
-        command: ["sh", "-c", ["dir=\"$HOME/.config/quickshell/isra/components/emojis\"", "files=\"emojis_smileys_emotion.csv emojis_people_body.csv emojis_activities.csv emojis_animals_nature.csv emojis_food_drink.csv emojis_objects.csv emojis_travel_places.csv emojis_symbols.csv emojis_flags.csv\"", "for f in $files; do cat \"$dir/$f\" 2>/dev/null; done"].join("\n")]
+        command: ["sh", "-c", ["dir=\"$1\"", "files=\"emojis_smileys_emotion.csv emojis_people_body.csv emojis_activities.csv emojis_animals_nature.csv emojis_food_drink.csv emojis_objects.csv emojis_travel_places.csv emojis_symbols.csv emojis_flags.csv\"", "for f in $files; do cat \"$dir/$f\" 2>/dev/null; done"].join("\n"), "sh", Quickshell.shellDir + "/components/emojis"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const re = /^(\S+)\s+(.*?)\s*(?:<small>\(([^)]*)\)<\/small>)?\s*$/;
@@ -280,7 +304,7 @@ Scope {
 
     Process {
         id: kaomojiLoader
-        command: ["sh", "-c", "cat \"$HOME/.config/quickshell/isra/components/emojis/kaomoji.csv\" 2>/dev/null"]
+        command: ["cat", Quickshell.shellDir + "/components/emojis/kaomoji.csv"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const parsed = [];
@@ -310,6 +334,8 @@ Scope {
     }
 
     property var _clipEntries: []
+    property bool _clipLoaded: false
+    readonly property bool busy: (mode === "clipboard" && !_clipLoaded) || (mode === "emoji" && !_emojiLoaded)
 
     Process {
         id: clipLoader
@@ -327,12 +353,14 @@ Scope {
                     const content = line.slice(tab + 1);
                     const trimmed = content.trim();
                     if (trimmed.startsWith("[[ binary data ")) {
-                        const mm = /\[\[ binary data ([^\]]+?)\s*\]\]/.exec(trimmed);
+                        const mm = /\s(\w+\/[\w.+-]+)/.exec(trimmed);
+                        const meta = /\[\[ binary data (.*?)\s*\]\]/.exec(trimmed);
                         parsed.push({
                             id,
                             isImage: true,
                             content: "",
-                            mime: mm ? mm[1].trim() : "image/png"
+                            mime: mm ? mm[1] : "image/png",
+                            meta: meta ? meta[1] : ""
                         });
                     } else {
                         parsed.push({
@@ -344,6 +372,7 @@ Scope {
                     }
                 }
                 root._clipEntries = parsed;
+                root._clipLoaded = true;
             }
         }
     }
@@ -353,12 +382,16 @@ Scope {
         clipLoader.running = true;
     }
 
+    function _preload() {
+        _reloadClipboard();
+        if (!root._emojiLoaded && !emojiLoader.running)
+            emojiLoader.running = true;
+    }
+
     onModeChanged: {
-        if (mode === "clipboard") {
-            _clipEntries = [];
+        if (mode === "clipboard")
             _reloadClipboard();
-        }
-        if (mode === "emoji" && !root._emojiLoaded)
+        if (mode === "emoji" && !root._emojiLoaded && !emojiLoader.running)
             emojiLoader.running = true;
     }
 
@@ -369,10 +402,9 @@ Scope {
 
     property alias unifiedModel: unifiedModel
 
-    ScriptModel {
+    QtObject {
         id: unifiedModel
-        objectProp: "uid"
-        values: {
+        readonly property var values: {
             const q = root.modeQuery.trim().toLowerCase();
             const mode = root.mode;
 
@@ -380,21 +412,47 @@ Scope {
                 const all = DesktopEntries.applications.values.slice();
 
                 if (q === "") {
-                    const mapped = arr => arr.map(d => ({
-                                    type: "app",
-                                    uid: "app_" + d.id,
-                                    entry: d
-                                }));
-                    if (root._sortAlpha) {
-                        return mapped(all.sort((a, b) => a.name.localeCompare(b.name)));
-                    } else {
-                        return mapped(all.sort((a, b) => {
-                            const ac = a.categories?.[0] ?? "ZZZ";
-                            const bc = b.categories?.[0] ?? "ZZZ";
-                            const cmp = ac.localeCompare(bc);
-                            return cmp !== 0 ? cmp : a.name.localeCompare(b.name);
-                        }));
+                    const usage = root._usage;
+                    const out = [];
+                    const header = label => out.push({
+                            type: "header",
+                            uid: "hdr_" + label,
+                            label: label
+                        });
+                    const frequent = all.filter(d => (usage[d.id] ?? 0) > 0).sort((a, b) => usage[b.id] - usage[a.id] || a.name.localeCompare(b.name)).slice(0, root._frequentCount);
+                    if (frequent.length > 0) {
+                        header(Localization.t("launcher.section_frequent"));
+                        for (const d of frequent)
+                            out.push({
+                                type: "app",
+                                uid: "fav_" + d.id,
+                                entry: d
+                            });
                     }
+                    if (root._sortAlpha) {
+                        if (frequent.length > 0)
+                            header(Localization.t("launcher.section_all"));
+                        for (const d of all.sort((a, b) => a.name.localeCompare(b.name)))
+                            out.push({
+                                type: "app",
+                                uid: "app_" + d.id,
+                                entry: d
+                            });
+                    } else {
+                        let last = null;
+                        for (const d of all.sort((a, b) => (a.categories?.[0] ?? "\uffff").localeCompare(b.categories?.[0] ?? "\uffff") || a.name.localeCompare(b.name))) {
+                            const cat = d.categories?.[0] ?? Localization.t("launcher.section_other");
+                            if (cat !== last)
+                                header(cat);
+                            last = cat;
+                            out.push({
+                                type: "app",
+                                uid: "app_" + d.id,
+                                entry: d
+                            });
+                        }
+                    }
+                    return out;
                 }
 
                 const scored = [];
@@ -406,7 +464,7 @@ Scope {
                             type: "app",
                             uid: "app_" + d.id,
                             entry: d,
-                            _score: res.score
+                            _score: res.score + Math.min(root._usage[d.id] ?? 0, 25) * 2
                         });
                     }
                 }
@@ -474,8 +532,13 @@ Scope {
     }
 
     function copyToClipboard(text) {
-        copyProc.command = ["wl-copy", text];
+        copyProc.command = ["wl-copy", "--", text];
         copyProc.running = true;
+    }
+
+    function deleteClip(id) {
+        Quickshell.execDetached(["clipvault", "delete", id]);
+        root._clipEntries = root._clipEntries.filter(e => e.id !== id);
     }
     Process {
         id: imgCopyProc
@@ -498,24 +561,26 @@ Scope {
                 command: cmd,
                 workingDirectory: cwd
             });
+            _recordLaunch(e.id);
             close();
         } else if (entry.type === "clip") {
             if (entry.isImage) {
-                imgCopyProc.command = ["sh", "-c", "clipvault get " + entry.id + " | wl-copy --type " + entry.mime];
+                imgCopyProc.command = ["sh", "-c", "clipvault get \"$1\" | wl-copy --type \"$2\"", "sh", entry.id, entry.mime];
                 imgCopyProc.running = true;
             } else {
-                copyProc.command = ["sh", "-c", "clipvault get " + entry.id + " | wl-copy &"];
+                copyProc.command = ["sh", "-c", "clipvault get \"$1\" | wl-copy", "sh", entry.id];
                 copyProc.running = true;
             }
             close();
         } else if (entry.type === "emoji") {
-            copyProc.command = ["wl-copy", entry.emoji];
+            copyProc.command = ["wl-copy", "--", entry.emoji];
             copyProc.running = true;
             close();
         }
     }
 
     function open(prefix) {
+        _preload();
         _targetScreen = _findFocusedScreen();
         _opening = true;
         _pendingPrefix = prefix;
