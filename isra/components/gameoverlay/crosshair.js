@@ -53,6 +53,8 @@ function parse(code) {
     var s = defaults();
     var t = String(code || "").split(";");
     for (var i = 0; i < t.length; i++) {
+        if (t[i] === "A" || t[i] === "S")
+            break;
         var set = setters.hasOwnProperty(t[i]) ? setters[t[i]] : null;
         if (set && i + 1 < t.length) {
             set(s, t[i + 1]);
