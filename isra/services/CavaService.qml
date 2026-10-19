@@ -61,7 +61,7 @@ Singleton {
 
     readonly property var cavaCommand: [
         "bash", "-c",
-        "printf '%s' \"$1\" | cava -p /dev/stdin", "--",
+        "f=\"${XDG_RUNTIME_DIR:-/tmp}/isra-cava.conf\"; printf '%s' \"$1\" > \"$f\" && exec cava -p \"$f\"", "--",
         "[general]\n" +
         "framerate = 60\n" +
         "bars = " + service.activeBars + "\n" +
