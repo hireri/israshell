@@ -1,7 +1,7 @@
 .pragma library
 
 const browsers = /^(zen|helium|firefox|librewolf|chromium|google-chrome|brave|vivaldi|microsoft-edge)/i;
-const suffix = /\s[—–-]\s(zen browser|mozilla firefox|librewolf|chromium|google chrome|brave|vivaldi|microsoft edge)$/i;
+const suffix = /\s[—–-]\s(zen( browser)?|helium|(mozilla )?firefox|librewolf|chromium|google chrome|brave|vivaldi|microsoft edge)$/i;
 
 const sites = [
     [/\byoutube\b/i, "youtube"],
