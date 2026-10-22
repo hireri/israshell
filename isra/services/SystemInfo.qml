@@ -450,6 +450,9 @@ Singleton {
         onTriggered: fileUptime.reload()
     }
 
+    property bool _fetchCardPresent: false
+    on_FetchCardPresentChanged: if (_fetchCardPresent) packagesProc.running = true
+
     Timer {
         id: packagesTimer
         interval: 600000

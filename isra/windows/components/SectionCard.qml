@@ -49,11 +49,11 @@ Column {
         Rectangle {
             required property Item target
 
-            x: target.x
-            y: target.y
-            width: target.width
-            height: target.height
-            visible: target.visible
+            x: target?.x ?? 0
+            y: target?.y ?? 0
+            width: target?.width ?? 0
+            height: target?.height ?? 0
+            visible: target?.visible ?? false
             color: Config.dim(Colors.md3.surface_container)
 
             Behavior on topLeftRadius {

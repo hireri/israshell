@@ -34,6 +34,7 @@ Item {
     Component.onCompleted: {
         root.appliedWide = root.wide;
         root._started = true;
+        SystemInfo._fetchCardPresent = true;
     }
 
     SequentialAnimation {
