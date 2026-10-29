@@ -113,7 +113,7 @@ Singleton {
         return rects;
     }
 
-    function _hyprlandClientRects(backendObj: QtObject): var {
+    function _hyprlandClientRects(backendObj: var): var {
         const rawWindows = backendObj?.rawWindows;
         if (!Array.isArray(rawWindows))
             return [];
