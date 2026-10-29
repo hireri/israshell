@@ -9,6 +9,10 @@ function duration(secs) {
     return h > 0 ? h + "h " + (m % 60 < 10 ? "0" : "") + (m % 60) + "m" : m + "m";
 }
 
+function num(n) {
+    return String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 function bytes(n) {
     var v = Math.max(0, Number(n) || 0);
     var units = ["B", "KiB", "MiB", "GiB", "TiB"];
@@ -17,7 +21,7 @@ function bytes(n) {
         v /= 1024;
         i++;
     }
-    return (i === 0 || v >= 100 ? Math.round(v) : Math.round(v * 10) / 10) + " " + units[i];
+    return (i === 0 || v >= 100 ? num(v) : Math.round(v * 10) / 10) + " " + units[i];
 }
 
 function clock(ms) {

@@ -131,6 +131,8 @@ Singleton {
                 fullscreen: w.fullscreen ?? false,
                 title: w.title ?? "",
                 appId: w.class ?? "",
+                address: w.address ?? "",
+                toplevel: w.toplevel ?? null,
                 floating: w.floating ?? false,
                 focusOrder: w.focusHistoryID ?? 0
             });
@@ -164,9 +166,15 @@ Singleton {
             const x2 = Math.min(r.x + r.w, scr.x + scr.width);
             const y2 = Math.min(r.y + r.h, scr.y + scr.height);
             if (x2 > x1 && y2 > y1)
-                out.push({ x: x1, y: y1, w: x2 - x1, h: y2 - y1, workspaceId: r.workspaceId, title: r.title, appId: r.appId });
+                out.push({ x: x1, y: y1, w: x2 - x1, h: y2 - y1, workspaceId: r.workspaceId, title: r.title, appId: r.appId,
+                    toplevel: x1 === r.x && y1 === r.y && x2 === r.x + r.w && y2 === r.y + r.h ? (r.toplevel ?? null) : null });
         }
         return out;
+    }
+
+    function fetchClientRects(done: var): void {
+        if (backendName === "hyprland" && backend?.snapshotRaw)
+            backend.snapshotRaw(r => done(_filterToVisibleWorkspaces(_hyprlandClientRects({ rawWindows: r.windows }), r.monitors)));
     }
 
     function windowSnapshot(): var {

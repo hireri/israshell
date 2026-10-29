@@ -165,7 +165,7 @@ PageBase {
                 tone: page.checking ? "neutral" : page.manual ? "warn" : "ok"
                 shape: "cookie6"
                 icon: page.pending.length === 0 && !page.checking ? "check" : "inventory-2"
-                title: page.checking ? Localization.t("systemApp.sub_checking") : page.pending.length === 0 ? Localization.t("systemApp.pkg_up_to_date") : page.pending.length === 1 ? Localization.t("systemApp.pkg_updates_one") : Localization.t("systemApp.pkg_updates_many").replace("%1", page.pending.length)
+                title: page.checking ? Localization.t("systemApp.sub_checking") : page.pending.length === 0 ? Localization.t("systemApp.pkg_up_to_date") : page.pending.length === 1 ? Localization.t("systemApp.pkg_updates_one") : Localization.t("systemApp.pkg_updates_many").replace("%1", Fmt.num(page.pending.length))
                 sublabel: page.manual ? Localization.t("systemApp.pkg_read_news") : page.lastUpdate > 0 ? Localization.t("systemApp.pkg_last_updated").replace("%1", Fmt.ago(page.lastUpdate)) : ""
 
                 Pill {
@@ -275,8 +275,8 @@ PageBase {
                     visible: page.live("pkg.orphans")
                     checkId: "pkg.orphans"
                     icon: "delete"
-                    value: !orphans.res ? "—" : orphans.res.count > 0 ? (orphans.res.bytes === null ? String(orphans.res.count) : Fmt.bytes(orphans.res.bytes)) : Localization.t("systemApp.det_none")
-                    sublabel: (orphans.res?.count ?? 0) === 1 ? Localization.t("systemApp.pkg_unused_one") : (orphans.res?.count ?? 0) > 1 ? Localization.t("systemApp.pkg_unused_many").replace("%1", orphans.res.count) : ""
+                    value: !orphans.res ? "—" : orphans.res.count > 0 ? (orphans.res.bytes === null ? Fmt.num(orphans.res.count) : Fmt.bytes(orphans.res.bytes)) : Localization.t("systemApp.det_none")
+                    sublabel: (orphans.res?.count ?? 0) === 1 ? Localization.t("systemApp.pkg_unused_one") : (orphans.res?.count ?? 0) > 1 ? Localization.t("systemApp.pkg_unused_many").replace("%1", Fmt.num(orphans.res.count)) : ""
 
                     ActionButton {
                         visible: (orphans.res?.count ?? 0) > 0
@@ -293,7 +293,7 @@ PageBase {
                     visible: page.live("pkg.pacnew")
                     checkId: "pkg.pacnew"
                     icon: "edit"
-                    value: pacnew.res ? String(pacnew.res.count) : "—"
+                    value: pacnew.res ? Fmt.num(pacnew.res.count) : "—"
                     sublabel: (pacnew.res?.count ?? 0) === 1 ? Localization.t("systemApp.pkg_review_one") : (pacnew.res?.count ?? 0) > 1 ? Localization.t("systemApp.pkg_review_many") : ""
 
                     ActionButton {
@@ -328,7 +328,7 @@ PageBase {
                     visible: page.live("pkg.deps")
                     checkId: "pkg.deps"
                     icon: "check"
-                    value: !deps.res ? "—" : (deps.res.issues ?? []).length > 0 ? Localization.t("systemApp.det_dep_issues").replace("%1", deps.res.issues.length) : "OK"
+                    value: !deps.res ? "—" : (deps.res.issues ?? []).length > 0 ? Localization.t("systemApp.det_dep_issues").replace("%1", Fmt.num(deps.res.issues.length)) : "OK"
                 }
             }
         }

@@ -281,7 +281,7 @@ PageBase {
                 icon: "lock"
                 fill: Colors.md3.primary_container
                 ink: Colors.md3.on_primary_container
-                value: String(page.view.unlocks)
+                value: Fmt.num(page.view.unlocks)
                 label: Localization.t("screenTime.unlocks")
             }
 
@@ -292,7 +292,7 @@ PageBase {
                 icon: "notifications"
                 fill: Colors.md3.secondary_container
                 ink: Colors.md3.on_secondary_container
-                value: String(page.view.notifications)
+                value: Fmt.num(page.view.notifications)
                 label: Localization.t("systemApp.notifications")
             }
 
@@ -365,7 +365,7 @@ PageBase {
 
                 SectionLabel {
                     Layout.fillWidth: true
-                    text: Localization.t("screenTime.most_used").toUpperCase() + " · " + page.apps.length
+                    text: Localization.t("screenTime.most_used").toUpperCase() + " · " + Fmt.num(page.apps.length)
                 }
 
                 ChipRow {
@@ -397,7 +397,7 @@ PageBase {
                         topRadius: app.index === 0 ? 18 : 6
                         bottomRadius: app.index === page.shownApps.length - 1 ? 18 : 6
                         title: app.name
-                        sublabel: Localization.t("screenTime.app_sub").replace("%1", app.modelData.sessions).replace("%2", app.modelData.notifications)
+                        sublabel: Localization.t("screenTime.app_sub").replace("%1", Fmt.num(app.modelData.sessions)).replace("%2", Fmt.num(app.modelData.notifications))
 
                         leading: [
                             Item {
@@ -441,7 +441,7 @@ PageBase {
                             anchors.verticalCenter: parent.verticalCenter
                             width: 62
                             horizontalAlignment: Text.AlignRight
-                            text: page.sortBy === "notifications" ? String(app.modelData.notifications) : Fmt.duration(app.modelData.seconds)
+                            text: page.sortBy === "notifications" ? Fmt.num(app.modelData.notifications) : Fmt.duration(app.modelData.seconds)
                             font.family: Config.fontFamily
                             font.pixelSize: 14
                             font.weight: Font.Medium
@@ -489,13 +489,13 @@ PageBase {
 
                 ActionButton {
                     visible: page.apps.length > 8
-                    label: page.allApps ? Localization.t("systemApp.show_less") : Localization.t("systemApp.show_all").replace("%1", page.apps.length)
+                    label: page.allApps ? Localization.t("systemApp.show_less") : Localization.t("systemApp.show_all").replace("%1", Fmt.num(page.apps.length))
                     onClicked: page.allApps = !page.allApps
                 }
 
                 Text {
                     visible: ScreenTimeService.cfg.excluded.length > 0
-                    text: Localization.t("screenTime.excluded_count").replace("%1", ScreenTimeService.cfg.excluded.length)
+                    text: Localization.t("screenTime.excluded_count").replace("%1", Fmt.num(ScreenTimeService.cfg.excluded.length))
                     font.family: Config.fontFamily
                     font.pixelSize: 12
                     color: Colors.md3.outline

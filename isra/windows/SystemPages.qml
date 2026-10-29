@@ -55,7 +55,7 @@ Singleton {
             return HealthService.attention > 0 ? Localization.t("systemApp.sub_needs").replace("%1", HealthService.attention) : (HealthService.probed ? Localization.t("systemApp.sub_all_clear") : Localization.t("systemApp.sub_checking"));
         case "packages": {
             const n = (HealthService.result("updates.repo")?.count ?? 0) + (HealthService.result("updates.aur")?.count ?? 0) + (HealthService.result("updates.flatpak")?.count ?? 0);
-            return HealthService.result("updates.repo") ? Localization.t("systemApp.sub_updates").replace("%1", n) : Localization.t("systemApp.sub_checking");
+            return HealthService.result("updates.repo") ? Localization.t("systemApp.sub_updates").replace("%1", Fmt.num(n)) : Localization.t("systemApp.sub_checking");
         }
         case "storage": {
             const m = HealthService.result("storage.mounts")?.mounts ?? [];

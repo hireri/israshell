@@ -285,6 +285,10 @@ Item {
         root._readyScreens = {};
         root._forceBackingReady = false;
         root._frozenClientRects = root.clientRects;
+        CompositorService.fetchClientRects(r => {
+            if (uiLoader.active)
+                root._frozenClientRects = root._padRects(r);
+        });
 
         uiLoader.active = true;
 
@@ -339,7 +343,24 @@ Item {
 
         if (root.activeTool !== "screenshot")
             root._closeOverlay();
+        else if (root._renderShot(gx, gy, gw, gh))
+            return;
         captureDelay.start();
+    }
+
+    function _renderShot(gx, gy, gw, gh) {
+        const x = Math.round(gx), y = Math.round(gy), w = Math.round(gw), h = Math.round(gh);
+        const scr = Quickshell.screens.find(s => x >= s.x && y >= s.y && x + w <= s.x + s.width && y + h <= s.y + s.height);
+        if (!scr || !uiLoader.item)
+            return false;
+        const hit = root.effectiveClientRects.find(r => r.toplevel && r.x === x && r.y === y && r.w === w && r.h === h);
+        return uiLoader.item.shoot(scr, { x: x, y: y, w: w, h: h, toplevel: hit?.toplevel ?? null, win: hit?.win ?? null });
+    }
+
+    function _shotRendered(path) {
+        const tool = root.toolList.find(t => t.id === "screenshot");
+        captureProc.command = ["sh", "-c", `${tool?.cmd ?? ""} '${path}'`];
+        captureProc.running = true;
     }
 
     function clampToScreenAxis(v, horizontal) {
@@ -417,9 +438,10 @@ Item {
         return root.rectBetween(px, py, px + sx * size, py + sy * size);
     }
 
-    readonly property var clientRects: {
+    readonly property var clientRects: _padRects(CompositorService.clientRects)
+
+    function _padRects(rawRects) {
         const pad = root.windowPad;
-        const rawRects = CompositorService.clientRects;
         const rects = [];
         if (Array.isArray(rawRects)) {
             for (let i = 0; i < rawRects.length; i++) {
@@ -437,7 +459,9 @@ Item {
                         w: x2 - x1,
                         h: y2 - y1,
                         title: r.title ?? "",
-                        appId: r.appId ?? ""
+                        appId: r.appId ?? "",
+                        toplevel: r.toplevel ?? null,
+                        win: { x: r.x, y: r.y, w: r.w, h: r.h }
                     });
                 }
             }
@@ -1148,6 +1172,17 @@ Item {
                     globalPressY += my;
                 }
 
+                function shoot(scr, job) {
+                    for (let i = 0; i < overlays.count; i++) {
+                        const o = overlays.objectAt(i);
+                        if (o.modelData === scr) {
+                            o.startShot(job);
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
                 function windowAtGlobal(gx, gy) {
                     const rects = root.effectiveClientRects;
                     for (let i = rects.length - 1; i >= 0; i--) {
@@ -1159,6 +1194,7 @@ Item {
                 }
 
                 Instantiator {
+                    id: overlays
                     model: Quickshell.screens
 
                     PanelWindow {
@@ -1188,6 +1224,56 @@ Item {
                             }
                         }
                         readonly property var backgroundItem: backgroundViewLoader.item
+
+                        property var shotJob: null
+                        function startShot(job) {
+                            shotJob = job;
+                            if (job.toplevel) {
+                                winLoader.active = true;
+                                shotTimer.restart();
+                            } else {
+                                renderShot();
+                            }
+                        }
+                        function renderShot() {
+                            shotTimer.stop();
+                            const j = shotJob;
+                            if (!j || j.rendering)
+                                return;
+                            j.rendering = true;
+                            const own = j.toplevel && winLoader.item && winLoader.item.hasContent;
+                            if (j.toplevel && !own)
+                                winLoader.active = false;
+                            const r = own ? j.win : j;
+                            cropSrc.sourceRect = Qt.rect(r.x - monX, r.y - monY, r.w, r.h);
+                            cropBox.width = r.w;
+                            cropBox.height = r.h;
+                            const size = Qt.size(Math.round(r.w * modelData.devicePixelRatio), Math.round(r.h * modelData.devicePixelRatio));
+                            cropSrc.textureSize = size;
+                            Qt.callLater(() => cropBox.grabToImage(res => {
+                                    const path = `/tmp/qs-screenshot-${Date.now()}.png`;
+                                    if (res.saveToFile(path))
+                                        root._shotRendered(path);
+                                    else
+                                        captureDelay.start();
+                                }, size));
+                        }
+                        Timer {
+                            id: shotTimer
+                            interval: 700
+                            onTriggered: overlay.renderShot()
+                        }
+                        Item {
+                            id: cropBox
+                            visible: false
+                            ShaderEffectSource {
+                                id: cropSrc
+                                anchors.fill: parent
+                                sourceItem: shotLayer
+                                smooth: true
+                                mipmap: true
+                            }
+                        }
 
                         Component.onCompleted: {
                             if (CompositorService.focusedMonitor?.name === modelData.name)
@@ -1345,44 +1431,65 @@ Item {
                             Keys.onEnterPressed: sessionRoot.commitText()
                         }
 
-                        Loader {
-                            id: backgroundViewLoader
+                        Item {
+                            id: shotLayer
                             anchors.fill: parent
-                            visible: root.activeTool !== "record"
-                            z: -1
-                            sourceComponent: root.useGrimCapture ? grimImageComp : screencopyViewComp
+                            Loader {
+                                id: backgroundViewLoader
+                                anchors.fill: parent
+                                visible: root.activeTool !== "record" && !winLoader.active
+                                z: -1
+                                sourceComponent: root.useGrimCapture ? grimImageComp : screencopyViewComp
 
-                            Component {
-                                id: screencopyViewComp
-                                ScreencopyView {
-                                    id: screencopyView
-                                    captureSource: overlay.screen
+                                Component {
+                                    id: screencopyViewComp
+                                    ScreencopyView {
+                                        id: screencopyView
+                                        captureSource: overlay.screen
+                                        live: false
+                                        onHasContentChanged: if (hasContent)
+                                        root._markScreenReady(overlay.screen.name)
+                                    }
+                                }
+                                Component {
+                                    id: grimImageComp
+                                    Image {
+                                        source: root._grimPaths[overlay.screen.name] ? "file://" + root._grimPaths[overlay.screen.name] : ""
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: false
+                                        cache: false
+                                    }
+                                }
+                            }
+
+                            MarkupLayer {
+                                anchors.fill: parent
+                                z: 0
+                                visible: root.backingReady && root.activeTool === "screenshot"
+                                shapes: sessionRoot.doc.shapes
+                                draft: sessionRoot.draft
+                                hiddenIndex: sessionRoot.editIndex
+                                originX: overlay.monX
+                                originY: overlay.monY
+                                backgroundSource: overlay.backgroundItem
+                            }
+
+                            Loader {
+                                id: winLoader
+                                active: false
+                                z: -0.5
+                                x: overlay.shotJob?.win ? overlay.shotJob.win.x - overlay.monX : 0
+                                y: overlay.shotJob?.win ? overlay.shotJob.win.y - overlay.monY : 0
+                                width: overlay.shotJob?.win?.w ?? 0
+                                height: overlay.shotJob?.win?.h ?? 0
+                                sourceComponent: ScreencopyView {
+                                    anchors.fill: parent
+                                    captureSource: overlay.shotJob?.toplevel ?? null
                                     live: false
                                     onHasContentChanged: if (hasContent)
-                                    root._markScreenReady(overlay.screen.name)
+                                        overlay.renderShot()
                                 }
                             }
-                            Component {
-                                id: grimImageComp
-                                Image {
-                                    source: root._grimPaths[overlay.screen.name] ? "file://" + root._grimPaths[overlay.screen.name] : ""
-                                    fillMode: Image.PreserveAspectCrop
-                                    asynchronous: false
-                                    cache: false
-                                }
-                            }
-                        }
-
-                        MarkupLayer {
-                            anchors.fill: parent
-                            z: 0
-                            visible: root.backingReady && root.activeTool === "screenshot"
-                            shapes: sessionRoot.doc.shapes
-                            draft: sessionRoot.draft
-                            hiddenIndex: sessionRoot.editIndex
-                            originX: overlay.monX
-                            originY: overlay.monY
-                            backgroundSource: overlay.backgroundItem
                         }
 
                         Item {

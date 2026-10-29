@@ -17,7 +17,11 @@ SELECTION="${1:-}"
 FILENAME="screenshot-$(date +'%Y-%m-%d_%H-%M-%S').png"
 FILEPATH="$OUTPUT_DIR/$FILENAME"
 
-grim -g "$SELECTION" "$FILEPATH" || exit 1
+if [[ -f "$SELECTION" ]]; then
+    mv "$SELECTION" "$FILEPATH" || exit 1
+else
+    grim -g "$SELECTION" "$FILEPATH" || exit 1
+fi
 wl-copy < "$FILEPATH"
 
 echo "$FILEPATH"

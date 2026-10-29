@@ -91,8 +91,8 @@ Scope {
         monitors = Hyprland.monitors.values.map(m => _monitorShape(m));
         windows = Hyprland.toplevels.values.map(t => _windowShape(t));
         rawWindows = Hyprland.toplevels.values
-            .map(t => t.lastIpcObject)
-            .filter(ipc => !!ipc);
+            .filter(t => !!t.lastIpcObject)
+            .map(t => Object.assign({}, t.lastIpcObject, { toplevel: t.wayland }));
     }
 
     Component.onCompleted: {
@@ -204,6 +204,39 @@ Scope {
                     cb(root.snapshotWindows(JSON.parse(text.slice(i))));
                 } catch (e) {
                     console.warn("[HyprlandBackend] snapshotAfter parse failed:", e);
+                }
+            }
+        }
+    }
+
+    function snapshotRaw(done: var): void {
+        rawProc.done = done;
+        rawProc.running = false;
+        rawProc.running = true;
+    }
+
+    Process {
+        id: rawProc
+        property var done: null
+        command: ["sh", "-c", "hyprctl -j clients; echo '@@'; hyprctl -j monitors"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const cb = rawProc.done;
+                rawProc.done = null;
+                if (!cb)
+                    return;
+                try {
+                    const [c, m] = text.split("@@");
+                    const handles = {};
+                    for (const t of Hyprland.toplevels.values)
+                        if (t.lastIpcObject?.address)
+                            handles[t.lastIpcObject.address] = t.wayland;
+                    cb({
+                        windows: JSON.parse(c).map(o => Object.assign(o, { toplevel: handles[o.address] ?? null })),
+                        monitors: JSON.parse(m).map(o => ({ name: o.name, activeWorkspaceId: o.activeWorkspace?.id ?? -1, specialWorkspaceId: o.specialWorkspace?.id ?? 0 }))
+                    });
+                } catch (e) {
+                    console.warn("[HyprlandBackend] snapshotRaw parse failed:", e);
                 }
             }
         }

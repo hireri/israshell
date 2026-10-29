@@ -57,8 +57,7 @@ PageBase {
     readonly property var failedUnits: HealthService.result("svc.list")?.failed ?? []
     readonly property int svcDown: page.failedUnits.length
     readonly property int svcRunning: page.services.filter(s => s.state === "run").length
-    // One dot per service up to 24; beyond that each dot stands for a share of the total, keeping every
-    // non-empty state visible (a failing unit never rounds away to nothing).
+
     readonly property var svcDots: {
         const n = page.services.length;
         if (n === 0)
@@ -295,7 +294,7 @@ PageBase {
 
             Text {
                 anchors.centerIn: parent
-                text: String(page.updates)
+                text: Fmt.num(page.updates)
                 font.family: Config.fontFamily
                 font.pixelSize: 44
                 font.weight: Font.Medium

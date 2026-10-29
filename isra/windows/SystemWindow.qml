@@ -191,7 +191,7 @@ FloatingWindow {
             spacing: 0
 
             Rectangle {
-                Layout.preferredWidth: root.sidebarCollapsed ? 64 : 248
+                Layout.preferredWidth: root.sidebarCollapsed ? 64 : 208
                 Layout.fillHeight: true
                 color: "transparent"
                 clip: true
