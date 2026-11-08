@@ -484,7 +484,8 @@ CAVAEOF`]
                 width: 28
                 height: 28
                 anchors {
-                    left: parent.left
+                    left: shuffleBtn.right
+                    leftMargin: shuffleBtn.visible ? 2 : 0
                     verticalCenter: parent.verticalCenter
                 }
                 opacity: (root.player?.canGoPrevious ?? false) ? 1.0 : 0.4
@@ -658,8 +659,8 @@ CAVAEOF`]
                 width: 28
                 height: 28
                 anchors {
-                    right: pinBtn.left
-                    rightMargin: root.showPin ? 4 : 0
+                    right: repeatBtn.left
+                    rightMargin: repeatBtn.visible ? 2 : 0
                     verticalCenter: parent.verticalCenter
                 }
                 opacity: (root.player?.canGoNext ?? false) ? 1.0 : 0.4
@@ -706,6 +707,31 @@ CAVAEOF`]
                         skipSyncTimer.restart();
                     }
                 }
+            }
+
+            ToggleBtn {
+                id: shuffleBtn
+                anchors {
+                    left: parent.left
+                    verticalCenter: parent.verticalCenter
+                }
+                visible: root.player?.shuffleSupported ?? false
+                icon: "shuffle"
+                active: root.player?.shuffle ?? false
+                onClicked: root.player.shuffle = !root.player.shuffle
+            }
+
+            ToggleBtn {
+                id: repeatBtn
+                anchors {
+                    right: pinBtn.left
+                    rightMargin: root.showPin ? 4 : 0
+                    verticalCenter: parent.verticalCenter
+                }
+                visible: root.player?.loopSupported ?? false
+                icon: root.player?.loopState === MprisLoopState.Track ? "repeat-one" : "repeat"
+                active: (root.player?.loopState ?? MprisLoopState.None) !== MprisLoopState.None
+                onClicked: root.player.loopState = root.player.loopState === MprisLoopState.None ? MprisLoopState.Playlist : root.player.loopState === MprisLoopState.Playlist ? MprisLoopState.Track : MprisLoopState.None
             }
 
             Item {
@@ -794,6 +820,35 @@ CAVAEOF`]
                     duration: 500
                 }
             }
+        }
+    }
+
+    component ToggleBtn: Item {
+        id: tb
+        property string icon: ""
+        property bool active: false
+        signal clicked
+        width: visible ? 28 : 0
+        height: 28
+
+        MaterialIcon {
+            name: tb.icon
+            anchors.centerIn: parent
+            iconSize: 16
+            color: tb.active ? root.colPrimary : root.colOnSurfaceVariant
+            transitionType: "none"
+            Behavior on color {
+                ColorAnimation {
+                    duration: 150
+                }
+            }
+        }
+        MouseArea {
+            id: tbMa
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: tb.clicked()
         }
     }
 
