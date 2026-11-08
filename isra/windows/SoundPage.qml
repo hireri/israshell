@@ -21,6 +21,7 @@ PageBase {
     component SoundSwitch: SettingSwitch {
         id: sw
         property string key
+        previewSound: ({notifications: "message-new-instant", volumeChange: "audio-volume-change", screenshot: "screen-capture", unlock: "complete", startup: "service-login", lock: "service-logout", chargerPlug: "power-plug", batteryLow: "battery-caution", localsend: "message", bluetooth: "device-added"})[key] ?? ""
         enabled: Config.sounds.enabled
         opacity: enabled ? 1.0 : 0.4
         checked: Config.sounds[sw.key]

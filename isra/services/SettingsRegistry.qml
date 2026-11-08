@@ -8,13 +8,14 @@ import "fuzzy.js" as Fuzzy
 Singleton {
     id: root
 
-    readonly property string _cacheVersion: "5"
+    readonly property string _cacheVersion: "6"
 
     property bool _initialized: false
     property bool _instancesLoaded: false
     property bool _allInstantiated: false
     property bool _cacheValid: false
     property string _loadedKey: ""
+    property string _loadedLang: ""
 
     property var pageDefs: []
     property var entries: []
@@ -157,9 +158,11 @@ Singleton {
     function refreshTranslations() {
         if (!root._initialized)
             return;
-        if (!root._allInstantiated && root.entries.some(e => e.source === null))
+        const langStale = root._loadedLang !== Config.language;
+        if (langStale && !root._allInstantiated && root.entries.some(e => e.source === null))
             root.ensureInstances();
-        let changed = false;
+        root._loadedLang = Config.language;
+        let changed = langStale;
         for (const entry of root.entries) {
             if (entry.source === null)
                 continue;
@@ -545,6 +548,7 @@ Singleton {
             if (!Array.isArray(data.entries))
                 return;
             root._loadedKey = data.key ?? "";
+            root._loadedLang = data.lang ?? "";
             for (const e of data.entries) {
                 if (typeof e.path !== "string" || typeof e.type !== "string")
                     continue;
@@ -577,6 +581,7 @@ Singleton {
         root._cacheValid = true;
         cacheFile.setText(JSON.stringify({
             key: root._cacheVersion,
+            lang: Config.language,
             entries: root.entries.map(e => root.publicEntry(e))
         }));
     }
