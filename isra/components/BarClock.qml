@@ -147,7 +147,7 @@ Item {
                     "tnum": 1
                 }
                 text: LocaleService.barDateText
-                visible: Config.bar.showDate && !row.fallbackToTime && text !== ""
+                visible: Config.bar.showDate && !row.fallbackToTime && !root.panelWindow.barTight && text !== ""
                 anchors.verticalCenter: parent.verticalCenter
                 renderType: Text.NativeRendering
             }

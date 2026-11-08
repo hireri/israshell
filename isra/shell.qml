@@ -328,6 +328,28 @@ ShellRoot {
                     height: window.height
                 }
 
+                readonly property real barAvail: barContent.width
+                readonly property real barNeed: {
+                    const gap = 12;
+                    const half = centerAnchorLoader.active ? (centerAnchorLoader.item?.width ?? 0) / 2 + gap + Math.max(centerBeforeZone.width, centerAfterZone.width) : centerAutoZone.width / 2;
+                    if (half === 0)
+                        return leftZone.width + rightZone.width + gap;
+                    return 2 * (Math.max(leftZone.width, rightZone.width) + gap + half);
+                }
+                property bool barTight: false
+                property real _tightFullNeed: 0
+
+                function _updateTight(): void {
+                    if (!barTight && barNeed > barAvail) {
+                        _tightFullNeed = barNeed;
+                        barTight = true;
+                    } else if (barTight && barAvail >= _tightFullNeed + 24) {
+                        barTight = false;
+                    }
+                }
+                onBarNeedChanged: _updateTight()
+                onBarAvailChanged: _updateTight()
+
                 property rect dockHoverRect: Qt.rect(0, 0, 0, 0)
                 property int dockMenuCount: 0
                 readonly property bool dockMenuOpen: dockMenuCount > 0

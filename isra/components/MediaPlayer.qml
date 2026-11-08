@@ -14,6 +14,7 @@ ClippingRectangle {
     property var controllerRegistry: null
 
     readonly property string panelType: "media"
+    readonly property int mode: panelWindow.barTight ? 1 : Config.bar.playerMode
 
     color: {
         if (root.isOpen) {
@@ -31,11 +32,11 @@ ClippingRectangle {
         }
     }
 
-    radius: Config.bar.playerMode === 1 ? height / 2 : 18
+    radius: root.mode === 1 ? height / 2 : 18
     implicitWidth: {
-        if (Config.bar.playerMode === 1)
+        if (root.mode === 1)
             return 32;
-        if (Config.bar.playerMode === 2)
+        if (root.mode === 2)
             return 216;
         return 240;
     }
@@ -92,13 +93,13 @@ ClippingRectangle {
 
     Row {
         anchors.centerIn: parent
-        spacing: (Config.bar.playerMode === 1 || Config.bar.playerMode === 2) ? 0 : 8
+        spacing: (root.mode === 1 || root.mode === 2) ? 0 : 8
 
         Item {
             id: pillCover
-            visible: Config.bar.playerMode !== 2
-            implicitWidth: Config.bar.playerMode === 1 ? root.height - 4 : 24
-            height: Config.bar.playerMode === 1 ? root.height - 4 : 24
+            visible: root.mode !== 2
+            implicitWidth: root.mode === 1 ? root.height - 4 : 24
+            height: root.mode === 1 ? root.height - 4 : 24
             anchors.verticalCenter: parent.verticalCenter
 
             readonly property bool isPlaying: MediaPlayerState.displayPlayer?.playbackState === MprisPlaybackState.Playing
@@ -196,8 +197,8 @@ ClippingRectangle {
 
         Item {
             id: marqueeContainer
-            visible: Config.bar.playerMode !== 1
-            implicitWidth: Config.bar.playerMode !== 1 ? (Config.bar.playerMode === 2 ? 176 : 200) : 0
+            visible: root.mode !== 1
+            implicitWidth: root.mode !== 1 ? (root.mode === 2 ? 176 : 200) : 0
             height: 20
             clip: true
             anchors.verticalCenter: parent.verticalCenter

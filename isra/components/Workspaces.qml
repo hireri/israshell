@@ -31,6 +31,7 @@ Rectangle {
         }
     }
 
+    readonly property bool compact: Config.workspaces.compact || panelWindow.barTight
     readonly property bool isNiri: SystemInfo.compositor === "niri" || CompositorService.backendName === "niri"
     readonly property string currentMonitorName: panelWindow.modelData?.name ?? ""
     property var currentMonitor: CompositorService.monitors.find(m => m.name === currentMonitorName)
@@ -53,7 +54,7 @@ Rectangle {
 
     property var visibleIds: {
         if (isNiri) return [];
-        if (!Config.workspaces.compact) {
+        if (!root.compact) {
             return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         }
         const ids = [];
@@ -263,7 +264,7 @@ Rectangle {
 
                     property bool isVisible: {
                         if (root.isNiri) return true;
-                        return !Config.workspaces.compact || hasWindows || takenByMonitor || isActiveHere || isActiveOther;
+                        return !root.compact || hasWindows || takenByMonitor || isActiveHere || isActiveOther;
                     }
 
                     property string clientAppId: root.getAppId(firstWindow)
