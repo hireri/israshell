@@ -48,6 +48,7 @@ Item {
         root._closing = false;
         if (root.useGrimCapture)
             root._cleanupGrimFiles();
+        root._cleanupWinShots();
     }
 
     Timer {
@@ -255,6 +256,31 @@ Item {
 
     readonly property bool useGrimCapture: SystemInfo.compositor === "niri"
     property var _grimPaths: ({})
+    property var _winShots: ({})
+    property int _snapStep: 0
+
+    readonly property var _snapRects: {
+        if (root.activeTool !== "screenshot" || root.useGrimCapture)
+            return [];
+        const rects = root.effectiveClientRects.filter(r => r.toplevel && r.win);
+        const n = {};
+        for (const r of rects)
+            n[r.appId + "\n" + r.title] = (n[r.appId + "\n" + r.title] ?? 0) + 1;
+        return rects.filter(r => n[r.appId + "\n" + r.title] === 1);
+    }
+
+    function _dprAt(x, y) {
+        const s = Quickshell.screens.find(s => x >= s.x && y >= s.y && x < s.x + s.width && y < s.y + s.height);
+        return s?.devicePixelRatio ?? 1;
+    }
+
+    function _cleanupWinShots() {
+        const paths = Object.values(root._winShots);
+        if (paths.length > 0)
+            Quickshell.execDetached(["rm", "-f", ...paths]);
+        root._winShots = {};
+        root._snapStep = 0;
+    }
 
     property var _readyScreens: ({})
     property bool _forceBackingReady: false
@@ -353,8 +379,9 @@ Item {
         const scr = Quickshell.screens.find(s => x >= s.x && y >= s.y && x + w <= s.x + s.width && y + h <= s.y + s.height);
         if (!scr || !uiLoader.item)
             return false;
-        const hit = root.effectiveClientRects.find(r => r.toplevel && r.x === x && r.y === y && r.w === w && r.h === h);
-        return uiLoader.item.shoot(scr, { x: x, y: y, w: w, h: h, toplevel: hit?.toplevel ?? null, win: hit?.win ?? null });
+        const hit = root.effectiveClientRects.find(r => r.x === x && r.y === y && r.w === w && r.h === h);
+        const snap = hit ? root._winShots[`${hit.x},${hit.y},${hit.w},${hit.h}`] ?? "" : "";
+        return uiLoader.item.shoot(scr, { x: x, y: y, w: w, h: h, snap: snap, win: snap ? hit.win : null });
     }
 
     function _shotRendered(path) {
@@ -1228,7 +1255,7 @@ Item {
                         property var shotJob: null
                         function startShot(job) {
                             shotJob = job;
-                            if (job.toplevel) {
+                            if (job.snap) {
                                 winLoader.active = true;
                                 shotTimer.restart();
                             } else {
@@ -1241,8 +1268,8 @@ Item {
                             if (!j || j.rendering)
                                 return;
                             j.rendering = true;
-                            const own = j.toplevel && winLoader.item && winLoader.item.hasContent;
-                            if (j.toplevel && !own)
+                            const own = j.snap && winLoader.item && winLoader.item.status === Image.Ready;
+                            if (j.snap && !own)
                                 winLoader.active = false;
                             const r = own ? j.win : j;
                             cropSrc.sourceRect = Qt.rect(r.x - monX, r.y - monY, r.w, r.h);
@@ -1260,7 +1287,7 @@ Item {
                         }
                         Timer {
                             id: shotTimer
-                            interval: 700
+                            interval: 120
                             onTriggered: overlay.renderShot()
                         }
                         Item {
@@ -1272,6 +1299,24 @@ Item {
                                 sourceItem: shotLayer
                                 smooth: true
                                 mipmap: true
+                            }
+                        }
+
+                        Repeater {
+                            model: ScriptModel {
+                                values: overlay.modelData === Quickshell.screens[0] ? root._snapRects.map(r => `${r.x},${r.y},${r.w},${r.h}`) : []
+                            }
+
+                            WindowSnap {
+                                id: winSnap
+                                required property string modelData
+                                required property int index
+                                z: -5
+                                rect: root._snapRects.find(r => `${r.x},${r.y},${r.w},${r.h}` === modelData) ?? ({ x: 0, y: 0, w: 0, h: 0, win: { w: 0, h: 0 } })
+                                dpr: root._dprAt(rect.x, rect.y)
+                                go: index <= root._snapStep
+                                onDone: root._snapStep = Math.max(root._snapStep, index + 1)
+                                onSaved: (k, p) => root._winShots = Object.assign({}, root._winShots, { [k]: p })
                             }
                         }
 
@@ -1482,12 +1527,10 @@ Item {
                                 y: overlay.shotJob?.win ? overlay.shotJob.win.y - overlay.monY : 0
                                 width: overlay.shotJob?.win?.w ?? 0
                                 height: overlay.shotJob?.win?.h ?? 0
-                                sourceComponent: ScreencopyView {
-                                    anchors.fill: parent
-                                    captureSource: overlay.shotJob?.toplevel ?? null
-                                    live: false
-                                    onHasContentChanged: if (hasContent)
-                                        overlay.renderShot()
+                                sourceComponent: Image {
+                                    source: overlay.shotJob?.snap ? "file://" + overlay.shotJob.snap : ""
+                                    asynchronous: false
+                                    cache: false
                                 }
                             }
                         }
