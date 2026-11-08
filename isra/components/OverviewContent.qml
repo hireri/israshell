@@ -551,6 +551,27 @@ Item {
                                 live: PowerProfileService.liveCaptureAllowed
                                 constraintSize: Qt.size(root.tileW * 2, root.tileH * 2)
                                 captureSource: cell.d?.toplevel ?? null
+                                property int tries: 0
+                                onHasContentChanged: if (hasContent) tries = 0
+
+                                Connections {
+                                    target: cell
+                                    function onDChanged(): void {
+                                        capture.tries = 0;
+                                    }
+                                }
+
+                                Timer {
+                                    id: retry
+                                    interval: 300
+                                    repeat: true
+                                    running: !capture.hasContent && !!cell.d?.toplevel && capture.tries < 30
+                                    onTriggered: {
+                                        capture.tries++;
+                                        capture.captureSource = null;
+                                        capture.captureSource = Qt.binding(() => cell.d?.toplevel ?? null);
+                                    }
+                                }
                             }
 
                             IconImage {

@@ -104,7 +104,7 @@ Scope {
     function _apply(list: var): void {
         if (!isOpen)
             return;
-        const sig = JSON.stringify(list.map(w => [w.address, w.workspaceId, w.workspaceName, w.x, w.y, w.w, w.h, w.floating, w.fullscreen, w.monitor]));
+        const sig = JSON.stringify(list.map(w => [w.address, w.workspaceId, w.workspaceName, w.x, w.y, w.w, w.h, w.floating, w.fullscreen, w.monitor, !!w.toplevel]));
         if (sig === _sig)
             return;
         _sig = sig;
