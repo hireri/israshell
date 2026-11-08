@@ -81,7 +81,10 @@ Singleton {
     readonly property real from: 0.01
     readonly property real to: 1.0
 
+    signal adjusted
+
     function setBrightness(val: real): void {
+        adjusted();
         if (Config.linkMonitorBrightness)
             root.monitors.forEach(m => m.setBrightness(val));
         else
@@ -139,11 +142,14 @@ Singleton {
                     return;
                 const lines = data.split("\n").map(l => l.trim());
                 const modelLine = lines.find(l => l.startsWith("Monitor:"));
+                const edidModel = lines.find(l => l.startsWith("Model:"));
                 const busLine = lines.find(l => l.startsWith("I2C bus:"));
-                if (!modelLine || !busLine)
+                const connLine = lines.find(l => /^DRM[ _]connector:/.test(l));
+                if (!busLine)
                     return;
                 root._ddcNext.push({
-                    model: modelLine.split(":")[2]?.trim() ?? "",
+                    model: modelLine ? (modelLine.split(":")[2]?.trim() ?? "") : (edidModel?.split(":")[1]?.trim() ?? ""),
+                    connector: connLine?.split(":")[1]?.trim().replace(/^card\d+-/, "") ?? "",
                     busNum: busLine.split("/dev/i2c-")[1]
                 });
             }
@@ -166,8 +172,9 @@ Singleton {
         id: monitor
 
         required property ShellScreen screen
-        readonly property bool isDdc: !!root.ddcMonitors.find(m => screen?.model?.includes(m.model))
-        readonly property string busNum: root.ddcMonitors.find(m => screen?.model?.includes(m.model))?.busNum ?? ""
+        readonly property var ddcEntry: root.ddcMonitors.find(m => m.connector ? m.connector === screen?.name : (m.model && screen?.model?.includes(m.model)))
+        readonly property bool isDdc: !!ddcEntry
+        readonly property string busNum: ddcEntry?.busNum ?? ""
         readonly property bool useGamma: !isDdc && root.backlightDetectionReady && root.backlightDevice === "" && root._isHyprland
 
         property int rawMaxBrightness: 100

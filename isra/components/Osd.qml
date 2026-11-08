@@ -70,7 +70,7 @@ Scope {
 
     Connections {
         target: BrightnessService
-        function onValueChanged() {
+        function onAdjusted() {
             root.showBrightnessOsd();
         }
     }
