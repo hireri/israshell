@@ -709,6 +709,15 @@ ShellRoot {
                         id: mountedPanelTypes
                     }
 
+                    Timer {
+                        interval: 4000
+                        running: true
+                        onTriggered: {
+                            if (!window._hasMountedType("launcher"))
+                                mountedPanelTypes.append({ type: "launcher" });
+                        }
+                    }
+
                     Repeater {
                         id: panelSlotRepeater
                         model: mountedPanelTypes
@@ -740,6 +749,8 @@ ShellRoot {
                                 id: unmountTimer
                                 interval: (panelSlotLoader.item && panelSlotLoader.item.controller === PanelService.current) ? 0 : 450
                                 onTriggered: {
+                                    if (panelSlotLoader.type === "launcher")
+                                        return;
                                     for (let i = 0; i < mountedPanelTypes.count; i++) {
                                         if (mountedPanelTypes.get(i).type === panelSlotLoader.type) {
                                             mountedPanelTypes.remove(i);

@@ -193,6 +193,30 @@ PageBase {
     }
 
     SectionCard {
+        label: Localization.t("barPage.launcher")
+        Layout.fillWidth: true
+
+        SettingSwitch {
+            label: Localization.t("displayPage.dock_launcher")
+            sublabel: Localization.t("displayPage.dock_launcher_desc")
+            checked: Config.launcher.docked
+            onToggled: v => Config.update({
+                launcher: Object.assign({}, Config.launcher, { docked: v })
+            })
+        }
+
+        SettingSwitch {
+            isLast: true
+            label: Localization.t("displayPage.launcher_sections")
+            sublabel: Localization.t("displayPage.launcher_sections_desc")
+            checked: Config.launcher.sections
+            onToggled: v => Config.update({
+                launcher: Object.assign({}, Config.launcher, { sections: v })
+            })
+        }
+    }
+
+    SectionCard {
         label: Localization.t("barPage.status_icons")
         Layout.fillWidth: true
 

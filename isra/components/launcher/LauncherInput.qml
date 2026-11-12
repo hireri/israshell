@@ -12,6 +12,8 @@ Item {
     property bool sortAlpha: true
     property int skinToneIndex: 0
     property bool canClear: false
+    property bool embedded: false
+    property bool gridNav: false
     readonly property bool hasText: input.text !== ""
 
     signal queryChanged(string q)
@@ -27,6 +29,9 @@ Item {
     signal sortToggled
     signal clearRequested
     signal skinToneCycled
+    signal frequentRequested(int index)
+    signal leftPressed
+    signal rightPressed
 
     property string _prefix: ""
     readonly property var _prefixTriggers: [";", ":"]
@@ -120,8 +125,8 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-        border.width: 1
+        color: root.embedded ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+        border.width: root.embedded ? 0 : 1
         border.color: Colors.md3.outline_variant
 
         Item {
@@ -230,6 +235,11 @@ Item {
 
                     Keys.onEscapePressed: root.escapePressed()
                     Keys.onPressed: event => {
+                        if ((event.modifiers & Qt.AltModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
+                            event.accepted = true;
+                            root.frequentRequested(event.key - Qt.Key_1);
+                            return;
+                        }
                         switch (event.key) {
                         case Qt.Key_Backspace:
                             if (input.text === "" && root._prefix !== "") {
@@ -251,6 +261,18 @@ Item {
                         case Qt.Key_Down:
                             event.accepted = true;
                             root.downPressed();
+                            break;
+                        case Qt.Key_Left:
+                            if (root.gridNav) {
+                                event.accepted = true;
+                                root.leftPressed();
+                            }
+                            break;
+                        case Qt.Key_Right:
+                            if (root.gridNav) {
+                                event.accepted = true;
+                                root.rightPressed();
+                            }
                             break;
                         case Qt.Key_PageUp:
                             event.accepted = true;

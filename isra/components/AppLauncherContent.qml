@@ -12,7 +12,12 @@ Item {
 
     property var controller: null
 
-    readonly property bool isOpen: controller ? controller.isOpen : false
+    readonly property bool _mine: {
+        const screen = root.QsWindow.window?.screen ?? null;
+        const target = root.controller?._targetScreen ?? null;
+        return screen === null || target === null || screen === target;
+    }
+    readonly property bool isOpen: (controller ? controller.isOpen : false) && _mine
 
     anchors.fill: parent
 
@@ -23,25 +28,66 @@ Item {
 
     readonly property var activeWidget: {
         switch (root.controller?.widgetType ?? "") {
-            case "math":      return mathWidget;
-            case "translate": return translateWidget;
-            case "color":     return colorWidget;
-            case "timestamp": return timestampWidget;
-            case "define":    return defineWidget;
-            case "whois":     return whoisWidget;
-            case "kaomoji":   return kaomojiWidget;
-            case "password":  return passwordWidget;
-            case "weather":   return weatherWidget;
-            case "wolfram":   return wolframWidget;
+            case "math":      return mathLoader.item;
+            case "translate": return translateLoader.item;
+            case "color":     return colorLoader.item;
+            case "timestamp": return timestampLoader.item;
+            case "define":    return defineLoader.item;
+            case "whois":     return whoisLoader.item;
+            case "kaomoji":   return kaomojiLoader.item;
+            case "password":  return passwordLoader.item;
+            case "weather":   return weatherLoader.item;
+            case "wolfram":   return wolframLoader.item;
             default:          return null;
         }
     }
 
+    readonly property var _loaders: ({
+            math: mathLoader,
+            translate: translateLoader,
+            color: colorLoader,
+            timestamp: timestampLoader,
+            define: defineLoader,
+            whois: whoisLoader,
+            kaomoji: kaomojiLoader,
+            password: passwordLoader,
+            weather: weatherLoader,
+            wolfram: wolframLoader
+        })
+
+    function _wake() {
+        const l = root._loaders[root.controller?.widgetType ?? ""];
+        if (l)
+            l.active = true;
+    }
+
     readonly property bool widgetShown: activeWidget !== null && activeWidget.hasResult
+
+    readonly property bool docked: Config.launcher.docked
+    readonly property bool _gridMode: docked && (root.controller?.mode ?? "") === "emoji"
+    readonly property var _nav: _gridMode ? _emojiGrid : _launcherList
+    readonly property int _pad: docked ? 8 : 0
+
+    readonly property string _zone: {
+        const b = Config.bar;
+        if (b.left.includes("launcher"))
+            return "left";
+        if (b.right.includes("launcher"))
+            return "right";
+        return "center";
+    }
+    readonly property real _barInset: {
+        const mode = Config.bar.transparency === 2 ? (Config.bar.mode === 2 ? 2 : 0) : Config.bar.mode;
+        return (mode === 2 ? 66 : 44) + 8;
+    }
+
+    readonly property bool _showFrequent: docked && !widgetShown && (root.controller?.mode ?? "") === "apps" && (root.controller?._query ?? "") === "" && (root.controller?.frequentApps.length ?? 0) >= 3
+    readonly property real _freqW: _showFrequent ? 252 : 0
 
     function _resetForOpen() {
         if (!root.controller)
             return;
+        root._wake();
         _closeAnim.stop();
         _stack.opacity = 1.0;
         _stack.scale = 1.0;
@@ -52,32 +98,101 @@ Item {
         Qt.callLater(() => {
             _launcherInput.forceInputFocus();
             _launcherList.resetToTop();
+            _emojiGrid.resetToTop();
         });
     }
 
-    Component.onCompleted: Qt.callLater(_resetForOpen)
+    property bool _ready: false
+    Component.onCompleted: {
+        if (root.isOpen)
+            Qt.callLater(_resetForOpen);
+        Qt.callLater(() => root._ready = true);
+    }
+    onDockedChanged: {
+        _closeAnim.stop();
+        dockResetTimer.stop();
+        _stack.opacity = root.isOpen ? 1.0 : 0.0;
+        _stack.scale = 1.0;
+    }
     onIsOpenChanged: {
         if (root.isOpen)
             Qt.callLater(_resetForOpen);
+        else if (root.docked)
+            dockResetTimer.restart();
         else
             _closeAnim.start();
     }
 
+    Timer {
+        id: dockResetTimer
+        interval: 360
+        onTriggered: {
+            if (root.isOpen || !root.controller)
+                return;
+            root.controller._query = "";
+            _launcherList.resetToTop();
+            _emojiGrid.resetToTop();
+        }
+    }
+
+    property real _slide: (root._ready && root.isOpen) ? 0 : 1
+    Behavior on _slide {
+        enabled: root.docked
+        NumberAnimation {
+            duration: 350
+            easing.type: Easing.OutExpo
+        }
+    }
+
+    readonly property real _bodyTarget: {
+        if (!docked)
+            return 0;
+        const content = root.widgetShown ? (widgetInner.implicitHeight + 32) : listCard._contentH;
+        return Math.min(360, Math.max(168, content));
+    }
+    property real _bodyH: _bodyTarget
+    Behavior on _bodyH {
+        enabled: root.docked && root.isOpen && root._slide === 0 && !(root.controller?._opening ?? false)
+        NumberAnimation {
+            duration: 220
+            easing.type: Easing.OutCubic
+        }
+    }
+
     Connections {
         target: root.controller
+        function onWidgetTypeChanged() {
+            root._wake();
+        }
         function onModeChanged() {
             _launcherList.resetToTop();
+            _emojiGrid.resetToTop();
         }
     }
 
     Item {
         id: _stack
-        anchors.horizontalCenter: parent.horizontalCenter
 
         readonly property real _restFraction: 0.3
-        y: Math.round(root.height * _restFraction)
+        x: {
+            if (!root.docked)
+                return Math.round((root.width - width) / 2);
+            if (root._zone === "left")
+                return 12;
+            if (root._zone === "right")
+                return root.width - width - 12;
+            return Math.round((root.width - width) / 2);
+        }
+        y: {
+            if (!root.docked)
+                return Math.round(root.height * _restFraction);
+            const travel = (height + root._barInset + 8) * root._slide;
+            return Config.bar.position === 1 ? root.height - height - root._barInset + travel : root._barInset - travel;
+        }
 
         width: {
+            if (root.docked)
+                return 640;
             const controller = root.controller;
             if (!controller)
                 return 460;
@@ -107,11 +222,13 @@ Item {
             }
         }
 
-        height: listCard.y + listCard.height
-        transformOrigin: Item.Center
+        height: root.docked ? (root._pad + _launcherInput.height + gap + root._bodyH + root._pad) : (listCard.y + listCard.height)
+        transformOrigin: root.docked ? (Config.bar.position === 1 ? Item.Bottom : Item.Top) : Item.Center
 
-        opacity: 1.0
+
+        opacity: 0.0
         scale: 1.0
+        visible: root.docked ? root._slide < 0.999 : opacity > 0.01
 
         ParallelAnimation {
             id: _closeAnim
@@ -138,12 +255,27 @@ Item {
 
         readonly property int gap: 8
 
+        Rectangle {
+            visible: root.docked
+            anchors.fill: parent
+            z: -1
+            radius: 28
+            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+            border.width: 1
+            border.color: Colors.md3.outline_variant
+        }
+
         LauncherInput {
             id: _launcherInput
+            embedded: root.docked
+            gridNav: root._gridMode
             anchors {
                 top: parent.top
                 left: parent.left
                 right: parent.right
+                topMargin: root._pad
+                leftMargin: root._pad
+                rightMargin: root._pad
             }
             mode: root.controller?.mode ?? "apps"
             widgetType: root.controller?.widgetType ?? ""
@@ -153,20 +285,26 @@ Item {
                     root.controller._query = q;
             }
             onEscapePressed: root.controller?.close()
-            onUpPressed: _launcherList.moveUp()
-            onDownPressed: _launcherList.moveDown()
-            onEnterPressed: _launcherList.activateCurrent()
-            onTabPressed: _launcherList.moveDown()
-            onBacktabPressed: _launcherList.moveUp()
-            onPageUpPressed: _launcherList.pageUp()
-            onPageDownPressed: _launcherList.pageDown()
+            onUpPressed: root._nav.moveUp()
+            onDownPressed: root._nav.moveDown()
+            onEnterPressed: root._nav.activateCurrent()
+            onTabPressed: root._gridMode ? _emojiGrid.moveRight() : _launcherList.moveDown()
+            onBacktabPressed: root._gridMode ? _emojiGrid.moveLeft() : _launcherList.moveUp()
+            onLeftPressed: _emojiGrid.moveLeft()
+            onRightPressed: _emojiGrid.moveRight()
+            onPageUpPressed: root._nav.pageUp()
+            onPageDownPressed: root._nav.pageDown()
             onDeletePressed: _launcherList.deleteCurrent()
+            onFrequentRequested: index => {
+                const app = root.controller?.frequentApps[index];
+                if (app && root._freqW > 0)
+                    root.controller._handleActivation({ type: "app", uid: "fav_" + app.id, entry: app });
+            }
             sortAlpha: root.controller?._sortAlpha ?? true
             skinToneIndex: _launcherList.skinToneIndex
             canClear: (root.controller?._clipEntries.length ?? 0) > 0
             onSortToggled: {
-                if (root.controller)
-                    root.controller._sortAlpha = !root.controller._sortAlpha;
+                Config.update({ launcher: Object.assign({}, Config.launcher, { sections: !Config.launcher.sections }) });
                 _launcherList.resetToTop();
             }
             onClearRequested: {
@@ -185,21 +323,24 @@ Item {
                 topMargin: _stack.gap
                 left: parent.left
                 right: parent.right
+                leftMargin: root._pad
+                rightMargin: root._pad
             }
-            radius: 28
-            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+            radius: root.docked ? 20 : 28
+            color: root.docked ? Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity) : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
             clip: true
 
-            height: root.widgetShown ? (widgetInner.implicitHeight + 32) : 0
+            visible: root.docked ? opacity > 0.01 : true
+            height: root.docked ? root._bodyH : (root.widgetShown ? (widgetInner.implicitHeight + 32) : 0)
             opacity: root.widgetShown ? 1.0 : 0.0
             scale: root.widgetShown ? 1.0 : 0.80
             transformOrigin: Item.Top
 
-            border.width: 1
+            border.width: root.docked ? 0 : 1
             border.color: Colors.md3.outline_variant
 
             Behavior on height {
-                enabled: !(root.controller?._opening ?? false)
+                enabled: !root.docked && !(root.controller?._opening ?? false)
                 NumberAnimation {
                     duration: 240
                     easing.type: Easing.OutCubic
@@ -230,119 +371,121 @@ Item {
                 }
                 implicitHeight: root.activeWidget ? root.activeWidget.implicitHeight : 0
 
-                MathWidget {
-                    id: mathWidget
-                    anchors {
-                        top: parent.top
-                        left: parent.left
-                        right: parent.right
-                    }
+                Loader {
+                    id: mathLoader
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "math"
-                    query: root.controller?.modeQuery ?? ""
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
-                    onSwapRequested: q => {
-                        _launcherInput.prefill(q);
+                    sourceComponent: MathWidget {
+                        query: root.controller?.modeQuery ?? ""
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                        onSwapRequested: q => {
+                            _launcherInput.prefill(q);
+                        }
                     }
                 }
 
-                TranslateWidget {
-                    id: translateWidget
-                    anchors {
-                        top: parent.top
-                        left: parent.left
-                        right: parent.right
-                    }
+                Loader {
+                    id: translateLoader
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "translate"
-                    sourceText: root.controller?.modeQuery ?? ""
-                    targetLang: root.controller?.translateTarget ?? ""
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
+                    sourceComponent: TranslateWidget {
+                        sourceText: root.controller?.modeQuery ?? ""
+                        targetLang: root.controller?.translateTarget ?? ""
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                    }
                 }
 
-                ColorWidget {
-                    id: colorWidget
-                    anchors {
-                        top: parent.top
-                        left: parent.left
-                        right: parent.right
-                    }
+                Loader {
+                    id: colorLoader
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "color"
-                    query: (root.controller?._query ?? "").trim()
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
+                    sourceComponent: ColorWidget {
+                        query: (root.controller?._query ?? "").trim()
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                    }
                 }
 
-                TimestampWidget {
-                    id: timestampWidget
-                    anchors {
-                        top: parent.top
-                        left: parent.left
-                        right: parent.right
-                    }
+                Loader {
+                    id: timestampLoader
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "timestamp"
-                    query: (root.controller?._query ?? "").trim()
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
+                    sourceComponent: TimestampWidget {
+                        query: (root.controller?._query ?? "").trim()
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                    }
                 }
 
-                DefineWidget {
-                    id: defineWidget
-                    anchors {
-                        top: parent.top
-                        left: parent.left
-                        right: parent.right
-                    }
+                Loader {
+                    id: defineLoader
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "define"
-                    word: root.controller?.widgetQuery ?? ""
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
+                    sourceComponent: DefineWidget {
+                        word: root.controller?.widgetQuery ?? ""
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                    }
                 }
 
-                WhoisWidget {
-                    id: whoisWidget
-                    anchors {
-                        top: parent.top
-                        left: parent.left
-                        right: parent.right
-                    }
+                Loader {
+                    id: whoisLoader
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "whois"
-                    subject: root.controller?.widgetQuery ?? ""
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
+                    sourceComponent: WhoisWidget {
+                        subject: root.controller?.widgetQuery ?? ""
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                    }
                 }
 
-                KaomojiWidget {
-                    id: kaomojiWidget
-                    anchors {
-                        top: parent.top
-                        left: parent.left
-                        right: parent.right
-                    }
+                Loader {
+                    id: kaomojiLoader
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "kaomoji"
-                    entries: root.controller?._kaomojiData ?? []
-                    query: root.controller?.widgetQuery ?? ""
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
-                    onCategoryRequested: tag => {
-                        _launcherInput.prefill("kao " + tag);
+                    sourceComponent: KaomojiWidget {
+                        entries: root.controller?._kaomojiData ?? []
+                        query: root.controller?.widgetQuery ?? ""
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                        onCategoryRequested: tag => {
+                            _launcherInput.prefill("kao " + tag);
+                        }
                     }
                 }
 
-                PasswordWidget {
-                    id: passwordWidget
+                Loader {
+                    id: passwordLoader
                     anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "password"
-                    query: root.controller?.modeQuery ?? ""
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
+                    sourceComponent: PasswordWidget {
+                        query: root.controller?.modeQuery ?? ""
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                    }
                 }
 
-                WeatherWidget {
-                    id: weatherWidget
+                Loader {
+                    id: weatherLoader
                     anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "weather"
-                    query: root.controller?.widgetQuery ?? ""
+                    sourceComponent: WeatherWidget {
+                        query: root.controller?.widgetQuery ?? ""
+                    }
                 }
 
-                WolframWidget {
-                    id: wolframWidget
+                Loader {
+                    id: wolframLoader
                     anchors { top: parent.top; left: parent.left; right: parent.right }
+                    active: false
                     visible: root.controller?.widgetType === "wolfram"
-                    question: root.controller?.widgetQuery ?? ""
-                    onCopyResult: text => root.controller?.copyToClipboard(text)
+                    sourceComponent: WolframWidget {
+                        question: root.controller?.widgetQuery ?? ""
+                        onCopyResult: text => root.controller?.copyToClipboard(text)
+                    }
                 }
             }
         }
@@ -350,31 +493,44 @@ Item {
         ClippingRectangle {
             id: listCard
             anchors {
-                top: widgetCard.bottom
+                top: root.docked ? _launcherInput.bottom : widgetCard.bottom
                 topMargin: _stack.gap
                 left: parent.left
                 right: parent.right
+                leftMargin: root._pad
+                rightMargin: root._pad
             }
-            radius: 28
-            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+            radius: root.docked ? 20 : 28
+            color: root.docked ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
             clip: true
 
-            border.width: 1
+            border.width: root.docked ? 0 : 1
             border.color: Colors.md3.outline_variant
 
-            visible: !(root.widgetShown && _launcherList.count === 0)
-            readonly property int _max: root.controller?.mode === "clipboard" ? 600 : 448
-            height: _launcherList.count === 0 ? 168 : Math.min(_max, Math.max(60, _launcherList.listContentHeight))
+            opacity: root.docked && root.widgetShown ? 0.0 : 1.0
+            visible: root.docked ? opacity > 0.01 : !(root.widgetShown && _launcherList.count === 0)
+            readonly property int _max: root.docked ? 360 : (root.controller?.mode === "clipboard" ? 600 : 448)
+            readonly property real _contentH: root._gridMode ? _emojiGrid.contentHeight : _launcherList.listContentHeight
+            readonly property real _inset: border.width * 2
+            height: root.docked ? root._bodyH : (_launcherList.count === 0 ? 168 : Math.min(_max, Math.max(60, _contentH + _inset)))
+
+            Behavior on opacity {
+                enabled: root.docked && !(root.controller?._opening ?? false)
+                NumberAnimation {
+                    duration: 180
+                    easing.type: Easing.OutCubic
+                }
+            }
 
             Behavior on height {
-                enabled: !(root.controller?._opening ?? false)
+                enabled: !root.docked && !(root.controller?._opening ?? false)
                 NumberAnimation {
                     duration: 220
                     easing.type: Easing.OutCubic
                 }
             }
 
-            Column {
+            Item {
                 anchors.fill: parent
 
                 Process {
@@ -393,7 +549,8 @@ Item {
 
                 LauncherList {
                     id: _launcherList
-                    width: parent.width
+                    visible: !root._gridMode
+                    width: parent.width - (root._freqW > 0 ? root._freqW + 8 : 0)
                     height: parent.height
                     model: root.controller?.unifiedModel ?? null
                     mode: root.controller?.mode ?? "apps"
@@ -401,6 +558,33 @@ Item {
                     onActionActivated: root.controller?.close()
                     onClipDeleteRequested: id => root.controller?.deleteClip(id)
                     busy: root.controller?.busy ?? false
+                }
+
+                EmojiGrid {
+                    id: _emojiGrid
+                    visible: root._gridMode
+                    anchors.fill: parent
+                    model: root._gridMode ? (root.controller?.unifiedModel ?? null) : null
+                    skinToneIndex: _launcherList.skinToneIndex
+                    onItemActivated: entry => root.controller?._handleActivation(entry)
+                }
+
+                Rectangle {
+                    visible: root._freqW > 0
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                        bottom: parent.bottom
+                    }
+                    width: root._freqW
+                    radius: 20
+                    color: Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
+
+                    FrequentGrid {
+                        anchors.fill: parent
+                        apps: root.controller?.frequentApps ?? []
+                        onLaunchRequested: entry => root.controller?._handleActivation({ type: "app", uid: "fav_" + entry.id, entry: entry })
+                    }
                 }
             }
         }

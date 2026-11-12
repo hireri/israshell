@@ -149,6 +149,14 @@ Singleton {
     }
     property var floatingDock: __floatingDockDefaults()
 
+    function __launcherDefaults() {
+        return {
+            docked: false,
+            sections: true
+        };
+    }
+    property var launcher: __launcherDefaults()
+
     readonly property int floatingDockThickness: floatingDock.iconSize + 32
 
     function __barDockEdgeConflict() {
@@ -470,6 +478,7 @@ Singleton {
             },
             bar: __barDefaults(),
             floatingDock: __floatingDockDefaults(),
+            launcher: __launcherDefaults(),
             quickSettingsTiles: __qsTilesDefaults(),
             powerMenu: __powerMenuDefaults(),
             nightLight: {

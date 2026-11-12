@@ -31,10 +31,47 @@ Scope {
 
     property string _query: ""
 
-    property bool _sortAlpha: true
+    readonly property bool _sortAlpha: !Config.launcher.sections
+    readonly property bool docked: Config.launcher.docked
 
     property var _usage: ({})
-    readonly property int _frequentCount: 5
+    readonly property int _frequentCount: docked ? 6 : 5
+
+    property var _byName: []
+    property var _byCategory: []
+
+    function _cmp(a, b) {
+        return a < b ? -1 : a > b ? 1 : 0;
+    }
+
+    function _syncApps() {
+        const key = d => d.name.toLowerCase();
+        const all = DesktopEntries.applications.values.map(d => ({
+                    d: d,
+                    n: key(d),
+                    c: d.categories?.[0] ?? "\uffff"
+                }));
+        root._byName = all.slice().sort((a, b) => _cmp(a.n, b.n)).map(x => x.d);
+        root._byCategory = all.slice().sort((a, b) => _cmp(a.c, b.c) || _cmp(a.n, b.n)).map(x => x.d);
+    }
+
+    Timer {
+        id: syncTimer
+        interval: 150
+        onTriggered: root._syncApps()
+    }
+    Connections {
+        target: DesktopEntries.applications
+        function onValuesChanged() {
+            syncTimer.restart();
+        }
+    }
+    Component.onCompleted: root._syncApps()
+
+    readonly property var frequentApps: {
+        const usage = root._usage;
+        return root._byName.filter(d => (usage[d.id] ?? 0) > 0).sort((a, b) => usage[b.id] - usage[a.id]).slice(0, root._frequentCount);
+    }
 
     FileView {
         id: usageFile
@@ -409,17 +446,15 @@ Scope {
             const mode = root.mode;
 
             if (mode === "apps" || mode === "translate") {
-                const all = DesktopEntries.applications.values.slice();
 
                 if (q === "") {
-                    const usage = root._usage;
                     const out = [];
                     const header = label => out.push({
                             type: "header",
                             uid: "hdr_" + label,
                             label: label
                         });
-                    const frequent = all.filter(d => (usage[d.id] ?? 0) > 0).sort((a, b) => usage[b.id] - usage[a.id] || a.name.localeCompare(b.name)).slice(0, root._frequentCount);
+                    const frequent = root.docked ? [] : root.frequentApps;
                     if (frequent.length > 0) {
                         header(Localization.t("launcher.section_frequent"));
                         for (const d of frequent)
@@ -432,7 +467,7 @@ Scope {
                     if (root._sortAlpha) {
                         if (frequent.length > 0)
                             header(Localization.t("launcher.section_all"));
-                        for (const d of all.sort((a, b) => a.name.localeCompare(b.name)))
+                        for (const d of root._byName)
                             out.push({
                                 type: "app",
                                 uid: "app_" + d.id,
@@ -440,7 +475,7 @@ Scope {
                             });
                     } else {
                         let last = null;
-                        for (const d of all.sort((a, b) => (a.categories?.[0] ?? "\uffff").localeCompare(b.categories?.[0] ?? "\uffff") || a.name.localeCompare(b.name))) {
+                        for (const d of root._byCategory) {
                             const cat = d.categories?.[0] ?? Localization.t("launcher.section_other");
                             if (cat !== last)
                                 header(cat);
@@ -456,6 +491,7 @@ Scope {
                 }
 
                 const scored = [];
+                const all = root._byName;
                 for (let i = 0; i < all.length; i++) {
                     const d = all[i];
                     const res = root._scoreApp(d, q);
@@ -599,7 +635,7 @@ Scope {
 
     Timer {
         id: openGuard
-        interval: 280
+        interval: root.docked ? 450 : 280
         onTriggered: root._opening = false
     }
 
