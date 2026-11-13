@@ -8,6 +8,7 @@ Item {
     property string cornerColor: "black"
 
     property real maskProgress: 0
+    property color outlineColor: "transparent"
 
     width: cornerRadius
     height: cornerRadius
@@ -24,5 +25,17 @@ Item {
 
         x: (block.type === 1 || block.type === 3) ? -block.cornerRadius * 2 : -block.cornerRadius
         y: (block.type === 2 || block.type === 3) ? -block.cornerRadius * 2 : -block.cornerRadius
+    }
+
+    Rectangle {
+        readonly property real d: block.cornerRadius * 2 * (1 - block.maskProgress)
+        width: d
+        height: d
+        radius: d / 2
+        color: "transparent"
+        border.width: 1
+        border.color: block.outlineColor
+        x: ((block.type === 1 || block.type === 3) ? 0 : block.cornerRadius) - d / 2
+        y: ((block.type === 2 || block.type === 3) ? 0 : block.cornerRadius) - d / 2
     }
 }

@@ -287,6 +287,9 @@ ShellRoot {
 
                 property bool shouldHide: LockscreenService.lockAnimating || LockscreenService.locked
 
+                readonly property real outlineAlpha: Config.bar.transparency === 2 ? 0 : Config.blurOpacity * (typeof Config.bar.outline === "number" ? Config.bar.outline : (Config.bar.outline === false ? 0 : 1))
+                readonly property color outlineColor: Qt.alpha(Colors.md3.outline_variant, outlineAlpha)
+
                 readonly property bool huggingCornersVisible: screenScope.barMode === 0 && Config.bar.transparency !== 2
 
                 readonly property string currentPanelType: ((PanelService.current?.panelType ?? "") !== "" && PanelService.currentScreen === modelData) ? PanelService.current.panelType : ""
@@ -425,7 +428,7 @@ ShellRoot {
                     height: 44 + 2 * floatProgress
                     anchors.leftMargin: 12 * floatProgress
                     anchors.rightMargin: 12 * floatProgress
-                    clip: barContainer.height > height
+                    clip: dropProgress > 0
 
                     readonly property real topY: edgeGap
                     readonly property real bottomY: parent.height - height - edgeGap
@@ -493,10 +496,13 @@ ShellRoot {
 
                     Rectangle {
                         id: barContainer
+                        readonly property real edgeK: 1 - visualContent.floatProgress
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        height: parent.height * (1 + visualContent.dropProgress)
-                        y: Config.bar.position === 0 ? -parent.height * visualContent.dropProgress : 0
+                        anchors.leftMargin: -edgeK
+                        anchors.rightMargin: -edgeK
+                        height: parent.height * (1 + visualContent.dropProgress) + edgeK
+                        y: (Config.bar.position === 0 ? -parent.height * visualContent.dropProgress - edgeK : 0)
 
                         readonly property bool atTop: Config.bar.position === 0
                         readonly property real innerRadius: 22 * Math.max(0, visualContent.cornerShape)
@@ -506,8 +512,8 @@ ShellRoot {
                         bottomLeftRadius: atTop ? innerRadius : outerRadius
                         bottomRightRadius: atTop ? innerRadius : outerRadius
 
-                        border.width: visualContent.floatProgress
-                        border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
+                        border.width: 1
+                        border.color: Qt.alpha(Colors.md3.outline_variant, window.outlineAlpha * Math.max(0, Math.min(1, 1 + visualContent.cornerShape)))
                         Behavior on border.color {
                             ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
                         }
@@ -542,6 +548,18 @@ ShellRoot {
                                 }
                             }
                         }
+                    }
+
+                    Rectangle {
+                        z: 1
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: huggingCornersWrapper.huggingCornerRadius
+                        anchors.rightMargin: huggingCornersWrapper.huggingCornerRadius
+                        height: 1
+                        y: Config.bar.position === 0 ? parent.height : -1
+                        color: window.outlineColor
+                        opacity: Math.max(0, Math.min(1, -visualContent.cornerShape))
                     }
 
                     Item {
@@ -693,6 +711,7 @@ ShellRoot {
                             cornerColor: huggingCornersWrapper.barColor
                             cornerRadius: huggingCornersWrapper.huggingCornerRadius
                             maskProgress: huggingCornersWrapper.maskProgress
+                            outlineColor: window.outlineColor
                         }
 
                         CornerBlock {
@@ -702,6 +721,7 @@ ShellRoot {
                             cornerColor: huggingCornersWrapper.barColor
                             cornerRadius: huggingCornersWrapper.huggingCornerRadius
                             maskProgress: huggingCornersWrapper.maskProgress
+                            outlineColor: window.outlineColor
                         }
                     }
 

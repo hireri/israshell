@@ -146,6 +146,8 @@
   "barPage.automatically_fills_center_space": "Automatically fills center space",
   "barPage.background_opacity_level": "Background opacity level",
   "barPage.bar_mode": "Bar mode",
+  "barPage.bar_outline": "Outline",
+  "barPage.bar_outline_sub": "Outline strength, multiplied with the bar transparency; 0 turns it off",
   "barPage.blacklist": "Blacklist",
   "barPage.both": "Both",
   "barPage.center_layout_mode": "Center layout mode",

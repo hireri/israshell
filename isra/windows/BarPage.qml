@@ -130,6 +130,22 @@ PageBase {
                 })
             })
         }
+
+        SettingSlider {
+            isLast: true
+            label: Localization.t("barPage.bar_outline")
+            sublabel: Localization.t("barPage.bar_outline_sub")
+            from: 0
+            to: 1
+            stepSize: 0.05
+            decimals: 2
+            value: typeof Config.bar.outline === "number" ? Config.bar.outline : (Config.bar.outline === false ? 0 : 1)
+            onMoved: v => Config.update({
+                    bar: Object.assign({}, Config.bar, {
+                        outline: v
+                    })
+                })
+        }
         SettingChips {
             label: Localization.t("backgroundPage.position")
             options: [

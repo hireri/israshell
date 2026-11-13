@@ -113,6 +113,7 @@ Singleton {
             position: 0,                // 0 = top,     1 = bottom
             transparency: 1,            // 1 = tinted, 2 = full transparency
             transparentPills: false,
+            outline: 1,
 
             showClock: true,
             showDate: true,
