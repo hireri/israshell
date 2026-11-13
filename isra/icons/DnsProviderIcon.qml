@@ -37,25 +37,23 @@ Item {
     readonly property string _path: root._pathFor(root.provider)
     readonly property real _vb: root._viewBoxFor(root.provider)
 
-    Shape {
-        id: shape
-        width: root.width
-        height: root.height
-        antialiasing: true
-        preferredRendererType: Shape.CurveRenderer
-        y: root._vb === 960 ? height : 0
+    Repeater {
+        model: [root.provider]
 
-        ShapePath {
-            strokeWidth: 0
-            fillColor: root.color
-            scale: Qt.size(shape.width / root._vb, shape.height / root._vb)
-            PathSvg { id: pathSvg; path: root._path }
+        Shape {
+            id: shape
+            width: root.width
+            height: root.height
+            antialiasing: true
+            preferredRendererType: Shape.CurveRenderer
+            y: root._vb === 960 ? height : 0
+
+            ShapePath {
+                strokeWidth: 0
+                fillColor: root.color
+                scale: Qt.size(shape.width / root._vb, shape.height / root._vb)
+                PathSvg { path: root._path }
+            }
         }
     }
-
-    Component.onCompleted: Qt.callLater(() => {
-        const p = pathSvg.path;
-        pathSvg.path = "";
-        pathSvg.path = p;
-    })
 }
