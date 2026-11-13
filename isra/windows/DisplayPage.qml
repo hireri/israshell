@@ -338,6 +338,15 @@ PageBase {
         }
 
         SettingSwitch {
+            label: Localization.t("displayPage.colorful_sidebar")
+            sublabel: Localization.t("displayPage.colorful_sidebar_sub")
+            checked: Config.colorfulSidebar
+            onToggled: v => Config.update({
+                colorfulSidebar: v
+            })
+        }
+
+        SettingSwitch {
             isLast: true
             label: Localization.t("displayPage.generic_launcher_icon")
             sublabel: Localization.t("displayPage.use_a_generic_icon_instead")

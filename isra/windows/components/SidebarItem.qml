@@ -12,6 +12,8 @@ Rectangle {
     property string sublabel: ""
     property bool active: false
     property bool collapsed: false
+    property color iconBg: Colors.md3.primary_container
+    readonly property bool circled: true
 
     property real topRadius: 18
     property real bottomRadius: 18
@@ -42,7 +44,7 @@ Rectangle {
     RowLayout {
         anchors {
             fill: parent
-            leftMargin: 14
+            leftMargin: root.circled ? 8 : 14
             rightMargin: 14
             topMargin: 8
             bottomMargin: 8
@@ -50,11 +52,24 @@ Rectangle {
         spacing: 12
 
         Item {
-            id: iconSlot
-            width: 20
-            height: 20
+            Layout.preferredWidth: root.circled ? 32 : 20
+            Layout.preferredHeight: root.circled ? 32 : 20
             Layout.alignment: Qt.AlignVCenter
-            onChildrenChanged: deferSync.restart()
+
+            Rectangle {
+                anchors.fill: parent
+                radius: width / 2
+                color: root.iconBg
+                visible: root.circled
+            }
+
+            Item {
+                id: iconSlot
+                width: 20
+                height: 20
+                anchors.centerIn: parent
+                onChildrenChanged: deferSync.restart()
+            }
         }
 
         ColumnLayout {
@@ -96,9 +111,10 @@ Rectangle {
 
     Component.onCompleted: deferSync.restart()
     onActiveChanged: _syncIcon()
+    onIconBgChanged: deferSync.restart()
 
     function _syncIcon() {
-        IconSlotSync.syncIconSlot(iconSlot.children, 20, () => root.active ? Colors.md3.on_secondary_container : Colors.md3.outline, root.active);
+        IconSlotSync.syncIconSlot(iconSlot.children, 20, () => root.circled ? (root.iconBg.hslLightness > 0.6 ? "#1f1f24" : Colors.md3.on_primary_container) : root.active ? Colors.md3.on_secondary_container : Colors.md3.outline, root.active);
     }
 
     Tooltip {

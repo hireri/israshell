@@ -582,7 +582,13 @@ Singleton {
         cacheFile.setText(JSON.stringify({
             key: root._cacheVersion,
             lang: Config.language,
-            entries: root.entries.map(e => root.publicEntry(e))
+            entries: root.entries.map(e => {
+                const pub = root.publicEntry(e);
+                try {
+                    pub.value = e.source ? root.readValue(e) : e.value;
+                } catch (err) {}
+                return pub;
+            })
         }));
     }
 

@@ -74,116 +74,14 @@ FloatingWindow {
         color: Config.dim(Colors.md3.surface_container_low)
     }
 
+    MouseArea {
+        anchors.fill: parent
+        onPressed: root.startSystemMove()
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
-
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 56
-
-            MouseArea {
-                anchors.fill: parent
-                onPressed: root.startSystemMove()
-            }
-
-            Rectangle {
-                id: collapseButton
-                anchors.left: parent.left
-                anchors.leftMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                width: 48
-                height: 40
-                radius: 16
-                color: Colors.md3.secondary_container
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "󰮫"
-                    font.pixelSize: 20
-                    color: Colors.md3.on_secondary_container
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.sidebarCollapsed = !root.sidebarCollapsed
-                }
-            }
-
-            Text {
-                id: titleLabel
-                anchors.left: collapseButton.right
-                anchors.leftMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
-                text: Localization.t("systemApp.title")
-                font.family: Config.fontFamily
-                font.pixelSize: 18
-                font.weight: Font.Bold
-                color: Colors.md3.on_surface
-            }
-
-            SearchField {
-                id: searchField
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.min(420, parent.width - 400)
-                placeholder: Localization.t("systemApp.search")
-            }
-
-            Rectangle {
-                anchors.right: closeButton.left
-                anchors.rightMargin: 4
-                anchors.verticalCenter: parent.verticalCenter
-                width: 40
-                height: 40
-                radius: 20
-                color: gearHover.containsMouse ? Config.dim(Colors.md3.surface_container_high) : Qt.alpha(Colors.md3.surface_container_high, 0)
-                Behavior on color { ColorAnimation { duration: 120 } }
-
-                MaterialIcon {
-                    anchors.centerIn: parent
-                    name: "settings"
-                    iconSize: 18
-                    color: Colors.md3.on_surface
-                }
-
-                MouseArea {
-                    id: gearHover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"])
-                }
-            }
-
-            Rectangle {
-                id: closeButton
-                anchors.right: parent.right
-                anchors.rightMargin: 10
-                anchors.verticalCenter: parent.verticalCenter
-                width: 40
-                height: 40
-                radius: 20
-                color: closeHover.containsMouse ? Config.dim(Colors.md3.surface_container_high) : Qt.alpha(Colors.md3.surface_container_high, 0)
-                Behavior on color { ColorAnimation { duration: 120 } }
-
-                MaterialIcon {
-                    anchors.centerIn: parent
-                    name: "close"
-                    iconSize: 18
-                    color: Colors.md3.on_surface
-                }
-
-                MouseArea {
-                    id: closeHover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.visible = false
-                }
-            }
-        }
 
         RowLayout {
             Layout.fillWidth: true
@@ -200,9 +98,28 @@ FloatingWindow {
                     NumberAnimation { duration: 200; easing.type: Easing.InOutQuad }
                 }
 
+                SidebarSearch {
+                    id: searchField
+                    anchors {
+                        top: parent.top
+                        topMargin: 8
+                        left: parent.left
+                        leftMargin: 8
+                        right: parent.right
+                        rightMargin: 8
+                    }
+                    placeholder: Localization.t("systemApp.search")
+                    collapsed: root.sidebarCollapsed
+                    onToggled: root.sidebarCollapsed = !root.sidebarCollapsed
+                }
+
                 Flickable {
                     anchors {
-                        fill: parent
+                        top: searchField.bottom
+                        topMargin: 8
+                        bottom: parent.bottom
+                        left: parent.left
+                        right: parent.right
                         leftMargin: 8
                         rightMargin: 8
                     }
@@ -263,6 +180,7 @@ FloatingWindow {
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.topMargin: 8
                 Layout.rightMargin: 8
                 Layout.bottomMargin: 8
 
@@ -319,6 +237,64 @@ FloatingWindow {
                             pageStack.previousPage = next;
                             pageStack.replace(root._pageUrl(root.currentPage));
                         }
+                    }
+                }
+
+                Rectangle {
+                    anchors {
+                        top: parent.top
+                        topMargin: 8
+                        right: parent.right
+                        rightMargin: 52
+                    }
+                    width: 40
+                    height: 40
+                    radius: 20
+                    color: gearHover.containsMouse ? Config.dim(Colors.md3.surface_container_high) : Qt.alpha(Colors.md3.surface_container_high, 0)
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: "settings"
+                        iconSize: 18
+                        color: Colors.md3.on_surface
+                    }
+
+                    MouseArea {
+                        id: gearHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Quickshell.execDetached(["qs", "-c", "isra", "ipc", "call", "settings", "open", "overview"])
+                    }
+                }
+
+                Rectangle {
+                    anchors {
+                        top: parent.top
+                        topMargin: 8
+                        right: parent.right
+                        rightMargin: 8
+                    }
+                    width: 40
+                    height: 40
+                    radius: 20
+                    color: closeHover.containsMouse ? Config.dim(Colors.md3.surface_container_high) : Qt.alpha(Colors.md3.surface_container_high, 0)
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: "close"
+                        iconSize: 18
+                        color: Colors.md3.on_surface
+                    }
+
+                    MouseArea {
+                        id: closeHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.visible = false
                     }
                 }
             }

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
+import Quickshell
 
 import qs.style
 
@@ -56,6 +57,12 @@ Item {
             }
         }
 
+        MouseArea {
+            width: flick.width
+            height: header.y + header.height + 16
+            onPressed: root.QsWindow.window?.startSystemMove()
+        }
+
         ColumnLayout {
             id: inner
             width: Math.min(flick.width, root.maxWidth)
@@ -63,6 +70,7 @@ Item {
             spacing: 0
 
             ColumnLayout {
+                id: header
                 Layout.fillWidth: true
                 Layout.leftMargin: 28
                 Layout.rightMargin: 28

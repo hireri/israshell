@@ -22,10 +22,44 @@ PageBase {
         onTriggered: SettingsRegistry.apply(path, value)
     }
 
+    property int rev: 0
+    readonly property var shown: results.slice(0, 40)
+
+    function val(entry) {
+        rev;
+        const live = SettingsRegistry.byPath[entry.path];
+        if (!live)
+            return null;
+        return live.source ? SettingsRegistry.readValue(live) : (live.value ?? null);
+    }
+
+    onResultsChanged: {
+        warmup.interval = 400;
+        warmup.restart();
+    }
+
+    Timer {
+        id: warmup
+        interval: 400
+        repeat: true
+        property var tried: ({})
+        onTriggered: {
+            interval = 60;
+            const e = resultsRoot.shown.find(r => !tried[r.pageId] && SettingsRegistry.byPath[r.path]?.source === null);
+            if (!e) {
+                stop();
+                return;
+            }
+            tried[e.pageId] = true;
+            SettingsRegistry._ensurePage(e.pageId);
+            resultsRoot.rev++;
+        }
+    }
+
     readonly property var groups: {
         const byPage = ({});
         const order = [];
-        for (const entry of results) {
+        for (const entry of shown) {
             if (!byPage[entry.pageId]) {
                 const def = SettingsPages.pageDef(entry.pageId);
                 byPage[entry.pageId] = {
@@ -128,7 +162,7 @@ PageBase {
             property var entry
             label: entry ? entry.label : ""
             sublabel: entry ? resultsRoot.rowSublabel(entry) : ""
-            checked: entry ? SettingsRegistry.readValue(entry) : false
+            checked: entry ? (resultsRoot.val(entry) ?? false) : false
             onToggled: v => SettingsRegistry.apply(entry.path, v)
         }
     }
@@ -144,7 +178,7 @@ PageBase {
             stepSize: entry?.meta.stepSize ?? 1
             unit: entry?.meta.unit ?? ""
             decimals: entry?.meta.decimals ?? 0
-            value: entry ? SettingsRegistry.readValue(entry) : 0
+            value: entry ? (resultsRoot.val(entry) ?? 0) : 0
             onMoved: v => {
                 applyDebounce.path = entry.path;
                 applyDebounce.value = v;
@@ -160,7 +194,7 @@ PageBase {
             label: entry ? entry.label : ""
             sublabel: entry ? resultsRoot.rowSublabel(entry) : ""
             options: resultsRoot.liveOptions(entry)
-            currentValue: entry ? SettingsRegistry.readValue(entry) : null
+            currentValue: entry ? resultsRoot.val(entry) : null
             onSelected: v => SettingsRegistry.apply(entry.path, v)
         }
     }
@@ -172,7 +206,7 @@ PageBase {
             label: entry ? entry.label : ""
             sublabel: entry ? resultsRoot.rowSublabel(entry) : ""
             options: resultsRoot.liveOptions(entry)
-            currentValue: entry ? SettingsRegistry.readValue(entry) : null
+            currentValue: entry ? resultsRoot.val(entry) : null
             onSelected: v => SettingsRegistry.apply(entry.path, v)
         }
     }
@@ -184,7 +218,7 @@ PageBase {
             label: entry ? entry.label : ""
             sublabel: entry ? resultsRoot.rowSublabel(entry) : ""
             placeholder: entry?.meta.placeholder ?? ""
-            value: entry ? (SettingsRegistry.readValue(entry) ?? "") : ""
+            value: entry ? (resultsRoot.val(entry) ?? "") : ""
             onCommitted: v => SettingsRegistry.apply(entry.path, v)
         }
     }
@@ -196,7 +230,7 @@ PageBase {
             label: entry ? entry.label : ""
             sublabel: entry ? resultsRoot.rowSublabel(entry) : ""
             placeholder: entry?.meta.placeholder ?? ""
-            value: entry ? (SettingsRegistry.readValue(entry) ?? "") : ""
+            value: entry ? (resultsRoot.val(entry) ?? "") : ""
             onCommitted: v => SettingsRegistry.apply(entry.path, v)
         }
     }
@@ -207,7 +241,7 @@ PageBase {
             property var entry
             label: entry ? entry.label : ""
             sublabel: entry ? resultsRoot.rowSublabel(entry) : ""
-            value: entry ? (SettingsRegistry.readValue(entry) ?? "00:00") : "00:00"
+            value: entry ? (resultsRoot.val(entry) ?? "00:00") : "00:00"
             onCommitted: v => SettingsRegistry.apply(entry.path, v)
         }
     }
@@ -231,8 +265,9 @@ PageBase {
     }
 
     function liveOptions(entry) {
-        if (entry && entry.source)
-            return entry.source.options ?? [];
+        const src = entry ? (rev, SettingsRegistry.byPath[entry.path]?.source) : null;
+        if (src)
+            return src.options ?? [];
         return entry?.meta.options ?? [];
     }
 }

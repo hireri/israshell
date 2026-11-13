@@ -18,6 +18,7 @@ Singleton {
     property string translationProvider: ""
     property bool screenCorners: true
     property bool tintIcons: false
+    property bool colorfulSidebar: true
     property bool siteIcons: true
     property bool genericLauncherIcon: false
     property bool blurEffects: false
@@ -402,6 +403,7 @@ Singleton {
             translationProvider: "",
             screenCorners: true,
             tintIcons: false,
+            colorfulSidebar: true,
             siteIcons: true,
             genericLauncherIcon: false,
             blurEffects: false,

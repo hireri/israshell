@@ -19,9 +19,9 @@ FloatingWindow {
     color: "transparent"
 
     property string currentPage: "overview"
-    property string searchText: ""
+    readonly property string searchText: searchField.text
     readonly property bool resultsActive: searchText !== ""
-    property string searchQuery: ""
+    readonly property string searchQuery: searchField.query
     property bool sidebarCollapsed: false
     readonly property int collapseThreshold: 900
 
@@ -39,8 +39,7 @@ FloatingWindow {
             console.warn("[SettingsWindow] unknown page:", pageKey);
             return;
         }
-        if (root.searchText !== "")
-            searchInput.text = "";
+        searchField.clear();
         currentPage = pageKey;
     }
 
@@ -58,9 +57,7 @@ FloatingWindow {
             if (it)
                 it.opacity = 1;
         }
-        searchDebounce.stop();
-        searchText = "";
-        searchQuery = "";
+        searchField.clear();
         pageStack.clear();
     }
 
@@ -78,206 +75,19 @@ FloatingWindow {
         color: Config.dim(Colors.md3.surface_container_low)
     }
 
+    MouseArea {
+        anchors.fill: parent
+        onPressed: root.startSystemMove()
+    }
+
+    Shortcut {
+        sequence: "Ctrl+F"
+        onActivated: searchField.focusInput()
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
-
-        Item {
-            id: titleBar
-
-            Layout.fillWidth: true
-            Layout.preferredHeight: 56
-
-            MouseArea {
-                anchors.fill: parent
-                onPressed: root.startSystemMove()
-            }
-
-            Rectangle {
-                id: collapseButton
-                anchors.left: parent.left
-                anchors.leftMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                width: 48
-                height: 40
-                radius: 16
-                color: Colors.md3.secondary_container
-                Behavior on color { ColorAnimation { duration: 120 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "󰮫"
-                    font.pixelSize: 20
-                    color: Colors.md3.on_secondary_container
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.sidebarCollapsed = !root.sidebarCollapsed
-                }
-            }
-
-            Text {
-                id: titleLabel
-                anchors.left: collapseButton.right
-                anchors.leftMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
-                text: Localization.t("settingsWindow.settings")
-                font.family: Config.fontFamily
-                font.pixelSize: 18
-                font.weight: Font.Bold
-                color: Colors.md3.on_surface
-            }
-
-            Rectangle {
-                id: searchPane
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.min(420, parent.width - 340)
-                height: 36
-                radius: 18
-                color: Config.dim(Colors.md3.surface_container)
-
-                Row {
-                    anchors {
-                        left: parent.left
-                        leftMargin: 14
-                        verticalCenter: parent.verticalCenter
-                    }
-                    spacing: 6
-                    opacity: searchInput.text.length === 0 ? 0.5 : 0
-                    Behavior on opacity {
-                        NumberAnimation { duration: 100 }
-                    }
-
-                    MaterialIcon {
-                        anchors.verticalCenter: parent.verticalCenter
-                        name: "search"
-                        iconSize: 15
-                        color: Colors.md3.on_surface_variant
-                    }
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: Localization.t("settingsWindow.search_settings")
-                        font.family: Config.fontFamily
-                        font.pixelSize: 13
-                        color: Colors.md3.on_surface_variant
-                    }
-                }
-
-                TextInput {
-                    id: searchInput
-                    anchors {
-                        left: parent.left
-                        leftMargin: 14
-                        right: clearBtn.left
-                        rightMargin: 4
-                        verticalCenter: parent.verticalCenter
-                    }
-                    font.family: Config.fontFamily
-                    font.pixelSize: 13
-                    color: Colors.md3.on_surface
-                    selectionColor: Qt.alpha(Colors.md3.primary, 0.3)
-                    selectedTextColor: Colors.md3.on_surface
-                    clip: true
-
-                    onTextChanged: {
-                        root.searchText = text;
-                        if (text === "") {
-                            searchDebounce.stop();
-                            root.searchQuery = "";
-                        } else {
-                            searchDebounce.restart();
-                        }
-                    }
-                    Keys.onEscapePressed: {
-                        text = "";
-                        focus = false;
-                    }
-
-                    Timer {
-                        id: searchDebounce
-                        interval: 150
-                        onTriggered: root.searchQuery = searchInput.text
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.IBeamCursor
-                        acceptedButtons: Qt.NoButton
-                    }
-                }
-
-                Rectangle {
-                    id: clearBtn
-                    anchors {
-                        right: parent.right
-                        rightMargin: 8
-                        verticalCenter: parent.verticalCenter
-                    }
-                    width: 20
-                    height: 20
-                    radius: 10
-                    opacity: searchInput.text.length > 0 ? 1 : 0
-                    visible: opacity > 0
-                    color: clearMA.containsMouse ? Qt.alpha(Colors.md3.on_surface_variant, 0.18) : "transparent"
-                    Behavior on opacity {
-                        NumberAnimation { duration: 100 }
-                    }
-                    Behavior on color {
-                        ColorAnimation { duration: 80 }
-                    }
-
-                    MaterialIcon {
-                        anchors.centerIn: parent
-                        name: "close"
-                        iconSize: 12
-                        color: Colors.md3.on_surface_variant
-                    }
-
-                    MouseArea {
-                        id: clearMA
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            searchInput.text = "";
-                            searchInput.forceActiveFocus();
-                        }
-                    }
-                }
-            }
-
-            Rectangle {
-                id: closeButton
-                anchors.right: parent.right
-                anchors.rightMargin: 10
-                anchors.verticalCenter: parent.verticalCenter
-                width: 40
-                height: 40
-                radius: 20
-                color: closeHover.containsMouse ? Config.dim(Colors.md3.surface_container_high) : Qt.alpha(Colors.md3.surface_container_high, 0) 
-                Behavior on color { ColorAnimation { duration: 120 } }
-
-                MaterialIcon {
-                    anchors.centerIn: parent
-                    name: "close"
-                    iconSize: 18
-                    color: Colors.md3.on_surface
-                }
-
-                MouseArea {
-                    id: closeHover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.visible = false
-                }
-            }
-        }
 
         RowLayout {
             Layout.fillWidth: true
@@ -298,9 +108,28 @@ FloatingWindow {
                     }
                 }
 
+                SidebarSearch {
+                    id: searchField
+                    anchors {
+                        top: parent.top
+                        topMargin: 8
+                        left: parent.left
+                        leftMargin: 8
+                        right: parent.right
+                        rightMargin: 8
+                    }
+                    placeholder: Localization.t("settingsWindow.search_settings")
+                    collapsed: root.sidebarCollapsed
+                    onToggled: root.sidebarCollapsed = !root.sidebarCollapsed
+                }
+
                 Flickable {
                     anchors {
-                        fill: parent
+                        top: searchField.bottom
+                        topMargin: 8
+                        bottom: parent.bottom
+                        left: parent.left
+                        right: parent.right
                         leftMargin: 8
                         rightMargin: 8
                     }
@@ -338,6 +167,7 @@ FloatingWindow {
                                         required property var modelData
 
                                         pageKey: modelData.key
+                                        iconBg: Config.colorfulSidebar ? modelData.tint : Colors.md3.primary_container
                                         label: SettingsPages.pageTitle(modelData)
                                         sublabel: Localization.t(modelData.sublabelKey)
                                         onClicked: root.currentPage = pageKey
@@ -363,6 +193,7 @@ FloatingWindow {
                 id: contentPane
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.topMargin: 8
                 Layout.rightMargin: 8
                 Layout.bottomMargin: 8
 
@@ -434,11 +265,38 @@ FloatingWindow {
                             pageStack.enterOffset = nextIdx > prevIdx ? 48 : -48;
                             pageStack.previousPage = nextIdx;
 
-                            searchDebounce.stop();
-                            searchInput.text = "";
-                            root.searchQuery = "";
+                            searchField.clear();
                             pageStack.replace(SettingsRegistry.pageInstance(root.currentPage));
                         }
+                    }
+                }
+
+                Rectangle {
+                    anchors {
+                        top: parent.top
+                        topMargin: 8
+                        right: parent.right
+                        rightMargin: 8
+                    }
+                    width: 40
+                    height: 40
+                    radius: 20
+                    color: closeHover.containsMouse ? Config.dim(Colors.md3.surface_container_high) : Qt.alpha(Colors.md3.surface_container_high, 0)
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: "close"
+                        iconSize: 18
+                        color: Colors.md3.on_surface
+                    }
+
+                    MouseArea {
+                        id: closeHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.visible = false
                     }
                 }
             }
