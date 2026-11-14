@@ -22,6 +22,22 @@ Item {
 
     property bool isOpen: false
 
+    property bool meltable: false
+    readonly property var win: root.dockRoot.QsWindow.window
+    readonly property bool menuMelt: root.meltable && !root.sideEdge && (root.win?.meltActive ?? false)
+    readonly property bool melt: root.meltable && !root.sideEdge && (root.win?.meltActive ?? false) && PanelService.current === null
+    property real meltP: root.isOpen && root.animateIn ? 1 : 0
+    Behavior on meltP {
+        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+    }
+
+    MeltReporter {
+        win: root.win
+        key: "dockHover"
+        rect: Qt.rect(popupContent.x, popupContent.y, popupContent.width, popupContent.height * root.meltP)
+        active: root.melt && (root.isOpen || root.meltP > 0.001)
+    }
+
     readonly property rect maskRect: isOpen
         ? Qt.rect(popupContent.x, popupContent.y, popupContent.width, popupContent.height)
         : Qt.rect(0, 0, 0, 0)
@@ -60,12 +76,14 @@ Item {
         if (!host) return;
         hideNow();
         menuButton = button;
+        const bh = win?.barHeight ?? 0;
         const w = itemMenu._measuredW(entries);
         const h = itemMenu._measuredH(entries);
         const tl = button.mapToItem(host, 0, 0);
         let x = tl.x + (button.width - w) / 2;
         let y = tl.y + (button.height - h) / 2;
-        if (dockEdge === 0) y = tl.y + button.height + gap;
+        if (menuMelt) y = barOnTop ? bh : host.height - bh - h;
+        else if (dockEdge === 0) y = tl.y + button.height + gap;
         else if (dockEdge === 1) y = tl.y - h - gap;
         else if (dockEdge === 2) x = tl.x + button.width + gap;
         else x = tl.x - w - gap;
@@ -83,6 +101,7 @@ Item {
         id: itemMenu
         parent: root.host ?? root
         hostScreen: root.dockRoot.QsWindow.window?.screen ?? null
+        meltWin: root.menuMelt ? root.win : null
         z: 1000
     }
 
@@ -386,6 +405,10 @@ Item {
 
     readonly property real cardY: {
         if (!host) return 0;
+        if (melt) {
+            const bh = win?.barHeight ?? 0;
+            return barOnTop ? bh : host.height - bh - popupContent.height;
+        }
         if (!sideEdge)
             return barOnTop
                 ? (latchedDockY + latchedDockHeight + gap)
@@ -507,7 +530,7 @@ Item {
         }
 
         opacity: root.animateIn ? root.contentOpacity : 0
-        scale: root.animateIn ? 1 : 0.92
+        scale: root.melt || root.animateIn ? 1 : 0.92
         transformOrigin: {
             if (root.sideEdge)
                 return root.dockEdge === 2 ? Item.Left : Item.Right;
@@ -525,8 +548,8 @@ Item {
             id: popupContainer
             anchors.fill: parent
             radius: 12
-            color: Config.dim(Colors.md3.surface_container)
-            border.width: 1
+            color: root.melt ? "transparent" : Config.dim(Colors.md3.surface_container)
+            border.width: root.melt ? 0 : 1
             border.color: Qt.alpha(Colors.md3.outline, 0.2)
 
             HoverHandler {

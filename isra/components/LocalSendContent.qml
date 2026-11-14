@@ -33,6 +33,23 @@ Item {
 
     anchors.fill: parent
 
+    readonly property var win: root.controller?.panelWindow ?? null
+    readonly property bool melt: win?.meltActive ?? false
+    anchors.topMargin: melt && Config.bar.position === 0 ? win.barHeight : 0
+    anchors.bottomMargin: melt && Config.bar.position === 1 ? win.barHeight : 0
+    clip: melt
+
+    readonly property real meltTop: Math.max(root.y + wrapper.y + card.y, root.y)
+    readonly property real meltBottom: Math.min(root.y + wrapper.y + card.y + card.height, root.y + root.height)
+    readonly property real meltVisible: Math.max(0, meltBottom - meltTop)
+
+    MeltReporter {
+        win: root.win
+        key: "localsend"
+        rect: Qt.rect(root.x + wrapper.x, root.meltTop, wrapper.width, root.meltVisible)
+        active: root.melt && (root.isOpen || root.meltVisible > 0.5)
+    }
+
     function plural(n, noun) {
         return n + " " + noun + (n === 1 ? "" : "s");
     }
@@ -85,13 +102,13 @@ Item {
         width: root.cardW
         height: card.height
 
-        readonly property real screenEdgeMargin: 12
+        readonly property real screenEdgeMargin: (root.controller?.panelWindow?.frameInset ?? 0) + (root.controller?.panelWindow?.panelGap ?? 12)
 
         anchors {
             top: Config.bar.position === 0 ? parent.top : undefined
             bottom: Config.bar.position === 1 ? parent.bottom : undefined
-            topMargin: Config.bar.position === 0 ? (root.controller?.panelWindow.barHeight ?? 0) + 8 : 0
-            bottomMargin: Config.bar.position === 1 ? (root.controller?.panelWindow.barHeight ?? 0) + 8 : 0
+            topMargin: Config.bar.position === 0 && !root.melt ? (root.controller?.panelWindow.barHeight ?? 0) + (root.controller?.panelWindow?.panelGap ?? 12) : 0
+            bottomMargin: Config.bar.position === 1 && !root.melt ? (root.controller?.panelWindow.barHeight ?? 0) + (root.controller?.panelWindow?.panelGap ?? 12) : 0
         }
 
         function _clamp(value, min, max) {
@@ -124,11 +141,11 @@ Item {
 
             width: root.cardW
             height: content.implicitHeight + 2
-            radius: root.cardR
+            radius: root.melt ? root.win.meltRadius : root.cardR
 
             y: {
                 const open = _ready && root.isOpen;
-                const edgeMargin = root.controller?.panelWindow.barHeight ?? 0;
+                const edgeMargin = root.melt ? 0 : (root.controller?.panelWindow.barHeight ?? 0);
                 if (Config.bar.position === 0)
                     return open ? 0 : -(height + edgeMargin + 8);
                 return open ? 0 : height + edgeMargin + 8;
@@ -140,13 +157,14 @@ Item {
                 NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
             }
 
-            color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-            border.width: 1
+            color: root.melt ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+            border.width: root.melt ? 0 : 1
             border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
             clip: true
 
             ColumnLayout {
                 id: content
+                opacity: root.melt ? Math.max(0, Math.min(1, (root.meltVisible / card.height - 0.5) * 2)) : 1
                 width: root.cardW
                 spacing: 0
 

@@ -20,6 +20,30 @@ Item {
 
     anchors.fill: parent
 
+    readonly property var win: root.controller?.panelWindow ?? null
+    readonly property bool melt: win?.meltActive ?? false
+    anchors.topMargin: melt && !_barAtBottom ? win.barHeight : 0
+    anchors.bottomMargin: melt && _barAtBottom ? win.barHeight : 0
+    clip: melt
+
+    property real meltP: isOpen ? 1 : 0
+    Behavior on meltP {
+        NumberAnimation {
+            duration: 320
+            easing.type: Easing.OutCubic
+        }
+    }
+    readonly property real meltTop: Math.max(root.y + animContainer.y, root.y)
+    readonly property real meltBottom: Math.min(root.y + animContainer.y + animContainer.height, root.y + root.height)
+    readonly property real meltVisible: Math.max(0, meltBottom - meltTop)
+
+    MeltReporter {
+        win: root.win
+        key: "media"
+        rect: Qt.rect(root.x + animContainer.x, root.meltTop, animContainer.width, root.meltVisible)
+        active: root.melt && (root.isOpen || root.meltVisible > 0.5)
+    }
+
     function getIconSource(player) {
         return PlayerIcon.getIconSource(player, DesktopEntries);
     }
@@ -36,10 +60,11 @@ Item {
     }
 
     readonly property real popupWidth: 380
+    readonly property real inPad: melt ? 12 : 0
     readonly property real contentMargin: 16
-    readonly property real popupHeight: cardStack.height + chipItem.height + 10 + (contentMargin * 2)
-    readonly property real screenEdgeMargin: 12
-    readonly property real verticalGap: 8
+    readonly property real popupHeight: cardStack.height + chipItem.height + 10 + (melt ? 6 + inPad : contentMargin * 2)
+    readonly property real screenEdgeMargin: (win?.frameInset ?? 0) + (win?.panelGap ?? 12)
+    readonly property real verticalGap: win?.panelGap ?? 12
 
     property real calculatedX: 0
     property real calculatedY: 0
@@ -56,7 +81,7 @@ Item {
         const barHeight = root.controller.panelWindow.barHeight;
 
         calculatedX = _clampedCenteredX(pillPos.x, screenWidth);
-        calculatedY = root._barAtBottom ? _yAboveBottomBar(screenHeight, barHeight) : _yBelowTopBar(barHeight);
+        calculatedY = root.melt ? (root._barAtBottom ? screenHeight - popupHeight : 0) : root._barAtBottom ? _yAboveBottomBar(screenHeight, barHeight) : _yBelowTopBar(barHeight);
     }
 
     function _clampedCenteredX(pillX, screenWidth) {
@@ -72,6 +97,7 @@ Item {
         return barHeight + verticalGap - contentMargin;
     }
 
+    onMeltChanged: updatePosition()
     onWidthChanged: updatePosition()
     onHeightChanged: updatePosition()
     onIsOpenChanged: {
@@ -100,12 +126,12 @@ Item {
     Item {
         id: animContainer
         x: root.calculatedX
-        y: root.calculatedY
+        y: root.calculatedY + (root.melt ? (1 - root.meltP) * (root._barAtBottom ? root.popupHeight : -root.popupHeight) : 0)
         width: root.popupWidth
         height: root.popupHeight
 
-        opacity: root.isOpen ? 1 : 0
-        scale: root.isOpen ? 1 : 0.92
+        opacity: (root.isOpen || root.melt) ? 1 : 0
+        scale: (root.isOpen || root.melt) ? 1 : 0.92
 
         transformOrigin: root._barAtBottom ? Item.Bottom : Item.Top
 
@@ -138,7 +164,47 @@ Item {
         Item {
             id: popupContent
             anchors.fill: parent
-            anchors.margins: root.contentMargin
+            anchors.leftMargin: root.melt ? 6 : root.contentMargin
+            anchors.rightMargin: root.melt ? 6 : root.contentMargin
+            anchors.topMargin: root.melt ? (root._barAtBottom ? 6 : 0) : root.contentMargin
+            anchors.bottomMargin: root.melt ? (root._barAtBottom ? 0 : 6) : root.contentMargin
+            opacity: root.melt ? Math.max(0, Math.min(1, (root.meltP - 0.5) * 2)) : 1
+
+            Rectangle {
+                id: meltBg
+                visible: root.melt
+                anchors.fill: parent
+                readonly property real far: Math.max(0, (root.win?.meltRadius ?? 18) - 6)
+                radius: far
+                color: cardStack.frontCard.colSurface
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 500
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+
+            ClippingRectangle {
+                visible: root.melt
+                anchors.fill: parent
+                color: "transparent"
+                radius: meltBg.far
+
+                CrossfadeArt {
+                    anchors.fill: parent
+                    url: cardStack.frontCard.artUrl
+                    blurEnabled: true
+                    blurAmount: 1.0
+                    blurMax: 30
+                    renderSize: Qt.size(120, 120)
+                    fadeDuration: 380
+                }
+                Rectangle {
+                    anchors.fill: parent
+                    color: Qt.rgba(cardStack.frontCard._overlayBase.r, cardStack.frontCard._overlayBase.g, cardStack.frontCard._overlayBase.b, 0.5)
+                }
+            }
 
             Item {
                 id: cardStack
@@ -186,19 +252,24 @@ Item {
                     }
                 }
 
-                y: root._barAtBottom ? chipItem.height + 10 : 0
+                y: root._barAtBottom && !root.melt ? root.inPad + chipItem.height + 10 : 0
                 width: parent.width
                 height: cardA.implicitHeight
 
                 PlayerCard {
                     id: cardA
+                    outlined: !root.melt
+                    flat: root.melt
+                    width: root.melt ? parent.width : implicitWidth
+                    flatCorner: meltBg.far
+                    _flatBottom: root._barAtBottom
                     z: cardStack.cardAIsFront ? 1 : 0
                     enabled: cardStack.cardAIsFront
                     anchors.horizontalCenter: parent.horizontalCenter
                     opacity: cardStack.cardAIsFront ? 1 : 0
                     scale: cardStack.cardAIsFront ? 1 : 0.92
                     pinned: MediaPlayerState.pinnedPlayer === player
-                    showPin: MediaPlayerState.players.length >= 2
+                    showPin: !root.melt && MediaPlayerState.players.length >= 2
                     onPinToggled: MediaPlayerState.togglePin(player)
                     Component.onCompleted: {
                         player = MediaPlayerState.currentPlayer;
@@ -208,13 +279,18 @@ Item {
 
                 PlayerCard {
                     id: cardB
+                    outlined: !root.melt
+                    flat: root.melt
+                    width: root.melt ? parent.width : implicitWidth
+                    flatCorner: meltBg.far
+                    _flatBottom: root._barAtBottom
                     z: cardStack.cardAIsFront ? 0 : 1
                     enabled: !cardStack.cardAIsFront
                     anchors.horizontalCenter: parent.horizontalCenter
                     opacity: cardStack.cardAIsFront ? 0 : 1
                     scale: cardStack.cardAIsFront ? 0.92 : 1
                     pinned: MediaPlayerState.pinnedPlayer === player
-                    showPin: MediaPlayerState.players.length >= 2
+                    showPin: !root.melt && MediaPlayerState.players.length >= 2
                     onPinToggled: MediaPlayerState.togglePin(player)
                 }
 
@@ -272,12 +348,18 @@ Item {
             Item {
                 id: chipItem
 
-                y: root._barAtBottom ? 0 : cardStack.height + 10
-                anchors.horizontalCenter: parent.horizontalCenter
-                height: 44
+                y: root._barAtBottom && !root.melt ? root.inPad : cardStack.height + 10
+                anchors.horizontalCenter: root.melt ? undefined : parent.horizontalCenter
+                anchors.left: root.melt ? parent.left : undefined
+                anchors.right: root.melt ? parent.right : undefined
+                anchors.leftMargin: 14
+                anchors.rightMargin: 14
+                width: root.melt ? undefined : implicitWidth
+                height: root.melt ? 36 : 44
                 implicitWidth: chipRow.implicitWidth + 10
 
                 Rectangle {
+                    visible: !root.melt
                     anchors.fill: parent
                     radius: height / 2
                     color: cardStack.frontCard.colSurfaceContainer
@@ -290,7 +372,9 @@ Item {
 
                 Row {
                     id: chipRow
-                    anchors.centerIn: parent
+                    anchors.horizontalCenter: root.melt ? undefined : parent.horizontalCenter
+                    anchors.left: root.melt ? parent.left : undefined
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
 
                     Item {
@@ -298,12 +382,28 @@ Item {
                         height: 36
                         readonly property bool multi: MediaPlayerState.players.length >= 2
                         readonly property bool noPlayers: MediaPlayerState.players.length === 0
-                        width: multi ? Math.max(srcRow.implicitWidth + 8, 44) : Math.max(singleRow.implicitWidth + 24, 60)
+                        readonly property int n: MediaPlayerState.players.length
+                        readonly property int curIdx: Math.max(0, MediaPlayerState.players.indexOf(MediaPlayerState.currentPlayer))
+                        readonly property real gap: 2
+                        readonly property real meltW: chipItem.width - meltBtns.width - chipRow.spacing
+                        readonly property real availW: meltW - 8 - gap * (n - 1)
+                        readonly property real natCur: 18 + 6 + curMetrics.width + 20
+                        readonly property real curW: root.melt ? Math.max(36, availW * 3 / (n + 2)) : Math.max(36, natCur)
+                        readonly property real othW: root.melt ? Math.max(36, availW / (n + 2)) : 36
+                        readonly property real rowW: curW + (n - 1) * (othW + gap)
+                        width: multi ? (root.melt ? meltW : rowW + 8) : root.melt ? meltW : Math.max(singleRow.implicitWidth + 24, 60)
                         Behavior on width {
                             NumberAnimation {
                                 duration: 220
                                 easing.type: Easing.OutCubic
                             }
+                        }
+
+                        TextMetrics {
+                            id: curMetrics
+                            text: root.getPlayerName(MediaPlayerState.currentPlayer)
+                            font.pixelSize: 13
+                            font.family: Config.fontFamily
                         }
 
                         Rectangle {
@@ -356,6 +456,8 @@ Item {
                             id: chipSlider
                             height: 28
                             y: 4
+                            x: (sourcePill.width - sourcePill.rowW) / 2 + sourcePill.curIdx * (sourcePill.othW + sourcePill.gap)
+                            width: sourcePill.curW
                             radius: height / 2
                             color: cardStack.frontCard.colPrimary
                             opacity: sourcePill.multi ? 1 : 0
@@ -399,122 +501,117 @@ Item {
                                 id: playerRepeater
                                 model: MediaPlayerState.players
                                 delegate: Item {
+                                    id: dlg
                                     required property var modelData
                                     required property int index
-                                    width: 36
+                                    width: isCurrent ? sourcePill.curW : sourcePill.othW
                                     height: 36
                                     readonly property bool isCurrent: modelData === MediaPlayerState.currentPlayer
-
-                                    IconImage {
-                                        id: appIcon
-                                        anchors.centerIn: parent
-                                        implicitSize: 18
-                                        source: root.getIconSource(modelData)
-                                        visible: source !== "" && status !== Image.Error
-                                        mipmap: true
-                                        opacity: isCurrent ? 1.0 : 0.5
-                                        Behavior on opacity {
-                                            NumberAnimation {
-                                                duration: 150
-                                            }
+                                    readonly property real textW: Math.min(curMetrics.width, width - 18 - 6 - 20)
+                                    Behavior on width {
+                                        NumberAnimation {
+                                            duration: 220
+                                            easing.type: Easing.OutCubic
                                         }
                                     }
 
-                                    MaterialIcon {
+                                    Row {
                                         anchors.centerIn: parent
-                                        iconSize: 16
-                                        name: "music-note"
-                                        visible: !appIcon.visible
-                                        color: isCurrent ? cardStack.frontCard.colOnPrimary : cardStack.frontCard.colOnPrimaryContainer
-                                        opacity: isCurrent ? 1.0 : 0.5
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: 150
+                                        spacing: 6
+
+                                        IconImage {
+                                            id: appIcon
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            implicitSize: 18
+                                            source: root.getIconSource(dlg.modelData)
+                                            visible: source !== "" && status !== Image.Error
+                                            mipmap: true
+                                            opacity: dlg.isCurrent ? 1.0 : 0.5
+                                            Behavior on opacity {
+                                                NumberAnimation {
+                                                    duration: 150
+                                                }
                                             }
                                         }
-                                        Behavior on opacity {
-                                            NumberAnimation {
-                                                duration: 150
+
+                                        MaterialIcon {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            iconSize: 16
+                                            name: "music-note"
+                                            visible: !appIcon.visible
+                                            color: dlg.isCurrent ? cardStack.frontCard.colOnPrimary : cardStack.frontCard.colOnPrimaryContainer
+                                            opacity: dlg.isCurrent ? 1.0 : 0.5
+                                            Behavior on color {
+                                                ColorAnimation {
+                                                    duration: 150
+                                                }
                                             }
+                                            Behavior on opacity {
+                                                NumberAnimation {
+                                                    duration: 150
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: dlg.isCurrent && dlg.textW > 30
+                                            width: Math.max(0, dlg.textW)
+                                            text: root.getPlayerName(dlg.modelData)
+                                            elide: Text.ElideRight
+                                            color: cardStack.frontCard.colOnPrimary
+                                            font.pixelSize: 13
+                                            font.family: Config.fontFamily
+                                            renderType: Text.NativeRendering
                                         }
                                     }
 
                                     MouseArea {
                                         anchors.fill: parent
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: MediaPlayerState.switchTo(modelData)
+                                        onClicked: MediaPlayerState.switchTo(dlg.modelData)
                                     }
                                 }
                             }
                         }
-
-                        function updateSlider() {
-                            if (!multi)
-                                return;
-                            for (let i = 0; i < playerRepeater.count; i++) {
-                                const item = playerRepeater.itemAt(i);
-                                if (item && item.isCurrent) {
-                                    const mapped = item.mapToItem(sourcePill, 0, 0);
-                                    chipSlider.x = mapped.x;
-                                    chipSlider.width = item.width;
-                                    return;
-                                }
-                            }
-                        }
-
-                        onWidthChanged: Qt.callLater(updateSlider)
-                        onVisibleChanged: Qt.callLater(updateSlider)
-
-                        Connections {
-                            target: MediaPlayerState
-                            function onCurrentPlayerChanged() {
-                                Qt.callLater(sourcePill.updateSlider);
-                            }
-                            function onPlayersChanged() {
-                                Qt.callLater(sourcePill.updateSlider);
-                            }
-                        }
                     }
 
-                    Item {
-                        height: 36
-                        width: 36
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: height / 2
-                            color: cardStack.frontCard.colSurfaceContainerHigh
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 400
-                                }
-                            }
-                        }
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰴸"
-                            font.family: Config.fontFamily
-                            font.pixelSize: 15
-                            color: cardStack.frontCard.colOnPrimaryContainer
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 400
-                                }
-                            }
-                        }
-                        MouseArea {
-                            id: hpMa
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                pavuProc.running = true;
-                                if (root.controller)
-                                    root.controller.close();
-                            }
-                        }
+                    ChipBtn {
+                        card: cardStack.frontCard
+                        visible: !root.melt
+                        glyph: "󰴸"
+                        onClicked: root.openSound()
+                    }
+                }
+
+                Row {
+                    id: meltBtns
+                    visible: root.melt
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 4
+
+                    ChipBtn {
+                        card: cardStack.frontCard
+                        visible: MediaPlayerState.players.length >= 2
+                        glyph: "󰐃"
+                        active: MediaPlayerState.pinnedPlayer !== null && MediaPlayerState.pinnedPlayer === cardStack.frontCard.player
+                        onClicked: MediaPlayerState.togglePin(cardStack.frontCard.player)
+                    }
+                    ChipBtn {
+                        card: cardStack.frontCard
+                        glyph: "󰴸"
+                        onClicked: root.openSound()
                     }
                 }
             }
         }
+    }
+
+    function openSound() {
+        pavuProc.running = true;
+        if (controller)
+            controller.close();
     }
 
     Process {

@@ -23,8 +23,13 @@ Item {
 
     signal pinToggled
 
+    property bool outlined: true
+    property bool flat: false
+    property real flatCorner: 0
+    property bool _flatBottom: false
+    readonly property real pad: 14
     implicitWidth: 380
-    implicitHeight: 160
+    implicitHeight: flat ? 128 : 160
 
     readonly property string artUrl: player?.trackArtUrl ?? ""
 
@@ -221,8 +226,12 @@ CAVAEOF`]
     ClippingRectangle {
         id: card
         anchors.fill: parent
-        radius: 24
-        color: root.colSurface
+        radius: root.flat ? 0 : 24
+        topLeftRadius: root.flat ? root.flatCorner : radius
+        topRightRadius: topLeftRadius
+        bottomLeftRadius: radius
+        bottomRightRadius: bottomLeftRadius
+        color: root.flat ? "transparent" : root.colSurface
         Behavior on color {
             enabled: !root.suppressAnimations
             ColorAnimation {
@@ -233,6 +242,7 @@ CAVAEOF`]
 
         CrossfadeArt {
             id: bgClip
+            visible: !root.flat
             anchors.fill: parent
             radius: card.radius
             url: root.artUrl
@@ -244,6 +254,7 @@ CAVAEOF`]
         }
 
         Rectangle {
+            visible: !root.flat
             anchors.fill: parent
             color: Qt.rgba(root._overlayBase.r, root._overlayBase.g, root._overlayBase.b, 0.5)
             Behavior on color {
@@ -253,6 +264,7 @@ CAVAEOF`]
             }
         }
         Rectangle {
+            visible: !root.flat
             anchors {
                 top: parent.top
                 left: parent.left
@@ -271,6 +283,7 @@ CAVAEOF`]
             }
         }
         Rectangle {
+            visible: !root.flat
             anchors {
                 bottom: parent.bottom
                 left: parent.left
@@ -291,13 +304,14 @@ CAVAEOF`]
 
         Item {
             id: topRow
+            visible: !root.flat
             anchors {
                 top: parent.top
                 left: parent.left
                 right: parent.right
                 topMargin: 13
-                leftMargin: 14
-                rightMargin: 14
+                leftMargin: root.pad
+                rightMargin: root.pad
             }
             height: 22
 
@@ -385,17 +399,49 @@ CAVAEOF`]
             anchors {
                 left: parent.left
                 right: parent.right
-                top: topRow.bottom
+                top: root.flat ? parent.top : topRow.bottom
+                topMargin: root.flat ? 14 : 0
                 bottom: bottomRow.top
-                leftMargin: 14
-                rightMargin: 14
+                bottomMargin: root.flat ? 10 : 0
+                leftMargin: root.pad
+                rightMargin: root.pad
             }
 
             readonly property bool isPlaying: root.player?.playbackState === MprisPlaybackState.Playing
 
-            Column {
+            Item {
+                id: flatCover
+                visible: root.flat
+                width: root.flat ? 64 : 0
+                height: 64
                 anchors {
                     left: parent.left
+                    verticalCenter: parent.verticalCenter
+                }
+                ClippingRectangle {
+                    anchors.fill: parent
+                    radius: 16
+                    color: Qt.rgba(root.colOnSurface.r, root.colOnSurface.g, root.colOnSurface.b, 0.1)
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        iconSize: 24
+                        name: "music-note"
+                        color: root.colOnSurfaceVariant
+                    }
+                    CrossfadeArt {
+                        anchors.fill: parent
+                        url: root.flat ? root.artUrl : ""
+                        blurEnabled: false
+                        renderSize: Qt.size(128, 128)
+                        fadeDuration: 380
+                    }
+                }
+            }
+
+            Column {
+                anchors {
+                    left: flatCover.right
+                    leftMargin: root.flat ? 14 : 0
                     right: playBtn.left
                     rightMargin: 12
                     verticalCenter: parent.verticalCenter
@@ -413,17 +459,29 @@ CAVAEOF`]
                     textColor: root.colOnSurfaceVariant
                     pixelSize: 12
                 }
+                Text {
+                    visible: root.flat
+                    width: parent.width
+                    text: timestampLabel.text
+                    color: root.colOnSurfaceVariant
+                    opacity: 0.7
+                    font.pixelSize: 11
+                    font.family: Config.fontFamily
+                    font.features: {
+                        "tnum": 1
+                    }
+                }
             }
 
             Rectangle {
                 id: playBtn
-                width: 44
-                height: 44
+                width: root.flat ? 52 : 44
+                height: width
                 anchors {
                     right: parent.right
                     verticalCenter: parent.verticalCenter
                 }
-                radius: middleRow.isPlaying ? 14 : 22
+                radius: middleRow.isPlaying ? width * 0.3 : width / 2
                 color: root.colPrimary
 
                 Behavior on radius {
@@ -474,8 +532,8 @@ CAVAEOF`]
                 left: parent.left
                 right: parent.right
                 bottomMargin: 12
-                leftMargin: 14
-                rightMargin: 14
+                leftMargin: root.pad
+                rightMargin: root.pad
             }
             height: 28
 
@@ -725,7 +783,7 @@ CAVAEOF`]
                 id: repeatBtn
                 anchors {
                     right: pinBtn.left
-                    rightMargin: root.showPin ? 4 : 0
+                    rightMargin: pinBtn.visible ? 4 : 0
                     verticalCenter: parent.verticalCenter
                 }
                 visible: root.player?.loopSupported ?? false
@@ -736,13 +794,13 @@ CAVAEOF`]
 
             Item {
                 id: pinBtn
-                width: root.showPin ? 28 : 0
+                width: visible ? 28 : 0
                 height: 28
                 anchors {
                     right: parent.right
                     verticalCenter: parent.verticalCenter
                 }
-                visible: root.showPin
+                visible: root.showPin && !root.flat
 
                 Rectangle {
                     anchors.fill: parent
@@ -785,7 +843,7 @@ CAVAEOF`]
             id: cavaViz
             anchors.fill: parent
             visible: root.showVisualizer
-            opacity: root.player !== null ? 0.28 : 0
+            opacity: root.player !== null ? (root.flat ? 0.16 : 0.28) : 0
             Behavior on opacity {
                 NumberAnimation {
                     duration: 600
@@ -796,7 +854,7 @@ CAVAEOF`]
             values: root.cavaBars
             maxValue: 1000
             cavaColor: root.colPrimary
-            overrideMaxHeight: height
+            overrideMaxHeight: root.flat ? height * 0.45 : height
             style: ({
                     enabled: true,
                     position: 0,
@@ -813,7 +871,8 @@ CAVAEOF`]
             anchors.fill: parent
             radius: card.radius
             color: "transparent"
-            border.width: 1
+            visible: !root.flat
+            border.width: root.outlined ? 1 : 0
             border.color: root.colOutline
             Behavior on border.color {
                 ColorAnimation {

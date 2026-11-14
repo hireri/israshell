@@ -10,9 +10,11 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
 import QtQuick
+import QtQuick.Shapes
 
 import qs.components
 import qs.style
+import "services/meltPath.js" as MeltPath
 import qs.windows
 import qs.services
 
@@ -24,7 +26,7 @@ ShellRoot {
         Lockscreen {}
     }
 
-    NotificationPopup {}
+    NotificationPopup { barWindows: rootShell.barWindows }
     Osd {}
 
     AppLauncher { id: appLauncher }
@@ -33,6 +35,7 @@ ShellRoot {
     Screenshot {}
     AiAssistant {}
 
+    property var barWindows: ({})
     property var wallpaperPanels: ({})
     property var quickSettingsPanels: ({})
     readonly property var appLauncherController: appLauncher
@@ -63,6 +66,7 @@ ShellRoot {
         quickSettingsPanels: rootShell.quickSettingsPanels
     }
 
+    readonly property int frameThickness: Config.bar.mode === 4 && Config.bar.transparency !== 2 ? 10 : 0
     Component.onCompleted: SettingsRegistry.init(SettingsPages.pages)
 
     readonly property var _updater: Updater
@@ -272,6 +276,7 @@ ShellRoot {
             }
 
             readonly property int floatingGap: 10
+            readonly property int frameThickness: rootShell.frameThickness
             readonly property int barExclusiveZone: ((barMode === 2) ? 56 : (Config.bar.transparency === 2 && !GameModeService.active) ? 34 : 44)
 
             readonly property var visibleBarLeft: Config.bar.left.filter(id => !isWidgetDisabled(id))
@@ -282,6 +287,8 @@ ShellRoot {
                 id: window
                 property var modelData: screenScope.modelData
                 screen: modelData
+                Component.onCompleted: rootShell.barWindows[modelData.name] = window
+                Component.onDestruction: delete rootShell.barWindows[modelData.name]
 
                 property bool isMenuOpen: (PanelService.current?.excludeFromBarOverlay === true ? false : (leftZone.anyMenuOpen || rightZone.anyMenuOpen || centerAutoZone.anyMenuOpen || centerBeforeZone.anyMenuOpen || centerAfterZone.anyMenuOpen || (centerAnchorLoader.item && centerAnchorLoader.item.isOpen === true) || (PanelService.current !== null && PanelService.current.excludeFromBarOverlay !== true && (anyMergedPanelOpen || PanelService.currentScreen === null || PanelService.currentScreen === modelData)) || PanelService.currentMode !== null)) || false
 
@@ -290,7 +297,27 @@ ShellRoot {
                 readonly property real outlineAlpha: Config.bar.transparency === 2 ? 0 : Config.blurOpacity * (typeof Config.bar.outline === "number" ? Config.bar.outline : (Config.bar.outline === false ? 0 : 1))
                 readonly property color outlineColor: Qt.alpha(Colors.md3.outline_variant, outlineAlpha)
 
-                readonly property bool huggingCornersVisible: screenScope.barMode === 0 && Config.bar.transparency !== 2
+                readonly property bool huggingCornersVisible: (screenScope.barMode === 0 || screenScope.barMode === 4) && Config.bar.transparency !== 2
+
+                readonly property bool meltActive: Config.bar.meltPanels && huggingCornersVisible
+                readonly property bool dockMeltActive: Config.floatingDock.enabled
+                        && (Config.floatingDock.melt === 1 || (Config.floatingDock.melt !== 2 && Config.bar.meltPanels))
+                        && (screenScope.frameThickness > 0 || huggingCornersVisible)
+                readonly property bool ringActive: screenScope.frameThickness > 0 || meltActive || dockMeltActive
+                readonly property real frameInset: screenScope.frameThickness
+                readonly property real panelGap: 12
+                readonly property real meltRadius: 18
+                readonly property bool notifMelt: meltActive
+                        && (Config.notifications.showAllMonitors || CompositorService.focusedMonitor?.name === modelData.name)
+                property var meltMap: ({})
+                function setMelt(key, r) {
+                    const m = Object.assign({}, meltMap);
+                    if (r)
+                        m[key] = r;
+                    else
+                        delete m[key];
+                    meltMap = m;
+                }
 
                 readonly property string currentPanelType: ((PanelService.current?.panelType ?? "") !== "" && PanelService.currentScreen === modelData) ? PanelService.current.panelType : ""
                 readonly property bool ownsOpenMergedPanel: currentPanelType !== "" || dockMenuOpen
@@ -379,6 +406,9 @@ ShellRoot {
                     }
                     Region {
                         item: recordRegionIndicator.chipShown ? recordRegionIndicator.chipItem : null
+                    }
+                    Region {
+                        item: notifMeltLoader.item?.box ?? null
                     }
                 }
                 mask: (anyMergedPanelOpen || dockMenuOpen) ? null : barOnlyMask
@@ -496,6 +526,7 @@ ShellRoot {
 
                     Rectangle {
                         id: barContainer
+                        opacity: window.ringActive ? 0 : 1
                         readonly property real edgeK: 1 - visualContent.floatProgress
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -552,10 +583,11 @@ ShellRoot {
 
                     Rectangle {
                         z: 1
+                        visible: !window.ringActive
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        anchors.leftMargin: huggingCornersWrapper.huggingCornerRadius
-                        anchors.rightMargin: huggingCornersWrapper.huggingCornerRadius
+                        anchors.leftMargin: huggingCornersWrapper.huggingCornerRadius + screenScope.frameThickness
+                        anchors.rightMargin: huggingCornersWrapper.huggingCornerRadius + screenScope.frameThickness
                         height: 1
                         y: Config.bar.position === 0 ? parent.height : -1
                         color: window.outlineColor
@@ -681,9 +713,69 @@ ShellRoot {
                     }
 
                     Item {
+                        id: frameRing
+                        anchors.fill: parent
+                        visible: window.ringActive
+                        readonly property real t: screenScope.frameThickness
+                        readonly property real r: huggingCornersWrapper.huggingCornerRadius
+                        readonly property bool atTop: Config.bar.position === 0
+                        readonly property bool framed: t > 0
+                        readonly property real farInset: framed ? t : -1
+                        readonly property real rt: (atTop || framed) ? r : 0
+                        readonly property real rb: (!atTop || framed) ? r : 0
+                        property real topInset: atTop ? screenScope.barExclusiveZone : farInset
+                        property real bottomInset: atTop ? farInset : screenScope.barExclusiveZone
+                        Behavior on topInset { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+                        Behavior on bottomInset { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+                        readonly property real x1: farInset
+                        readonly property real x2: width - farInset
+                        readonly property real y1: topInset
+                        readonly property real y2: height - bottomInset
+                        readonly property var meltEdges: {
+                            const e = [[], [], [], []];
+                            for (const m of Object.values(window.meltMap)) {
+                                const edge = m.edge >= 0 ? m.edge : Config.bar.position;
+                                const h = m.depth >= 0 ? m.depth : m.height;
+                                e[edge].push(edge < 2 ? { p: m.x, w: m.width, h: h } : { p: m.y, w: m.height, h: h });
+                            }
+                            return e;
+                        }
+                        function pathFor(inset) {
+                            return MeltPath.holePath({
+                                x1: x1, x2: x2, y1: y1, y2: y2, rt: rt, rb: rb, barEdge: Config.bar.position,
+                                top: meltEdges[0], bottom: meltEdges[1], left: meltEdges[2], right: meltEdges[3],
+                                f: r, c: window.meltRadius, inset: inset
+                            });
+                        }
+                        readonly property string holeD: pathFor(0)
+                        readonly property string strokeD: pathFor(0.5)
+
+                        Shape {
+                            anchors.fill: parent
+                            preferredRendererType: Shape.CurveRenderer
+
+                            ShapePath {
+                                fillColor: huggingCornersWrapper.barColor
+                                strokeColor: "transparent"
+                                fillRule: ShapePath.OddEvenFill
+                                PathSvg { path: "M-10 -10 H" + (frameRing.width + 10) + " V" + (frameRing.height + 10) + " H-10 Z " + frameRing.holeD }
+                            }
+                            ShapePath {
+                                fillColor: "transparent"
+                                strokeColor: window.outlineColor
+                                strokeWidth: 1
+                                PathSvg { path: frameRing.strokeD }
+                            }
+                        }
+                    }
+
+                    Item {
                         id: huggingCornersWrapper
+                        visible: !window.ringActive
                         anchors.left: parent.left
                         anchors.right: parent.right
+                        anchors.leftMargin: screenScope.frameThickness
+                        anchors.rightMargin: screenScope.frameThickness
                         height: huggingCornerRadius
 
                         y: activeSide === 0
@@ -725,6 +817,13 @@ ShellRoot {
                         }
                     }
 
+                    Loader {
+                        id: notifMeltLoader
+                        anchors.fill: parent
+                        active: window.notifMelt
+                        sourceComponent: NotificationMeltStack { win: window }
+                    }
+
                     ListModel {
                         id: mountedPanelTypes
                     }
@@ -751,6 +850,8 @@ ShellRoot {
 
                             onLoaded: {
                                 item.controller = (rootShell.globalPanelControllers[panelSlotLoader.type] ?? screenScope.panelControllers[panelSlotLoader.type]) ?? null;
+                                if (panelSlotLoader.type === "launcher")
+                                    item.shellWindow = window;
                             }
 
                             readonly property bool owned: panelSlotLoader.type === window.currentPanelType
@@ -807,6 +908,28 @@ ShellRoot {
                     exclusionMode: ExclusionMode.Normal
                     exclusiveZone: thickness
 
+                    color: "transparent"
+                    mask: Region {}
+                    visible: true
+                }
+            }
+
+            Variants {
+                model: screenScope.frameThickness > 0 ? [2, 3, 1 - Config.bar.position] : []
+                PanelWindow {
+                    required property int modelData
+                    screen: screenScope.modelData
+                    WlrLayershell.namespace: "quickshell:frameSpacer"
+                    WlrLayershell.layer: WlrLayer.Bottom
+                    readonly property bool side: modelData >= 2
+                    anchors.top: modelData === 0 || side
+                    anchors.bottom: modelData === 1 || side
+                    anchors.left: modelData === 2 || !side
+                    anchors.right: modelData === 3 || !side
+                    implicitWidth: side ? screenScope.frameThickness : 0
+                    implicitHeight: side ? 0 : screenScope.frameThickness
+                    exclusionMode: ExclusionMode.Normal
+                    exclusiveZone: screenScope.frameThickness
                     color: "transparent"
                     mask: Region {}
                     visible: true

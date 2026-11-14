@@ -21,16 +21,35 @@ Item {
 
     anchors.fill: parent
 
+    readonly property var win: root.controller?.panelWindow ?? null
+    readonly property bool melt: win?.meltActive ?? false
+    anchors.topMargin: melt && Config.bar.position === 0 ? win.barHeight : 0
+    anchors.bottomMargin: melt && Config.bar.position === 1 ? win.barHeight : 0
+    clip: melt
+
+    readonly property real meltTop: Math.max(root.y + panel.y, root.y)
+    readonly property real meltBottom: Math.min(root.y + panel.y + panel.height, root.y + root.height)
+    readonly property real meltVisible: Math.max(0, meltBottom - meltTop)
+
+    MeltReporter {
+        win: root.win
+        key: "wallpaper"
+        rect: Qt.rect(root.x + panel.x, root.meltTop, panel.width, root.meltVisible)
+        active: root.melt && (root.isOpen || root.meltVisible > 0.5)
+    }
+
     property bool _ready: false
     Component.onCompleted: {
         Qt.callLater(() => root._ready = true);
         root.syncUserPins();
+        panel.rebuildModel(panel.searchQuery, WallpaperService.entries);
     }
 
     onIsOpenChanged: {
         if (isOpen) {
             breadcrumbs.updatePath(WallpaperService.currentDir);
             searchInput.forceActiveFocus();
+            panel.scrollToCurrent();
         }
     }
 
@@ -127,20 +146,32 @@ Item {
         width: 1100
         height: 600
         radius: 20
-        color: Config.dim(Colors.md3.surface_container_low)
-        border.width: 1
+        color: root.melt ? "transparent" : Config.dim(Colors.md3.surface_container_low)
+        border.width: root.melt ? 0 : 1
         border.color: Colors.md3.outline_variant
+        opacity: root.melt ? Math.max(0, Math.min(1, (root.meltVisible / height - 0.5) * 2)) : 1
+
+        x: {
+            let pos = Config.screencap.wallpaperPosition ?? "button";
+            if (pos === "button")
+                pos = Config.bar.left.includes("screencap") ? "left" : Config.bar.right.includes("screencap") ? "right" : "center";
+            const edge = (root.win?.frameInset ?? 0) + (root.win?.panelGap ?? 12);
+            if (pos === "left")
+                return edge;
+            if (pos === "right")
+                return root.width - width - edge;
+            return Math.round((root.width - width) / 2);
+        }
 
         anchors {
-            horizontalCenter: parent.horizontalCenter
             top: Config.bar.position === 0 ? parent.top : undefined
             bottom: Config.bar.position === 1 ? parent.bottom : undefined
             topMargin: Config.bar.position === 0
-                ? ((root._ready && root.isOpen) ? (root.controller?.panelWindow.barHeight ?? 0) + 8 : -panel.height)
-                : 8
+                ? ((root._ready && root.isOpen) ? (root.melt ? 0 : (root.controller?.panelWindow.barHeight ?? 0) + (root.controller?.panelWindow?.panelGap ?? 12)) : -panel.height)
+                : (root.controller?.panelWindow?.frameInset ?? 0) + (root.controller?.panelWindow?.panelGap ?? 12)
             bottomMargin: Config.bar.position === 1
-                ? ((root._ready && root.isOpen) ? (root.controller?.panelWindow.barHeight ?? 0) + 8 : -panel.height)
-                : 8
+                ? ((root._ready && root.isOpen) ? (root.melt ? 0 : (root.controller?.panelWindow.barHeight ?? 0) + (root.controller?.panelWindow?.panelGap ?? 12)) : -panel.height)
+                : (root.controller?.panelWindow?.frameInset ?? 0) + (root.controller?.panelWindow?.panelGap ?? 12)
         }
 
         Behavior on anchors.topMargin {
@@ -317,18 +348,23 @@ Item {
             panel.gridModel.append(sorted);
             grid.visible = true;
 
-            if (root.isOpen && !q && WallpaperService.currentWall) {
-                Qt.callLater(() => {
-                    for (let i = 0; i < panel.gridModel.count; i++) {
-                        const e = panel.gridModel.get(i);
-                        if (!e.isDir && e.path === WallpaperService.currentWall) {
-                            grid.currentIndex = i;
-                            grid.positionViewAtIndex(i, GridView.Center);
-                            break;
-                        }
+            if (root.isOpen && !q)
+                panel.scrollToCurrent();
+        }
+
+        function scrollToCurrent() {
+            if (!panel.isLocal || panel.searchQuery || !WallpaperService.currentWall)
+                return;
+            Qt.callLater(() => {
+                for (let i = 0; i < panel.gridModel.count; i++) {
+                    const e = panel.gridModel.get(i);
+                    if (!e.isDir && e.path === WallpaperService.currentWall) {
+                        grid.currentIndex = i;
+                        grid.positionViewAtIndex(i, GridView.Center);
+                        break;
                     }
-                });
-            }
+                }
+            });
         }
 
         onSearchQueryChanged: rebuildModel(panel.searchQuery, WallpaperService.entries)
@@ -1413,37 +1449,39 @@ Item {
                 }
             }
 
-            Column {
-                visible: card.isDir
+            Loader {
+                active: card.isDir
                 anchors.centerIn: parent
-                spacing: 8
+                sourceComponent: Column {
+                    spacing: 8
 
-                Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    width: 36
-                    height: 36
-                    radius: 10
-                    color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: 36
+                        height: 36
+                        radius: 10
+                        color: Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
 
-                    MaterialIcon {
-                        anchors.centerIn: parent
-                        name: "folder"
-                        iconSize: 20
+                        MaterialIcon {
+                            anchors.centerIn: parent
+                            name: "folder"
+                            iconSize: 20
+                            color: Colors.md3.on_surface_variant
+                        }
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: cardBody.width - 16
+                        text: card.entryName
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                        font.family: Config.fontFamily
+                        renderType: Text.NativeRendering
+                        elide: Text.ElideMiddle
+                        horizontalAlignment: Text.AlignHCenter
                         color: Colors.md3.on_surface_variant
                     }
-                }
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    width: cardBody.width - 16
-                    text: card.entryName
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
-                    font.family: Config.fontFamily
-                    renderType: Text.NativeRendering
-                    elide: Text.ElideMiddle
-                    horizontalAlignment: Text.AlignHCenter
-                    color: Colors.md3.on_surface_variant
                 }
             }
 
@@ -1503,78 +1541,84 @@ Item {
                     }
                 }
 
-                Rectangle {
-                    id: localDurationBadge
-                    visible: card.isVideo
+                Loader {
+                    active: card.isVideo
                     anchors {
                         top: parent.top
                         left: parent.left
                         margins: 6
                     }
-                    readonly property string durationText: VideoJobs.formatDuration(preview.duration)
-                    width: durationRow.implicitWidth + (durationText ? 14 : 8)
-                    height: 22
-                    radius: 11
-                    color: Qt.alpha(Colors.md3.surface_container_lowest, 0.85)
                     z: 2
+                    sourceComponent: Rectangle {
+                        id: localDurationBadge
+                        readonly property string durationText: VideoJobs.formatDuration(preview.duration)
+                        width: durationRow.implicitWidth + (durationText ? 14 : 8)
+                        height: 22
+                        radius: 11
+                        color: Qt.alpha(Colors.md3.surface_container_lowest, 0.85)
 
-                    Row {
-                        id: durationRow
-                        anchors.centerIn: parent
-                        spacing: 3
+                        Row {
+                            id: durationRow
+                            anchors.centerIn: parent
+                            spacing: 3
 
-                        MaterialIcon {
-                            anchors.verticalCenter: parent.verticalCenter
-                            name: "video"
-                            iconSize: 12
-                            transitionType: "none"
-                            color: Colors.md3.on_surface_variant
-                        }
+                            MaterialIcon {
+                                anchors.verticalCenter: parent.verticalCenter
+                                name: "video"
+                                iconSize: 12
+                                transitionType: "none"
+                                color: Colors.md3.on_surface_variant
+                            }
 
-                        Text {
-                            visible: localDurationBadge.durationText !== ""
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: localDurationBadge.durationText
-                            font.pixelSize: 10
-                            font.family: Config.fontFamily
-                            renderType: Text.NativeRendering
-                            color: Colors.md3.on_surface_variant
+                            Text {
+                                visible: localDurationBadge.durationText !== ""
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: localDurationBadge.durationText
+                                font.pixelSize: 10
+                                font.family: Config.fontFamily
+                                renderType: Text.NativeRendering
+                                color: Colors.md3.on_surface_variant
+                            }
                         }
                     }
                 }
 
-                Rectangle {
-                    visible: card.isCurrent
+                Loader {
+                    active: card.isCurrent
                     anchors {
                         top: parent.top
                         right: parent.right
                         margins: 6
                     }
-                    width: 22
-                    height: 22
-                    radius: 11
-                    color: Colors.md3.primary
                     z: 2
+                    sourceComponent: Rectangle {
+                        width: 22
+                        height: 22
+                        radius: 11
+                        color: Colors.md3.primary
 
-                    MaterialIcon {
-                        anchors.centerIn: parent
-                        name: "check"
-                        iconSize: 14
-                        color: Colors.md3.on_primary
+                        MaterialIcon {
+                            anchors.centerIn: parent
+                            name: "check"
+                            iconSize: 14
+                            color: Colors.md3.on_primary
+                        }
                     }
                 }
 
-                Rectangle {
+                Loader {
+                    active: card.applying
                     anchors.fill: parent
                     z: 3
-                    visible: card.applying
-                    color: Qt.alpha(Colors.md3.surface_container_lowest, 0.65)
+                    sourceComponent: Rectangle {
+                        color: Qt.alpha(Colors.md3.surface_container_lowest, 0.65)
 
-                    LoadingSpinner {
-                        anchors.centerIn: parent
-                        running: card.applying
-                        size: 40
-                        background: true
+                        LoadingSpinner {
+                            anchors.centerIn: parent
+                            running: card.applying
+                            size: 40
+                            background: true
+                        }
                     }
                 }
             }

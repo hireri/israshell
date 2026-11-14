@@ -21,6 +21,30 @@ Item {
 
     anchors.fill: parent
 
+    property var shellWindow: null
+    readonly property bool melt: docked && (shellWindow?.meltActive ?? false)
+    anchors.topMargin: melt && Config.bar.position === 0 ? shellWindow.barHeight : 0
+    anchors.bottomMargin: melt && Config.bar.position === 1 ? shellWindow.barHeight : 0
+    clip: melt
+
+    readonly property real meltTop: Math.max(root.y + _stack.y, root.y)
+    readonly property real meltBottom: Math.min(root.y + _stack.y + _stack.height, root.y + root.height)
+    readonly property real meltVisible: Math.max(0, meltBottom - meltTop)
+
+    MeltReporter {
+        win: root.shellWindow
+        key: "launcher"
+        rect: Qt.rect(root.x + _stack.x, root.meltTop, _stack.width, root.meltVisible)
+        active: root.melt && (root.isOpen || root.meltVisible > 0.5)
+    }
+
+    Binding {
+        target: _stack
+        property: "opacity"
+        value: Math.max(0, Math.min(1, ((1 - root._slide) - 0.5) * 2))
+        when: root.melt
+    }
+
     property alias stack: _stack
     property alias closeAnim: _closeAnim
     property alias launcherInput: _launcherInput
@@ -69,6 +93,9 @@ Item {
     readonly property int _pad: docked ? 8 : 0
 
     readonly property string _zone: {
+        const pos = Config.launcher.position;
+        if (pos === "left" || pos === "center" || pos === "right")
+            return pos;
         const b = Config.bar;
         if (b.left.includes("launcher"))
             return "left";
@@ -77,8 +104,10 @@ Item {
         return "center";
     }
     readonly property real _barInset: {
+        if (melt)
+            return 0;
         const mode = Config.bar.transparency === 2 ? (Config.bar.mode === 2 ? 2 : 0) : Config.bar.mode;
-        return (mode === 2 ? 66 : 44) + 8;
+        return (mode === 2 ? 66 : 44) + (shellWindow?.panelGap ?? 12);
     }
 
     readonly property bool _showFrequent: docked && !widgetShown && (root.controller?.mode ?? "") === "apps" && (root.controller?._query ?? "") === "" && (root.controller?.frequentApps.length ?? 0) >= 3
@@ -174,13 +203,14 @@ Item {
         id: _stack
 
         readonly property real _restFraction: 0.3
+        readonly property real _edge: (root.shellWindow?.frameInset ?? 0) + (root.shellWindow?.panelGap ?? 12)
         x: {
             if (!root.docked)
                 return Math.round((root.width - width) / 2);
             if (root._zone === "left")
-                return 12;
+                return _edge;
             if (root._zone === "right")
-                return root.width - width - 12;
+                return root.width - width - _edge;
             return Math.round((root.width - width) / 2);
         }
         y: {
@@ -256,7 +286,7 @@ Item {
         readonly property int gap: 8
 
         Rectangle {
-            visible: root.docked
+            visible: root.docked && !root.melt
             anchors.fill: parent
             z: -1
             radius: 28

@@ -16,7 +16,7 @@ Item {
     property bool panelActive: false
     property string dismissMode: "slide"
 
-    readonly property bool isBottom: (Config.notifications.popupFollowBar ?? true) ? (Config.bar.position ?? 0) === 1 : Config.notifications.popupPosition === 2
+    readonly property bool isBottom: (Config.notifications.popupPosition ?? 0) === 0 ? (Config.bar.position ?? 0) === 1 : Config.notifications.popupPosition === 2
 
     function show(path) {
         imagePath = path;

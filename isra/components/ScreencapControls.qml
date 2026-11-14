@@ -346,8 +346,10 @@ Rectangle {
     Component {
         id: wallpaperComp
         Item {
+            id: wpItem
             width: 32
             height: 32
+
 
             ToolButton {
                 anchors.centerIn: parent

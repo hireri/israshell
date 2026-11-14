@@ -15,6 +15,7 @@ Item {
     property bool above: false
     property string side: ""
     property bool flat: root.embedded
+    property bool melt: false
     property int gap: 8
     property int padding: 10
     property real edgeMargin: 12
@@ -174,10 +175,10 @@ Item {
             height: implicitHeight
 
             opacity: tip.ready && root._want && root._shown ? 1 : 0
-            scale: tip.ready && root._want && root._shown ? 1 : 0.9
-            color: root.flat ? Colors.md3.surface_container_highest : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+            scale: root.melt || (tip.ready && root._want && root._shown) ? 1 : 0.9
+            color: root.melt ? "transparent" : root.flat ? Colors.md3.surface_container_highest : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
             radius: 8
-            border.width: root.flat ? 0 : 1
+            border.width: root.flat || root.melt ? 0 : 1
             border.color: Qt.alpha(Colors.md3.outline, 0.5)
 
             Behavior on opacity {

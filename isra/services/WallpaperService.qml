@@ -606,16 +606,20 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.loading = false;
-                const lines = text.trim().split("\n").filter(l => l.trim());
-                root.entries = lines.map(l => {
-                    const p = l.split("\t");
-                    return {
-                        mtime: parseFloat(p[0]) || 0,
-                        isDir: p[1] === "D",
-                        name: p[2] ?? "",
-                        path: p[3] ?? ""
-                    };
-                }).filter(e => e.name);
+                const raw = text.trim();
+                if (raw !== root._lastListText) {
+                    root._lastListText = raw;
+                    const lines = raw.split("\n").filter(l => l.trim());
+                    root.entries = lines.map(l => {
+                        const p = l.split("\t");
+                        return {
+                            mtime: parseFloat(p[0]) || 0,
+                            isDir: p[1] === "D",
+                            name: p[2] ?? "",
+                            path: p[3] ?? ""
+                        };
+                    }).filter(e => e.name);
+                }
 
                 if (root._pendingRandomize) {
                     root._pendingRandomize = false;
@@ -629,19 +633,26 @@ Singleton {
     property var thumbs: ({})
     property bool thumbsUnavailable: false
     property var _thumbBuf: ({})
+    property string _lastListText: ""
 
     readonly property string _thumbScript: 'command -v vipsthumbnail >/dev/null || exit 127; mkdir -p "$1"; shift; miss=(); ' + 'while [ $# -gt 0 ]; do if [ -s "$2" ]; then printf "%s\\t%s\\n" "$1" "$2"; else miss+=("$1" "$2"); fi; shift 2; done; ' + '[ ${#miss[@]} -gt 0 ] && printf "%s\\0" "${miss[@]}" | xargs -0 -n2 -P4 bash -c ' + "'vipsthumbnail \"$0\" -s 512x -o \"$1[Q=82]\" 2>/dev/null && [ -s \"$1\" ] && printf \"%s\\t%s\\n\" \"$0\" \"$1\"'"
 
     onEntriesChanged: {
         const imgs = entries.filter(e => !e.isDir && /\.(jpe?g|png|webp|gif)$/i.test(e.name)).sort((a, b) => b.mtime - a.mtime);
         thumbProc.running = false;
-        thumbs = {};
-        _thumbBuf = {};
-        if (imgs.length === 0)
-            return;
+        thumbFlush.stop();
+        const kept = {};
         const args = [];
-        for (const e of imgs)
-            args.push(e.path, thumbDir + "/" + Qt.md5(e.path) + ".jpg");
+        for (const e of imgs) {
+            if (thumbs[e.path])
+                kept[e.path] = thumbs[e.path];
+            else
+                args.push(e.path, thumbDir + "/" + Qt.md5(e.path) + ".jpg");
+        }
+        _thumbBuf = kept;
+        thumbs = Object.assign({}, kept);
+        if (args.length === 0)
+            return;
         thumbProc.command = ["bash", "-c", _thumbScript, "_", thumbDir].concat(args);
         thumbProc.running = true;
     }

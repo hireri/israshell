@@ -386,16 +386,6 @@ PageBase {
                 })
         }
         SettingSwitch {
-            label: Localization.t("soundPage.follow_bar_position")
-            sublabel: Localization.t("soundPage.snap_popups_to_the_same_edge")
-            checked: Config.notifications.popupFollowBar ?? true
-            onToggled: v => Config.update({
-                    notifications: Object.assign({}, Config.notifications, {
-                        popupFollowBar: v
-                    })
-                })
-        }
-        SettingSwitch {
             label: Localization.t("soundPage.network_notifications")
             sublabel: Localization.t("soundPage.notify_on_wifi_and_ethernet_changes")
             checked: Config.notifications.network ?? true
@@ -418,10 +408,11 @@ PageBase {
         SettingChips {
             isLast: true
             label: Localization.t("backgroundPage.position")
-            tooltip: Localization.t("soundPage.tooltip_popup_position_follow")
-            enabled: !(Config.notifications.popupFollowBar ?? true)
-            opacity: enabled ? 1.0 : 0.4
             options: [
+                {
+                    label: Localization.t("soundPage.follow_bar"),
+                    value: 0
+                },
                 {
                     label: Localization.t("soundPage.always_top"),
                     value: 1
@@ -431,7 +422,7 @@ PageBase {
                     value: 2
                 }
             ]
-            currentValue: Config.notifications.popupPosition ?? 1
+            currentValue: Config.notifications.popupPosition ?? 0
             onSelected: v => Config.update({
                     notifications: Object.assign({}, Config.notifications, {
                         popupPosition: v

@@ -8,6 +8,8 @@ Item {
 
     required property bool isOpen
     property real edgeMargin: 0
+    property bool melt: false
+    property real meltFade: 1
     property var editing: null
     property bool editorOpen: false
     property bool editorLoaded: false
@@ -117,10 +119,11 @@ Item {
         implicitWidth: 601
         implicitHeight: Math.max(content.implicitHeight + 16 + 86, calPane.implicitHeight) + 32
 
-        color: Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
+        color: root.melt ? "transparent" : Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
         radius: root.shape.large
-        border.width: 1
+        border.width: root.melt ? 0 : 1
         border.color: Colors.md3.outline_variant
+        opacity: root.melt ? root.meltFade : 1
 
         Column {
             id: content

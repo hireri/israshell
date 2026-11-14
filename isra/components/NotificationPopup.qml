@@ -7,8 +7,9 @@ import qs.services
 Item {
     id: outer
     property bool keepActive: false
+    property var barWindows: ({})
 
-    readonly property bool isBottom: (Config.notifications.popupFollowBar ?? true) ? (Config.bar.position ?? 0) === 1 : Config.notifications.popupPosition === 2
+    readonly property bool isBottom: (Config.notifications.popupPosition ?? 0) === 0 ? (Config.bar.position ?? 0) === 1 : Config.notifications.popupPosition === 2
 
     Timer {
         id: deactivateTimer
@@ -31,6 +32,7 @@ Item {
     component PopupPanel: PanelWindow {
         id: root
         required property var targetScreen
+        visible: !(outer.barWindows[targetScreen?.name ?? ""]?.notifMelt ?? false)
         anchors.top: true
         anchors.right: true
         anchors.bottom: true

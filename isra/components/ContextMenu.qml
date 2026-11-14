@@ -36,6 +36,17 @@ Item {
 
     property int anchorOrigin: -1
 
+    property var meltWin: null
+    readonly property bool melt: root.meltWin !== null && (root.meltWin.meltActive ?? false)
+    readonly property real _s0: root.melt ? 1 : 0.9
+
+    MeltReporter {
+        win: root.meltWin
+        key: "contextMenu"
+        rect: Qt.rect(card.x, card.y, card.width, card.height * card.opacity)
+        active: root.melt && root.visible
+    }
+
     property bool _originRight: false
     property bool _originBottom: false
     readonly property real cardOriginX: root._originRight ? 1 : 0
@@ -109,7 +120,7 @@ Item {
         root._originBottom = root.cardY < y - 0.5;
         card.height = root._targetH;
         card.opacity = 0;
-        card.scale = 0.9;
+        card.scale = root._s0;
         root.visible = true;
         openAnim.restart();
         PanelService.opened(root, root.hostScreen);
@@ -131,7 +142,7 @@ Item {
     ParallelAnimation {
         id: closeAnim
         NumberAnimation { target: card; property: "opacity"; to: 0; duration: 110; easing.type: Easing.InCubic }
-        NumberAnimation { target: card; property: "scale"; to: 0.9; duration: 110; easing.type: Easing.InCubic }
+        NumberAnimation { target: card; property: "scale"; to: root._s0; duration: 110; easing.type: Easing.InCubic }
         onStarted: card._wiping = true
         onStopped: {
             const next = root._pending;
@@ -148,7 +159,7 @@ Item {
     ParallelAnimation {
         id: openAnim
         NumberAnimation { target: card; property: "opacity"; from: 0; to: 1; duration: 160; easing.type: Easing.OutCubic }
-        NumberAnimation { target: card; property: "scale"; from: 0.9; to: 1; duration: 160; easing.type: Easing.OutCubic }
+        NumberAnimation { target: card; property: "scale"; from: root._s0; to: 1; duration: 160; easing.type: Easing.OutCubic }
         onStarted: card._wiping = true
         onStopped: card._wiping = false
     }
@@ -169,11 +180,9 @@ Item {
         visible: root.visible
         enabled: root.visible
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        propagateComposedEvents: true
-        onClicked: mouse => {
+        onPressed: mouse => {
             root.close();
-            if (mouse.button === Qt.RightButton)
-                mouse.accepted = false;
+            mouse.accepted = false;
         }
     }
 
@@ -208,15 +217,15 @@ Item {
             }
         }
 
-        color: root.blurActive ? "transparent" : Qt.alpha(Colors.md3.surface_container, root.opaque ? 1 : Config.blurOpacity)
-        radius: root.cardR
-        border.width: 1
+        color: root.melt || root.blurActive ? "transparent" : Qt.alpha(Colors.md3.surface_container, root.opaque ? 1 : Config.blurOpacity)
+        radius: root.melt ? (root.meltWin.meltRadius ?? 18) : root.cardR
+        border.width: root.melt ? 0 : 1
         border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
         layer.enabled: true
 
         Rectangle {
             anchors.fill: parent
-            visible: root.blurActive
+            visible: root.blurActive && !root.melt
             color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
         }
 

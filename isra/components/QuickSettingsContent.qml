@@ -50,24 +50,41 @@ Item {
 
     property bool showHistory: false
 
+    readonly property var win: root.controller?.panelWindow ?? null
+    readonly property bool melt: win?.meltActive ?? false
+    property real meltP: (root._ready && root.isOpen) ? 1 : 0
+    Behavior on meltP {
+        NumberAnimation {
+            duration: 300
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    MeltReporter {
+        win: root.win
+        key: "quicksettings"
+        rect: Qt.rect(sidebarCard.x, sidebarCard.y, sidebarCard.width, sidebarCard.height)
+        active: root.melt && (root.isOpen || root.meltP > 0.001)
+    }
+
     Rectangle {
         id: sidebarCard
         visible: !(root.controller?._instantHidden ?? false)
-        width: 420
+        width: root.melt ? 420 * root.meltP : 420
         height: 786
         radius: 18
-        color: Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
+        color: root.melt ? "transparent" : Qt.alpha(Colors.md3.surface_container_low, Config.blurOpacity)
         border.color: Qt.alpha(Colors.md3.outline_variant, 0.5)
-        border.width: 1
+        border.width: root.melt ? 0 : 1
         clip: true
 
         anchors {
             right: parent.right
-            rightMargin: (root._ready && root.isOpen) ? 12 : -440
+            rightMargin: root.melt ? (root.win?.frameInset ?? 0) : (root._ready && root.isOpen) ? (root.win?.frameInset ?? 0) + (root.win?.panelGap ?? 12) : -440
             top: Config.bar.position === 0 ? parent.top : undefined
             bottom: Config.bar.position === 1 ? parent.bottom : undefined
-            topMargin: Config.bar.position === 0 ? (root.controller?.panelWindow.barHeight ?? 0) + 8 : 8
-            bottomMargin: Config.bar.position === 1 ? (root.controller?.panelWindow.barHeight ?? 0) + 8 : 8
+            topMargin: Config.bar.position === 0 ? (root.controller?.panelWindow.barHeight ?? 0) + (root.melt ? 0 : (root.win?.panelGap ?? 12)) : (root.win?.frameInset ?? 0) + (root.win?.panelGap ?? 12)
+            bottomMargin: Config.bar.position === 1 ? (root.controller?.panelWindow.barHeight ?? 0) + (root.melt ? 0 : (root.win?.panelGap ?? 12)) : (root.win?.frameInset ?? 0) + (root.win?.panelGap ?? 12)
         }
 
         Behavior on anchors.rightMargin {
@@ -84,8 +101,11 @@ Item {
 
         ColumnLayout {
             id: mainLayout
-            anchors.fill: parent
-            anchors.margins: 14
+            x: parent.width - 420 + 14
+            y: 14
+            width: 392
+            height: parent.height - 28
+            opacity: root.melt ? Math.max(0, Math.min(1, (root.meltP - 0.5) * 2)) : 1
             spacing: 12
 
             Item {
@@ -710,16 +730,21 @@ Item {
                             width: historyFlick.width
                             spacing: 6
 
-                            NotificationListView {
-                                id: historyList
+                            Loader {
                                 width: parent.width
-                                implicitHeight: contentHeight
-                                height: contentHeight
-                                model: NotificationService.historyModel
+                                active: historyFlick.visible
+                                asynchronous: true
 
-                                delegate: NotificationHistoryItem {
-                                    entry: historyList.model.get(index)
-                                    width: historyList.width
+                                sourceComponent: NotificationListView {
+                                    id: historyList
+                                    implicitHeight: contentHeight
+                                    height: contentHeight
+                                    model: NotificationService.historyModel
+
+                                    delegate: NotificationHistoryItem {
+                                        entry: historyList.model.get(index)
+                                        width: historyList.width
+                                    }
                                 }
                             }
                         }

@@ -46,6 +46,20 @@ PageBase {
             })
         }
 
+        SettingChips {
+            label: Localization.t("dockPage.melt")
+            sublabel: Localization.t("dockPage.melt_sub")
+            options: [
+                { value: 0, label: Localization.t("dockPage.melt_follow") },
+                { value: 1, label: Localization.t("dockPage.melt_on") },
+                { value: 2, label: Localization.t("dockPage.melt_off") }
+            ]
+            currentValue: Config.floatingDock.melt
+            onSelected: v => Config.update({
+                floatingDock: Object.assign({}, Config.floatingDock, { melt: v })
+            })
+        }
+
         SettingSlider {
             label: Localization.t("dockPage.icon_size")
             sublabel: Localization.t("dockPage.size_of_the_app_icons")

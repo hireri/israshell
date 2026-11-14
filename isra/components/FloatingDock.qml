@@ -64,7 +64,11 @@ Item {
     readonly property int pillPadding: 6
     readonly property int pillThickness: itemCellSize + pillPadding * 2
     
+    readonly property var win: dockRoot.QsWindow.window
+    readonly property bool melt: win?.dockMeltActive ?? false
+    readonly property real frameInset: win?.frameInset ?? 0
     readonly property int edgeMargin: 8
+    readonly property real restMargin: melt ? frameInset : edgeMargin + frameInset
     readonly property int sensorThickness: 6
 
     readonly property bool pinned: Config.floatingDock.exclusiveZone
@@ -194,11 +198,11 @@ Item {
 
             readonly property real restX: {
                 if (!dockRoot.isVerticalEdge) return (parent.width - width) / 2;
-                return dockRoot.edge === 2 ? dockRoot.edgeMargin : (parent.width - width - dockRoot.edgeMargin);
+                return dockRoot.edge === 2 ? dockRoot.restMargin : (parent.width - width - dockRoot.restMargin);
             }
             readonly property real restY: {
                 if (dockRoot.isVerticalEdge) return (parent.height - height) / 2;
-                return dockRoot.edge === 0 ? dockRoot.edgeMargin : (parent.height - height - dockRoot.edgeMargin);
+                return dockRoot.edge === 0 ? dockRoot.restMargin : (parent.height - height - dockRoot.restMargin);
             }
 
             property real slideProgress: (dockRoot.revealed && !dockRoot.edgeSwapping) ? 0 : 1
@@ -215,9 +219,30 @@ Item {
             x: restX + (dockRoot.isVerticalEdge ? slideOffset : 0)
             y: restY + (dockRoot.isVerticalEdge ? 0 : slideOffset)
 
-            color: Config.dim(Colors.md3.surface_container)
-            border.width: 1
+            color: dockRoot.melt ? "transparent" : Config.dim(Colors.md3.surface_container)
+            border.width: dockRoot.melt ? 0 : 1
             border.color: Qt.alpha(Colors.md3.outline, 0.18)
+
+            readonly property real meltDepth: {
+                const w = dockRoot.win;
+                if (!w) return 0;
+                const t = dockRoot.frameInset > 0 ? dockRoot.frameInset : -1;
+                switch (dockRoot.edge) {
+                case 0: return y + height - t;
+                case 1: return w.height - t - y;
+                case 2: return x + width - t;
+                default: return w.width - t - x;
+                }
+            }
+
+            MeltReporter {
+                win: dockRoot.win
+                key: "floatingDock"
+                rect: Qt.rect(pill.x, pill.y, pill.width, pill.height)
+                edge: dockRoot.edge
+                depth: pill.meltDepth
+                active: dockRoot.melt && dockRoot.hasContent && pill.meltDepth > 0.5
+            }
 
             HoverHandler {
                 id: pillHover

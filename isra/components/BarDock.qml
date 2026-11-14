@@ -236,6 +236,7 @@ Rectangle {
 
     DockHover {
         id: hoverPopup
+        meltable: true
         dockRoot: dockRoot
         dockModel: dockModelImpl
     }

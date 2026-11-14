@@ -16,6 +16,7 @@ MouseArea {
     property bool showAll: false
     property bool inPanel: false
     property bool popup: false
+    property bool melted: false
     property var listRef: null
     property int groupIdx: 0
 
@@ -417,7 +418,7 @@ MouseArea {
             color: Qt.rgba(0, 0, 0, 0.3)
             offset: Qt.vector2d(0, 4)
             antialiasing: true
-            visible: !group.inPanel
+            visible: !group.inPanel && !group.melted
         }
 
         Rectangle {
@@ -429,8 +430,8 @@ MouseArea {
             height: group._cardHeight >= 0 ? group._cardHeight : cardCol.implicitHeight + 28
 
             radius: 26
-            color: group.isCritical ? Colors.md3.secondary_container : (group.inPanel ? Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity) : Colors.md3.surface_container)
-            border.color: group.inPanel ? "transparent" : Qt.alpha(group.isCritical ? Colors.md3.primary : Colors.md3.outline_variant, 0.5)
+            color: group.isCritical ? Colors.md3.secondary_container : group.melted ? "transparent" : (group.inPanel ? Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity) : Colors.md3.surface_container)
+            border.color: group.inPanel || (group.melted && !group.isCritical) ? "transparent" : Qt.alpha(group.isCritical ? Colors.md3.primary : Colors.md3.outline_variant, 0.5)
             clip: true
 
             Row {

@@ -12,8 +12,26 @@ Tooltip {
 
     suppressed: PanelService.current !== null
 
+    melt: root.panelWindow?.meltActive ?? false
+
+    property real meltP: root.shown && root._want ? 1 : 0
+    Behavior on meltP {
+        NumberAnimation {
+            duration: 150
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    property QtObject _reporter: MeltReporter {
+        win: root.panelWindow
+        key: "tooltip" + String(root)
+        rect: Qt.rect(root.tipX, root.tipY, root.tipWidth, root.tipHeight * root.meltP)
+        active: root.melt && root.meltP > 0.001
+    }
+
     tipY: {
         const barHeight = root.panelWindow?.barHeight ?? 0;
-        return Config.bar.position === 1 ? (root.host?.height ?? 0) - barHeight - root.tipHeight - root.gap : barHeight + root.gap;
+        const g = root.melt ? 0 : root.gap;
+        return Config.bar.position === 1 ? (root.host?.height ?? 0) - barHeight - root.tipHeight - g : barHeight + g;
     }
 }

@@ -28,6 +28,13 @@ PageBase {
         }
     }
     Component {
+        id: frameIconComp
+        MaterialIcon {
+            name: "rectangle"
+            iconSize: 16
+        }
+    }
+    Component {
         id: floatingIconComp
         MaterialIcon {
             name: "floating-bar"
@@ -93,6 +100,8 @@ PageBase {
                     return Localization.t("barPage.floating_detached");
                 case 3:
                     return Localization.t("barPage.chromebook_corners");
+                case 4:
+                    return Localization.t("barPage.frame_around_screen");
                 default:
                     return "";
                 }
@@ -115,6 +124,12 @@ PageBase {
                     value: 3,
                     icon: chromeOsIconComp,
                     tooltip: Localization.t("barPage.tooltip_mode_chromebook"),
+                },
+                {
+                    label: "",
+                    value: 4,
+                    icon: frameIconComp,
+                    tooltip: Localization.t("barPage.tooltip_mode_frame"),
                 },
                 {
                     label: "",
@@ -164,6 +179,18 @@ PageBase {
             onSelected: v => Config.update({
                 bar: Object.assign({}, Config.bar, {
                     position: v
+                })
+            })
+        }
+
+        SettingSwitch {
+            visible: Config.bar.mode === 0 || Config.bar.mode === 4
+            label: Localization.t("barPage.melt_panels")
+            sublabel: Localization.t("barPage.melt_panels_sub")
+            checked: Config.bar.meltPanels
+            onToggled: v => Config.update({
+                bar: Object.assign({}, Config.bar, {
+                    meltPanels: v
                 })
             })
         }
@@ -218,6 +245,22 @@ PageBase {
             checked: Config.launcher.docked
             onToggled: v => Config.update({
                 launcher: Object.assign({}, Config.launcher, { docked: v })
+            })
+        }
+
+        SettingChips {
+            label: Localization.t("barPage.launcher_position")
+            sublabel: Localization.t("barPage.launcher_position_desc")
+            enabled: Config.launcher.docked
+            options: [
+                { label: Localization.t("barPage.follow_button"), value: "button" },
+                { label: Localization.t("barPage.left"), value: "left" },
+                { label: Localization.t("backgroundPage.center"), value: "center" },
+                { label: Localization.t("barPage.right"), value: "right" }
+            ]
+            currentValue: Config.launcher.position ?? "button"
+            onSelected: v => Config.update({
+                launcher: Object.assign({}, Config.launcher, { position: v })
             })
         }
 
@@ -692,7 +735,6 @@ PageBase {
         Layout.fillWidth: true
 
         SettingRow {
-            isLast: true
             label: Localization.t("barPage.actions")
             sublabel: Localization.t("barPage.toggle_individual_toolbar_actions")
 
@@ -765,6 +807,22 @@ PageBase {
                     }
                 }
             }
+        }
+
+        SettingChips {
+            isLast: true
+            label: Localization.t("barPage.wallpaper_position")
+            sublabel: Localization.t("barPage.wallpaper_position_desc")
+            options: [
+                { label: Localization.t("barPage.follow_button"), value: "button" },
+                { label: Localization.t("barPage.left"), value: "left" },
+                { label: Localization.t("backgroundPage.center"), value: "center" },
+                { label: Localization.t("barPage.right"), value: "right" }
+            ]
+            currentValue: Config.screencap.wallpaperPosition ?? "button"
+            onSelected: v => Config.update({
+                screencap: Object.assign({}, Config.screencap, { wallpaperPosition: v })
+            })
         }
     }
 }

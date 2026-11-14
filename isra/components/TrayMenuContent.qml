@@ -23,6 +23,16 @@ Item {
 
     anchors.fill: parent
 
+    readonly property var win: root.controller?.panelWindow ?? null
+    readonly property bool melt: win?.meltActive ?? false
+
+    MeltReporter {
+        win: root.win
+        key: "trayMenu"
+        rect: Qt.rect(card.x, card.y, card.width, card.height)
+        active: root.melt && (root.isOpen || card.height > 0.5)
+    }
+
     QsMenuOpener {
         id: mainOpener
         menu: root.controller?.trayItem?.menu ?? null
@@ -58,8 +68,8 @@ Item {
         width: root.cardW
         height: (root._ready && root.isOpen) ? root.cardH : 0
         y: root.barAtBottom
-            ? (root.height - (root.controller?.panelWindow.barHeight ?? 0) - root.barGap - height)
-            : ((root.controller?.panelWindow.barHeight ?? 0) + root.barGap)
+            ? (root.height - (root.controller?.panelWindow.barHeight ?? 0) - (root.melt ? 0 : root.barGap) - height)
+            : ((root.controller?.panelWindow.barHeight ?? 0) + (root.melt ? 0 : root.barGap))
 
         Behavior on height {
             NumberAnimation {
@@ -70,10 +80,11 @@ Item {
 
         clip: true
 
-        color: Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
+        color: root.melt ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
         radius: root.cardR
-        border.width: 1
+        border.width: root.melt ? 0 : 1
         border.color: Qt.alpha(Colors.md3.on_surface, 0.3)
+        opacity: root.melt ? Math.max(0, Math.min(1, (card.height / root.cardH - 0.5) * 2)) : 1
 
         property real slideX: (root.controller?.submenuOpen ?? false) ? -root.cardW : 0
         Behavior on slideX {

@@ -110,11 +110,12 @@ Singleton {
     function __barDefaults() {
         const layout = WidgetService.defaultLayout();
         return {
-            mode: 0,                    // 0 = hugging, 1 = rect,   2 = floating
+            mode: 0,                    // 0 = hugging, 1 = rect,   2 = floating, 3 = chromebook, 4 = frame
             position: 0,                // 0 = top,     1 = bottom
             transparency: 1,            // 1 = tinted, 2 = full transparency
             transparentPills: false,
             outline: 1,
+            meltPanels: false,
 
             showClock: true,
             showDate: true,
@@ -143,6 +144,7 @@ Singleton {
             edge: 1,              // 0 = top, 1 = bottom, 2 = left, 3 = right
             smartHide: false,
             exclusiveZone: false,
+            melt: 0,              // 0 = follow the bar's melt setting, 1 = always, 2 = never
             showLauncher: true,
             showTrash: false,
             showMusicPlayer: false,
@@ -154,6 +156,7 @@ Singleton {
     function __launcherDefaults() {
         return {
             docked: false,
+            position: "button",
             sections: true
         };
     }
@@ -236,8 +239,7 @@ Singleton {
     property var notifications: ({
             popupTimeout: 5,
             showAllMonitors: false,
-            popupFollowBar: true,
-            popupPosition: 1,
+            popupPosition: 0,
             network: true,
             bluetooth: true
         })
@@ -299,6 +301,7 @@ Singleton {
     property bool desktopClock: true
     property var screencap: ({
             blacklist: ["cts", "ocr"],
+            wallpaperPosition: "button",
             order: ["wallpaper", "screenshot", "cts", "ocr", "colorpicker", "localsend", "songrec", "voice", "record"],
             screenshotPath: "~/.config/hypr/scripts/screenshot.sh",
             recordPath: "~/.config/hypr/scripts/record.sh",
@@ -530,8 +533,7 @@ Singleton {
             notifications: {
                 popupTimeout: 5,
                 showAllMonitors: false,
-                popupFollowBar: true,
-                popupPosition: 1,
+                popupPosition: 0,
                 network: true,
                 bluetooth: true
             },
@@ -593,6 +595,7 @@ Singleton {
             desktopClock: true,
             screencap: {
                 blacklist: ["cts", "ocr"],
+                wallpaperPosition: "button",
                 order: ["wallpaper", "screenshot", "cts", "ocr", "colorpicker", "localsend", "songrec", "voice", "record"],
                 screenshotPath: "~/.config/quickshell/isra/scripts/screenshot.sh",
                 recordPath: "~/.config/quickshell/isra/scripts/record.sh",
@@ -765,13 +768,12 @@ Singleton {
 
         if (result.notifications) {
             const rawPopupPosition = data.notifications && data.notifications.popupPosition;
-            const followBar = (data.notifications && data.notifications.popupFollowBar !== undefined)
-                ? data.notifications.popupFollowBar
-                : (rawPopupPosition === undefined || rawPopupPosition === 0);
+            const oldFollow = data.notifications && data.notifications.popupFollowBar;
+            const pos = (rawPopupPosition === 1 || rawPopupPosition === 2) ? rawPopupPosition : 0;
             result.notifications = Object.assign({}, result.notifications, {
-                popupFollowBar: followBar,
-                popupPosition: (rawPopupPosition === 1 || rawPopupPosition === 2) ? rawPopupPosition : 1
+                popupPosition: oldFollow === true ? 0 : (oldFollow === false && pos === 0 ? 1 : pos)
             });
+            delete result.notifications.popupFollowBar;
         }
 
         if (result.clock && data.clock) {
