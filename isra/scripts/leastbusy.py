@@ -17,9 +17,29 @@ import sys
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from scipy.ndimage import gaussian_filter, laplace
 
-_SCALE = 0.25
+_W = 480
+
+
+def gaussian_filter(a, sigma):
+    w = max(1, round((12 * sigma * sigma / 3 + 1) ** 0.5))
+    r = w // 2
+    for ax in (0, 1):
+        for _ in range(3):
+            p = np.pad(a, [(r, r) if i == ax else (0, 0)
+                       for i in (0, 1)], mode="reflect")
+            c = np.cumsum(p, axis=ax, dtype=np.float64)
+            z = np.zeros_like(np.take(c, [0], axis=ax))
+            c = np.concatenate([z, c], axis=ax)
+            n = a.shape[ax]
+            a = ((np.take(c, range(w, w + n), axis=ax) -
+                 np.take(c, range(0, n), axis=ax)) / w).astype(np.float32)
+    return a
+
+
+def laplace(a):
+    p = np.pad(a, 1, mode="reflect")
+    return p[:-2, 1:-1] + p[2:, 1:-1] + p[1:-1, :-2] + p[1:-1, 2:] - 4 * a
 
 
 def busyness_map(gray_f: np.ndarray, sigma: float = 2.0) -> np.ndarray:
@@ -46,11 +66,13 @@ def penalty_mask(h: int, w: int, edge_margin: float = 0.13, center_radius: float
 
 
 def score_image(image_path, brightness_weight: float = 0.5, mode: str = "dark"):
-    img = Image.open(image_path).convert("L")
+    img = Image.open(image_path)
     orig_w, orig_h = img.size
-    small_w = max(1, int(orig_w * _SCALE))
-    small_h = max(1, int(orig_h * _SCALE))
-    small = img.resize((small_w, small_h), Image.BOX)
+    small_w = _W
+    small_h = max(1, round(orig_h * _W / orig_w))
+    img.draft("L", (small_w, small_h))
+    small = img.convert("L").resize(
+        (small_w, small_h), Image.BOX, reducing_gap=None)
 
     gray_f = np.array(small, dtype=np.float32)
     norm_gray = gray_f / 255.0

@@ -530,7 +530,7 @@ Singleton {
 
     Timer {
         id: clockDebounceTimer
-        interval: 300
+        interval: 100
         repeat: false
         property var pendingCallback: null
         onTriggered: {
