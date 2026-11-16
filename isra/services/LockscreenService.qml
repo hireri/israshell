@@ -21,6 +21,10 @@ Singleton {
     property string _savedActiveWindow: ""
     property string _savedActiveMonitor: ""
 
+    property bool fromSaver: false
+
+    signal saverStart()
+    signal saverWake()
     signal unlocked()
     signal unlockAnimationStart()
 
@@ -40,6 +44,7 @@ Singleton {
     function lock(isFresh = false): void {
         if (root.locked || root.lockAnimating) return
         root._isFirstLock = isFresh;
+        root.fromSaver = false;
 
         if (Config.useHyprlock) {
             hyprlockProcess.running = true
@@ -66,6 +71,7 @@ Singleton {
         locked = false
         lockVisualActive = false
         unlockAnimating = true
+        fromSaver = false
         unlockAnimationStart()
         _restoreWorkspaces()
         unlockAnimationTimer.start()
@@ -100,7 +106,7 @@ Singleton {
 
     Timer {
         id: lockEngageTimer
-        interval: 450
+        interval: root.fromSaver ? 650 : 450
         onTriggered: {
             root.lockAnimating = false
             root.locked = true

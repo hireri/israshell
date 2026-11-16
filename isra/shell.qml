@@ -24,6 +24,8 @@ ShellRoot {
     LazyLoader {
         loading: LockscreenService.locked
         Lockscreen {}
+    Screensaver {}
+
     }
 
     NotificationPopup { barWindows: rootShell.barWindows }

@@ -17,6 +17,14 @@ PageBase {
     title: Localization.t("settingsWindow.system")
     subtitle: Localization.t("systemPage.about_and_script_paths")
 
+    function setSaver(key, value) {
+        Config.update({
+            screensaver: Object.assign({}, Config.screensaver, {
+                [key]: value
+            })
+        });
+    }
+
     function setVoice(key, value) {
         Config.update({
             voice: Object.assign({}, Config.voice, {
@@ -587,6 +595,67 @@ PageBase {
                         dotShape: v
                     })
                 })
+            }
+        }
+
+        SectionCard {
+            label: Localization.t("screensaverPage.general")
+            Layout.fillWidth: true
+
+            SettingSwitch {
+                label: Localization.t("screensaverPage.enabled")
+                sublabel: Localization.t("screensaverPage.enabled_sub")
+                checked: Config.screensaver.enabled
+                onToggled: v => pageRoot.setSaver("enabled", v)
+            }
+
+            SettingChips {
+                label: Localization.t("screensaverPage.mode")
+                sublabel: Localization.t("screensaverPage.mode_sub")
+                options: [
+                    { value: 2, label: Localization.t("screensaverPage.mode_arcs") },
+                    { value: 1, label: Localization.t("screensaverPage.mode_billiard") },
+                    { value: 0, label: Localization.t("screensaverPage.mode_gravity") }
+                ]
+                currentValue: Config.screensaver.mode
+                onSelected: v => pageRoot.setSaver("mode", v)
+            }
+
+            SettingSlider {
+                label: Localization.t("screensaverPage.speed")
+                sublabel: Localization.t("screensaverPage.speed_sub")
+                from: 0.1
+                to: 2
+                stepSize: 0.05
+                decimals: 2
+                unit: "×"
+                value: Config.screensaver.speed
+                onMoved: v => pageRoot.setSaver("speed", v)
+            }
+
+            SettingSlider {
+                label: Localization.t("screensaverPage.shuffle")
+                sublabel: Localization.t("screensaverPage.shuffle_sub")
+                from: 0
+                to: 30
+                stepSize: 1
+                unit: " min"
+                value: Config.screensaver.shuffleMinutes
+                onMoved: v => pageRoot.setSaver("shuffleMinutes", v)
+            }
+
+            SettingSwitch {
+                label: Localization.t("screensaverPage.monochrome")
+                sublabel: Localization.t("screensaverPage.monochrome_sub")
+                checked: Config.screensaver.monochrome
+                onToggled: v => pageRoot.setSaver("monochrome", v)
+            }
+
+            SettingSwitch {
+                label: Localization.t("screensaverPage.show_time")
+                sublabel: Localization.t("screensaverPage.show_time_sub")
+                checked: Config.screensaver.showClock
+                onToggled: v => pageRoot.setSaver("showClock", v)
             }
         }
 

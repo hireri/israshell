@@ -1925,5 +1925,21 @@
   "dockMenu.open_trash": "Open Trash",
   "dockMenu.empty_trash": "Empty Trash",
   "dockTrash.tooltip_empty": "Trash is empty",
-  "dockTrash.tooltip_full": "Trash has items"
+  "dockTrash.tooltip_full": "Trash has items",
+  "screensaverPage.general": "Screensaver",
+  "screensaverPage.enabled": "Enabled",
+  "screensaverPage.enabled_sub": "Show the screensaver after the idle timeout; never while locked or in game mode",
+  "screensaverPage.mode": "Motion",
+  "screensaverPage.mode_sub": "How the ball moves inside the big shape",
+  "screensaverPage.mode_arcs": "Arcs",
+  "screensaverPage.mode_billiard": "Billiard",
+  "screensaverPage.mode_gravity": "Gravity",
+  "screensaverPage.speed": "Speed",
+  "screensaverPage.speed_sub": "How fast the ball moves",
+  "screensaverPage.shuffle": "Reshuffle every",
+  "screensaverPage.shuffle_sub": "Redraw the mosaic on its own; 0 keeps one layout",
+  "screensaverPage.show_time": "Show time",
+  "screensaverPage.show_time_sub": "Hour and minutes in two neighbouring shapes, in your hour format",
+  "screensaverPage.monochrome": "Single color",
+  "screensaverPage.monochrome_sub": "Background shapes as shades of one color, like a single-hue mosaic"
 }

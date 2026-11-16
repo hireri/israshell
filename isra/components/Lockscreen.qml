@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
+import qs.components.screensaver
 import qs.services
 import qs.style
 
@@ -12,10 +13,49 @@ Item {
 
         WlSessionLockSurface {
             id: lockSurface
-            color: "black"
+            color: slate ? Colors.md3.surface : "black"
 
             property bool forceShow: false
             readonly property bool mountedAlreadyBlurred: LockscreenService.lockVisualActive
+            property bool slate: LockscreenService.fromSaver
+            property bool stageLive: LockscreenService.fromSaver
+            property bool waking: false
+
+            function wake(): void {
+                if (!slate || waking)
+                    return;
+                waking = true;
+                slate = false;
+                if (stageLoader.item)
+                    stageFade.start();
+                else
+                    stageLive = false;
+            }
+
+            function sleep(): void {
+                if (slate)
+                    return;
+                waking = false;
+                clockFadeIn.stop();
+                fadeInAnimation.stop();
+                clockWrapper.opacity = 0;
+                lockContent.opacity = 0;
+                stageLoader.opacity = 1;
+                wakeSensor.armed = false;
+                wakeSensor.hx = -1;
+                stageLive = true;
+                slate = true;
+            }
+
+            Connections {
+                target: LockscreenService
+                function onSaverStart() { lockSurface.sleep(); }
+            }
+
+            onSlateChanged: if (!slate && !LockscreenService.unlockAnimating) {
+                clockWrapper.tryFadeIn();
+                lockContent.tryFadeIn();
+            }
 
             Image {
                 id: lockWallImg
@@ -68,8 +108,32 @@ Item {
             CavaVisualizer {
                 id: cavaVisualizer
                 anchors.fill: parent
-                pause: false
+                pause: lockSurface.stageLive
                 visible: Config.cava.enabled
+            }
+
+            Loader {
+                id: stageLoader
+                anchors.fill: parent
+                active: lockSurface.stageLive
+
+                sourceComponent: SaverStage {
+                    mode: Config.screensaver.mode
+                    speed: Config.screensaver.speed
+                    showClock: Config.screensaver.showClock
+                    monochrome: Config.screensaver.monochrome
+                    shuffleSec: Config.screensaver.shuffleMinutes * 60
+                }
+
+                NumberAnimation {
+                    id: stageFade
+                    target: stageLoader
+                    property: "opacity"
+                    to: 0
+                    duration: 400
+                    easing.type: Easing.OutCubic
+                    onFinished: lockSurface.stageLive = false
+                }
             }
 
             Item {
@@ -78,7 +142,7 @@ Item {
                 opacity: 0
 
                 function tryFadeIn() {
-                    if (!Config.desktopClock || LockscreenService.lockVisualActive)
+                    if (!lockSurface.slate && (!Config.desktopClock || LockscreenService.lockVisualActive))
                         clockFadeIn.start()
                 }
 
@@ -125,7 +189,7 @@ Item {
                 opacity: 0
 
                 function tryFadeIn() {
-                    if (!Config.desktopClock || LockscreenService.lockVisualActive)
+                    if (!lockSurface.slate && (!Config.desktopClock || LockscreenService.lockVisualActive))
                         fadeInAnimation.start()
                 }
 
@@ -157,6 +221,42 @@ Item {
                 }
 
                 LockSurface { anchors.fill: parent }
+            }
+
+            Item {
+                id: wakeSensor
+                anchors.fill: parent
+                z: 100
+                property bool armed: false
+                property real hx: -1
+                property real hy: -1
+
+                Timer {
+                    running: lockSurface.slate
+                    interval: 600
+                    onTriggered: wakeSensor.armed = true
+                }
+
+                HoverHandler {
+                    enabled: lockSurface.slate
+                    onPointChanged: {
+                        if (wakeSensor.hx < 0) {
+                            wakeSensor.hx = point.position.x;
+                            wakeSensor.hy = point.position.y;
+                        } else if (wakeSensor.armed && Math.hypot(point.position.x - wakeSensor.hx, point.position.y - wakeSensor.hy) > 24) {
+                            LockscreenService.saverWake();
+                        }
+                    }
+                }
+
+                Connections {
+                    target: LockscreenService
+                    function onSaverWake() { lockSurface.wake(); }
+                    function onCurrentTextChanged() {
+                        if (wakeSensor.armed && lockSurface.slate)
+                            LockscreenService.saverWake();
+                    }
+                }
             }
 
             component LockCornerBlock: Item {

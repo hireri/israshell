@@ -351,6 +351,14 @@ Singleton {
             blurAmount: 1
         })
     property var clockPositions: ({})
+    property var screensaver: ({
+            enabled: false,
+            mode: 2,
+            speed: 0.4,
+            shuffleMinutes: 5,
+            showClock: true,
+            monochrome: false
+        })
     property var desktopWidgets: []
     property var weather: ({
             coloredIcons: false
@@ -644,6 +652,14 @@ Singleton {
                 blurAmount: 1
             },
             useAwww: false,
+            screensaver: {
+                enabled: false,
+                mode: 2,
+                speed: 0.4,
+                shuffleMinutes: 5,
+                showClock: true,
+                monochrome: false
+            },
             clockPositions: {},
             desktopWidgets: [],
             weather: {
