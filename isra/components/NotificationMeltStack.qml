@@ -12,8 +12,18 @@ Item {
     readonly property Item box: box
 
     readonly property real shadowGap: 10
-    property real meltH: notifList.height > 0.5 ? notifList.height - shadowGap + pad * 2 : 0
-    Behavior on meltH {
+    readonly property bool shown: win?.notifMelt ?? false
+    property real open: shown ? 1 : 0
+    Behavior on open {
+        NumberAnimation {
+            duration: 250
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    property real contentH: notifList.height > 0.5 ? notifList.height - shadowGap + pad * 2 : 0
+    readonly property real meltH: contentH * open
+    Behavior on contentH {
         enabled: countAnim.running
         NumberAnimation {
             duration: 250

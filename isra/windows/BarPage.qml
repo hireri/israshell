@@ -147,8 +147,8 @@ PageBase {
         }
 
         SettingSlider {
-            isLast: true
             label: Localization.t("barPage.bar_outline")
+            disabledHint: Config.bar.transparency === 2 ? Localization.t("barPage.needs_tinted") : ""
             sublabel: Localization.t("barPage.bar_outline_sub")
             from: 0
             to: 1
@@ -158,6 +158,21 @@ PageBase {
             onMoved: v => Config.update({
                     bar: Object.assign({}, Config.bar, {
                         outline: v
+                    })
+                })
+        }
+        SettingSlider {
+            disabledHint: Config.bar.mode !== 4 ? Localization.t("barPage.needs_frame_mode") : Config.bar.transparency === 2 ? Localization.t("barPage.needs_tinted") : ""
+            label: Localization.t("barPage.frame_thickness")
+            sublabel: Localization.t("barPage.frame_thickness_sub")
+            from: 2
+            to: 40
+            stepSize: 1
+            decimals: 0
+            value: Config.bar.frameThickness
+            onMoved: v => Config.update({
+                    bar: Object.assign({}, Config.bar, {
+                        frameThickness: v
                     })
                 })
         }
@@ -184,7 +199,7 @@ PageBase {
         }
 
         SettingSwitch {
-            visible: Config.bar.mode === 0 || Config.bar.mode === 4
+            disabledHint: Config.bar.transparency === 2 ? Localization.t("barPage.needs_tinted") : (Config.bar.mode === 2 || Config.bar.mode === 3) ? Localization.t("barPage.needs_joined_mode") : ""
             label: Localization.t("barPage.melt_panels")
             sublabel: Localization.t("barPage.melt_panels_sub")
             checked: Config.bar.meltPanels
@@ -251,7 +266,7 @@ PageBase {
         SettingChips {
             label: Localization.t("barPage.launcher_position")
             sublabel: Localization.t("barPage.launcher_position_desc")
-            enabled: Config.launcher.docked
+            disabledHint: Config.launcher.docked ? "" : Localization.t("barPage.needs_dock_launcher")
             options: [
                 { label: Localization.t("barPage.follow_button"), value: "button" },
                 { label: Localization.t("barPage.left"), value: "left" },

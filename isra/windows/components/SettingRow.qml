@@ -13,6 +13,8 @@ Item {
     property string label: ""
     property string sublabel: ""
     property string tooltip: ""
+    property string disabledHint: ""
+    readonly property bool unavailable: root.disabledHint !== ""
 
     property bool isLast: false
 
@@ -79,6 +81,8 @@ Item {
             verticalCenter: parent.verticalCenter
         }
         spacing: root.stack ? 6 : 0
+        opacity: root.unavailable ? 0.4 : 1
+        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
         RowLayout {
             id: contentRow
@@ -145,13 +149,14 @@ Item {
     }
 
     Tooltip {
-        anchorItem: root.label !== "" ? labelCol : root
-        text: root.tooltip !== "" ? root.tooltip : (labelText.truncated || sublabelText.truncated ? root.label + (root.sublabel !== "" ? "\n" + root.sublabel : "") : "")
+        anchorItem: root.unavailable || root.label === "" ? root : labelCol
+        text: root.unavailable ? root.disabledHint : root.tooltip !== "" ? root.tooltip : (labelText.truncated || sublabelText.truncated ? root.label + (root.sublabel !== "" ? "\n" + root.sublabel : "") : "")
     }
 
     Row {
         id: trailingSlot
         parent: root.stack ? contentCol : contentRow
+        enabled: !root.unavailable
         Layout.alignment: Qt.AlignVCenter
         spacing: 8
     }

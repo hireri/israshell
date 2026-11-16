@@ -63,7 +63,7 @@ Item {
     readonly property real inPad: melt ? 12 : 0
     readonly property real contentMargin: 16
     readonly property real popupHeight: cardStack.height + chipItem.height + 10 + (melt ? 6 + inPad : contentMargin * 2)
-    readonly property real screenEdgeMargin: (win?.frameInset ?? 0) + (win?.panelGap ?? 12)
+    readonly property real screenEdgeMargin: (win?.frameInset ?? 0) + (melt ? 0 : (win?.panelGap ?? 12))
     readonly property real verticalGap: win?.panelGap ?? 12
 
     property real calculatedX: 0

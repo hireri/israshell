@@ -89,6 +89,14 @@ Column {
                 item.compact = true;
         }
 
+        root._trackedRows = root._trackedRows.filter(r => items.indexOf(r) !== -1);
+        for (const [row, b] of root._backs) {
+            if (items.indexOf(row) === -1) {
+                b.destroy();
+                root._backs.delete(row);
+            }
+        }
+
         const shown = items.filter(r => r.visible);
         for (let i = 0; i < shown.length; i++) {
             const item = shown[i];

@@ -10,11 +10,9 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
 import QtQuick
-import QtQuick.Shapes
 
 import qs.components
 import qs.style
-import "services/meltPath.js" as MeltPath
 import qs.windows
 import qs.services
 
@@ -24,9 +22,9 @@ ShellRoot {
     LazyLoader {
         loading: LockscreenService.locked
         Lockscreen {}
-    Screensaver {}
-
     }
+
+    Screensaver {}
 
     NotificationPopup { barWindows: rootShell.barWindows }
     Osd {}
@@ -68,7 +66,21 @@ ShellRoot {
         quickSettingsPanels: rootShell.quickSettingsPanels
     }
 
-    readonly property int frameThickness: Config.bar.mode === 4 && Config.bar.transparency !== 2 ? 10 : 0
+    readonly property int frameTarget: Config.bar.mode === 4 && Config.bar.transparency !== 2 ? Config.bar.frameThickness : 0
+    property int frameThickness: frameTarget
+    onFrameTargetChanged: {
+        if (frameTarget === 0 || frameThickness === 0) {
+            frameSettle.stop();
+            frameThickness = frameTarget;
+        } else {
+            frameSettle.restart();
+        }
+    }
+    Timer {
+        id: frameSettle
+        interval: 250
+        onTriggered: rootShell.frameThickness = rootShell.frameTarget
+    }
     Component.onCompleted: SettingsRegistry.init(SettingsPages.pages)
 
     readonly property var _updater: Updater
@@ -301,13 +313,30 @@ ShellRoot {
 
                 readonly property bool huggingCornersVisible: (screenScope.barMode === 0 || screenScope.barMode === 4) && Config.bar.transparency !== 2
 
-                readonly property bool meltActive: Config.bar.meltPanels && huggingCornersVisible
+                readonly property bool meltCapable: (screenScope.barMode === 0 || screenScope.barMode === 1 || screenScope.barMode === 4) && Config.bar.transparency !== 2
+                readonly property bool meltActive: Config.bar.meltPanels && meltCapable
                 readonly property bool dockMeltActive: Config.floatingDock.enabled
                         && (Config.floatingDock.melt === 1 || (Config.floatingDock.melt !== 2 && Config.bar.meltPanels))
-                        && (screenScope.frameThickness > 0 || huggingCornersVisible)
-                readonly property bool ringActive: screenScope.frameThickness > 0 || meltActive || dockMeltActive
-                readonly property real frameInset: screenScope.frameThickness
-                readonly property real panelGap: 12
+                        && meltCapable
+
+                property real frameVis: rootShell.frameTarget
+                Behavior on frameVis { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+                readonly property bool ringActive: frameVis > 0.01 || meltActive || dockMeltActive
+
+                property bool ringShown: ringActive
+                readonly property real ringFade: ringShown ? 1 : 0
+                readonly property real barFade: 1 - ringFade
+                function syncRing() {
+                    ringShown = ringActive && (ringShown || !visualContent.morphing);
+                }
+                onRingActiveChanged: syncRing()
+                Connections {
+                    target: visualContent
+                    function onMorphingChanged() { window.syncRing(); }
+                }
+                readonly property real frameInset: 0
+                property real panelGap: meltActive ? 6 : 12
+                Behavior on panelGap { NumberAnimation { duration: 250; easing.type: Easing.InOutCubic } }
                 readonly property real meltRadius: 18
                 readonly property bool notifMelt: meltActive
                         && (Config.notifications.showAllMonitors || CompositorService.focusedMonitor?.name === modelData.name)
@@ -447,6 +476,9 @@ ShellRoot {
                     property real floatProgress: screenScope.barMode === 2 ? 1 : 0
                     property real dropProgress: screenScope.barMode === 3 ? 1 : 0
                     property real cornerShape: window.huggingCornersVisible ? -1 : screenScope.barMode >= 2 ? 1 : 0
+                    readonly property bool morphing: floatProgress !== (screenScope.barMode === 2 ? 1 : 0)
+                        || dropProgress !== (screenScope.barMode === 3 ? 1 : 0)
+                        || cornerShape !== (window.huggingCornersVisible ? -1 : screenScope.barMode >= 2 ? 1 : 0)
                     Behavior on floatProgress {
                         NumberAnimation { duration: 280; easing.type: Easing.InOutCubic }
                     }
@@ -528,7 +560,7 @@ ShellRoot {
 
                     Rectangle {
                         id: barContainer
-                        opacity: window.ringActive ? 0 : 1
+                        opacity: window.barFade
                         readonly property real edgeK: 1 - visualContent.floatProgress
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -585,15 +617,15 @@ ShellRoot {
 
                     Rectangle {
                         z: 1
-                        visible: !window.ringActive
+                        visible: window.ringFade < 1
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        anchors.leftMargin: huggingCornersWrapper.huggingCornerRadius + screenScope.frameThickness
-                        anchors.rightMargin: huggingCornersWrapper.huggingCornerRadius + screenScope.frameThickness
+                        anchors.leftMargin: huggingCornersWrapper.huggingCornerRadius + window.frameVis
+                        anchors.rightMargin: huggingCornersWrapper.huggingCornerRadius + window.frameVis
                         height: 1
                         y: Config.bar.position === 0 ? parent.height : -1
                         color: window.outlineColor
-                        opacity: Math.max(0, Math.min(1, -visualContent.cornerShape))
+                        opacity: Math.max(0, Math.min(1, -visualContent.cornerShape)) * window.barFade
                     }
 
                     Item {
@@ -717,67 +749,52 @@ ShellRoot {
                     Item {
                         id: frameRing
                         anchors.fill: parent
-                        visible: window.ringActive
-                        readonly property real t: screenScope.frameThickness
+                        visible: window.ringFade > 0
+                        opacity: window.ringFade
+                        readonly property real t: window.frameVis
                         readonly property real r: huggingCornersWrapper.huggingCornerRadius
-                        readonly property bool atTop: Config.bar.position === 0
-                        readonly property bool framed: t > 0
-                        readonly property real farInset: framed ? t : -1
-                        readonly property real rt: (atTop || framed) ? r : 0
-                        readonly property real rb: (!atTop || framed) ? r : 0
-                        property real topInset: atTop ? screenScope.barExclusiveZone : farInset
-                        property real bottomInset: atTop ? farInset : screenScope.barExclusiveZone
-                        Behavior on topInset { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
-                        Behavior on bottomInset { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
-                        readonly property real x1: farInset
-                        readonly property real x2: width - farInset
-                        readonly property real y1: topInset
-                        readonly property real y2: height - bottomInset
-                        readonly property var meltEdges: {
-                            const e = [[], [], [], []];
-                            for (const m of Object.values(window.meltMap)) {
-                                const edge = m.edge >= 0 ? m.edge : Config.bar.position;
-                                const h = m.depth >= 0 ? m.depth : m.height;
-                                e[edge].push(edge < 2 ? { p: m.x, w: m.width, h: h } : { p: m.y, w: m.height, h: h });
-                            }
-                            return e;
-                        }
-                        function pathFor(inset) {
-                            return MeltPath.holePath({
-                                x1: x1, x2: x2, y1: y1, y2: y2, rt: rt, rb: rb, barEdge: Config.bar.position,
-                                top: meltEdges[0], bottom: meltEdges[1], left: meltEdges[2], right: meltEdges[3],
-                                f: r, c: window.meltRadius, inset: inset
-                            });
-                        }
-                        readonly property string holeD: pathFor(0)
-                        readonly property string strokeD: pathFor(0.5)
+                        readonly property real framed: Math.min(1, t / 6)
 
-                        Shape {
+                        readonly property real farInset: t - (1 - framed)
+                        readonly property real barRadius: r * Math.max(0, -visualContent.cornerShape)
+                        readonly property real farRadius: r * framed
+                        readonly property real rt: barOnTop ? barRadius : farRadius
+                        readonly property real rb: barOnTop ? farRadius : barRadius
+                        property real zone: screenScope.barExclusiveZone
+                        Behavior on zone { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
+                        readonly property real lockOffset: visualContent.lockSlideDistance * visualContent.lockSlideProgress
+                        readonly property bool barOnTop: huggingCornersWrapper.activeSide === 0
+                        readonly property real barInset: Math.max(farInset, zone + (barOnTop
+                            ? (visualContent.y - visualContent.topY) - lockOffset
+                            : (visualContent.bottomY - visualContent.y) - lockOffset))
+                        readonly property real innerTop: barOnTop ? barInset : farInset
+                        readonly property real innerBottom: barOnTop ? farInset : barInset
+
+                        MeltFrame {
                             anchors.fill: parent
-                            preferredRendererType: Shape.CurveRenderer
-
-                            ShapePath {
-                                fillColor: huggingCornersWrapper.barColor
-                                strokeColor: "transparent"
-                                fillRule: ShapePath.OddEvenFill
-                                PathSvg { path: "M-10 -10 H" + (frameRing.width + 10) + " V" + (frameRing.height + 10) + " H-10 Z " + frameRing.holeD }
-                            }
-                            ShapePath {
-                                fillColor: "transparent"
-                                strokeColor: window.outlineColor
-                                strokeWidth: 1
-                                PathSvg { path: frameRing.strokeD }
-                            }
+                            innerX1: frameRing.farInset
+                            innerX2: frameRing.width - frameRing.farInset
+                            innerY1: frameRing.innerTop
+                            innerY2: frameRing.height - frameRing.innerBottom
+                            innerRadiusTop: frameRing.rt
+                            innerRadiusBottom: frameRing.rb
+                            barEdge: huggingCornersWrapper.activeSide
+                            panels: Object.values(window.meltMap)
+                            meltRadius: window.meltRadius
+                            fillet: frameRing.r
+                            frameColor: huggingCornersWrapper.barColor
+                            outlineColor: window.outlineColor
                         }
                     }
 
                     Item {
                         id: huggingCornersWrapper
-                        visible: !window.ringActive
+                        visible: window.ringFade < 1
+                        opacity: window.barFade
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        anchors.leftMargin: screenScope.frameThickness
-                        anchors.rightMargin: screenScope.frameThickness
+                        anchors.leftMargin: window.frameVis
+                        anchors.rightMargin: window.frameVis
                         height: huggingCornerRadius
 
                         y: activeSide === 0
@@ -822,7 +839,7 @@ ShellRoot {
                     Loader {
                         id: notifMeltLoader
                         anchors.fill: parent
-                        active: window.notifMelt
+                        active: window.meltActive
                         sourceComponent: NotificationMeltStack { win: window }
                     }
 

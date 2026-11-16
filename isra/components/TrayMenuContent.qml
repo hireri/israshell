@@ -14,10 +14,11 @@ Item {
 
     readonly property real cardW: 210
     readonly property real cardR: 16
-    readonly property real itemH: 34
-    readonly property real sepH: 14
-    readonly property real pad: 4
-    readonly property real barGap: 3
+    readonly property real itemH: 36
+    readonly property real sepH: 11
+    readonly property real pad: 3
+    readonly property real padBottom: 5
+    readonly property real barGap: 8
 
     readonly property bool barAtBottom: Config.bar.position === 1
 
@@ -42,8 +43,8 @@ Item {
         menu: root.controller?.activeSubmenu ?? null
     }
 
-    readonly property real mainH: mainCol.implicitHeight + pad * 2
-    readonly property real subH: subCol.implicitHeight + pad * 2
+    readonly property real mainH: mainCol.implicitHeight + pad + padBottom
+    readonly property real subH: subCol.implicitHeight + pad + padBottom
     readonly property real cardH: (root.controller?.submenuOpen ?? false) ? subH : mainH
 
     Item {

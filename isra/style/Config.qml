@@ -115,6 +115,7 @@ Singleton {
             transparency: 1,            // 1 = tinted, 2 = full transparency
             transparentPills: false,
             outline: 1,
+            frameThickness: 10,
             meltPanels: false,
 
             showClock: true,
@@ -350,7 +351,6 @@ Singleton {
             artWallpaper: false,
             blurAmount: 1
         })
-    property var clockPositions: ({})
     property var screensaver: ({
             enabled: false,
             mode: 2,
@@ -359,6 +359,7 @@ Singleton {
             showClock: true,
             monochrome: false
         })
+    property var clockPositions: ({})
     property var desktopWidgets: []
     property var weather: ({
             coloredIcons: false
@@ -651,7 +652,6 @@ Singleton {
                 artWallpaper: false,
                 blurAmount: 1
             },
-            useAwww: false,
             screensaver: {
                 enabled: false,
                 mode: 2,
@@ -660,6 +660,7 @@ Singleton {
                 showClock: true,
                 monochrome: false
             },
+            useAwww: false,
             clockPositions: {},
             desktopWidgets: [],
             weather: {

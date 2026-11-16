@@ -15,9 +15,10 @@ Item {
 
     readonly property real cardW: 190
     readonly property real cardR: 16
-    readonly property real itemH: 34
+    readonly property real itemH: 36
     readonly property real pad: 3
-    readonly property real barGap: 3
+    readonly property real padBottom: 5
+    readonly property real barGap: 8
 
     readonly property bool barAtBottom: Config.bar.position === 1
 
@@ -77,7 +78,7 @@ Item {
         }
     ]
 
-    readonly property real cardH: col.implicitHeight + pad * 2 + 2
+    readonly property real cardH: col.implicitHeight + pad + padBottom
 
     Item {
         id: keyHandler
@@ -158,8 +159,8 @@ Item {
                             leftMargin: 12
                             verticalCenter: parent.verticalCenter
                         }
-                        width: 18
-                        height: 18
+                        width: 16
+                        height: 16
 
                         Loader {
                             id: iconLoader
@@ -186,7 +187,9 @@ Item {
                         }
                         text: row.modelData.text
                         color: Colors.md3.on_surface
+                        font.family: Config.fontFamily
                         font.pixelSize: 12
+                        font.weight: Font.Medium
                         elide: Text.ElideRight
                         maximumLineCount: 1
                     }
