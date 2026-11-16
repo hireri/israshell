@@ -13,19 +13,12 @@ Tooltip {
     suppressed: PanelService.current !== null
 
     melt: root.panelWindow?.meltActive ?? false
-
-    property real meltP: root.shown && root._want ? 1 : 0
-    Behavior on meltP {
-        NumberAnimation {
-            duration: 150
-            easing.type: Easing.OutCubic
-        }
-    }
+    revealFromBottom: Config.bar.position === 1
 
     property QtObject _reporter: MeltReporter {
         win: root.panelWindow
         key: "tooltip" + String(root)
-        rect: Qt.rect(root.tipX, root.tipY, root.tipWidth, root.tipHeight * root.meltP)
+        rect: Qt.rect(root.tipX, root.tipY + root.revealY, root.tipWidth, root.tipHeight * root.meltP)
         active: root.melt && root.meltP > 0.001
     }
 

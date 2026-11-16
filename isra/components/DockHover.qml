@@ -34,7 +34,7 @@ Item {
     MeltReporter {
         win: root.win
         key: "dockHover"
-        rect: Qt.rect(popupContent.x, popupContent.y, popupContent.width, popupContent.height * root.meltP)
+        rect: Qt.rect(popupContent.x, popupContent.y + (root.barOnTop ? 0 : popupContent.height * (1 - root.meltP)), popupContent.width, popupContent.height * root.meltP)
         active: root.melt && (root.isOpen || root.meltP > 0.001)
     }
 
@@ -82,7 +82,7 @@ Item {
         const tl = button.mapToItem(host, 0, 0);
         let x = tl.x + (button.width - w) / 2;
         let y = tl.y + (button.height - h) / 2;
-        if (menuMelt) y = barOnTop ? bh : host.height - bh - h;
+        if (meltable && !sideEdge) y = barOnTop ? bh + (menuMelt ? 0 : gap) : host.height - bh - h - (menuMelt ? 0 : gap);
         else if (dockEdge === 0) y = tl.y + button.height + gap;
         else if (dockEdge === 1) y = tl.y - h - gap;
         else if (dockEdge === 2) x = tl.x + button.width + gap;
@@ -544,8 +544,24 @@ Item {
             NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
         }
 
+        Item {
+            id: revealClip
+            width: parent.width
+            height: root.melt ? parent.height * root.meltP : parent.height
+            y: root.barOnTop ? 0 : parent.height - height
+            clip: root.melt
+
+            Item {
+                id: fullBody
+                width: popupContent.width
+                height: popupContent.height
+                y: root.barOnTop ? 0 : revealClip.height - height
+            }
+        }
+
         Rectangle {
             id: popupContainer
+            parent: fullBody
             anchors.fill: parent
             radius: 12
             color: root.melt ? "transparent" : Config.dim(Colors.md3.surface_container)

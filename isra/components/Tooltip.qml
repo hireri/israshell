@@ -28,8 +28,17 @@ Item {
     readonly property bool embedded: (QsWindow.window as FloatingWindow) !== null
     readonly property bool _want: root.open || (root._hovered && (root.text !== "" || root.hasCustomContent))
     readonly property bool shown: root._shown && !root.suppressed
-    readonly property real tipWidth: (tipLoader.item as Item)?.width ?? 0
-    readonly property real tipHeight: (tipLoader.item as Item)?.height ?? 0
+    readonly property real tipWidth: (tipLoader.item as Item)?.implicitWidth ?? 0
+    readonly property real tipHeight: (tipLoader.item as Item)?.implicitHeight ?? 0
+    property bool revealFromBottom: false
+    readonly property real revealY: root.melt && root.revealFromBottom ? root.tipHeight * (1 - root.meltP) : 0
+    property real meltP: root.shown && root._want ? 1 : 0
+    Behavior on meltP {
+        NumberAnimation {
+            duration: 150
+            easing.type: Easing.OutCubic
+        }
+    }
 
     readonly property real _hostW: root.host?.width ?? 0
     readonly property real _hostH: root.host?.height ?? 0
@@ -140,7 +149,7 @@ Item {
 
     Item {
         id: contentHolder
-        parent: root.hasCustomContent && tipLoader.item ? (tipLoader.item as Item) : root
+        parent: root.hasCustomContent && tipLoader.item ? tipLoader.item.body : root
         anchors.fill: parent
         anchors.margins: root.padding
         implicitWidth: childrenRect.width
@@ -157,29 +166,27 @@ Item {
     Component {
         id: tipComponent
 
-        Rectangle {
+        Item {
             id: tip
 
             property bool ready: false
+            readonly property Item body: fullBody
             Component.onCompleted: Qt.callLater(() => tip.ready = true)
 
             parent: root.host
             z: 100
             visible: root.shown
             x: root.tipX
-            y: root.tipY
+            y: root.tipY + root.revealY
 
             implicitWidth: (root.hasCustomContent ? contentHolder.implicitWidth : label.width) + root.padding * 2
             implicitHeight: (root.hasCustomContent ? contentHolder.implicitHeight : label.implicitHeight) + root.padding * 2
             width: implicitWidth
-            height: implicitHeight
+            height: root.melt ? implicitHeight * root.meltP : implicitHeight
+            clip: root.melt
 
             opacity: tip.ready && root._want && root._shown ? 1 : 0
             scale: root.melt || (tip.ready && root._want && root._shown) ? 1 : 0.9
-            color: root.melt ? "transparent" : root.flat ? Colors.md3.surface_container_highest : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
-            radius: 8
-            border.width: root.flat || root.melt ? 0 : 1
-            border.color: Qt.alpha(Colors.md3.outline, 0.5)
 
             Behavior on opacity {
                 NumberAnimation {
@@ -194,16 +201,27 @@ Item {
                 }
             }
 
-            Text {
-                id: label
-                anchors.centerIn: parent
-                text: root.text
-                color: Colors.md3.on_surface
-                font.family: Config.fontFamily
-                font.pixelSize: 11
-                wrapMode: Text.Wrap
-                width: Math.min(implicitWidth, root.maxWidth - root.padding * 2)
-                visible: !root.hasCustomContent
+            Rectangle {
+                id: fullBody
+                y: root.melt && root.revealFromBottom ? tip.height - height : 0
+                width: tip.implicitWidth
+                height: tip.implicitHeight
+                color: root.melt ? "transparent" : root.flat ? Colors.md3.surface_container_highest : Qt.alpha(Colors.md3.surface_container_high, Config.blurOpacity)
+                radius: 8
+                border.width: root.flat || root.melt ? 0 : 1
+                border.color: Qt.alpha(Colors.md3.outline, 0.5)
+
+                Text {
+                    id: label
+                    anchors.centerIn: parent
+                    text: root.text
+                    color: Colors.md3.on_surface
+                    font.family: Config.fontFamily
+                    font.pixelSize: 11
+                    wrapMode: Text.Wrap
+                    width: Math.min(implicitWidth, root.maxWidth - root.padding * 2)
+                    visible: !root.hasCustomContent
+                }
             }
         }
     }
