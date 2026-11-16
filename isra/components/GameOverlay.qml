@@ -71,9 +71,24 @@ Scope {
 
             Region {
                 id: closedMask
-                regions: GameOverlayService.clickableItems.map(item => regionComponent.createObject(closedMask, {
-                        item: item
-                    }))
+
+                function rebuild() {
+                    const old = closedMask.regions;
+                    closedMask.regions = GameOverlayService.clickableItems.map(item => regionComponent.createObject(closedMask, {
+                            item: item
+                        }));
+                    for (let i = 0; i < old.length; i++)
+                        old[i].destroy();
+                }
+
+                Component.onCompleted: rebuild()
+            }
+
+            Connections {
+                target: GameOverlayService
+                function onClickableItemsChanged() {
+                    closedMask.rebuild();
+                }
             }
 
             property real progress
