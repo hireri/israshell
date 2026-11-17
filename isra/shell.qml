@@ -320,23 +320,11 @@ ShellRoot {
                         && meltCapable
 
                 property real frameVis: rootShell.frameTarget
-                Behavior on frameVis { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
-                readonly property bool ringActive: frameVis > 0.01 || meltActive || dockMeltActive
-
-                property bool ringShown: ringActive
-                readonly property real ringFade: ringShown ? 1 : 0
-                readonly property real barFade: 1 - ringFade
-                function syncRing() {
-                    ringShown = ringActive && (ringShown || !visualContent.morphing);
-                }
-                onRingActiveChanged: syncRing()
-                Connections {
-                    target: visualContent
-                    function onMorphingChanged() { window.syncRing(); }
-                }
+                Behavior on frameVis { NumberAnimation { duration: 280; easing.type: Easing.InOutCubic } }
+                readonly property real farInset: frameVis - 1 + Math.min(1, frameVis / 6)
                 readonly property real frameInset: 0
                 property real panelGap: meltActive ? 6 : 12
-                Behavior on panelGap { NumberAnimation { duration: 250; easing.type: Easing.InOutCubic } }
+                Behavior on panelGap { NumberAnimation { duration: 280; easing.type: Easing.InOutCubic } }
                 readonly property real meltRadius: 18
                 readonly property bool notifMelt: meltActive
                         && (Config.notifications.showAllMonitors || CompositorService.focusedMonitor?.name === modelData.name)
@@ -476,9 +464,6 @@ ShellRoot {
                     property real floatProgress: screenScope.barMode === 2 ? 1 : 0
                     property real dropProgress: screenScope.barMode === 3 ? 1 : 0
                     property real cornerShape: window.huggingCornersVisible ? -1 : screenScope.barMode >= 2 ? 1 : 0
-                    readonly property bool morphing: floatProgress !== (screenScope.barMode === 2 ? 1 : 0)
-                        || dropProgress !== (screenScope.barMode === 3 ? 1 : 0)
-                        || cornerShape !== (window.huggingCornersVisible ? -1 : screenScope.barMode >= 2 ? 1 : 0)
                     Behavior on floatProgress {
                         NumberAnimation { duration: 280; easing.type: Easing.InOutCubic }
                     }
@@ -515,13 +500,13 @@ ShellRoot {
                             SequentialAnimation {
                                 ParallelAnimation {
                                     NumberAnimation { target: visualContent; property: "y"; to: -visualContent.height; duration: 150; easing.type: Easing.InCubic }
-                                    NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: -1; duration: 150; easing.type: Easing.InCubic }
+                                    NumberAnimation { target: barShape; property: "swapMaskProgress"; to: -1; duration: 150; easing.type: Easing.InCubic }
                                 }
                                 PropertyAction { target: visualContent; property: "y"; value: window.height }
-                                PropertyAction { target: huggingCornersWrapper; property: "activeSide"; value: 1 }
+                                PropertyAction { target: barShape; property: "activeSide"; value: 1 }
                                 ParallelAnimation {
                                     NumberAnimation { target: visualContent; property: "y"; to: visualContent.bottomY; duration: 150; easing.type: Easing.OutCubic }
-                                    NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: 0; duration: 150; easing.type: Easing.OutCubic }
+                                    NumberAnimation { target: barShape; property: "swapMaskProgress"; to: 0; duration: 150; easing.type: Easing.OutCubic }
                                 }
                                 ScriptAction { script: Qt.callLater(visualContent.rebindY) }
                             }
@@ -531,13 +516,13 @@ ShellRoot {
                             SequentialAnimation {
                                 ParallelAnimation {
                                     NumberAnimation { target: visualContent; property: "y"; to: window.height; duration: 150; easing.type: Easing.InCubic }
-                                    NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: -1; duration: 150; easing.type: Easing.InCubic }
+                                    NumberAnimation { target: barShape; property: "swapMaskProgress"; to: -1; duration: 150; easing.type: Easing.InCubic }
                                 }
                                 PropertyAction { target: visualContent; property: "y"; value: -visualContent.height }
-                                PropertyAction { target: huggingCornersWrapper; property: "activeSide"; value: 0 }
+                                PropertyAction { target: barShape; property: "activeSide"; value: 0 }
                                 ParallelAnimation {
                                     NumberAnimation { target: visualContent; property: "y"; to: visualContent.topY; duration: 150; easing.type: Easing.OutCubic }
-                                    NumberAnimation { target: huggingCornersWrapper; property: "swapMaskProgress"; to: 0; duration: 150; easing.type: Easing.OutCubic }
+                                    NumberAnimation { target: barShape; property: "swapMaskProgress"; to: 0; duration: 150; easing.type: Easing.OutCubic }
                                 }
                                 ScriptAction { script: Qt.callLater(visualContent.rebindY) }
                             }
@@ -558,9 +543,8 @@ ShellRoot {
                         y: (visualContent.state === "top" ? -1 : 1) * visualContent.lockSlideDistance * visualContent.lockSlideProgress
                     }
 
-                    Rectangle {
+                    Item {
                         id: barContainer
-                        opacity: window.barFade
                         readonly property real edgeK: 1 - visualContent.floatProgress
                         anchors.left: parent.left
                         anchors.right: parent.right
@@ -572,22 +556,14 @@ ShellRoot {
                         readonly property bool atTop: Config.bar.position === 0
                         readonly property real innerRadius: 22 * Math.max(0, visualContent.cornerShape)
                         readonly property real outerRadius: 22 * visualContent.floatProgress
-                        topLeftRadius: atTop ? outerRadius : innerRadius
-                        topRightRadius: atTop ? outerRadius : innerRadius
-                        bottomLeftRadius: atTop ? innerRadius : outerRadius
-                        bottomRightRadius: atTop ? innerRadius : outerRadius
-
-                        border.width: 1
-                        border.color: Qt.alpha(Colors.md3.outline_variant, window.outlineAlpha * Math.max(0, Math.min(1, 1 + visualContent.cornerShape)))
-                        Behavior on border.color {
-                            ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
-                        }
-
-                        readonly property real dimAlpha: Config.blurOpacity
+                        readonly property real topLeftRadius: atTop ? outerRadius : innerRadius
+                        readonly property real topRightRadius: atTop ? outerRadius : innerRadius
+                        readonly property real bottomLeftRadius: atTop ? innerRadius : outerRadius
+                        readonly property real bottomRightRadius: atTop ? innerRadius : outerRadius
 
                         function edgeFade(isTopStop) {
                             if (Config.bar.transparency !== 2)
-                                return Qt.alpha(Colors.md3.surface_container, dimAlpha);
+                                return Qt.alpha(Colors.md3.surface_container, Config.blurOpacity);
                             if (screenScope.barMode !== 2)
                                 return Qt.alpha(Colors.md3.background, 0);
                             const fadeAtTop = Config.bar.position === 0;
@@ -595,37 +571,8 @@ ShellRoot {
                         }
                         property color topColor: edgeFade(true)
                         property color bottomColor: edgeFade(false)
-
-                        gradient: Gradient {
-                            orientation: Gradient.Vertical
-                            GradientStop {
-                                position: 0.0
-                                color: barContainer.topColor
-                                Behavior on color {
-                                    ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
-                                }
-                            }
-                            GradientStop {
-                                position: 1.0
-                                color: barContainer.bottomColor
-                                Behavior on color {
-                                    ColorAnimation { duration: 200; easing.type: Easing.InOutCubic }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        z: 1
-                        visible: window.ringFade < 1
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.leftMargin: huggingCornersWrapper.huggingCornerRadius + window.frameVis
-                        anchors.rightMargin: huggingCornersWrapper.huggingCornerRadius + window.frameVis
-                        height: 1
-                        y: Config.bar.position === 0 ? parent.height : -1
-                        color: window.outlineColor
-                        opacity: Math.max(0, Math.min(1, -visualContent.cornerShape)) * window.barFade
+                        Behavior on topColor { ColorAnimation { duration: 280; easing.type: Easing.InOutCubic } }
+                        Behavior on bottomColor { ColorAnimation { duration: 280; easing.type: Easing.InOutCubic } }
                     }
 
                     Item {
@@ -747,92 +694,41 @@ ShellRoot {
                     }
 
                     Item {
-                        id: frameRing
+                        id: barShape
                         anchors.fill: parent
-                        visible: window.ringFade > 0
-                        opacity: window.ringFade
-                        readonly property real t: window.frameVis
-                        readonly property real r: huggingCornersWrapper.huggingCornerRadius
-                        readonly property real framed: Math.min(1, t / 6)
+                        readonly property int cornerRadius: 26
+                        property real swapMaskProgress: 0
+                        property int activeSide: 0
+                        Component.onCompleted: activeSide = Config.bar.position
+                        readonly property color barColor: GameModeService.active ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
 
-                        readonly property real farInset: t - (1 - framed)
-                        readonly property real barRadius: r * Math.max(0, -visualContent.cornerShape)
-                        readonly property real farRadius: r * framed
-                        readonly property real rt: barOnTop ? barRadius : farRadius
-                        readonly property real rb: barOnTop ? farRadius : barRadius
-                        property real zone: screenScope.barExclusiveZone
-                        Behavior on zone { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
-                        readonly property real lockOffset: visualContent.lockSlideDistance * visualContent.lockSlideProgress
-                        readonly property bool barOnTop: huggingCornersWrapper.activeSide === 0
-                        readonly property real barInset: Math.max(farInset, zone + (barOnTop
-                            ? (visualContent.y - visualContent.topY) - lockOffset
-                            : (visualContent.bottomY - visualContent.y) - lockOffset))
-                        readonly property real innerTop: barOnTop ? barInset : farInset
-                        readonly property real innerBottom: barOnTop ? farInset : barInset
+                        readonly property real farInset: window.farInset
+                        readonly property real hug: Math.max(0, Math.min(1, swapMaskProgress - visualContent.cornerShape))
+                        readonly property real lockShift: (visualContent.state === "top" ? -1 : 1) * visualContent.lockSlideDistance * visualContent.lockSlideProgress
+                        readonly property real barY: visualContent.y + lockShift
+                        readonly property real pillX: visualContent.x + barContainer.x
+                        readonly property real pillTop: barY + (visualContent.clip ? Math.max(0, barContainer.y) : barContainer.y)
+                        readonly property real pillBottom: barY + (visualContent.clip ? Math.min(visualContent.height, barContainer.y + barContainer.height) : barContainer.y + barContainer.height)
 
                         MeltFrame {
                             anchors.fill: parent
-                            innerX1: frameRing.farInset
-                            innerX2: frameRing.width - frameRing.farInset
-                            innerY1: frameRing.innerTop
-                            innerY2: frameRing.height - frameRing.innerBottom
-                            innerRadiusTop: frameRing.rt
-                            innerRadiusBottom: frameRing.rb
-                            barEdge: huggingCornersWrapper.activeSide
+                            innerX1: barShape.farInset
+                            innerX2: barShape.width - barShape.farInset
+                            innerY1: barShape.farInset
+                            innerY2: barShape.height - barShape.farInset
+                            innerRadius: barShape.cornerRadius * Math.min(1, window.frameVis / 6)
+                            barLine: barShape.activeSide === 0 ? barShape.barY + visualContent.height : barShape.barY
+                            barEdge: barShape.activeSide
                             panels: Object.values(window.meltMap)
                             meltRadius: window.meltRadius
-                            fillet: frameRing.r
-                            frameColor: huggingCornersWrapper.barColor
+                            fillet: barShape.cornerRadius
+                            frameColor: barShape.barColor
                             outlineColor: window.outlineColor
-                        }
-                    }
-
-                    Item {
-                        id: huggingCornersWrapper
-                        visible: window.ringFade < 1
-                        opacity: window.barFade
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.leftMargin: window.frameVis
-                        anchors.rightMargin: window.frameVis
-                        height: huggingCornerRadius
-
-                        y: activeSide === 0
-                            ? (visualContent.y + visualContent.height)
-                            : (visualContent.y - huggingCornerRadius)
-
-                        readonly property int huggingCornerRadius: 26
-
-                        property real swapMaskProgress: 0
-                        readonly property real maskProgress: Math.max(-1, swapMaskProgress - 1 - visualContent.cornerShape)
-
-                        property int activeSide: 0
-                        Component.onCompleted: activeSide = Config.bar.position
-
-                        property string barColor: GameModeService.active ? "transparent" : Qt.alpha(Colors.md3.surface_container, Config.blurOpacity)
-
-                        transform: Translate {
-                            y: (visualContent.state === "top" ? -1 : 1) * visualContent.lockSlideDistance * visualContent.lockSlideProgress
-                        }
-
-                        CornerBlock {
-                            type: huggingCornersWrapper.activeSide === 1 ? 2 : 0
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            cornerColor: huggingCornersWrapper.barColor
-                            cornerRadius: huggingCornersWrapper.huggingCornerRadius
-                            maskProgress: huggingCornersWrapper.maskProgress
-                            outlineColor: window.outlineColor
-                        }
-
-                        CornerBlock {
-                            type: huggingCornersWrapper.activeSide === 1 ? 3 : 1
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            cornerColor: huggingCornersWrapper.barColor
-                            cornerRadius: huggingCornersWrapper.huggingCornerRadius
-                            maskProgress: huggingCornersWrapper.maskProgress
-                            outlineColor: window.outlineColor
+                            pillRect: Qt.vector4d(barShape.pillX, barShape.pillTop, barShape.pillX + barContainer.width, barShape.pillBottom)
+                            pillFillet: barShape.cornerRadius * barShape.hug
+                            pillR: Qt.vector4d(barContainer.topLeftRadius, barContainer.topRightRadius, barContainer.bottomRightRadius, barContainer.bottomLeftRadius)
+                            pillTop: barContainer.topColor
+                            pillBottom: barContainer.bottomColor
                         }
                     }
 

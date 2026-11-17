@@ -17,6 +17,9 @@ layout(std140, binding = 0) uniform buf {
     vec4 p3; vec4 q3;
     vec4 p4; vec4 q4;
     vec4 p5; vec4 q5;
+    vec4 pillRect; vec4 pillR;
+    vec4 pillTop; vec4 pillBottom;
+    float pillFillet;
 };
 void main() {
     qt_TexCoord0 = qt_MultiTexCoord0;

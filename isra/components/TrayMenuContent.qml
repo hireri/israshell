@@ -16,8 +16,8 @@ Item {
     readonly property real cardR: 16
     readonly property real itemH: 36
     readonly property real sepH: 11
-    readonly property real pad: 3
-    readonly property real padBottom: 5
+    readonly property real pad: 4
+    readonly property real padBottom: 4
     readonly property real barGap: 8
 
     readonly property bool barAtBottom: Config.bar.position === 1

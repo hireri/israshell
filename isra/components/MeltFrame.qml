@@ -7,14 +7,19 @@ ShaderEffect {
     property real innerY1: 0
     property real innerX2: width
     property real innerY2: height
-    property real innerRadiusTop: 0
-    property real innerRadiusBottom: 0
+    property real innerRadius: 0
+    property real barLine: 0
     property var panels: []          // {x, y, width, height, edge, depth}, edge -1 = bar edge
     property int barEdge: 0          // 0 top, 1 bottom
     property real meltRadius: 18
     property real fillet: 26
     property color frameColor: "black"
     property color outlineColor: "transparent"
+    property vector4d pillRect: Qt.vector4d(_farCoord, _farCoord, _farCoord, _farCoord)
+    property vector4d pillR: Qt.vector4d(0, 0, 0, 0)
+    property real pillFillet: 0
+    property color pillTop: frameColor
+    property color pillBottom: frameColor
 
     readonly property int maxPanels: 6
     readonly property real _farCoord: -10000
@@ -40,12 +45,14 @@ ShaderEffect {
         const C = meltRadius;
         const e = 1.5;
         const L = innerX1 + e, R = innerX2 - e, T = innerY1 + e, B = innerY2 - e;
+        const top = edge === barEdge ? barLine : innerY1;
+        const bottom = edge === barEdge ? barLine : innerY2;
         let r, q;
         if (edge === 0) {
-            r = [m.x, innerY1, m.x + m.width, Math.min(innerY2, innerY1 + depth)];
+            r = [m.x, top, m.x + m.width, Math.min(innerY2, top + depth)];
             q = [0, 0, r[2] >= R ? 0 : C, r[0] <= L ? 0 : C];
         } else if (edge === 1) {
-            r = [m.x, Math.max(innerY1, innerY2 - depth), m.x + m.width, innerY2];
+            r = [m.x, Math.max(innerY1, bottom - depth), m.x + m.width, bottom];
             q = [r[0] <= L ? 0 : C, r[2] >= R ? 0 : C, 0, 0];
         } else if (edge === 2) {
             r = [innerX1, m.y, Math.min(innerX2, innerX1 + depth), m.y + m.height];
@@ -68,7 +75,7 @@ ShaderEffect {
 
     readonly property vector2d winSize: Qt.vector2d(width, height)
     readonly property vector4d innerRect: Qt.vector4d(innerX1, innerY1, innerX2, innerY2)
-    readonly property vector4d innerR: Qt.vector4d(innerRadiusTop, innerRadiusTop, innerRadiusBottom, innerRadiusBottom)
+    readonly property vector4d innerR: Qt.vector4d(innerRadius, innerRadius, innerRadius, innerRadius)
     readonly property vector4d p0: _slotRect(0)
     readonly property vector4d q0: _slotRadii(0)
     readonly property vector4d p1: _slotRect(1)

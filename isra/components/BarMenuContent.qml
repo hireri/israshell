@@ -16,8 +16,8 @@ Item {
     readonly property real cardW: 190
     readonly property real cardR: 16
     readonly property real itemH: 36
-    readonly property real pad: 3
-    readonly property real padBottom: 5
+    readonly property real pad: 4
+    readonly property real padBottom: 4
     readonly property real barGap: 8
 
     readonly property bool barAtBottom: Config.bar.position === 1
@@ -137,8 +137,8 @@ Item {
                         id: hoverBg
                         anchors {
                             fill: parent
-                            leftMargin: 5
-                            rightMargin: 7
+                            leftMargin: 6
+                            rightMargin: 6
                             topMargin: 2
                             bottomMargin: 2
                         }

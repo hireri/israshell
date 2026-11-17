@@ -16,6 +16,9 @@ layout(std140, binding = 0) uniform buf {
     vec4 p3; vec4 q3;
     vec4 p4; vec4 q4;
     vec4 p5; vec4 q5;
+    vec4 pillRect; vec4 pillR;
+    vec4 pillTop; vec4 pillBottom;
+    float pillFillet;
 };
 
 // rect = (x1, y1, x2, y2); radii = (tl, tr, br, bl)
@@ -36,22 +39,37 @@ float smin(float a, float b, float k) {
     return min(a, b) - h * h * k * 0.25;
 }
 
+float roundUnion(float a, float b, float r) {
+    vec2 u = max(vec2(r - a, r - b), vec2(0.0));
+    return max(r, min(a, b)) - length(u);
+}
+
 float panelFillet(vec4 rect) {
     return min(fillet, min((rect.z - rect.x) * 0.5, rect.w - rect.y));
 }
 
 void main() {
     vec2 p = qt_TexCoord0 * winSize;
-    float d = -sdRoundRect(p, innerRect, innerR);
-    d = smin(d, sdRoundRect(p, p0, q0), panelFillet(p0));
-    d = smin(d, sdRoundRect(p, p1, q1), panelFillet(p1));
-    d = smin(d, sdRoundRect(p, p2, q2), panelFillet(p2));
-    d = smin(d, sdRoundRect(p, p3, q3), panelFillet(p3));
-    d = smin(d, sdRoundRect(p, p4, q4), panelFillet(p4));
-    d = smin(d, sdRoundRect(p, p5, q5), panelFillet(p5));
-    float coverage = clamp(0.5 - d, 0.0, 1.0);
-    vec4 frame = vec4(frameColor.rgb * frameColor.a, frameColor.a) * coverage;
-    float edge = clamp(1.0 - abs(d), 0.0, 1.0);
+    float frame = -sdRoundRect(p, innerRect, innerR);
+    float pill = sdRoundRect(p, pillRect, pillR);
+    float s0 = sdRoundRect(p, p0, q0);
+    float s1 = sdRoundRect(p, p1, q1);
+    float s2 = sdRoundRect(p, p2, q2);
+    float s3 = sdRoundRect(p, p3, q3);
+    float s4 = sdRoundRect(p, p4, q4);
+    float s5 = sdRoundRect(p, p5, q5);
+    float d = roundUnion(frame, pill, pillFillet);
+    d = smin(d, s0, panelFillet(p0));
+    d = smin(d, s1, panelFillet(p1));
+    d = smin(d, s2, panelFillet(p2));
+    d = smin(d, s3, panelFillet(p3));
+    d = smin(d, s4, panelFillet(p4));
+    d = smin(d, s5, panelFillet(p5));
+    float rest = min(frame, min(min(s0, s1), min(min(s2, s3), min(s4, s5))));
+    float t = clamp((p.y - pillRect.y) / max(pillRect.w - pillRect.y, 1.0), 0.0, 1.0);
+    vec4 c = pill <= rest ? mix(pillTop, pillBottom, t) : frameColor;
+    vec4 fill = vec4(c.rgb * c.a, c.a) * clamp(0.5 - d, 0.0, 1.0);
+    float edge = clamp(1.0 - abs(d + 0.5), 0.0, 1.0);
     vec4 outline = vec4(outlineColor.rgb * outlineColor.a, outlineColor.a) * edge;
-    fragColor = (outline + frame * (1.0 - outline.a)) * qt_Opacity;
+    fragColor = (outline + fill * (1.0 - outline.a)) * qt_Opacity;
 }
