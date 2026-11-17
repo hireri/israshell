@@ -25,7 +25,6 @@ Item {
     signal deleteRequested
     signal undoRequested
     signal redoRequested
-    signal closeRequested
 
     readonly property var tools: [
         { id: "region", icon: "region" },
@@ -392,18 +391,6 @@ Item {
                     text: Localization.t("screenshot.tip_redo")
                     suppressed: !root.shown
                 }
-            }
-        }
-
-        MorphButton {
-            icon: "close"
-            container: Colors.md3.surface_container_highest
-            content: Colors.md3.on_surface_variant
-            onClicked: root.closeRequested()
-            Tooltip {
-                flat: true
-                text: Localization.t("screenshot.tip_close")
-                suppressed: !root.shown
             }
         }
     }

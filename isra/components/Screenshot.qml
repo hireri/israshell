@@ -2211,7 +2211,6 @@ Item {
                             onDeleteRequested: sessionRoot.deleteSelected()
                             onUndoRequested: sessionRoot.undo()
                             onRedoRequested: sessionRoot.redo()
-                            onCloseRequested: root._closeOverlay()
                         }
 
                         Item {
